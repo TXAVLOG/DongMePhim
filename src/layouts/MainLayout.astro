@@ -439,8 +439,8 @@ const isActive = (path: string) => {
           <!-- Center Branding Content -->
           <div class="relative z-10 flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
             <!-- Icon -->
-            <div class="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary shadow-lg shadow-primary/20">
-              <span class="material-symbols-outlined text-white text-3xl font-bold animate-[pulse_3s_infinite]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+            <div class="relative flex items-center justify-center w-24 h-24 mb-2">
+              <img src="/logo-icon.gif" alt="Logo" class="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)] animate-pulse" />
             </div>
             <div class="space-y-1">
               <h3 class="font-display-hero text-2xl font-black text-white tracking-tight uppercase">{settings.general.site_name}</h3>
@@ -1296,12 +1296,16 @@ const isActive = (path: string) => {
                     .finally(() => {
                       window.dispatchEvent(new Event('auth-changed'));
                       closeLoginModal();
-                      window.location.reload();
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 1000);
                     });
                 } else {
                   window.dispatchEvent(new Event('auth-changed'));
                   closeLoginModal();
-                  window.location.reload();
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
                 }
               } else {
                 showGlobalToast(data.message || data.error || 'Sai thông tin tài khoản!', 'error');
