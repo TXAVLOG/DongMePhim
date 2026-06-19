@@ -1,11 +1,13 @@
 ---
 import '../styles/index.css';
+import { SettingService } from '../services/SettingService';
 
 interface Props {
   title: string;
 }
 
 const { title } = Astro.props;
+const settings = await SettingService.getSettings();
 ---
 
 <!DOCTYPE html>
@@ -14,7 +16,7 @@ const { title } = Astro.props;
   <meta charset="utf-8" />
   <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title} - DongPhim Admin</title>
+  <title>{title} | {settings.general.site_name} Admin</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,7 +59,7 @@ const { title } = Astro.props;
             <span class="material-symbols-outlined text-on-primary-fixed">movie_filter</span>
           </div>
           <div>
-            <h1 class="font-display-hero text-title-md text-primary leading-none">DongPhim</h1>
+            <h1 class="font-display-hero text-title-md text-primary leading-none">{settings.general.site_name}</h1>
             <p class="text-[10px] text-text-dim font-label-caps tracking-widest mt-1">PREMIUM ADMIN</p>
           </div>
         </a>
@@ -71,7 +73,7 @@ const { title } = Astro.props;
             <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-surface-deep rounded-full"></div>
           </div>
           <div class="overflow-hidden">
-            <p class="font-title-md text-sm truncate">Admin_DongPhim</p>
+            <p class="font-title-md text-sm truncate">Admin_{settings.general.site_name}</p>
             <p class="text-xs text-text-dim font-label-caps">Super Admin</p>
           </div>
         </div>
@@ -149,12 +151,12 @@ const { title } = Astro.props;
       <footer class="mt-auto pt-12 border-t border-glass-stroke w-full pb-6">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
-            <h4 class="font-display-hero text-title-md text-primary mb-1">DongPhim Admin</h4>
-            <p class="font-body-main text-[10px] font-label-caps text-text-dim">© 2024 DongPhim Cinematic Noir. All rights reserved.</p>
+            <h4 class="font-display-hero text-title-md text-primary mb-1">{settings.general.site_name} Admin</h4>
+            <p class="font-body-main text-[10px] font-label-caps text-text-dim">© {new Date().getFullYear()} {settings.general.site_name}. Tất cả các quyền được bảo lưu.</p>
           </div>
           <div class="flex gap-4">
-             <a class="text-xs text-text-dim hover:text-primary transition-colors" href="#">Trợ giúp</a>
-             <a class="text-xs text-text-dim hover:text-primary transition-colors" href="#">Quyền riêng tư</a>
+             <a class="text-xs text-text-dim hover:text-primary transition-colors" href={settings.social?.social_telegram_url || "/lien-he"} target="_blank" rel="noopener noreferrer">Trợ giúp</a>
+             <a class="text-xs text-text-dim hover:text-primary transition-colors" href="/bao-mat">Quyền riêng tư</a>
           </div>
         </div>
       </footer>

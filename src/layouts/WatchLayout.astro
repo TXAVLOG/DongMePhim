@@ -1,15 +1,18 @@
 ---
 import '../styles/index.css';
 
+import { SettingService } from '../services/SettingService';
+
 interface Props {
   title: string;
   description?: string;
   image?: string;
 }
 
+const settings = await SettingService.getSettings();
 const { 
   title, 
-  description = "WebFilm - Xem phim trực tuyến chất lượng cao", 
+  description = `${settings.general.site_name} - Xem phim trực tuyến chất lượng cao`, 
   image = "/favicon.svg" 
 } = Astro.props;
 ---
@@ -38,7 +41,7 @@ const {
     <header class="absolute top-0 left-0 w-full z-50 p-4 bg-gradient-to-b from-black/80 to-transparent">
       <div class="flex items-center justify-between">
         <a href="/tphim" class="text-xl font-outfit font-bold text-white tracking-tight hover:scale-105 transition-transform">
-          Web<span class="text-blue-500">Film</span>
+          {settings.general.site_name}
         </a>
         <a href="/tphim" class="flex items-center gap-2 text-zinc-300 hover:text-white transition-colors text-sm font-medium">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
