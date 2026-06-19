@@ -199,10 +199,12 @@ const isActive = (path: string) => {
       document.addEventListener('astro:after-swap', () => {
         applyTheme();
         hydrateSettings();
+        if (typeof updateAuthState === 'function') updateAuthState();
       });
       document.addEventListener('astro:page-load', () => {
         applyTheme();
         hydrateSettings();
+        if (typeof updateAuthState === 'function') updateAuthState();
       });
     </script>
     <meta charset="UTF-8" />
@@ -709,6 +711,8 @@ const isActive = (path: string) => {
 
       updateAuthState();
       window.addEventListener('auth-changed', updateAuthState);
+      document.addEventListener('astro:after-swap', updateAuthState);
+      document.addEventListener('astro:page-load', updateAuthState);
 
       window.logout = function() {
         document.cookie = "txa_gate_passed=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
