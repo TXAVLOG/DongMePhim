@@ -1,0 +1,235 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Email Logs">
+  <div class="max-w-container-max mx-auto mt-4 pb-10 px-0 md:px-0">
+    <!-- Top Header -->
+    <header class="h-20 flex items-center justify-between mb-6 z-10 relative">
+      <div class="flex items-center gap-4">
+        <div>
+          <h1 class="font-headline-lg text-headline-lg tracking-tight text-on-surface">Email Outbox</h1>
+          <p class="text-on-surface-variant text-sm mt-1">Monitor all automated system communications</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative hidden sm:block">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">search</span>
+          <input class="bg-surface-container h-10 pl-10 pr-4 rounded-full border border-glass-stroke focus:border-primary outline-none text-sm w-64 transition-all text-on-surface" placeholder="Search recipients..." type="text"/>
+        </div>
+        <button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container border border-glass-stroke text-on-surface-variant hover:text-primary transition-all cursor-pointer">
+          <span class="material-symbols-outlined">filter_list</span>
+        </button>
+        <button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container border border-glass-stroke text-on-surface-variant hover:text-primary transition-all cursor-pointer">
+          <span class="material-symbols-outlined">refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
+      <div class="glass-panel p-5 rounded-2xl flex flex-col gap-2 group hover:border-primary/50 transition-all">
+        <div class="flex items-center justify-between">
+          <span class="text-on-surface-variant text-sm font-medium">Total Sent</span>
+          <span class="material-symbols-outlined text-primary">outbox</span>
+        </div>
+        <div class="text-2xl font-bold text-on-surface">12,842</div>
+        <div class="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">+12% from yesterday</div>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl flex flex-col gap-2 group hover:border-emerald-400/50 transition-all">
+        <div class="flex items-center justify-between">
+          <span class="text-on-surface-variant text-sm font-medium">Success Rate</span>
+          <span class="material-symbols-outlined text-emerald-400">check_circle</span>
+        </div>
+        <div class="text-2xl font-bold text-on-surface">99.2%</div>
+        <div class="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">High performance</div>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl flex flex-col gap-2 group hover:border-error/50 transition-all">
+        <div class="flex items-center justify-between">
+          <span class="text-on-surface-variant text-sm font-medium">Failed Deliveries</span>
+          <span class="material-symbols-outlined text-error">error</span>
+        </div>
+        <div class="text-2xl font-bold text-on-surface">104</div>
+        <div class="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Requires attention</div>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl flex flex-col gap-2 group hover:border-secondary/50 transition-all">
+        <div class="flex items-center justify-between">
+          <span class="text-on-surface-variant text-sm font-medium">Queue Status</span>
+          <span class="material-symbols-outlined text-secondary">pending</span>
+        </div>
+        <div class="text-2xl font-bold text-on-surface">0</div>
+        <div class="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Queue is empty</div>
+      </div>
+    </div>
+
+    <!-- History Table Container -->
+    <div class="glass-panel rounded-2xl overflow-hidden border border-glass-stroke relative z-10">
+      <div class="p-6 border-b border-glass-stroke flex items-center justify-between">
+        <h3 class="font-title-md text-title-md text-on-surface text-xl">Outbound Activity</h3>
+        <div class="flex gap-2">
+          <button class="text-xs bg-surface-container px-3 py-1.5 rounded-lg border border-glass-stroke hover:border-primary transition-all text-on-surface-variant cursor-pointer">Export CSV</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-surface-container/50">
+            <tr>
+              <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Recipient</th>
+              <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Subject</th>
+              <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Category</th>
+              <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Timestamp</th>
+              <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Status</th>
+              <th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-glass-stroke">
+            <!-- Row 1 -->
+            <tr class="hover:bg-primary/5 transition-colors group">
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-on-surface whitespace-nowrap">quoc.nguyen@example.com</span>
+                  <span class="text-[11px] text-on-surface-variant whitespace-nowrap">User ID: #88291</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-sm text-on-surface-variant whitespace-nowrap">Your DongPhim VIP is now active!</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase whitespace-nowrap">VIP Notification</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm text-on-surface whitespace-nowrap">Today, 14:22</span>
+                  <span class="text-[11px] text-on-surface-variant whitespace-nowrap">AWS SES: us-east-1</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400 whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Delivered
+                </span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <button class="p-2 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all cursor-pointer">
+                  <span class="material-symbols-outlined">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <!-- Row 2 -->
+            <tr class="hover:bg-primary/5 transition-colors group">
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-on-surface whitespace-nowrap">m.linh@gmail.com</span>
+                  <span class="text-[11px] text-on-surface-variant whitespace-nowrap">User ID: #88302</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-sm text-on-surface-variant whitespace-nowrap">Reset your password - Verification Code</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/10 text-secondary uppercase whitespace-nowrap">Auth</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm text-on-surface whitespace-nowrap">Today, 13:58</span>
+                  <span class="text-[11px] text-on-surface-variant whitespace-nowrap">NodeMailer / SMTP</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400 whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Delivered
+                </span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <button class="p-2 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all cursor-pointer">
+                  <span class="material-symbols-outlined">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <!-- Row 3: Failure -->
+            <tr class="hover:bg-primary/5 transition-colors group">
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-on-surface whitespace-nowrap">invalid-user@tempmail.co</span>
+                  <span class="text-[11px] text-on-surface-variant whitespace-nowrap">Guest Session</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-sm text-on-surface-variant whitespace-nowrap">Confirm your Registration</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-surface-container-highest text-on-surface-variant uppercase whitespace-nowrap">Registration</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm text-on-surface whitespace-nowrap">Today, 13:45</span>
+                  <span class="text-[11px] text-on-surface-variant whitespace-nowrap">Retried 3x</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-error whitespace-nowrap" title="550: Mailbox unavailable">
+                  <span class="w-1.5 h-1.5 rounded-full bg-error"></span> Failed (550)
+                </span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-1">
+                  <button class="p-2 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all cursor-pointer">
+                    <span class="material-symbols-outlined">restart_alt</span>
+                  </button>
+                  <button class="p-2 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all cursor-pointer">
+                    <span class="material-symbols-outlined">visibility</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <!-- Row 4 -->
+            <tr class="hover:bg-primary/5 transition-colors group">
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-on-surface whitespace-nowrap">kien.phan@corporate.vn</span>
+                  <span class="text-[11px] text-on-surface-variant whitespace-nowrap">User ID: #88152</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-sm text-on-surface-variant whitespace-nowrap">Your VIP Subscription will expire in 3 days</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase whitespace-nowrap">VIP Notification</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-sm text-on-surface whitespace-nowrap">Yesterday, 18:30</span>
+                  <span class="text-[11px] text-on-surface-variant whitespace-nowrap">Automated CRON</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400 whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Delivered
+                </span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <button class="p-2 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all cursor-pointer">
+                  <span class="material-symbols-outlined">visibility</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div class="p-6 border-t border-glass-stroke flex items-center justify-between">
+        <span class="text-sm text-on-surface-variant">Showing 1 to 10 of 12,842 entries</span>
+        <div class="flex gap-2">
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-glass-stroke text-on-surface-variant hover:border-primary transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-sm">chevron_left</span>
+          </button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary-fixed text-sm font-bold cursor-pointer">1</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-glass-stroke text-on-surface-variant hover:border-primary transition-all text-sm cursor-pointer">2</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-glass-stroke text-on-surface-variant hover:border-primary transition-all text-sm cursor-pointer">3</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-glass-stroke text-on-surface-variant hover:border-primary transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

@@ -1,0 +1,316 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Quản lý Thành viên">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Quản lý Thành viên</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý các tài khoản đã đăng ký thành viên trên hệ thống.</p>
+    </div>
+    <div>
+      <button id="add-member-btn" class="px-4 py-2.5 bg-primary hover:brightness-110 text-slate-950 font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer border-none shadow-lg shadow-primary/10">
+        <span class="material-symbols-outlined text-sm">person_add</span>
+        <span>Thêm thành viên thử nghiệm</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filter & Search Panel -->
+  <section class="glass-panel p-6 rounded-3xl mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="relative group w-full md:w-80">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-dim group-focus-within:text-primary transition-colors">search</span>
+      <input id="member-search" class="bg-surface-container border border-glass-stroke rounded-full pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary w-full transition-all focus:outline-none placeholder:text-zinc-500 text-white" placeholder="Tìm kiếm tên, email thành viên..." type="text"/>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+      <select id="filter-package" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
+        <option value="all">Tất cả gói</option>
+        <option value="VIP">Thành viên VIP</option>
+        <option value="Free">Thành viên Miễn phí</option>
+      </select>
+      
+      <select id="filter-status" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
+        <option value="all">Tất cả trạng thái</option>
+        <option value="active">Đang hoạt động</option>
+        <option value="banned">Đã khóa</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Members Table -->
+  <section class="glass-panel rounded-3xl overflow-hidden mb-8">
+    <div class="px-8 py-6 flex justify-between items-center border-b border-glass-stroke bg-white/[0.01]">
+      <h3 class="text-title-md text-on-surface font-bold">Danh sách thành viên</h3>
+      <span id="members-summary" class="text-xs text-text-dim font-bold font-label-caps">ĐANG TẢI...</span>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead class="bg-surface-container/40">
+          <tr>
+            <th class="px-8 py-4 text-xs font-label-caps text-text-dim">TÊN TÀI KHOẢN / EMAIL</th>
+            <th class="px-8 py-4 text-xs font-label-caps text-text-dim">NGÀY ĐĂNG KÝ</th>
+            <th class="px-8 py-4 text-xs font-label-caps text-text-dim">GÓI DỊCH VỤ</th>
+            <th class="px-8 py-4 text-xs font-label-caps text-text-dim">TRẠNG THÁI</th>
+            <th class="px-8 py-4 text-xs font-label-caps text-text-dim text-right">HÀNH ĐỘNG</th>
+          </tr>
+        </thead>
+        <tbody id="member-table-tbody" class="divide-y divide-glass-stroke">
+          <!-- Populated dynamically via JS client side -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="p-4 bg-surface-container/20 text-center border-t border-glass-stroke">
+      <p id="show-count-text" class="text-xs text-text-dim font-label-caps font-bold">HIỂN THỊ 0 TRÊN TỔNG SỐ 0 THÀNH VIÊN</p>
+    </div>
+  </section>
+
+  <script is:inline>
+    (function() {
+      // Helper: Initial seed data if tregistered_users is empty
+      function getInitialUsers() {
+        const dateNow = new Date();
+        const getOffsetDate = (daysAgo) => {
+          const d = new Date();
+          d.setDate(d.getDate() - daysAgo);
+          return d.toISOString();
+        };
+
+        return [
+          {
+            username: "hoang.nguyen_92",
+            email: "hoang.nguyen@gmail.com",
+            createdAt: getOffsetDate(1),
+            package: "VIP",
+            status: "active"
+          },
+          {
+            username: "linh_beauty_88",
+            email: "linh.tran.beauty@gmail.com",
+            createdAt: getOffsetDate(3),
+            package: "Free",
+            status: "active"
+          },
+          {
+            username: "ducanh_ios_dev",
+            email: "ducanh.dev.ios@yahoo.com",
+            createdAt: getOffsetDate(5),
+            package: "VIP",
+            status: "active"
+          },
+          {
+            username: "hacker_lord_99",
+            email: "hacker.lord@spambox.me",
+            createdAt: getOffsetDate(12),
+            package: "Free",
+            status: "banned"
+          },
+          {
+            username: "mai_phuong_kute",
+            email: "maiphuong9x@outlook.com",
+            createdAt: getOffsetDate(18),
+            package: "VIP",
+            status: "active"
+          }
+        ];
+      }
+
+      // Initialize storage
+      if (!localStorage.getItem('tregistered_users')) {
+        localStorage.setItem('tregistered_users', JSON.stringify(getInitialUsers()));
+      }
+
+      let users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+
+      const tbody = document.getElementById('member-table-tbody');
+      const searchInput = document.getElementById('member-search');
+      const filterPackage = document.getElementById('filter-package');
+      const filterStatus = document.getElementById('filter-status');
+      const summaryText = document.getElementById('members-summary');
+      const showCountText = document.getElementById('show-count-text');
+      const addBtn = document.getElementById('add-member-btn');
+
+      // Global actions
+      window.toggleUserStatus = function(username) {
+        users = users.map(u => {
+          if (u.username === username) {
+            const nextStatus = u.status === 'active' ? 'banned' : 'active';
+            if (window.showGlobalToast) {
+              window.showGlobalToast(`Đã ${nextStatus === 'active' ? 'mở khóa' : 'khóa'} tài khoản ${username}!`, 'success');
+            }
+            return { ...u, status: nextStatus };
+          }
+          return u;
+        });
+        localStorage.setItem('tregistered_users', JSON.stringify(users));
+        filterAndSearch();
+      };
+
+      window.deleteUser = function(username) {
+        if (confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản thành viên ${username} không?`)) {
+          users = users.filter(u => u.username !== username);
+          localStorage.setItem('tregistered_users', JSON.stringify(users));
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Đã xóa thành viên thành công!', 'success');
+          }
+          filterAndSearch();
+        }
+      };
+
+      window.changeUserPackage = function(username) {
+        users = users.map(u => {
+          if (u.username === username) {
+            const nextPackage = u.package === 'VIP' ? 'Free' : 'VIP';
+            if (window.showGlobalToast) {
+              window.showGlobalToast(`Đã chuyển ${username} sang gói ${nextPackage}!`, 'success');
+            }
+            return { ...u, package: nextPackage };
+          }
+          return u;
+        });
+        localStorage.setItem('tregistered_users', JSON.stringify(users));
+        filterAndSearch();
+      };
+
+      function renderUsers(list) {
+        if (!tbody) return;
+        
+        if (list.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="px-8 py-12 text-center text-xs text-text-dim italic">
+                Không tìm thấy thành viên nào khớp với bộ lọc của bạn.
+              </td>
+            </tr>
+          `;
+          if (showCountText) showCountText.textContent = 'HIỂN THỊ 0 THÀNH VIÊN';
+          return;
+        }
+
+        tbody.innerHTML = list.map(u => {
+          const registeredDate = new Date(u.createdAt).toLocaleDateString('vi-VN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          const isVIP = u.package === 'VIP';
+          const packageBg = isVIP ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+          const packageText = isVIP ? 'VIP Member' : 'Free Member';
+
+          const isActive = u.status === 'active';
+          const statusBg = isActive ? 'bg-emerald-500' : 'bg-error';
+          const statusText = isActive ? 'Hoạt động' : 'Đã khóa';
+
+          return `
+            <tr class="hover:bg-white/5 transition-colors group">
+              <td class="px-8 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-surface-container border border-glass-stroke flex items-center justify-center text-text-dim font-bold text-sm uppercase">
+                    ${u.username.substring(0, 2)}
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold group-hover:text-primary transition-colors">${u.username}</p>
+                    <p class="text-[10px] text-text-dim mt-0.5">${u.email}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-8 py-4 text-xs text-text-dim">${registeredDate}</td>
+              <td class="px-8 py-4">
+                <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold border ${packageBg} cursor-pointer hover:brightness-110" title="Click để thay đổi gói">
+                  ${packageText}
+                </button>
+              </td>
+              <td class="px-8 py-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full ${statusBg}"></div>
+                  <span class="text-xs font-medium text-on-surface">${statusText}</span>
+                </div>
+              </td>
+              <td class="px-8 py-4 text-right">
+                <div class="flex gap-2 justify-end">
+                  <button onclick="toggleUserStatus('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="${isActive ? 'Khóa tài khoản' : 'Kích hoạt tài khoản'}">
+                    <span class="material-symbols-outlined text-sm">${isActive ? 'block' : 'lock_open'}</span>
+                  </button>
+                  <button onclick="deleteUser('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa tài khoản">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (showCountText) {
+          showCountText.textContent = `HIỂN THỊ ${list.length} TRÊN TỔNG SỐ ${users.length} THÀNH VIÊN`;
+        }
+      }
+
+      function filterAndSearch() {
+        const query = searchInput?.value.trim().toLowerCase() || '';
+        const pack = filterPackage?.value || 'all';
+        const stat = filterStatus?.value || 'all';
+
+        let filtered = users;
+
+        if (query) {
+          filtered = filtered.filter(u => 
+            u.username.toLowerCase().includes(query) || 
+            u.email.toLowerCase().includes(query)
+          );
+        }
+
+        if (pack !== 'all') {
+          filtered = filtered.filter(u => u.package === pack);
+        }
+
+        if (stat !== 'all') {
+          filtered = filtered.filter(u => u.status === stat);
+        }
+
+        renderUsers(filtered);
+        
+        if (summaryText) {
+          const activeCount = users.filter(u => u.status === 'active').length;
+          summaryText.textContent = `${activeCount} Đang hoạt động / ${users.length} Tổng số`;
+        }
+      }
+
+      // Add Test User
+      addBtn?.addEventListener('click', () => {
+        const randId = Math.floor(Math.random() * 900) + 100;
+        const newU = {
+          username: `user_test_${randId}`,
+          email: `test.user.${randId}@dongphim.net`,
+          createdAt: new Date().toISOString(),
+          package: Math.random() > 0.5 ? "VIP" : "Free",
+          status: "active"
+        };
+        users.push(newU);
+        localStorage.setItem('tregistered_users', JSON.stringify(users));
+        if (window.showGlobalToast) {
+          window.showGlobalToast(`Đã thêm thành viên thử nghiệm: ${newU.username}`, 'success');
+        }
+        filterAndSearch();
+      });
+
+      // Initial stats count text
+      if (summaryText) {
+        const activeCount = users.filter(u => u.status === 'active').length;
+        summaryText.textContent = `${activeCount} Đang hoạt động / ${users.length} Tổng số`;
+      }
+
+      // Initial render
+      renderUsers(users);
+
+      // Event listeners
+      searchInput?.addEventListener('input', filterAndSearch);
+      filterPackage?.addEventListener('change', filterAndSearch);
+      filterStatus?.addEventListener('change', filterAndSearch);
+    })();
+  </script>
+</AdminLayout>

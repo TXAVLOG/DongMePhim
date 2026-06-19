@@ -1,0 +1,154 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { WatchContainer } from '../../components/player/WatchContainer';
+import { MovieService } from '../../services/MovieService';
+import { SettingService } from '../../services/SettingService';
+import NotFound from '../../components/ui/NotFound.astro';
+
+const { slug } = Astro.params;
+
+const movie = slug ? await MovieService.getMovieBySlug(slug) : null;
+
+if (!movie) {
+  Astro.response.status = 404;
+  Astro.response.statusText = 'Not Found';
+}
+
+const settings = await SettingService.getSettings();
+
+// Get initial server and episode parameters from query string
+const epSlug = Astro.url.searchParams.get('ep') || undefined;
+const svParam = Astro.url.searchParams.get('sv');
+const tsParam = Astro.url.searchParams.get('ts');
+
+// Filter episodes based on airing schedule
+let filteredMovie = movie;
+let nextAiringEpisode = null;
+let isUnreleased = false;
+let unreleasedEpisode = null;
+
+if (movie && movie.episodes && movie.episodes.length > 0) {
+  const rawServers = movie.episodes;
+  const firstServer = rawServers[0];
+  const allEps = firstServer.serverData || [];
+  
+  let firstUnreleasedIdx = -1;
+  
+  // Hide unreleased episodes only if status is "ongoing"
+  if (movie.status === 'ongoing') {
+    const nowTime = Date.now();
+    for (let i = 0; i < allEps.length; i++) {
+      const ep = allEps[i];
+      if (ep.airDate) {
+        let airDateTimeStr = `${ep.airDate}T00:00:00Z`;
+        if (ep.airTime) {
+          const parts = ep.airTime.split(':');
+          if (parts.length === 2) {
+            airDateTimeStr = `${ep.airDate}T${ep.airTime}:00Z`;
+          } else {
+            airDateTimeStr = `${ep.airDate}T${ep.airTime}Z`;
+          }
+        }
+        try {
+          const airDateObj = new Date(airDateTimeStr);
+          if (nowTime < airDateObj.getTime()) {
+            firstUnreleasedIdx = i;
+            break;
+          }
+        } catch (e) {
+          console.error('Error parsing air date:', e);
+        }
+      }
+    }
+  }
+
+  // Check if user is trying to access an unreleased episode
+  if (firstUnreleasedIdx !== -1) {
+    nextAiringEpisode = allEps[firstUnreleasedIdx];
+    
+    // Find target episode by slug
+    let targetEpIdx = 0;
+    if (epSlug) {
+      targetEpIdx = allEps.findIndex(e => e.slug === epSlug);
+    }
+    
+    if (targetEpIdx >= firstUnreleasedIdx && targetEpIdx !== -1) {
+      isUnreleased = true;
+      unreleasedEpisode = allEps[targetEpIdx];
+    }
+    
+    // Hide unreleased episodes from listing
+    const filteredServers = rawServers.map(server => ({
+      serverName: server.serverName,
+      serverData: (server.serverData || []).slice(0, firstUnreleasedIdx)
+    }));
+    
+    filteredMovie = {
+      ...movie,
+      episodes: filteredServers
+    };
+  }
+}
+
+let svIdx = 0;
+if (filteredMovie && filteredMovie.episodes) {
+  if (tsParam) {
+    const idx = filteredMovie.episodes.findIndex(
+      s => s.serverName.toLowerCase() === tsParam.toLowerCase() || 
+           s.serverName.toLowerCase().includes(tsParam.toLowerCase())
+    );
+    if (idx !== -1) {
+      svIdx = idx;
+    } else {
+      const parsed = parseInt(tsParam);
+      if (!isNaN(parsed) && parsed >= 0 && parsed < filteredMovie.episodes.length) {
+        svIdx = parsed;
+      }
+    }
+  } else if (svParam) {
+    const parsed = parseInt(svParam);
+    if (!isNaN(parsed) && parsed >= 0 && parsed < filteredMovie.episodes.length) {
+      svIdx = parsed;
+    }
+  }
+}
+
+// Fetch related movies
+const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : [];
+---
+
+{movie ? (
+  <MainLayout title={`Xem Phim: ${movie.title} | ${settings.general.site_name}`}>
+    <div class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 pb-20 w-full flex-1">
+      <!-- Sub Navigation matching the requested mockup design -->
+      <div class="flex items-center gap-3 mb-6">
+        <a href={`/phim/${movie.slug}`} class="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-glass-stroke hover:bg-white/10 hover:border-white/20 transition-all duration-300 active:scale-95 group" title="Quay lại trang chi tiết phim">
+          <span class="material-symbols-outlined text-white text-[20px] transition-transform duration-300 group-hover:-translate-x-0.5" style="font-variation-settings: 'FILL' 0, 'wght' 600;">chevron_left</span>
+        </a>
+        <h1 class="text-lg md:text-xl font-outfit font-bold text-white tracking-tight flex items-center gap-2">
+          <span class="text-white/60 font-normal">Xem phim</span>
+          <span>{movie.title}</span>
+        </h1>
+      </div>
+
+      <WatchContainer 
+        client:load 
+        movie={filteredMovie!} 
+        initialEpisodeSlug={epSlug} 
+        initialServerIndex={svIdx} 
+        relatedMovies={relatedMovies} 
+        isUnreleased={isUnreleased}
+        unreleasedEpisode={unreleasedEpisode}
+        nextAiringEpisode={nextAiringEpisode}
+        siteName={settings.general.site_name}
+        siteUrl={settings.general.site_url}
+      />
+    </div>
+  </MainLayout>
+) : (
+  <MainLayout title={`Không tìm thấy phim | ${settings.general.site_name}`}>
+    <div class="max-w-container-max mx-auto px-gutter pt-24 flex items-center justify-center flex-1">
+      <NotFound />
+    </div>
+  </MainLayout>
+)}

@@ -1,0 +1,297 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { SettingService } from '../services/SettingService';
+
+const settings = await SettingService.getSettings();
+---
+
+<MainLayout title={`Chính sách bảo mật | ${settings.general.site_name}`}>
+
+  <main class="max-w-5xl mx-auto px-6 py-24 md:py-32">
+
+<div
+  class="glass-panel p-8 md:p-12 rounded-[32px] border border-glass-stroke relative overflow-hidden"
+>
+  <!-- Background Glow -->
+  <div class="absolute inset-0 bg-primary/5 blur-[120px] pointer-events-none"></div>
+  <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 blur-[150px] rounded-full"></div>
+
+  <div class="relative z-10">
+
+    <!-- Header -->
+    <header class="border-b border-glass-stroke pb-8 mb-10">
+
+      <div
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest"
+      >
+        🔒 Privacy & Security
+      </div>
+
+      <h1
+        class="mt-6 text-4xl md:text-5xl font-black text-white tracking-tight"
+      >
+        Chính sách bảo mật
+      </h1>
+
+      <p
+        class="mt-4 text-zinc-400 max-w-2xl leading-relaxed"
+      >
+        Tại
+        <strong class="text-white">
+          {settings.general.site_name}
+        </strong>,
+        quyền riêng tư của người dùng không chỉ là một tính năng,
+        mà là một cam kết lâu dài. Chúng tôi luôn nỗ lực xây dựng
+        một môi trường giải trí trực tuyến an toàn, minh bạch và
+        đáng tin cậy cho tất cả người dùng.
+      </p>
+
+      <div class="flex flex-wrap gap-3 mt-6">
+        <span class="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-zinc-300 text-sm">🛡️ Bảo vệ dữ liệu</span>
+        <span class="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-zinc-300 text-sm">🔐 Mã hóa thông tin</span>
+        <span class="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-zinc-300 text-sm">🍪 Cookie an toàn</span>
+      </div>
+
+    </header>
+
+    <!-- Content -->
+    <article class="space-y-10">
+
+      <!-- 1 -->
+      <section>
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            class="size-12 rounded-2xl bg-primary/15 flex items-center justify-center"
+          >
+            📋
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold text-white">
+              1. Thông tin chúng tôi thu thập
+            </h2>
+
+            <p class="text-zinc-500 text-sm">
+              Các dữ liệu cần thiết để vận hành dịch vụ.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4 text-zinc-300 leading-8">
+          <p>
+            Chúng tôi chỉ thu thập những thông tin cần thiết nhằm
+            cung cấp và duy trì trải nghiệm sử dụng ổn định cho
+            người dùng.
+          </p>
+
+          <p>
+            Các dữ liệu có thể bao gồm địa chỉ Email, tên tài khoản,
+            lịch sử xem phim, danh sách yêu thích, cài đặt cá nhân
+            và một số thông tin kỹ thuật liên quan đến thiết bị
+            truy cập như trình duyệt, hệ điều hành hoặc độ phân giải
+            màn hình.
+          </p>
+
+          <p>
+            Phần lớn dữ liệu cá nhân hóa được lưu trữ cục bộ trên
+            thiết bị người dùng thông qua localStorage hoặc cookie,
+            giúp tối ưu trải nghiệm mà không yêu cầu thu thập quá
+            mức thông tin cá nhân.
+          </p>
+        </div>
+      </section>
+
+      <!-- 2 -->
+      <section>
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            class="size-12 rounded-2xl bg-primary/15 flex items-center justify-center"
+          >
+            ⚙️
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold text-white">
+              2. Cách chúng tôi sử dụng thông tin
+            </h2>
+
+            <p class="text-zinc-500 text-sm">
+              Mục đích sử dụng dữ liệu người dùng.
+            </p>
+          </div>
+        </div>
+
+        <ul class="space-y-3.5 text-zinc-300 leading-relaxed pl-2">
+          <li class="flex items-start gap-2.5">
+            <span class="text-primary mt-1 select-none">✦</span>
+            <span>Duy trì hệ thống tài khoản, phiên đăng nhập và xác thực người dùng.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="text-primary mt-1 select-none">✦</span>
+            <span>Lưu danh sách phim yêu thích, lịch sử xem và tiến độ xem phim nhằm hỗ trợ tiếp tục trải nghiệm trên các lần truy cập tiếp theo.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="text-primary mt-1 select-none">✦</span>
+            <span>Tối ưu tốc độ tải dữ liệu, chất lượng phát video và khả năng tương thích trên nhiều thiết bị khác nhau.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="text-primary mt-1 select-none">✦</span>
+            <span>Phát hiện các hành vi truy cập bất thường, lạm dụng hệ thống hoặc các hoạt động có dấu hiệu gây ảnh hưởng đến sự ổn định của nền tảng.</span>
+          </li>
+          <li class="flex items-start gap-2.5">
+            <span class="text-primary mt-1 select-none">✦</span>
+            <span>Cải thiện chất lượng dịch vụ, giao diện và các tính năng trong tương lai.</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- 3 -->
+      <section>
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            class="size-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center"
+          >
+            🛡️
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold text-white">
+              3. Bảo mật dữ liệu
+            </h2>
+
+            <p class="text-zinc-500 text-sm">
+              Cam kết bảo vệ thông tin người dùng.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4 text-zinc-300 leading-8">
+          <p>
+            Chúng tôi áp dụng nhiều lớp bảo mật nhằm giảm thiểu nguy
+            cơ truy cập trái phép, rò rỉ hoặc thay đổi dữ liệu từ
+            bên ngoài.
+          </p>
+
+          <p>
+            Các biện pháp bảo vệ có thể bao gồm mã hóa dữ liệu,
+            giới hạn quyền truy cập hệ thống, giám sát hoạt động
+            máy chủ, tường lửa và các cơ chế phòng chống tấn công
+            phổ biến trên môi trường Internet.
+          </p>
+
+          <p>
+            Mặc dù không có phương thức truyền tải hoặc lưu trữ dữ
+            liệu nào đạt mức an toàn tuyệt đối 100%, chúng tôi luôn
+            nỗ lực áp dụng các tiêu chuẩn bảo mật phù hợp nhằm bảo
+            vệ thông tin người dùng ở mức cao nhất có thể.
+          </p>
+        </div>
+      </section>
+
+      <!-- 4 -->
+      <section>
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            class="size-12 rounded-2xl bg-amber-500/15 flex items-center justify-center"
+          >
+            🍪
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold text-white">
+              4. Cookie và công nghệ lưu trữ
+            </h2>
+
+            <p class="text-zinc-500 text-sm">
+              Duy trì trải nghiệm người dùng.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4 text-zinc-300 leading-8">
+          <p>
+            Website sử dụng cookie và các công nghệ lưu trữ tương tự
+            để ghi nhớ trạng thái đăng nhập, tùy chỉnh giao diện và
+            các lựa chọn cá nhân của người dùng.
+          </p>
+
+          <p>
+            Cookie giúp giảm thời gian tải lại dữ liệu, tăng tính
+            thuận tiện và mang lại trải nghiệm sử dụng liền mạch hơn
+            trong suốt quá trình truy cập.
+          </p>
+
+          <p>
+            Người dùng hoàn toàn có thể vô hiệu hóa cookie thông qua
+            trình duyệt của mình. Tuy nhiên, một số tính năng cá nhân
+            hóa hoặc đăng nhập có thể hoạt động không đầy đủ.
+          </p>
+        </div>
+      </section>
+
+      <!-- 5 -->
+      <section>
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            class="size-12 rounded-2xl bg-sky-500/15 flex items-center justify-center"
+          >
+            🔄
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold text-white">
+              5. Thay đổi chính sách
+            </h2>
+
+            <p class="text-zinc-500 text-sm">
+              Cập nhật và điều chỉnh khi cần thiết.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4 text-zinc-300 leading-8">
+          <p>
+            Chính sách bảo mật này có thể được cập nhật theo thời
+            gian nhằm phản ánh các thay đổi về tính năng, yêu cầu
+            pháp lý hoặc quy trình vận hành của hệ thống.
+          </p>
+
+          <p>
+            Mọi thay đổi quan trọng sẽ được công bố trực tiếp trên
+            website. Việc tiếp tục sử dụng dịch vụ sau khi chính sách
+            được cập nhật đồng nghĩa với việc người dùng đồng ý với
+            các nội dung đã được điều chỉnh.
+          </p>
+        </div>
+      </section>
+
+    </article>
+
+    <!-- Footer -->
+    <div
+      class="mt-12 pt-8 border-t border-glass-stroke text-center"
+    >
+      <div class="text-4xl mb-4">
+        🔐
+      </div>
+
+      <h3 class="text-2xl font-bold text-white">
+        Quyền riêng tư luôn được đặt lên hàng đầu
+      </h3>
+
+      <p class="text-zinc-400 mt-4 max-w-xl mx-auto">
+        Chúng tôi tin rằng một nền tảng giải trí hiện đại không chỉ
+        mang đến nội dung chất lượng mà còn phải đảm bảo sự minh bạch,
+        an toàn và tôn trọng dữ liệu cá nhân của người dùng.
+      </p>
+
+      <p class="mt-6 text-xs uppercase tracking-widest text-zinc-600">
+        Last Updated • June 2026
+      </p>
+    </div>
+
+  </div>
+</div>
+
+  </main>
+</MainLayout>

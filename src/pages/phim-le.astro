@@ -1,0 +1,259 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import Card from '../components/ui/Card.astro';
+import { MovieService } from '../services/MovieService';
+
+const movies = await MovieService.getMovies({ type: 'movie' });
+---
+
+<MainLayout title="Phim Lẻ">
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-32">
+    <!-- Breadcrumb & Header -->
+    <div class="mb-10">
+      <nav class="flex text-on-surface-variant text-sm mb-4" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+          <li class="inline-flex items-center">
+            <a href="/tphim" class="inline-flex items-center hover:text-primary transition-colors">
+              <span class="material-symbols-outlined text-sm mr-1">home</span>
+              Trang Chủ
+            </a>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <span class="material-symbols-outlined text-sm mx-1">chevron_right</span>
+              <span class="text-on-surface ml-1 md:ml-2">Phim Lẻ</span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+      
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-glass-stroke pb-6">
+        <div>
+          <h1 class="font-display-hero text-4xl md:text-5xl text-primary font-bold flex items-center gap-3">
+            Phim Lẻ
+            <span class="material-symbols-outlined text-4xl">movie</span>
+          </h1>
+          <p class="text-on-surface-variant mt-2 max-w-2xl text-sm">
+            Tuyển tập những bộ phim lẻ đặc sắc, bom tấn chiếu rạp với chất lượng 4K cực nét.
+          </p>
+        </div>
+        
+        <!-- Filter Toggle Button (matches Image 1 style) -->
+        <button id="toggle-filter-btn" class="px-4 py-2 bg-zinc-900 border border-glass-stroke hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+          <span class="material-symbols-outlined text-sm">filter_alt</span>
+          <span>Bộ lọc</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Drawer Panel -->
+    <div id="filter-panel" class="hidden glass-panel p-6 rounded-2xl mb-8 transition-all duration-300 border border-glass-stroke">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Genre Filter -->
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Thể loại</label>
+          <select id="filter-genre" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-zinc-300 py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs cursor-pointer">
+            <option value="all">Tất cả thể loại</option>
+            <option value="Kịch Tính">Kịch Tính</option>
+            <option value="Hành Động">Hành Động</option>
+            <option value="Tình Cảm">Tình Cảm</option>
+            <option value="Học Đường">Học Đường</option>
+            <option value="Kinh Dị">Kinh Dị</option>
+            <option value="Hài Hước">Hài Hước</option>
+            <option value="Trinh Thám">Trinh Thám</option>
+            <option value="Tâm Lý">Tâm Lý</option>
+            <option value="Hình Sự">Hình Sự</option>
+            <option value="Bí Ẩn">Bí Ẩn</option>
+            <option value="Cổ Trang">Cổ Trang</option>
+            <option value="Hoạt Hình">Hoạt Hình</option>
+          </select>
+        </div>
+        <!-- Country Filter -->
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Quốc gia</label>
+          <select id="filter-country" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-zinc-300 py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs cursor-pointer">
+            <option value="all">Tất cả quốc gia</option>
+            <option value="Hàn Quốc">Hàn Quốc</option>
+            <option value="Trung Quốc">Trung Quốc</option>
+            <option value="Âu Mỹ">Âu Mỹ</option>
+            <option value="Việt Nam">Việt Nam</option>
+            <option value="TVB">TVB</option>
+          </select>
+        </div>
+        <!-- Year Filter -->
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Năm sản xuất</label>
+          <select id="filter-year" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-zinc-300 py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs cursor-pointer">
+            <option value="all">Tất cả năm</option>
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+            <option value="2021">2021</option>
+            <option value="2020">2020</option>
+            <option value="2013">2013</option>
+            <option value="2006">2006</option>
+            <option value="1999">1999</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Movie Grid -->
+    <div id="movie-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+      {movies.map((movie) => (
+        <Card 
+          title={movie.title}
+          slug={movie.slug}
+          poster={movie.posterUrl}
+          quality={movie.quality}
+          aspect="aspect-[2/3]"
+        />
+      ))}
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden py-20 text-center glass-card bg-surface-card rounded-2xl border border-glass-stroke">
+      <span class="material-symbols-outlined text-6xl text-on-surface-variant mb-4">sentiment_dissatisfied</span>
+      <h3 class="text-xl font-bold text-on-surface">Không tìm thấy phim lẻ phù hợp</h3>
+      <p class="text-on-surface-variant mt-2">Vui lòng thay đổi tùy chọn bộ lọc hoặc quay lại sau.</p>
+    </div>
+  </main>
+
+  <script is:inline define:vars={{ staticMovies: movies }}>
+    (function() {
+      // 1. Merge crawled movies client-side
+      const crawledMovies = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+      
+      const staticList = staticMovies.map(m => ({ ...m, source: 'static' }));
+      const crawledList = crawledMovies.map(m => ({ ...m, source: 'crawled' }));
+      const allMovies = [...crawledList, ...staticList];
+      
+      // Deduplicate slugs
+      const seen = new Set();
+      let uniqueMovies = allMovies.filter(m => {
+        if (seen.has(m.slug)) return false;
+        seen.add(m.slug);
+        return true;
+      });
+
+      // Filter to movies only (type === 'movie')
+      uniqueMovies = uniqueMovies.filter(m => m.type === 'movie');
+
+      // Sort strictly by updatedAt descending (newest updates first)
+      uniqueMovies.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+
+      // DOM Elements
+      const grid = document.getElementById('movie-grid');
+      const emptyState = document.getElementById('empty-state');
+      const toggleFilterBtn = document.getElementById('toggle-filter-btn');
+      const filterPanel = document.getElementById('filter-panel');
+      const filterGenre = document.getElementById('filter-genre');
+      const filterCountry = document.getElementById('filter-country');
+      const filterYear = document.getElementById('filter-year');
+
+      // Toggle Filter Panel
+      toggleFilterBtn?.addEventListener('click', () => {
+        filterPanel?.classList.toggle('hidden');
+        toggleFilterBtn.classList.toggle('bg-zinc-850');
+      });
+
+      function getLangBadge(lang) {
+        if (!lang) return 'P.Đề';
+        const lower = lang.toLowerCase();
+        if (lower.includes('thuyết minh') && (lower.includes('vietsub') || lower.includes('phụ đề'))) return 'P.Đề + T.Minh';
+        if (lower.includes('thuyết minh') || lower.includes('t.minh') || lower.includes('tm')) return 'T.Minh';
+        if (lower.includes('lồng tiếng') || lower.includes('lt')) return 'L.Tiếng';
+        return 'P.Đề';
+      }
+
+      function renderMovies(list) {
+        if (!grid) return;
+        if (list.length === 0) {
+          grid.classList.add('hidden');
+          emptyState?.classList.remove('hidden');
+          return;
+        }
+
+        emptyState?.classList.add('hidden');
+        grid.classList.remove('hidden');
+
+        grid.innerHTML = list.map(m => {
+          const is4K = m.quality === '4K';
+          const isSeries = m.type === 'series';
+          const statusBadge = isSeries && m.episodeCurrent ? `
+            <div class="absolute top-2 left-2 z-20">
+              <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm">
+                Tập ${m.episodeCurrent.trim().replace(/^[tT]ập\s+/, '')}
+              </span>
+            </div>
+          ` : '';
+
+          const badge4K = is4K ? `
+            <div class="absolute top-2 right-2 z-20">
+              <span class="bg-amber-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm tracking-wider">4K</span>
+            </div>
+          ` : '';
+
+          const originalTitle = m.originalTitle || m.title || '';
+
+          return `
+            <div class="relative group w-full">
+              <a href="/phim/${m.slug}" class="relative block w-full aspect-[2/3] rounded-xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer">
+                <img src="${m.posterUrl}" alt="${m.title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='/favicon.png'" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity"></div>
+                ${badge4K}
+                ${statusBadge}
+                <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
+                    <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                  </div>
+                </div>
+                <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
+                  <span class="bg-[#141416]/80 text-zinc-300 text-[8px] font-bold px-2.5 py-0.5 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap">
+                    ${getLangBadge(m.lang || m.quality)}
+                  </span>
+                </div>
+              </a>
+              <div class="mt-2.5 px-1 space-y-0.5 text-center">
+                <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" title="${m.title}">${m.title}</h3>
+                <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" title="${originalTitle}">${originalTitle}</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function filterMovies() {
+        const genre = filterGenre?.value || 'all';
+        const country = filterCountry?.value || 'all';
+        const yearVal = filterYear?.value || 'all';
+
+        let filtered = uniqueMovies;
+
+        if (genre !== 'all') {
+          filtered = filtered.filter(m => Array.isArray(m.genres) && m.genres.includes(genre));
+        }
+
+        if (country !== 'all') {
+          filtered = filtered.filter(m => m.category === country);
+        }
+
+        if (yearVal !== 'all') {
+          filtered = filtered.filter(m => String(m.releaseYear) === yearVal);
+        }
+
+        renderMovies(filtered);
+      }
+
+      // Initial Render
+      renderMovies(uniqueMovies);
+
+      // Event listeners
+      filterGenre?.addEventListener('change', filterMovies);
+      filterCountry?.addEventListener('change', filterMovies);
+      filterYear?.addEventListener('change', filterMovies);
+    })();
+  </script>
+</MainLayout>

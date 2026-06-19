@@ -1,0 +1,83 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import Card from '../../components/ui/Card.astro';
+import { MovieService } from '../../services/MovieService';
+import { SettingService } from '../../services/SettingService';
+
+const { slug } = Astro.params;
+
+// Mock actor profiles for realistic details
+const actorMap: Record<string, { name: string, avatar: string, bio: string, movies: string[] }> = {
+  'son-ye-jin': {
+    name: 'Son Ye Jin',
+    avatar: 'https://lh3.googleusercontent.com/aida/AP1WRLs0cwmsQtUMxz8S1kYIBe2vdzk9wlKrAYAA0SaImKjlJwYFoNlbX5Ezes6Vk4D5W-ucCQ2T9RmBKbr_ZMBabRA9Ttc6dmERubqhLsdx1wunz3brbgXi5rroXOR2ruzik_0pwCF5YxH6Uvl1XXNB5hThMgn1BnmAaijvACGEDvmqkuTyiOamRT4EaIM9cR5bB6VIsLFANxSFbHoSZwiBE2ropgLTIEGcBH_t4b9HchPMwtxA3L-vMixjNaq2',
+    bio: 'Son Ye Jin (sinh ngày 11 tháng 1 năm 1982) là một nữ diễn viên nổi tiếng người Hàn Quốc. Cô được biết đến qua các vai diễn trong các phim điện ảnh và truyền hình lãng mạn như The Classic, Summer Scent, A Moment to Remember, và Crash Landing on You.',
+    movies: ['bai-hoc-dang-doi', 'hyeri-yeu-dau']
+  },
+  'tom-cruise': {
+    name: 'Tom Cruise',
+    avatar: 'https://lh3.googleusercontent.com/aida/AP1WRLvm-KnVg4nBEHswFKKhesNV70CJMm6igqUtinLPPrIJ_4Kcn3TrZB8WxUim06kwLSgvkpoJLz_Fsw1ZsJR_AjlZfOLNewlWmYB0w1kkBq5yAjrC2iFRnKdgYNfPBrDj7MBvwsFGMfQqFraz3DHFBzR74sDJtNikr4oTdppPL4qoa5EUpOjZXDARYm6n8DogRqs8I3whgQpr5Ii6reom2PW6AmEA0tKU235oyiaF_D10hGqcDoafAV6uuyd5',
+    bio: 'Thomas Cruise Mapother IV (sinh ngày 3 tháng 7 năm 1962), thường được biết đến với nghệ danh Tom Cruise, là một nam diễn viên kiêm nhà sản xuất điện ảnh người Mỹ. Anh là một trong những diễn viên được trả cát-sê cao nhất thế giới và đã nhận được nhiều giải thưởng danh giá.',
+    movies: ['nghe-thuat-lua-doi']
+  },
+  'au-duong-chan-hoa': {
+    name: 'Âu Dương Chấn Hoa',
+    avatar: 'https://lh3.googleusercontent.com/aida/AP1WRLt1gw1NAa9--TgtxDr6MhqsVB6sFg1irwNVWwIPu22poK0pfrnPqOog32qfkmPyXdcp5G0NcesfQ1YDDJmWUOS5yQBN5Szfx2TttGEiInE65MW9-hiVlfYBMev45vhAzXfjvs3xIxkksQXqfx_sWB4RqrStJSYU6r8XTRSck5mpN3vHkVcrkDYjlRbCB5p_A70QDRIiVMIDJaBf9F4r7vnaudXMxq8QoKbk0y8RVU2H77Hci2fkGH0rRWs',
+    bio: 'Âu Dương Chấn Hoa (sinh ngày 28 tháng 7 năm 1960) là một nam diễn viên gạo cội người Hồng Kông, nổi tiếng với các vai diễn trong các bộ phim truyền hình của hãng TVB, tiêu biểu là series Bằng Chứng Thép, Lực Lượng Phản Ứng, Bức Màn Bí Mật.',
+    movies: ['bang-chung-thep']
+  }
+};
+
+const actorSlug = slug || '';
+const actor = actorMap[actorSlug] || {
+  name: actorSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80',
+  bio: 'Thông tin về nghệ sĩ đang được cập nhật.',
+  movies: ['bai-hoc-dang-doi']
+};
+
+// Fetch movies that match this actor
+const allMovies = await MovieService.getMovies();
+const movies = allMovies.filter(m => actor.movies.includes(m.slug));
+const settings = await SettingService.getSettings();
+---
+
+<MainLayout title={`Nghệ Sĩ: ${actor.name} | ${settings.general.site_name}`}>
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 space-y-8">
+    <!-- Actor Profile Card -->
+    <div class="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start shadow-xl">
+      <div class="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 shadow-lg bg-surface">
+        <img src={actor.avatar} alt={actor.name} class="w-full h-full object-cover" />
+      </div>
+      <div class="space-y-4 text-center md:text-left flex-1">
+        <h1 class="text-3xl md:text-4xl text-white font-bold tracking-tight font-display-hero">{actor.name}</h1>
+        <p class="text-sm font-label-caps text-primary tracking-widest font-bold">DIỄN VIÊN / ĐẠO DIỄN</p>
+        <p class="text-on-surface-variant leading-relaxed text-sm font-body-main">{actor.bio}</p>
+      </div>
+    </div>
+
+    <!-- Movies Grid -->
+    <div class="space-y-6 pt-4">
+      <h2 class="text-2xl text-white font-title-md border-l-4 border-primary pl-4 font-bold">Các Phim Đã Tham Gia</h2>
+      
+      {movies.length === 0 ? (
+        <div class="text-center py-10 text-on-surface-variant font-body-main">
+          Không tìm thấy phim nào của nghệ sĩ này.
+        </div>
+      ) : (
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {movies.map((movie) => (
+            <Card 
+              title={movie.title}
+              slug={movie.slug}
+              poster={movie.posterUrl}
+              year={movie.releaseYear}
+              quality={movie.quality}
+              status={movie.status === 'ongoing' ? `Tập ${(movie.episodeCurrent || '').trim().replace(/^[tT]ập\s+/, '')}` : 'Full'}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </main>
+</MainLayout>

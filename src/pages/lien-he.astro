@@ -1,0 +1,60 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { SettingService } from '../services/SettingService';
+import Txaicon from '../components/ui/txaicon.astro';
+
+const settings = await SettingService.getSettings();
+---
+
+<MainLayout title={`Liên hệ quảng cáo | ${settings.general.site_name}`}>
+  <main class="max-w-4xl mx-auto px-6 py-24 md:py-32">
+    <div class="glass-panel p-8 md:p-12 rounded-[32px] border border-glass-stroke relative overflow-hidden">
+      <div class="absolute inset-0 bg-primary/5 blur-[80px] pointer-events-none"></div>
+      
+      <div class="relative z-10 space-y-6">
+        <header class="border-b border-glass-stroke pb-6">
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Liên hệ hợp tác & Quảng cáo</h1>
+          <p class="text-zinc-500 text-xs font-bold uppercase tracking-wider mt-2 font-label-caps">Liên hệ với ban quản trị website</p>
+        </header>
+
+        <article class="prose prose-invert max-w-none text-zinc-300 text-sm leading-relaxed space-y-6">
+          <p>
+            Bạn đang có nhu cầu hợp tác đặt banner quảng cáo, quảng bá sản phẩm hoặc liên hệ hợp tác nội dung với ban quản trị <strong>{settings.general.site_name}</strong>? Vui lòng liên hệ trực tiếp với chúng tôi qua các cổng thông tin chính thức dưới đây để nhận phản hồi nhanh chóng nhất.
+          </p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+            <div class="glass-panel p-6 rounded-2xl border border-glass-stroke/50 flex items-start gap-4 hover:border-primary/50 transition-colors">
+              <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary border border-glass-stroke">
+                <span class="material-symbols-outlined text-xl">mail</span>
+              </div>
+              <div class="space-y-1">
+                <h3 class="font-bold text-white text-xs font-label-caps uppercase tracking-wider text-zinc-400">Địa chỉ Email</h3>
+                <p class="text-sm font-semibold text-zinc-200">{settings.smtp?.smtp_user || "ads@dongmephim.com"}</p>
+                <p class="text-[10px] text-zinc-500">Phản hồi trong vòng 24 giờ làm việc.</p>
+              </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl border border-glass-stroke/50 flex items-start gap-4 hover:border-primary/50 transition-colors">
+              <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary border border-glass-stroke">
+                <Txaicon name="telegram" class="w-5 h-5 fill-current text-primary" />
+              </div>
+              <div class="space-y-1">
+                <h3 class="font-bold text-white text-xs font-label-caps uppercase tracking-wider text-zinc-400">Hỗ trợ Telegram</h3>
+                <p class="text-sm font-semibold text-zinc-200">
+                  <a href={settings.social?.social_telegram_url || "https://t.me/dongphimtxa"} target="_blank" class="hover:underline text-primary">
+                    t.me/dongphimtxa
+                  </a>
+                </p>
+                <p class="text-[10px] text-zinc-500">Kênh phản hồi nhanh nhất 24/7.</p>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-zinc-500 text-xs italic pt-4">
+            Lưu ý: Chúng tôi hoàn toàn không chấp nhận quảng cáo các hình thức độc hại, lừa đảo hoặc vi phạm nghiêm trọng quy định pháp luật hiện hành. Ban quản trị có quyền từ chối hợp tác không cần nêu lý do đối với các đối tác không đạt tiêu chuẩn an toàn nội dung.
+          </p>
+        </article>
+      </div>
+    </div>
+  </main>
+</MainLayout>

@@ -1,0 +1,1126 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Thu thập phim (Crawler) - Nâng cao">
+  <header class="mb-8 mt-4">
+    <a href="/admin" class="text-zinc-400 hover:text-primary text-xs font-bold flex items-center gap-1 mb-2 transition-colors">
+      <span class="material-symbols-outlined text-sm">arrow_back</span> QUAY LẠI TỔNG QUAN
+    </a>
+    <h1 class="font-display-hero text-3xl font-extrabold text-white tracking-tight">Thu thập phim (Crawler) Nâng cao</h1>
+    <p class="text-zinc-400 text-sm mt-1">Cào phim nhanh từ nguồn API bằng URL, tìm kiếm trực tuyến để thêm vào giỏ hàng cào hàng loạt, hoặc cào theo thể loại, quốc gia.</p>
+  </header>
+
+  <!-- Main Crawler Tabs -->
+  <div class="flex border-b border-glass-stroke gap-4 mb-6">
+    <button id="tabStandardBtn" class="pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer">
+      Cào phim tiêu chuẩn
+    </button>
+    <button id="tabAdvancedBtn" class="pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer">
+      Tìm kiếm trực tuyến & Giỏ hàng
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 mb-10">
+    
+    <!-- Left panel: Settings & Controls -->
+    <div class="xl:col-span-4 space-y-6">
+      
+      <!-- Source Configuration -->
+      <div class="glass-panel rounded-2xl p-6 border border-glass-stroke shadow-2xl">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="material-symbols-outlined text-primary text-xl">tune</span>
+          <h2 class="font-bold text-sm text-white uppercase tracking-wider">Cấu hình chung</h2>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nguồn dữ liệu</label>
+            <select id="crawlSource" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <option value="kkphim">KKPhim API (phimapi.com)</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-3 py-1">
+            <input class="rounded border-glass-stroke bg-zinc-950 text-primary focus:ring-primary w-4 h-4 cursor-pointer" id="overwrite" type="checkbox" checked />
+            <label class="text-xs text-zinc-400 cursor-pointer select-none" for="overwrite">Ghi đè phim đã cào (Cập nhật tập mới)</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- STANDARD CRAWLERS PANEL -->
+      <div id="panelStandard" class="glass-panel rounded-2xl p-6 border border-glass-stroke space-y-5">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-secondary text-xl">layers</span>
+          <h2 class="font-bold text-sm text-white uppercase tracking-wider font-display-hero">Chế độ cào chuẩn</h2>
+        </div>
+
+        <!-- Mode sub-tabs -->
+        <div class="grid grid-cols-3 gap-1 p-1 bg-zinc-950/80 rounded-xl border border-glass-stroke">
+          <button id="subTabUrlBtn" class="py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all">URL/Slugs</button>
+          <button id="subTabBatchBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Số trang</button>
+          <button id="subTabFilterBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Lọc/Bộ lọc</button>
+        </div>
+
+        <!-- Sub-Tab: URL / Slug input -->
+        <div id="subTabUrl" class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập URL phim hoặc Slugs (Mỗi dòng 1 phim)</label>
+            <textarea id="crawlUrlsInput" rows="5" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs font-mono placeholder:text-zinc-700" placeholder="https://kkphim1.com/phim/digimon-beatbreak&#10;tro-choi-con-muc"></textarea>
+          </div>
+          <div class="text-[11px] text-zinc-500 italic flex items-center gap-1" id="detectCountText">
+            <span class="material-symbols-outlined text-sm">check_circle</span> Phát hiện 0 phim hợp lệ.
+          </div>
+        </div>
+
+        <!-- Sub-Tab: Batch range -->
+        <div id="subTabBatch" class="space-y-4 hidden">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang bắt đầu</label>
+              <input id="pageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang kết thúc</label>
+              <input id="pageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <p class="text-[10px] text-zinc-500 italic">Mỗi trang chứa 20 bộ phim mới cập nhật.</p>
+          <div class="border-t border-glass-stroke/50 pt-3">
+            <button id="crawlAllBtn" class="w-full py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer">
+              ⚠️ Cào toàn bộ API (All)
+            </button>
+          </div>
+        </div>
+
+        <!-- Sub-Tab: Country / Genre filters -->
+        <div id="subTabFilter" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1.5">Bộ lọc cào</label>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              <button id="filterCountryBtn" class="py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all">Quốc gia</button>
+              <button id="filterGenreBtn" class="py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all">Thể loại</button>
+            </div>
+          </div>
+
+          <!-- Select lists -->
+          <div id="filterCountryPanel">
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Quốc gia</label>
+            <select id="selectedCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary mb-3">
+              <option value="trung-quoc">Trung Quốc</option>
+              <option value="han-quoc">Hàn Quốc</option>
+              <option value="nhat-ban">Nhật Bản</option>
+              <option value="au-my">Âu Mỹ</option>
+              <option value="thai-lan">Thái Lan</option>
+              <option value="viet-nam">Việt Nam</option>
+            </select>
+          </div>
+
+          <div id="filterGenrePanel" class="hidden">
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Thể loại</label>
+            <select id="selectedGenre" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary mb-3">
+              <option value="hanh-dong">Hành Động</option>
+              <option value="phieu-luu">Phiêu Lưu</option>
+              <option value="tinh-cam">Tình Cảm</option>
+              <option value="hoat-hinh">Hoạt Hình</option>
+              <option value="khoa-hoc">Khoa Học</option>
+              <option value="kinh-di">Kinh Dị</option>
+              <option value="hai-huoc">Hài Hước</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="filterPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="filterPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Start/Stop buttons -->
+        <div class="flex gap-2 pt-2">
+          <button id="startStandardBtn" class="flex-1 bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs">
+            <span class="material-symbols-outlined text-lg">play_arrow</span> Bắt đầu cào
+          </button>
+          <button id="stopStandardBtn" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 hover:scale-[1.02] active:scale-95 transition-all py-3 px-4 rounded-xl cursor-pointer flex items-center justify-center hidden">
+            <span class="material-symbols-outlined">stop</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ADVANCED CRAWLERS PANEL (Cart & Search trigger) -->
+      <div id="panelAdvanced" class="glass-panel rounded-2xl p-6 border border-glass-stroke space-y-4 hidden">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">shopping_cart</span>
+          <h2 class="font-bold text-sm text-white uppercase tracking-wider font-display-hero">Giỏ hàng cào phim</h2>
+        </div>
+        <p class="text-xs text-zinc-400">Chọn các phim từ kết quả tìm kiếm trực tuyến ở bên phải để đưa vào giỏ hàng cào hàng loạt.</p>
+        
+        <div class="p-4 rounded-xl bg-zinc-950 border border-glass-stroke text-center">
+          <p class="text-[10px] text-zinc-500 font-bold uppercase mb-1">ĐÃ CHỌN TRONG GIỎ</p>
+          <p class="text-3xl font-black text-primary" id="cartCount">0 phim</p>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="startCartCrawlBtn" class="flex-1 bg-gradient-to-r from-primary to-secondary text-white font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-lg">cloud_download</span> Cào các phim đã chọn
+          </button>
+          <button id="clearCartBtn" class="p-3 border border-glass-stroke hover:bg-white/5 text-zinc-400 rounded-xl cursor-pointer" title="Làm trống giỏ">
+            <span class="material-symbols-outlined text-lg">delete_sweep</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Summary Box -->
+      <div class="glass-panel rounded-2xl p-6 border border-glass-stroke">
+        <h3 class="font-bold text-xs text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-primary text-lg">analytics</span> Thống kê cào phim
+        </h3>
+        <div class="grid grid-cols-3 gap-2">
+          <div class="p-3 rounded-xl bg-zinc-950 border border-glass-stroke text-center">
+            <p class="text-[9px] text-zinc-500 font-bold mb-1">THÀNH CÔNG</p>
+            <p class="text-xl font-bold text-emerald-400" id="statSuccess">0</p>
+          </div>
+          <div class="p-3 rounded-xl bg-zinc-950 border border-glass-stroke text-center">
+            <p class="text-[9px] text-zinc-500 font-bold mb-1">BỎ QUA</p>
+            <p class="text-xl font-bold text-yellow-400" id="statSkipped">0</p>
+          </div>
+          <div class="p-3 rounded-xl bg-zinc-950 border border-glass-stroke text-center">
+            <p class="text-[9px] text-zinc-500 font-bold mb-1">THẤT BẠI</p>
+            <p class="text-xl font-bold text-red-400" id="statFailed">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel: Interactive Search Results / Logs -->
+    <div class="xl:col-span-8 flex flex-col gap-6">
+      
+      <!-- Progress Bar (Visible during crawl) -->
+      <div class="glass-panel rounded-2xl p-6 border border-glass-stroke hidden" id="progressSection">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h3 class="font-bold text-sm text-white" id="currentMovieName">Đang khởi động...</h3>
+            <p class="text-xs text-zinc-400 mt-0.5" id="moviesCountProgress">Tiến trình: 0/0 phim</p>
+          </div>
+          <span class="text-2xl font-black text-primary" id="progressPercent">0%</span>
+        </div>
+        <div class="w-full bg-zinc-950 h-3 rounded-full overflow-hidden border border-glass-stroke/50">
+          <div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(210,187,255,0.4)]" id="mainProgressBar" style="width: 0%;"></div>
+        </div>
+        <div class="flex justify-between mt-2 text-[10px] text-zinc-500 font-bold">
+          <span id="progressTimeEstimate">Ước tính: Đang tính...</span>
+          <span class="animate-pulse flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span> ĐANG CÀO PHIM</span>
+        </div>
+      </div>
+
+      <!-- Advanced Direct Search Container (Tab content) -->
+      <div id="containerSearchTab" class="glass-panel rounded-2xl border border-glass-stroke flex flex-col min-h-[450px] hidden">
+        <div class="p-5 border-b border-glass-stroke flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-zinc-900/30">
+          <h3 class="font-bold text-white text-base shrink-0 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">search</span> Tìm kiếm phim trực tuyến
+          </h3>
+          <div class="flex-1 flex gap-2">
+            <input type="text" id="searchKeyword" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập tên phim cần tìm (ví dụ: Batman)..."/>
+            <button id="searchOnlineBtn" class="bg-primary text-on-primary font-bold px-4 rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer">
+              Tìm phim
+            </button>
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto flex-1 max-h-[350px] custom-scrollbar">
+          <table class="w-full text-left" id="searchResultTable">
+            <thead class="bg-zinc-950/70 text-[10px] font-bold text-zinc-500 uppercase tracking-wider sticky top-0 backdrop-blur-md">
+              <tr>
+                <th class="px-5 py-3 text-center w-12">
+                  <input type="checkbox" id="selectAllSearch" class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer"/>
+                </th>
+                <th class="px-5 py-3">Phim</th>
+                <th class="px-5 py-3">Chất lượng / Loại</th>
+                <th class="px-5 py-3">Trạng thái Cục bộ</th>
+                <th class="px-5 py-3 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody class="text-xs divide-y divide-glass-stroke/50" id="searchResultBody">
+              <!-- Dynamic search list -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="emptySearchResult" class="flex-1 flex flex-col items-center justify-center p-12 text-center">
+          <span class="material-symbols-outlined text-5xl opacity-20 mb-3">search_off</span>
+          <p class="text-zinc-400 text-sm">Chưa có kết quả tìm kiếm nào.</p>
+          <p class="text-[10px] text-zinc-500 mt-1">Nhập từ khóa ở trên và nhấn Tìm phim để tra cứu trực tiếp từ API.</p>
+        </div>
+      </div>
+
+      <!-- Logs Terminal (Always visible or toggle) -->
+      <div class="glass-panel rounded-2xl border border-glass-stroke flex flex-col flex-1 min-h-[400px]" id="logsTerminal">
+        <div class="p-5 border-b border-glass-stroke flex justify-between items-center bg-zinc-900/30">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-zinc-500" id="statusIndicator"></div>
+            <h3 class="font-bold text-white text-sm">Nhật ký tiến trình thu thập</h3>
+          </div>
+          <button id="clearLogsBtn" class="p-2 hover:bg-zinc-800 text-zinc-500 hover:text-white rounded-lg transition-colors cursor-pointer" title="Xóa logs">
+            <span class="material-symbols-outlined text-base">delete</span>
+          </button>
+        </div>
+        
+        <div class="overflow-y-auto flex-1 p-5 font-mono text-[11px] space-y-1.5 bg-black/60 custom-scrollbar max-h-[350px]" id="logTerminalBody">
+          <div class="text-zinc-600">Console initialized. Ready for crawl tasks...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Local Crawled Inventory List -->
+  <div class="glass-panel rounded-3xl border border-glass-stroke p-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <h3 class="font-bold text-lg text-white flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">video_library</span>
+        Kho phim đã cào cục bộ (<span id="crawledCount" class="text-primary font-black">0</span> phim)
+      </h3>
+      <button id="clearAllCrawledBtn" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
+        Xóa tất cả phim cào
+      </button>
+    </div>
+    
+    <div class="overflow-x-auto max-h-[400px] custom-scrollbar">
+      <table class="w-full text-left">
+        <thead class="bg-zinc-950/70 text-[10px] font-bold text-zinc-500 uppercase tracking-wider sticky top-0 backdrop-blur-md">
+          <tr>
+            <th class="px-6 py-3">Tên Phim</th>
+            <th class="px-6 py-3">Thể Loại</th>
+            <th class="px-6 py-3">Quốc Gia / Năm</th>
+            <th class="px-6 py-3">Tập hiện tại</th>
+            <th class="px-6 py-3">Phụ đề & Timings</th>
+            <th class="px-6 py-3 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs divide-y divide-glass-stroke/50" id="crawledMoviesBody">
+          <!-- Rendered dynamically -->
+        </tbody>
+      </table>
+    </div>
+    <div id="emptyCrawled" class="hidden flex flex-col items-center justify-center p-12 text-center text-zinc-500">
+      <span class="material-symbols-outlined text-5xl opacity-20 mb-2">movie_filter</span>
+      <p>Kho phim cào cục bộ trống. Phim sau khi cào sẽ xuất hiện ở đây.</p>
+    </div>
+  </div>
+
+  <script is:inline>
+    // State
+    let activeTab = 'standard'; // 'standard' | 'advanced'
+    let standardSubTab = 'url'; // 'url' | 'batch' | 'filter'
+    let filterType = 'country'; // 'country' | 'genre'
+    let isRunning = false;
+    let shouldStop = false;
+    let cartSlugs = new Map(); // slug -> name
+    let existingMoviesMap = {};
+
+    // Elements
+    const tabStandardBtn = document.getElementById('tabStandardBtn');
+    const tabAdvancedBtn = document.getElementById('tabAdvancedBtn');
+    const panelStandard = document.getElementById('panelStandard');
+    const panelAdvanced = document.getElementById('panelAdvanced');
+    const containerSearchTab = document.getElementById('containerSearchTab');
+    const logsTerminal = document.getElementById('logsTerminal');
+    const statusIndicator = document.getElementById('statusIndicator');
+
+    const subTabUrlBtn = document.getElementById('subTabUrlBtn');
+    const subTabBatchBtn = document.getElementById('subTabBatchBtn');
+    const subTabFilterBtn = document.getElementById('subTabFilterBtn');
+    const subTabUrl = document.getElementById('subTabUrl');
+    const subTabBatch = document.getElementById('subTabBatch');
+    const subTabFilter = document.getElementById('subTabFilter');
+
+    const filterCountryBtn = document.getElementById('filterCountryBtn');
+    const filterGenreBtn = document.getElementById('filterGenreBtn');
+    const filterCountryPanel = document.getElementById('filterCountryPanel');
+    const filterGenrePanel = document.getElementById('filterGenrePanel');
+
+    // Tab Switches
+    tabStandardBtn.addEventListener('click', () => {
+      if (isRunning) return;
+      activeTab = 'standard';
+      tabStandardBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer";
+      tabAdvancedBtn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer";
+      panelStandard.classList.remove('hidden');
+      panelAdvanced.classList.add('hidden');
+      containerSearchTab.classList.add('hidden');
+    });
+
+    tabAdvancedBtn.addEventListener('click', () => {
+      if (isRunning) return;
+      activeTab = 'advanced';
+      tabAdvancedBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer";
+      tabStandardBtn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer";
+      panelAdvanced.classList.remove('hidden');
+      panelStandard.classList.add('hidden');
+      containerSearchTab.classList.remove('hidden');
+    });
+
+    // Sub-tab Switches
+    subTabUrlBtn.addEventListener('click', () => {
+      if (isRunning) return;
+      standardSubTab = 'url';
+      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
+      subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabUrl.classList.remove('hidden');
+      subTabBatch.classList.add('hidden');
+      subTabFilter.classList.add('hidden');
+    });
+
+    subTabBatchBtn.addEventListener('click', () => {
+      if (isRunning) return;
+      standardSubTab = 'batch';
+      subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
+      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabBatch.classList.remove('hidden');
+      subTabUrl.classList.add('hidden');
+      subTabFilter.classList.add('hidden');
+    });
+
+    subTabFilterBtn.addEventListener('click', () => {
+      if (isRunning) return;
+      standardSubTab = 'filter';
+      subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
+      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabFilter.classList.remove('hidden');
+      subTabUrl.classList.add('hidden');
+      subTabBatch.classList.add('hidden');
+    });
+
+    // Filter type switches
+    filterCountryBtn.addEventListener('click', () => {
+      filterType = 'country';
+      filterCountryBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all";
+      filterGenreBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all";
+      filterCountryPanel.classList.remove('hidden');
+      filterGenrePanel.classList.add('hidden');
+    });
+
+    filterGenreBtn.addEventListener('click', () => {
+      filterType = 'genre';
+      filterGenreBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all";
+      filterCountryBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all";
+      filterGenrePanel.classList.remove('hidden');
+      filterCountryPanel.classList.add('hidden');
+    });
+
+    // URL slug parser helper
+    function extractSlug(input) {
+      const trimmed = input.trim();
+      if (!trimmed) return null;
+      
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        try {
+          const url = new URL(trimmed);
+          const pathname = url.pathname;
+          const parts = pathname.split('/').filter(Boolean);
+          if (parts.length > 0) {
+            return parts[parts.length - 1];
+          }
+        } catch (e) {
+          const match = trimmed.match(/(?:phim|detail|chitet|info)\/([a-zA-Z0-9\-]+)/);
+          if (match) return match[1];
+        }
+      }
+      
+      const cleanSlug = trimmed.split('/').filter(Boolean).pop();
+      if (cleanSlug && /^[a-zA-Z0-9\-]+$/.test(cleanSlug)) {
+        return cleanSlug;
+      }
+      return trimmed;
+    }
+
+    // Dynamic count input slugs
+    const crawlUrlsInput = document.getElementById('crawlUrlsInput');
+    const detectCountText = document.getElementById('detectCountText');
+
+    function updateDetectCount() {
+      const lines = crawlUrlsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
+      let valid = 0;
+      lines.forEach(line => {
+        const slug = extractSlug(line);
+        if (slug) valid++;
+      });
+      detectCountText.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span> Phát hiện ${valid} phim hợp lệ từ dòng nhập.`;
+    }
+    crawlUrlsInput.addEventListener('input', updateDetectCount);
+
+    // Logs helper
+    const logTerminalBody = document.getElementById('logTerminalBody');
+    const clearLogsBtn = document.getElementById('clearLogsBtn');
+
+    function addLog(text, type = 'info') {
+      const timeStr = new Date().toLocaleTimeString('vi-VN');
+      let colorClass = 'text-zinc-400';
+      if (type === 'success') colorClass = 'text-emerald-400 font-bold';
+      else if (type === 'error') colorClass = 'text-red-400 font-bold';
+      else if (type === 'warning') colorClass = 'text-yellow-400';
+      else if (type === 'system') colorClass = 'text-primary';
+
+      const line = document.createElement('div');
+      line.className = `flex gap-2 py-0.5 border-b border-glass-stroke/10 ${colorClass}`;
+      line.innerHTML = `<span class="text-zinc-600 shrink-0 select-none">[${timeStr}]</span> <span>${text}</span>`;
+      logTerminalBody.appendChild(line);
+      logTerminalBody.scrollTop = logTerminalBody.scrollHeight;
+    }
+
+    clearLogsBtn.addEventListener('click', () => {
+      logTerminalBody.innerHTML = '<div class="text-zinc-600">Console cleared. Ready.</div>';
+    });
+
+    // Load list local crawled movies & dictionaries
+    function loadExistingMoviesDict() {
+      const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
+      let list = [];
+      try { list = JSON.parse(listStr); } catch (e) {}
+
+      existingMoviesMap = {};
+      list.forEach(m => {
+        const movieData = m.movie || m;
+        let count = 0;
+        const eps = m.episodes || [];
+        eps.forEach(srv => {
+          if (srv && (srv.serverData || srv.server_data)) {
+            count = Math.max(count, (srv.serverData || srv.server_data).length || 0);
+          }
+        });
+        existingMoviesMap[movieData.slug] = count;
+      });
+    }
+
+    function renderCrawledList() {
+      loadExistingMoviesDict();
+      const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
+      let list = [];
+      try { list = JSON.parse(listStr); } catch (e) {}
+
+      document.getElementById('crawledCount').textContent = list.length;
+      const crawledMoviesBody = document.getElementById('crawledMoviesBody');
+      const emptyCrawled = document.getElementById('emptyCrawled');
+
+      if (list.length === 0) {
+        crawledMoviesBody.innerHTML = '';
+        emptyCrawled.classList.remove('hidden');
+        return;
+      }
+      emptyCrawled.classList.add('hidden');
+
+      // Load config mapping to show if there's custom settings
+      const configStr = localStorage.getItem('txa_episodes_config') || '{}';
+      let configs = {};
+      try { configs = JSON.parse(configStr); } catch(e) {}
+
+      crawledMoviesBody.innerHTML = list.map((item) => {
+        const m = item.movie || item;
+        const hasConfig = !!configs[m.slug];
+        
+        // Count subtitles configured
+        let subCount = 0;
+        let skipConfigured = false;
+        
+        if (hasConfig) {
+          const mConf = configs[m.slug];
+          Object.keys(mConf).forEach(epK => {
+            const epC = mConf[epK];
+            if (epC.subtitles && epC.subtitles.length > 0) subCount += epC.subtitles.length;
+            if (epC.timeIntroStart > 0 || epC.timeOutroStart > 0) skipConfigured = true;
+          });
+        } else {
+          // Check if embedded in episodes data directly
+          const eps = item.episodes || [];
+          eps.forEach(srv => {
+            const data = srv.serverData || srv.server_data || [];
+            data.forEach(ep => {
+              if (ep.subtitles && ep.subtitles.length > 0) subCount += ep.subtitles.length;
+              if (ep.timeIntroStart > 0 || ep.timeOutroStart > 0 || ep.time_intro_start > 0 || ep.time_outro_start > 0) skipConfigured = true;
+            });
+          });
+        }
+
+        let configBadge = '';
+        if (subCount > 0 || skipConfigured) {
+          configBadge = `
+            <div class="flex items-center gap-1 mt-1">
+              ${subCount > 0 ? `<span class="bg-primary/20 text-primary border border-primary/30 rounded px-1 text-[9px] font-bold">CC (${subCount})</span>` : ''}
+              ${skipConfigured ? '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded px-1 text-[9px] font-bold">SKIP TIMINGS</span>' : ''}
+            </div>
+          `;
+        } else {
+          configBadge = '<span class="text-[10px] text-zinc-600">Trống (Mặc định)</span>';
+        }
+
+        return `
+          <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
+            <td class="px-6 py-4 font-semibold text-white">
+              <a href="/phim/${m.slug}" target="_blank" class="hover:text-primary transition-colors">${m.title || m.name}</a>
+              <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${m.originalTitle || m.origin_name || ''}</div>
+            </td>
+            <td class="px-6 py-4 text-zinc-400">${(m.genres || []).join(', ') || m.category || 'N/A'}</td>
+            <td class="px-6 py-4 text-zinc-400 font-medium">${m.category || 'Khác'} / ${m.releaseYear || m.year || 'N/A'}</td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-0.5 rounded bg-zinc-950 border border-glass-stroke text-[11px] font-semibold">${m.episodeCurrent || 'Full'}</span>
+            </td>
+            <td class="px-6 py-4">
+              ${configBadge}
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex gap-2 justify-end">
+                <a href="/admin/phim/tao-thu-cong?edit=${m.slug}" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center hover:text-primary hover:border-primary/50 transition-colors cursor-pointer" title="Cấu hình / Sửa">
+                  <span class="material-symbols-outlined text-sm">settings</span>
+                </a>
+                <button onclick="deleteCrawledMovie('${m.slug}')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center text-red-400 hover:text-red-500 hover:border-red-500/50 transition-colors cursor-pointer" title="Xóa">
+                  <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.deleteCrawledMovie = function(slug) {
+      if (!confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách cào cục bộ?')) return;
+      const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
+      let list = [];
+      try { list = JSON.parse(listStr); } catch (e) {}
+
+      const newList = list.filter(m => (m.movie?.slug || m.slug) !== slug);
+      localStorage.setItem('txa_crawled_movies', JSON.stringify(newList));
+      
+      renderCrawledList();
+      if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim cào thành công!', 'success');
+    };
+
+    document.getElementById('clearAllCrawledBtn').addEventListener('click', () => {
+      if (!confirm('CẢNH BÁO: Hành động này sẽ xóa sạch toàn bộ phim đã cào cục bộ. Bạn chắc chắn muốn xóa?')) return;
+      localStorage.removeItem('txa_crawled_movies');
+      renderCrawledList();
+      if (window.showGlobalToast) window.showGlobalToast('Đã dọn dẹp kho phim cào!', 'success');
+    });
+
+    // ONLINE SEARCH TRIGGER
+    const searchKeywordInput = document.getElementById('searchKeyword');
+    const searchOnlineBtn = document.getElementById('searchOnlineBtn');
+    const searchResultBody = document.getElementById('searchResultBody');
+    const emptySearchResult = document.getElementById('emptySearchResult');
+    const searchResultTable = document.getElementById('searchResultTable');
+    const selectAllSearch = document.getElementById('selectAllSearch');
+    const cartCount = document.getElementById('cartCount');
+
+    searchOnlineBtn.addEventListener('click', async () => {
+      const keyword = searchKeywordInput.value.trim();
+      if (!keyword) {
+        if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập từ khóa tìm kiếm!', 'error');
+        return;
+      }
+
+      searchOnlineBtn.disabled = true;
+      searchOnlineBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">autorenew</span>';
+      
+      try {
+        const res = await fetch(`https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const responseData = await res.json();
+        
+        const items = responseData.data?.items || [];
+        
+        if (items.length === 0) {
+          searchResultTable.classList.add('hidden');
+          emptySearchResult.classList.remove('hidden');
+          emptySearchResult.innerHTML = `
+            <span class="material-symbols-outlined text-5xl opacity-20 mb-3">search_off</span>
+            <p class="text-zinc-400 text-sm">Không tìm thấy phim nào cho từ khóa "${keyword}".</p>
+          `;
+          return;
+        }
+
+        emptySearchResult.classList.add('hidden');
+        searchResultTable.classList.remove('hidden');
+        
+        searchResultBody.innerHTML = items.map(item => {
+          const localCount = existingMoviesMap[item.slug] || 0;
+          const isSelected = cartSlugs.has(item.slug);
+          const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
+
+          return `
+            <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
+              <td class="px-5 py-3 text-center">
+                <input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${item.name.replace(/'/g, "\\'")}')" 
+                       ${isSelected ? 'checked' : ''} class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer item-checkbox"/>
+              </td>
+              <td class="px-5 py-3 font-semibold text-white">
+                <div>${item.name}</div>
+                <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${item.origin_name} (${item.year})</div>
+              </td>
+              <td class="px-5 py-3">
+                <span class="bg-zinc-900 border border-glass-stroke rounded px-1.5 py-0.5 text-[10px] font-bold text-zinc-300 mr-1">${item.quality || 'FHD'}</span>
+                <span class="text-zinc-500 text-[10px] font-bold">${typeLabel}</span>
+              </td>
+              <td class="px-5 py-3 font-medium">
+                ${localCount > 0 
+                  ? `<span class="text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded text-[10px] font-bold">✓ Đã cào (${localCount} tập)</span>` 
+                  : '<span class="text-zinc-500 bg-zinc-950 border border-glass-stroke px-1.5 py-0.5 rounded text-[10px]">Chưa cào</span>'}
+              </td>
+              <td class="px-5 py-3 text-right">
+                <button type="button" onclick="crawlSingleDirect('${item.slug}')" class="text-primary hover:underline font-bold text-xs cursor-pointer">
+                  Cào ngay
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Reset select all checkbox
+        selectAllSearch.checked = false;
+
+      } catch (e) {
+        if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy phim trực tuyến: ' + e.message, 'error');
+      } finally {
+        searchOnlineBtn.disabled = false;
+        searchOnlineBtn.innerHTML = 'Tìm phim';
+      }
+    });
+
+    // Select all checkboxes search results
+    selectAllSearch.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = checked;
+        cb.dispatchEvent(new Event('change'));
+      });
+    });
+
+    // Cart management
+    window.toggleCartItem = function(checkbox, slug, name) {
+      if (checkbox.checked) {
+        cartSlugs.set(slug, name);
+      } else {
+        cartSlugs.delete(slug);
+      }
+      updateCartUI();
+    };
+
+    function updateCartUI() {
+      cartCount.textContent = `${cartSlugs.size} phim`;
+    }
+
+    document.getElementById('clearCartBtn').addEventListener('click', () => {
+      cartSlugs.clear();
+      updateCartUI();
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      checkboxes.forEach(cb => cb.checked = false);
+      selectAllSearch.checked = false;
+      if (window.showGlobalToast) window.showGlobalToast('Đã dọn dẹp giỏ hàng!', 'info');
+    });
+
+    // MAP KKPHIM DATA HELPER
+    function mapKKPhimToMovieDetail(data) {
+      const m = data.movie;
+      const cdnDomain = "https://phimimg.com";
+      
+      let posterUrl = m.poster_url || '';
+      if (posterUrl && !posterUrl.startsWith('http')) {
+        const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, '');
+        posterUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+      }
+      let bannerUrl = m.thumb_url || m.poster_url || '';
+      if (bannerUrl && !bannerUrl.startsWith('http')) {
+        const cleanPath = bannerUrl.replace(/^\/?uploads\/movies\//, '');
+        bannerUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+      }
+
+      const genres = Array.isArray(m.category) ? m.category.map(c => c.name) : [];
+      
+      let category = "Khác";
+      if (Array.isArray(m.country) && m.country.length > 0) {
+        category = m.country[0].name;
+      }
+
+      let type = 'series';
+      if (m.type === 'single') {
+        type = 'movie';
+      } else if (m.type === 'hoathinh') {
+        type = 'hoathinh';
+      } else if (m.type === 'tvshows') {
+        type = 'tvshows';
+      }
+
+      const episodes = Array.isArray(data.episodes) ? data.episodes.map(server => {
+        return {
+          serverName: server.server_name || "Server VIP",
+          serverData: Array.isArray(server.server_data) ? server.server_data.map(ep => {
+            let epName = ep.name || '';
+            if (epName.trim().match(/^\d+$/)) {
+              epName = `Tập ${epName.padStart(2, '0')}`;
+            }
+            return {
+              name: epName,
+              slug: ep.slug || `tap-${ep.name}`,
+              filename: ep.filename || `${m.name} - Tap ${ep.name}`,
+              linkEmbed: ep.link_embed || '',
+              linkM3u8: ep.link_m3u8 || '',
+              subtitles: ep.subtitles || ep.subtitles_data || [],
+              timeIntroStart: ep.timeIntroStart || ep.time_intro_start || 0,
+              timeIntroEnd: ep.timeIntroEnd || ep.time_intro_end || 0,
+              timeOutroStart: ep.timeOutroStart || ep.time_outro_start || 0,
+              timeOutroEnd: ep.timeOutroEnd || ep.time_outro_end || 0
+            };
+          }) : []
+        };
+      }) : [];
+
+      return {
+        id: m._id || m.id || `kk-${m.slug}`,
+        title: m.name,
+        originalTitle: m.origin_name,
+        slug: m.slug,
+        description: m.content ? m.content.replace(/<[^>]*>/g, '') : '',
+        posterUrl: posterUrl,
+        bannerUrl: bannerUrl,
+        releaseYear: parseInt(m.year) || 2025,
+        durationMinutes: m.time || (type === 'movie' ? '120 phút' : '45 phút/tập'),
+        type: type,
+        status: m.status === 'completed' ? 'completed' : 'ongoing',
+        episodeCurrent: m.episode_current || (type === 'movie' ? 'Full' : '1'),
+        episodeTotal: m.episode_total || '1',
+        quality: m.quality || 'FHD',
+        lang: m.lang || 'Vietsub',
+        imdbScore: 8.0,
+        category: category,
+        ageRating: type === 'movie' ? 'T16' : 'T13',
+        genres: genres,
+        seasons: type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1',
+        actors: Array.isArray(m.actor) ? m.actor.filter(Boolean) : [],
+        directors: Array.isArray(m.director) ? m.director.filter(Boolean) : [],
+        trailerUrl: m.trailer_url || '',
+        episodes: episodes
+      };
+    }
+
+    // CORE SEQUENTIAL CRAWLER PROCESS
+    async function runCrawlProcess(slugsList) {
+      if (isRunning) return;
+      isRunning = true;
+      shouldStop = false;
+
+      // Reset statistics
+      let success = 0;
+      let skipped = 0;
+      let failed = 0;
+      
+      const overwrite = document.getElementById('overwrite').checked;
+      
+      document.getElementById('statSuccess').textContent = '0';
+      document.getElementById('statSkipped').textContent = '0';
+      document.getElementById('statFailed').textContent = '0';
+
+      const progressSection = document.getElementById('progressSection');
+      const currentMovieName = document.getElementById('currentMovieName');
+      const moviesCountProgress = document.getElementById('moviesCountProgress');
+      const progressPercent = document.getElementById('progressPercent');
+      const mainProgressBar = document.getElementById('mainProgressBar');
+      const progressTimeEstimate = document.getElementById('progressTimeEstimate');
+      const startStandardBtn = document.getElementById('startStandardBtn');
+      const stopStandardBtn = document.getElementById('stopStandardBtn');
+
+      progressSection.classList.remove('hidden');
+      statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-primary animate-pulse';
+      startStandardBtn.classList.add('pointer-events-none', 'opacity-40');
+      stopStandardBtn.classList.remove('hidden');
+
+      addLog(`🚀 Khởi động tiến trình cào ${slugsList.length} phim trong hàng đợi...`, 'system');
+
+      for (let i = 0; i < slugsList.length; i++) {
+        if (shouldStop) {
+          addLog(`⚠️ Đã dừng tiến trình thu thập phim do Admin dừng!`, 'warning');
+          break;
+        }
+
+        const slug = slugsList[i];
+        currentMovieName.textContent = `[${i+1}/${slugsList.length}] Đang xử lý: ${slug}`;
+        moviesCountProgress.textContent = `Tiến trình: ${i+1}/${slugsList.length} phim`;
+        
+        const pct = Math.round(((i + 1) / slugsList.length) * 100);
+        progressPercent.textContent = `${pct}%`;
+        mainProgressBar.style.width = `${pct}%`;
+        progressTimeEstimate.textContent = `Thời gian còn lại: ~${(slugsList.length - i - 1) * 2} giây`;
+
+        // Check if exists
+        const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
+        let list = [];
+        try { list = JSON.parse(listStr); } catch (e) {}
+        
+        const dup = list.find(m => (m.movie?.slug || m.slug) === slug);
+        if (dup && !overwrite) {
+          skipped++;
+          document.getElementById('statSkipped').textContent = skipped;
+          addLog(`→ Bỏ qua (đã cào & không ghi đè): ${slug}`, 'warning');
+          continue;
+        }
+
+        addLog(`⏳ Đang cào dữ liệu chi tiết cho slug: ${slug}...`);
+        
+        try {
+          const detailRes = await fetch(`https://phimapi.com/phim/${slug}`);
+          if (!detailRes.ok) throw new Error(`HTTP ${detailRes.status}`);
+          const detailData = await detailRes.json();
+
+          if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
+            const movieDetailObj = mapKKPhimToMovieDetail(detailData);
+            movieDetailObj.updatedAt = new Date().toISOString();
+            
+            // Overwrite details or push new
+            let freshListStr = localStorage.getItem('txa_crawled_movies') || '[]';
+            let freshList = [];
+            try { freshList = JSON.parse(freshListStr); } catch (e) {}
+
+            freshList = freshList.filter(m => (m.movie?.slug || m.slug) !== slug);
+            freshList.unshift(movieDetailObj);
+            
+            localStorage.setItem('txa_crawled_movies', JSON.stringify(freshList));
+
+            success++;
+            document.getElementById('statSuccess').textContent = success;
+            addLog(`✓ Cào thành công: "${movieDetailObj.title}" (${movieDetailObj.episodeCurrent})`, 'success');
+            
+            // Live update inventory list
+            renderCrawledList();
+          } else {
+            throw new Error('Payload API bị lỗi hoặc trống');
+          }
+        } catch (e) {
+          failed++;
+          document.getElementById('statFailed').textContent = failed;
+          addLog(`✗ Lỗi khi cào slug "${slug}": ${e.message}`, 'error');
+        }
+
+        // Sequential delay
+        await new Promise(r => setTimeout(r, 800));
+      }
+
+      // Finish crawl task
+      isRunning = false;
+      startStandardBtn.classList.remove('pointer-events-none', 'opacity-40');
+      stopStandardBtn.classList.add('hidden');
+      statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+      progressTimeEstimate.textContent = 'Hoàn tất!';
+      addLog(`🎉 TIẾN TRÌNH CÀO PHIM KẾT THÚC! Thành công: ${success}, Bỏ qua: ${skipped}, Lỗi: ${failed}`, 'success');
+      if (window.showGlobalToast) window.showGlobalToast(`Cào hoàn tất! Thành công: ${success} phim.`, 'success');
+    }
+
+    // Trigger crawl standard
+    const startStandardBtn = document.getElementById('startStandardBtn');
+    const stopStandardBtn = document.getElementById('stopStandardBtn');
+
+    startStandardBtn.addEventListener('click', async () => {
+      if (isRunning) return;
+
+      if (standardSubTab === 'url') {
+        const lines = crawlUrlsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
+        const slugs = [];
+        lines.forEach(line => {
+          const slug = extractSlug(line);
+          if (slug) slugs.push(slug);
+        });
+
+        if (slugs.length === 0) {
+          if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy đường dẫn hoặc slug phim nào hợp lệ!', 'error');
+          return;
+        }
+
+        runCrawlProcess(slugs);
+      }
+      
+      else if (standardSubTab === 'batch') {
+        const startPage = parseInt(document.getElementById('pageStart').value) || 1;
+        const endPage = parseInt(document.getElementById('pageEnd').value) || 1;
+
+        if (startPage < 1 || endPage < startPage) {
+          if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+          return;
+        }
+
+        addLog(`⏳ Đang tải danh sách phim từ trang ${startPage} đến ${endPage}...`);
+        const slugs = [];
+        
+        for (let p = startPage; p <= endPage; p++) {
+          try {
+            const res = await fetch(`https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            
+            if (data && Array.isArray(data.items)) {
+              data.items.forEach(item => {
+                if (item.slug) slugs.push(item.slug);
+              });
+              addLog(`✓ Quét xong trang danh sách ${p}: Thêm ${data.items.length} phim.`);
+            }
+          } catch (e) {
+            addLog(`✗ Lỗi tải trang danh sách ${p}: ${e.message}`, 'error');
+          }
+          await new Promise(r => setTimeout(r, 200));
+        }
+
+        if (slugs.length === 0) {
+          if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào từ các trang danh sách!', 'error');
+          return;
+        }
+        
+        runCrawlProcess(slugs);
+      }
+      
+      else if (standardSubTab === 'filter') {
+        const startPage = parseInt(document.getElementById('filterPageStart').value) || 1;
+        const endPage = parseInt(document.getElementById('filterPageEnd').value) || 1;
+
+        if (startPage < 1 || endPage < startPage) {
+          if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang lọc không hợp lệ!', 'error');
+          return;
+        }
+
+        const slugs = [];
+        const country = document.getElementById('selectedCountry').value;
+        const genre = document.getElementById('selectedGenre').value;
+
+        if (filterType === 'country') {
+          addLog(`⏳ Đang tải phim Quốc gia "${country}": Từ trang ${startPage} đến ${endPage}...`);
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const res = await fetch(`https://phimapi.com/v1/api/quoc-gia/${country}?page=${p}`);
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const data = await res.json();
+              if (data && data.data && Array.isArray(data.data.items)) {
+                data.data.items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong quốc gia ${country} trang ${p}: Thêm ${data.data.items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang quốc gia ${country} trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+        } else {
+          addLog(`⏳ Đang tải phim Thể loại "${genre}": Từ trang ${startPage} đến ${endPage}...`);
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const res = await fetch(`https://phimapi.com/v1/api/the-loai/${genre}?page=${p}`);
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const data = await res.json();
+              if (data && data.data && Array.isArray(data.data.items)) {
+                data.data.items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong thể loại ${genre} trang ${p}: Thêm ${data.data.items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải thể loại ${genre} trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+        }
+
+        if (slugs.length === 0) {
+          if (window.showGlobalToast) window.showGlobalToast('Không lọc được phim nào từ các trang danh sách!', 'error');
+          return;
+        }
+
+        runCrawlProcess(slugs);
+      }
+    });
+
+    document.getElementById('crawlAllBtn').addEventListener('click', async () => {
+      if (isRunning) return;
+      if (!confirm('CẢNH BÁO: Cào toàn bộ sẽ tải tất cả các trang phim trên API (20000+ phim). Tiến trình có thể kéo dài rất lâu. Bạn chắc chắn muốn chạy?')) return;
+
+      addLog('⏳ Đang lấy dữ liệu trang 1 để ước tính toàn bộ kho phim...');
+      
+      try {
+        const res = await fetch('https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        
+        const totalPages = data.pagination?.totalPages || 500;
+        addLog(`✓ Tổng số trang phim cần quét: ${totalPages} trang. Bắt đầu thu thập slugs...`, 'system');
+
+        const slugs = [];
+        for (let p = 1; p <= totalPages; p++) {
+          if (shouldStop) break;
+          try {
+            const pageRes = await fetch(`https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}`);
+            const pageData = await pageRes.json();
+            if (pageData && Array.isArray(pageData.items)) {
+              pageData.items.forEach(item => {
+                if (item.slug) slugs.push(item.slug);
+              });
+              addLog(`Quét danh sách trang ${p}/${totalPages}: Thêm ${pageData.items.length} slugs.`);
+            }
+          } catch (e) {
+            addLog(`✗ Lỗi quét trang ${p}: ${e.message}`, 'error');
+          }
+          await new Promise(r => setTimeout(r, 100));
+        }
+
+        if (slugs.length > 0) {
+          runCrawlProcess(slugs);
+        }
+      } catch (e) {
+        addLog(`✗ Lỗi ước tính toàn bộ kho phim: ${e.message}`, 'error');
+      }
+    });
+
+    stopStandardBtn.addEventListener('click', () => {
+      shouldStop = true;
+      stopStandardBtn.classList.add('opacity-40', 'pointer-events-none');
+      addLog('Đang chờ tiến trình dừng lại...', 'warning');
+    });
+
+    // Start crawl single direct from search result
+    window.crawlSingleDirect = function(slug) {
+      if (isRunning) {
+        if (window.showGlobalToast) window.showGlobalToast('Đang có tiến trình cào phim đang hoạt động!', 'error');
+        return;
+      }
+      runCrawlProcess([slug]);
+    };
+
+    // Start cart crawl
+    document.getElementById('startCartCrawlBtn').addEventListener('click', () => {
+      if (isRunning) return;
+      if (cartSlugs.size === 0) {
+        if (window.showGlobalToast) window.showGlobalToast('Vui lòng chọn ít nhất 1 phim vào giỏ hàng!', 'error');
+        return;
+      }
+
+      const slugs = Array.from(cartSlugs.keys());
+      runCrawlProcess(slugs);
+      
+      // Reset cart
+      cartSlugs.clear();
+      updateCartUI();
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      checkboxes.forEach(cb => cb.checked = false);
+      selectAllSearch.checked = false;
+    });
+
+    // Initial runs
+    renderCrawledList();
+  </script>
+
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #37333e; border-radius: 10px; }
+  </style>
+</AdminLayout>

@@ -1,0 +1,214 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Quản lý Thể loại">
+  <!-- Actions Bar -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 mt-4">
+    <div>
+      <h3 class="font-headline-lg-mobile md:text-headline-lg font-headline-lg text-primary tracking-tight">Danh sách Thể loại</h3>
+      <p class="text-on-surface-variant text-body-main opacity-80">Quản lý và sắp xếp các danh mục phim trên toàn hệ thống.</p>
+    </div>
+    <button class="bg-primary text-on-primary-fixed font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer">
+      <span class="material-symbols-outlined">add_circle</span>
+      <span>Thêm thể loại</span>
+    </button>
+  </div>
+
+  <!-- Stats Overview (Bento Grid Style) -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="glass-panel p-6 rounded-2xl">
+      <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">TỔNG THỂ LOẠI</p>
+      <div class="flex items-end justify-between">
+        <span class="text-3xl font-display-hero text-primary">24</span>
+        <span class="text-secondary text-xs flex items-center bg-secondary-container/10 px-2 py-1 rounded-full">+2 tháng này</span>
+      </div>
+    </div>
+    <div class="glass-panel p-6 rounded-2xl">
+      <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">PHỔ BIẾN NHẤT</p>
+      <div class="flex items-end justify-between">
+        <span class="text-3xl font-display-hero text-primary">Hành động</span>
+        <span class="text-outline text-xs italic">1.2k phim</span>
+      </div>
+    </div>
+    <div class="glass-panel p-6 rounded-2xl">
+      <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">CHƯA CÓ PHIM</p>
+      <div class="flex items-end justify-between">
+        <span class="text-3xl font-display-hero text-primary">03</span>
+        <span class="text-error text-xs flex items-center bg-error-container/10 px-2 py-1 rounded-full">Cần kiểm tra</span>
+      </div>
+    </div>
+    <div class="glass-panel p-6 rounded-2xl">
+      <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">TRẠNG THÁI HỆ THỐNG</p>
+      <div class="flex items-end justify-between">
+        <span class="text-3xl font-display-hero text-secondary-fixed-dim">Ổn định</span>
+        <div class="w-3 h-3 bg-secondary-fixed-dim rounded-full animate-pulse mb-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories Table Section -->
+  <div class="glass-panel rounded-2xl overflow-hidden border border-glass-stroke">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/50 border-b border-glass-stroke">
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Thứ tự</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Tên thể loại</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Slug</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider text-center">Số lượng phim</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Trạng thái</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider text-right">Hành động</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-glass-stroke">
+          <!-- Row 1 -->
+          <tr class="hover:bg-primary/5 transition-colors group">
+            <td class="px-6 py-4">
+              <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">1</span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary opacity-50">movie</span>
+                </div>
+                <span class="font-title-md text-sm text-on-surface">Hành động</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">hanh-dong</code>
+            </td>
+            <td class="px-6 py-4 text-center font-bold text-on-surface">1,240</td>
+            <td class="px-6 py-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-container/20 text-secondary-fixed-dim">Hiển thị</span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[20px]">edit</span>
+                </button>
+                <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 2 -->
+          <tr class="hover:bg-primary/5 transition-colors group">
+            <td class="px-6 py-4">
+              <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">2</span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary opacity-50">favorite</span>
+                </div>
+                <span class="font-title-md text-sm text-on-surface">Tình cảm</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">tinh-cam</code>
+            </td>
+            <td class="px-6 py-4 text-center font-bold text-on-surface">856</td>
+            <td class="px-6 py-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-container/20 text-secondary-fixed-dim">Hiển thị</span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[20px]">edit</span>
+                </button>
+                <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 3 -->
+          <tr class="hover:bg-primary/5 transition-colors group">
+            <td class="px-6 py-4">
+              <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">3</span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary opacity-50">skull</span>
+                </div>
+                <span class="font-title-md text-sm text-on-surface">Kinh dị</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">kinh-di</code>
+            </td>
+            <td class="px-6 py-4 text-center font-bold text-on-surface">432</td>
+            <td class="px-6 py-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-container/20 text-secondary-fixed-dim">Hiển thị</span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[20px]">edit</span>
+                </button>
+                <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 4 -->
+          <tr class="hover:bg-primary/5 transition-colors group">
+            <td class="px-6 py-4">
+              <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">4</span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary opacity-50">rocket_launch</span>
+                </div>
+                <span class="font-title-md text-sm text-on-surface">Viễn tưởng</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">vien-tuong</code>
+            </td>
+            <td class="px-6 py-4 text-center font-bold text-on-surface">310</td>
+            <td class="px-6 py-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-outline">Ẩn</span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[20px]">edit</span>
+                </button>
+                <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Pagination Footer -->
+    <div class="px-6 py-4 border-t border-glass-stroke flex items-center justify-between bg-surface-container-low/30">
+      <p class="text-xs text-on-surface-variant">Hiển thị 1-10 của 24 thể loại</p>
+      <div class="flex items-center gap-1">
+        <button class="p-1.5 rounded-lg border border-glass-stroke text-outline disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+          <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+        </button>
+        <button class="w-8 h-8 rounded-lg bg-primary text-on-primary-fixed text-xs font-bold cursor-pointer">1</button>
+        <button class="w-8 h-8 rounded-lg border border-glass-stroke text-on-surface-variant hover:bg-surface-container text-xs transition-colors cursor-pointer">2</button>
+        <button class="w-8 h-8 rounded-lg border border-glass-stroke text-on-surface-variant hover:bg-surface-container text-xs transition-colors cursor-pointer">3</button>
+        <button class="p-1.5 rounded-lg border border-glass-stroke text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer">
+          <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drag & Drop Help Tip -->
+  <div class="mt-6 mb-10 flex items-center gap-3 p-4 bg-surface-container-low rounded-xl border border-glass-stroke w-fit">
+    <span class="material-symbols-outlined text-secondary">info</span>
+    <p class="text-sm text-on-surface-variant">Bạn có thể thay đổi thứ tự hiển thị bằng cách kéo thả các hàng trong danh sách.</p>
+  </div>
+</AdminLayout>

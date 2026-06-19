@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body-main: "Inter", sans-serif;
+  --font-title-md: "Plus Jakarta Sans", sans-serif;
+  --font-headline-lg: "Plus Jakarta Sans", sans-serif;
+  --font-display-hero: "Plus Jakarta Sans", sans-serif;
+  --font-label-caps: "Inter", sans-serif;
+  
+  /* Light Mode Colors (default) */
+  --color-primary: #6d28d9;
+  --color-primary-container: #ede9fe;
+  --color-on-primary: #ffffff;
+  --color-secondary: #0891b2;
+  --color-secondary-container: #ecfeff;
+  --color-on-secondary: #ffffff;
+  --color-tertiary: #ea580c;
+  --color-background: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-variant: #f4f4f5;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-highest: #e4e4e7;
+  --color-surface-container-high: #f4f4f5;
+  --color-surface-container: #fafafa;
+  --color-surface-container-low: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-dim: #f4f4f5;
+  --color-surface-deep: #f4f4f5;
+  --color-surface-card: #ffffff;
+  --color-on-surface: #09090b;
+  --color-on-surface-variant: #71717a;
+  --color-outline: #a1a1aa;
+  --color-outline-variant: #e4e4e7;
+  --color-glass-stroke: rgba(0, 0, 0, 0.08);
+  
+  --spacing-container-max: 1440px;
+  --spacing-element-gap: 0.75rem;
+  --spacing-margin-mobile: 1rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-section-gap: 4rem;
+}
+
+/* Dark Mode overrides */
+.dark {
+  --color-primary: #d2bbff;
+  --color-primary-container: #7c3aed;
+  --color-on-primary: #3f008e;
+  --color-secondary: #bdf4ff;
+  --color-secondary-container: #00e3fd;
+  --color-on-secondary: #00363d;
+  --color-tertiary: #ffb784;
+  --color-background: #15121b;
+  --color-surface: #15121b;
+  --color-surface-variant: #37333e;
+  --color-surface-bright: #3c3742;
+  --color-surface-container-highest: #37333e;
+  --color-surface-container-high: #2c2833;
+  --color-surface-container: #221e28;
+  --color-surface-container-low: #1d1a24;
+  --color-surface-container-lowest: #100d16;
+  --color-surface-dim: #15121b;
+  --color-surface-deep: #0A0A0B;
+  --color-surface-card: #161618;
+  --color-on-surface: #e8dfee;
+  --color-on-surface-variant: #ccc3d8;
+  --color-outline: #958da1;
+  --color-outline-variant: #4a4455;
+  --color-glass-stroke: rgba(255, 255, 255, 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-surface-deep text-on-surface antialiased font-sans;
+  }
+}
+
+@layer components {
+  .txaformat {
+    @apply leading-relaxed text-zinc-300;
+  }
+  
+  .txaformat p {
+    @apply mb-4 last:mb-0;
+  }
+  
+  .txaformat strong {
+    @apply text-white font-semibold;
+  }
+  
+  .txaformat a {
+    @apply text-blue-400 hover:text-blue-300 transition-colors;
+  }
+
+  .txatooltip {
+    @apply backdrop-blur-md bg-black/70 border border-white/10 rounded-lg p-2 text-sm text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200;
+  }
+
+  .txamodal {
+    @apply backdrop-blur-sm bg-black/60 fixed inset-0 flex items-center justify-center z-50 p-4;
+  }
+
+  .txamodal-content {
+    @apply bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl max-w-lg w-full relative overflow-hidden;
+  }
+
+  .txatoast {
+    @apply fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border border-white/10 backdrop-blur-md bg-zinc-900/90 text-white;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .movie-card-hover {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .movie-card-hover:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 20px 40px -15px rgba(109, 40, 217, 0.35), 0 0 20px 0 rgba(109, 40, 217, 0.15);
+  }
+}

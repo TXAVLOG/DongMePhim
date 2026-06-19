@@ -1,0 +1,1590 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+---
+
+<AdminLayout title="Tạo phim thủ công & Cấu hình tập phim">
+  <header
+    class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 mt-4 gap-4"
+  >
+    <div>
+      <a
+        href="/admin"
+        class="text-zinc-400 hover:text-primary text-xs font-bold flex items-center gap-1 mb-2 transition-colors"
+      >
+        <span class="material-symbols-outlined text-sm">arrow_back</span> QUAY LẠI
+        TỔNG QUAN
+      </a>
+      <h1
+        class="font-display-hero text-3xl font-extrabold text-white tracking-tight"
+        id="pageTitle"
+      >
+        Đăng phim mới thủ công
+      </h1>
+      <p class="text-zinc-400 text-sm mt-1">
+        Tạo phim thủ công hoàn toàn hoặc ghi đè cấu hình tập phim (phụ đề,
+        intro/outro) cho phim cào từ API.
+      </p>
+    </div>
+
+    <div class="flex gap-3">
+      <button
+        id="saveMovieBtn"
+        class="bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+      >
+        <span class="material-symbols-outlined text-lg">save</span>
+        Lưu dữ liệu phim
+      </button>
+    </div>
+  </header>
+
+  <!-- Setup modes selection -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+    <button
+      id="modeLocalBtn"
+      class="p-4 rounded-2xl border text-left transition-all cursor-pointer bg-primary/10 border-primary text-primary"
+    >
+      <h3 class="font-bold text-sm flex items-center gap-2">
+        <span class="material-symbols-outlined">edit_square</span> Tạo/Chỉnh sửa Phim
+        Thủ Công
+      </h3>
+      <p class="text-[11px] opacity-80 mt-1">
+        Lưu trữ toàn bộ thông tin phim và danh sách tập phim vào database cục
+        bộ.
+      </p>
+    </button>
+
+    <button
+      id="modeApiBtn"
+      class="p-4 rounded-2xl border text-left transition-all cursor-pointer bg-zinc-900 border-glass-stroke text-zinc-400 hover:text-white hover:border-zinc-700"
+    >
+      <h3 class="font-bold text-sm flex items-center gap-2">
+        <span class="material-symbols-outlined">cloud_sync</span> Cấu hình tập phim
+        cho Phim API
+      </h3>
+      <p class="text-[11px] opacity-80 mt-1">
+        Chỉ ghi đè phụ đề và mốc thời gian intro/outro cho phim cào trực tiếp từ
+        API.
+      </p>
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 mb-10">
+    <!-- Left: Movie info & Episode config -->
+    <div class="xl:col-span-8 space-y-6">
+      <!-- Quick API Import Card -->
+      <div
+        id="quickImportCard"
+        class="glass-panel rounded-3xl p-6 border border-glass-stroke relative overflow-hidden"
+      >
+        <div
+          class="absolute inset-0 bg-secondary/5 blur-[40px] pointer-events-none"
+        >
+        </div>
+        <div class="relative z-10">
+          <h3 class="font-bold text-lg text-white mb-2 flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">bolt</span> Nhập
+            nhanh & Tự động điền (Auto-fill) từ API
+          </h3>
+          <p class="text-xs text-zinc-400 mb-4 font-body-main">
+            Dán link phim (Ví dụ: <code
+              >https://kkphim1.com/phim/digimon-beatbreak</code
+            >) hoặc slug phim (Ví dụ: <code>digimon-beatbreak</code>) vào đây để
+            hệ thống tự động tải và điền toàn bộ thông tin phim + danh sách tập
+            phim.
+          </p>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              id="quickImportUrl"
+              class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-secondary text-sm"
+              placeholder="Dán link phim KKPhim hoặc slug phim..."
+            />
+            <button
+              id="quickImportBtn"
+              class="bg-secondary/20 hover:bg-secondary/30 border border-secondary/30 text-secondary font-bold px-5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-sm">bolt</span> Nạp & Tự
+              điền
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Load API Movie Panel (hidden by default) -->
+      <div
+        id="apiLoadPanel"
+        class="glass-panel rounded-3xl p-6 border border-glass-stroke hidden relative overflow-hidden"
+      >
+        <div
+          class="absolute inset-0 bg-primary/5 blur-[40px] pointer-events-none"
+        >
+        </div>
+        <div class="relative z-10">
+          <h3 class="font-bold text-lg text-white mb-2 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary"
+              >cloud_download</span
+            > Nạp danh sách tập từ API
+          </h3>
+          <p class="text-xs text-zinc-400 mb-4">
+            Nhập slug phim đã cào để tải danh sách tập từ API KKPhim, sau đó bạn
+            có thể cấu hình phụ đề/intro cho các tập này.
+          </p>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              id="apiMovieSlug"
+              class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="Nhập slug phim API (ví dụ: tro-choi-con-muc)"
+            />
+            <button
+              id="loadApiMovieBtn"
+              class="bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary font-bold px-5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-sm">download</span> Tải
+              tập phim
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Movie Info Form -->
+      <div
+        id="movieInfoCard"
+        class="glass-panel rounded-3xl p-6 border border-glass-stroke"
+      >
+        <h3
+          class="font-bold text-lg text-white mb-4 pb-2 border-b border-glass-stroke flex items-center gap-2"
+        >
+          <span class="material-symbols-outlined text-primary">info</span> Thông tin
+          chi tiết phim
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Tên phim</label
+            >
+            <input
+              type="text"
+              id="movieTitle"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="Ví dụ: Đảo Hải Tặc"
+              required
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Tên gốc / Tên tiếng Anh</label
+            >
+            <input
+              type="text"
+              id="movieOriginalTitle"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="Ví dụ: One Piece"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Đường dẫn tĩnh (Slug)</label
+            >
+            <input
+              type="text"
+              id="movieSlug"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm font-mono text-zinc-300"
+              placeholder="Ví dụ: dao-hai-tac (để trống tự tạo)"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label
+                class="block text-xs font-label-caps text-outline uppercase mb-2"
+                >Phân loại</label
+              >
+              <select
+                id="movieType"
+                class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              >
+                <option value="series">Phim Bộ</option>
+                <option value="movie">Phim Lẻ</option>
+                <option value="hoathinh">Hoạt Hình</option>
+                <option value="tvshows">TV Shows</option>
+              </select>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-label-caps text-outline uppercase mb-2"
+                >Trạng thái</label
+              >
+              <select
+                id="movieStatus"
+                class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              >
+                <option value="ongoing">Đang chiếu</option>
+                <option value="completed">Hoàn thành</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 col-span-1 md:col-span-2">
+            <input
+              type="checkbox"
+              id="moviePinned"
+              class="w-4 h-4 rounded border-glass-stroke bg-zinc-950 text-primary focus:ring-0 focus:outline-none cursor-pointer"
+            />
+            <label
+              for="moviePinned"
+              class="text-xs font-bold text-zinc-300 select-none cursor-pointer"
+              >Ghim phim này lên Banner chính (Hero Banner)</label
+            >
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Ảnh dọc (Poster URL)</label
+            >
+            <input
+              type="text"
+              id="moviePosterUrl"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="https://example.com/poster.jpg"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Ảnh ngang (Thumb URL)</label
+            >
+            <input
+              type="text"
+              id="movieBannerUrl"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="https://example.com/banner.jpg"
+            />
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Đường dẫn Trailer (YouTube URL)</label
+            >
+            <input
+              type="text"
+              id="movieTrailerUrl"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="https://www.youtube.com/watch?v=..."
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label
+                class="block text-xs font-label-caps text-outline uppercase mb-2"
+                >Thể loại</label
+              >
+              <input
+                type="text"
+                id="movieCategory"
+                class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                placeholder="Ví dụ: Hành Động"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-label-caps text-outline uppercase mb-2"
+                >Quốc gia</label
+              >
+              <input
+                type="text"
+                id="movieCountry"
+                class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                placeholder="Ví dụ: Nhật Bản"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Diễn viên chính (cách nhau bởi phẩy)</label
+            >
+            <input
+              type="text"
+              id="movieActors"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="Luffy, Zoro, Nami"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Đạo diễn</label
+            >
+            <input
+              type="text"
+              id="movieDirectors"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="Oda Eiichiro"
+            />
+          </div>
+
+          <!-- Lịch chiếu phim -->
+          <div
+            class="col-span-1 md:col-span-2 border-t border-glass-stroke/50 pt-4 mt-2"
+            id="broadcastScheduleSection"
+          >
+            <span
+              class="block text-xs font-label-caps text-outline uppercase mb-3 font-bold text-primary flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-sm"
+                >calendar_month</span
+              > Lịch phát sóng (Tập tiếp theo)
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] text-zinc-400 mb-1.5"
+                  >Ngày phát sóng dự kiến</label
+                >
+                <input
+                  type="date"
+                  id="scheduleDate"
+                  class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] text-zinc-400 mb-1.5"
+                  >Giờ phát sóng dự kiến</label
+                >
+                <input
+                  type="time"
+                  id="scheduleTime"
+                  class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] text-zinc-400 mb-1.5"
+                  >Thông báo lịch chiếu</label
+                >
+                <input
+                  type="text"
+                  id="scheduleNotice"
+                  class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                  placeholder="Ví dụ: Tập 13 chiếu vào 20:00 tối Thứ Bảy hàng tuần"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label
+            class="block text-xs font-label-caps text-outline uppercase mb-2"
+            >Tóm tắt nội dung phim</label
+          >
+          <textarea
+            id="movieDescription"
+            rows="4"
+            class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+            placeholder="Mô tả nội dung tóm tắt của phim..."></textarea>
+        </div>
+      </div>
+
+      <!-- Episode Management Panel -->
+      <div class="glass-panel rounded-3xl p-6 border border-glass-stroke">
+        <div
+          class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-2 border-b border-glass-stroke"
+        >
+          <h3 class="font-bold text-lg text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">list</span>
+            Hệ thống liên kết phát (Server / Tập)
+          </h3>
+          <button
+            type="button"
+            id="addServerBtn"
+            class="border border-primary/40 hover:bg-primary/10 text-primary py-2 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer"
+          >
+            + Thêm Server phát mới
+          </button>
+        </div>
+
+        <!-- Dynamic Servers List -->
+        <div id="serversContainer" class="space-y-6">
+          <!-- Rendered dynamically by script -->
+        </div>
+
+        <div
+          id="emptyServers"
+          class="hidden flex flex-col items-center justify-center p-8 text-center bg-zinc-950/40 rounded-2xl border border-dashed border-glass-stroke"
+        >
+          <span class="material-symbols-outlined text-4xl opacity-20 mb-2"
+            >dns</span
+          >
+          <p class="text-sm text-zinc-500">
+            Chưa có server phát nào. Hãy thêm server mới để bắt đầu cấu hình tập
+            phim.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sticky tools -->
+    <div class="xl:col-span-4 space-y-6">
+      <!-- Format & Progress Card -->
+      <div
+        id="formatCard"
+        class="glass-panel rounded-3xl p-6 border border-glass-stroke sticky top-6"
+      >
+        <h3
+          class="font-bold text-base text-white mb-4 pb-2 border-b border-glass-stroke flex items-center gap-2"
+        >
+          <span class="material-symbols-outlined text-primary">tune</span> Định dạng
+          & Tập hiển thị
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Chất lượng hiển thị</label
+            >
+            <input
+              type="text"
+              id="movieQuality"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              value="FHD"
+              placeholder="Ví dụ: FHD, 4K"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Ngôn ngữ thuyết minh</label
+            >
+            <input
+              type="text"
+              id="movieLang"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              value="Vietsub"
+              placeholder="Ví dụ: Vietsub, Lồng Tiếng"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Tập hiện tại hiển thị</label
+            >
+            <input
+              type="text"
+              id="movieEpCurrent"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="Ví dụ: Tập 12, Full..."
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-label-caps text-outline uppercase mb-2"
+              >Tổng số tập dự kiến</label
+            >
+            <input
+              type="text"
+              id="movieEpTotal"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              placeholder="Ví dụ: 24"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label
+                class="block text-xs font-label-caps text-outline uppercase mb-2"
+                >Năm sản xuất</label
+              >
+              <input
+                type="number"
+                id="movieYear"
+                class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                value="2025"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-label-caps text-outline uppercase mb-2"
+                >Thời lượng/Tập</label
+              >
+              <input
+                type="text"
+                id="movieTime"
+                class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                placeholder="Ví dụ: 45 phút/tập"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Converter tool -->
+      <div class="glass-panel rounded-3xl p-6 border border-glass-stroke">
+        <h3
+          class="font-bold text-base text-white mb-4 pb-2 border-b border-glass-stroke flex items-center gap-2"
+        >
+          <span class="material-symbols-outlined text-emerald-400"
+            >query_builder</span
+          > Quy đổi thời gian ra giây
+        </h3>
+        <p class="text-xs text-zinc-400 mb-4 font-body-main">
+          Sử dụng công cụ này để tính toán giây chạy intro/outro một cách chính
+          xác.
+        </p>
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <div>
+            <label class="block text-[10px] text-zinc-400 uppercase mb-1"
+              >Giờ</label
+            >
+            <input
+              type="number"
+              id="calcH"
+              min="0"
+              value="0"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 focus:outline-none text-center text-sm font-semibold"
+            />
+          </div>
+          <div>
+            <label class="block text-[10px] text-zinc-400 uppercase mb-1"
+              >Phút</label
+            >
+            <input
+              type="number"
+              id="calcM"
+              min="0"
+              max="59"
+              value="0"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 focus:outline-none text-center text-sm font-semibold"
+            />
+          </div>
+          <div>
+            <label class="block text-[10px] text-zinc-400 uppercase mb-1"
+              >Giây</label
+            >
+            <input
+              type="number"
+              id="calcS"
+              min="0"
+              max="59"
+              value="0"
+              class="w-full bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 focus:outline-none text-center text-sm font-semibold"
+            />
+          </div>
+        </div>
+        <div
+          class="bg-zinc-950/60 p-4 rounded-xl text-center border border-glass-stroke/50 mb-4"
+        >
+          <span
+            class="text-[10px] text-zinc-500 uppercase tracking-widest block"
+            >Kết quả giây</span
+          >
+          <span
+            class="text-2xl font-black text-emerald-400 mt-1 block"
+            id="calcResult">0 giây</span
+          >
+        </div>
+        <button
+          id="copyCalcBtn"
+          class="w-full py-2.5 border border-glass-stroke hover:bg-white/5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1"
+        >
+          <span class="material-symbols-outlined text-sm">content_copy</span> Sao
+          chép số giây
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Server & Episode Templates -->
+  <script is:inline>
+    // State management for manual creator
+    let movieData = {
+      movie: {
+        name: "",
+        origin_name: "",
+        slug: "",
+        type: "series",
+        status: "ongoing",
+        poster_url: "",
+        thumb_url: "",
+        trailer_url: "",
+        category: "",
+        country: "",
+        year: 2025,
+        time: "",
+        quality: "FHD",
+        lang: "Vietsub",
+        episode_current: "",
+        episode_total: "",
+        actor: [],
+        director: [],
+      },
+      episodes: [], // [{server_name: '', server_data: [{name: '', slug: '', link_m3u8: '', link_embed: '', filename: '', time_intro_start: 0, time_intro_end: 0, time_outro_start: 0, time_outro_end: 0, subtitles: []}]}]
+    };
+
+    let activeMode = "local"; // 'local' | 'api'
+    let isEditMode = false;
+    let editSlug = "";
+
+    // Elements
+    const pageTitle = document.getElementById("pageTitle");
+    const saveMovieBtn = document.getElementById("saveMovieBtn");
+    const modeLocalBtn = document.getElementById("modeLocalBtn");
+    const modeApiBtn = document.getElementById("modeApiBtn");
+    const apiLoadPanel = document.getElementById("apiLoadPanel");
+    const movieInfoCard = document.getElementById("movieInfoCard");
+    const formatCard = document.getElementById("formatCard");
+    const serversContainer = document.getElementById("serversContainer");
+    const emptyServers = document.getElementById("emptyServers");
+    const addServerBtn = document.getElementById("addServerBtn");
+
+    // Load initial values from URL query
+    function checkURLMode() {
+      const params = new URLSearchParams(window.location.search);
+      const edit = params.get("edit");
+
+      if (edit) {
+        isEditMode = true;
+        editSlug = edit;
+        pageTitle.textContent = `Chỉnh sửa phim: ${edit}`;
+        loadLocalMovieForEdit(edit);
+      } else {
+        renderServers();
+      }
+    }
+
+    // Toggle creation modes
+    modeLocalBtn.addEventListener("click", () => {
+      if (isEditMode) return;
+      activeMode = "local";
+      modeLocalBtn.className =
+        "p-4 rounded-2xl border text-left transition-all cursor-pointer bg-primary/10 border-primary text-primary";
+      modeApiBtn.className =
+        "p-4 rounded-2xl border text-left transition-all cursor-pointer bg-zinc-900 border-glass-stroke text-zinc-400 hover:text-white hover:border-zinc-700";
+      apiLoadPanel.classList.add("hidden");
+      movieInfoCard.classList.remove("opacity-40", "pointer-events-none");
+      formatCard.classList.remove("opacity-40", "pointer-events-none");
+    });
+
+    modeApiBtn.addEventListener("click", () => {
+      if (isEditMode) return;
+      activeMode = "api";
+      modeApiBtn.className =
+        "p-4 rounded-2xl border text-left transition-all cursor-pointer bg-primary/10 border-primary text-primary";
+      modeLocalBtn.className =
+        "p-4 rounded-2xl border text-left transition-all cursor-pointer bg-zinc-900 border-glass-stroke text-zinc-400 hover:text-white hover:border-zinc-700";
+      apiLoadPanel.classList.remove("hidden");
+      // Dim information form to highlight we only edit episodes configuration
+      movieInfoCard.classList.add("opacity-40", "pointer-events-none");
+      formatCard.classList.add("opacity-40", "pointer-events-none");
+    });
+
+    // Calc time converter
+    const calcH = document.getElementById("calcH");
+    const calcM = document.getElementById("calcM");
+    const calcS = document.getElementById("calcS");
+    const calcResult = document.getElementById("calcResult");
+    const copyCalcBtn = document.getElementById("copyCalcBtn");
+
+    function updateTimeCalc() {
+      const h = parseInt(calcH.value) || 0;
+      const m = parseInt(calcM.value) || 0;
+      const s = parseInt(calcS.value) || 0;
+      const total = h * 3600 + m * 60 + s;
+      calcResult.textContent = `${total} giây`;
+    }
+    calcH.addEventListener("input", updateTimeCalc);
+    calcM.addEventListener("input", updateTimeCalc);
+    calcS.addEventListener("input", updateTimeCalc);
+
+    copyCalcBtn.addEventListener("click", () => {
+      const text = calcResult.textContent.split(" ")[0];
+      navigator.clipboard.writeText(text);
+      if (window.showGlobalToast)
+        window.showGlobalToast("Đã sao chép tổng số giây!", "success");
+    });
+
+    // Server Management
+    addServerBtn.addEventListener("click", () => {
+      const defaultName = `Server VIP ${movieData.episodes.length + 1}`;
+      movieData.episodes.push({
+        server_name: defaultName,
+        server_data: [],
+      });
+      renderServers();
+      if (window.showGlobalToast)
+        window.showGlobalToast("Đã thêm máy chủ phát mới!", "info");
+    });
+
+    function deleteServer(serverIdx) {
+      if (
+        !confirm(
+          "Bạn có chắc chắn muốn xóa Server này cùng toàn bộ danh sách tập phim thuộc về nó?",
+        )
+      )
+        return;
+      movieData.episodes.splice(serverIdx, 1);
+      renderServers();
+    }
+
+    function addEpisode(serverIdx) {
+      const server = movieData.episodes[serverIdx];
+      const count = server.server_data.length + 1;
+      server.server_data.push({
+        name: `Tập ${count.toString().padStart(2, "0")}`,
+        slug: `tap-${count}`,
+        link_m3u8: "",
+        link_embed: "",
+        filename: "",
+        time_intro_start: 0,
+        time_intro_end: 0,
+        time_outro_start: 0,
+        time_outro_end: 0,
+        subtitles: [], // {label: '', file: '', default: false}
+      });
+      renderServers();
+    }
+
+    function deleteEpisode(serverIdx, epIdx) {
+      movieData.episodes[serverIdx].server_data.splice(epIdx, 1);
+      renderServers();
+    }
+
+    // Subtitle management per episode
+    function addSubtitle(serverIdx, epIdx) {
+      const ep = movieData.episodes[serverIdx].server_data[epIdx];
+      if (!ep.subtitles) ep.subtitles = [];
+
+      const defaultLabel =
+        ep.subtitles.length === 0
+          ? "Tiếng Việt"
+          : `Phụ đề ${ep.subtitles.length + 1}`;
+      ep.subtitles.push({
+        label: defaultLabel,
+        file: "",
+        default: ep.subtitles.length === 0, // default true for first sub
+      });
+      renderServers();
+    }
+
+    function deleteSubtitle(serverIdx, epIdx, subIdx) {
+      movieData.episodes[serverIdx].server_data[epIdx].subtitles.splice(
+        subIdx,
+        1,
+      );
+      renderServers();
+    }
+
+    function toggleSubDefault(serverIdx, epIdx, subIdx) {
+      const subs = movieData.episodes[serverIdx].server_data[epIdx].subtitles;
+      subs.forEach((sub, sIdx) => {
+        sub.default = sIdx === subIdx;
+      });
+      renderServers();
+    }
+
+    // Render configuration UI
+    function renderServers() {
+      if (movieData.episodes.length === 0) {
+        serversContainer.innerHTML = "";
+        emptyServers.classList.remove("hidden");
+        return;
+      }
+      emptyServers.classList.add("hidden");
+
+      serversContainer.innerHTML = movieData.episodes
+        .map((server, serverIdx) => {
+          const episodesHtml = server.server_data
+            .map((ep, epIdx) => {
+              // Render subtitles list
+              const subsList = ep.subtitles || [];
+              const subsHtml = subsList
+                .map((sub, subIdx) => {
+                  return `
+              <div class="flex flex-wrap items-center gap-2 p-2 bg-zinc-950 rounded-lg border border-glass-stroke/50">
+                <input type="text" class="flex-1 min-w-[80px] bg-zinc-900 border border-glass-stroke rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary" 
+                       placeholder="Nhãn (ví dụ: Tiếng Việt)" value="${sub.label}" 
+                       oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].subtitles[${subIdx}].label = this.value"/>
+                <input type="text" class="flex-[3] min-w-[150px] bg-zinc-900 border border-glass-stroke rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-mono" 
+                       placeholder="URL file SRT/VTT" value="${sub.file}" 
+                       oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].subtitles[${subIdx}].file = this.value"/>
+                <label class="flex items-center gap-1 text-[10px] font-bold text-zinc-400 select-none cursor-pointer">
+                  <input type="radio" name="sub-def-${serverIdx}-${epIdx}" ${sub.default ? "checked" : ""} 
+                         onchange="toggleSubDefault(${serverIdx}, ${epIdx}, ${subIdx})" class="accent-primary"/> Mặc định
+                </label>
+                <button type="button" onclick="deleteSubtitle(${serverIdx}, ${epIdx}, ${subIdx})" class="text-red-400 hover:text-red-500 font-bold p-1 cursor-pointer">
+                  <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+              </div>
+            `;
+                })
+                .join("");
+
+              return `
+            <div class="p-4 bg-zinc-900/60 border border-glass-stroke/70 rounded-2xl relative space-y-4">
+              <!-- Header episode delete -->
+              <div class="flex justify-between items-center gap-2">
+                <input type="text" class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-xs font-bold text-white w-28 focus:outline-none" 
+                       placeholder="Tên tập" value="${ep.name}" 
+                       oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].name = this.value; movieData.episodes[${serverIdx}].server_data[${epIdx}].slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')"/>
+                <button type="button" onclick="deleteEpisode(${serverIdx}, ${epIdx})" class="text-zinc-500 hover:text-red-400 p-1 cursor-pointer" title="Xóa tập này">
+                  <span class="material-symbols-outlined text-lg">delete</span>
+                </button>
+              </div>
+
+              <!-- Stream URL inputs -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Đường dẫn m3u8 (HLS)</label>
+                  <input type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-2 px-3 text-xs focus:outline-none text-zinc-200 font-mono" 
+                         placeholder="https://example.com/play/index.m3u8" value="${ep.link_m3u8 || ep.linkM3u8 || ""}" 
+                         oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].link_m3u8 = this.value"/>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Đường dẫn Embed phát trực tiếp</label>
+                  <input type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-2 px-3 text-xs focus:outline-none text-zinc-200 font-mono" 
+                         placeholder="https://example.com/embed/player" value="${ep.link_embed || ep.linkEmbed || ""}" 
+                         oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].link_embed = this.value"/>
+                </div>
+              </div>
+
+              <!-- Timings configurations -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div>
+                  <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Bắt đầu Intro (giây)</label>
+                  <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs focus:outline-none text-center" 
+                         value="${ep.time_intro_start || ep.timeIntroStart || 0}" 
+                         oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].time_intro_start = parseInt(this.value) || 0"/>
+                </div>
+                <div>
+                  <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Bỏ qua Intro (giây)</label>
+                  <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs focus:outline-none text-center" 
+                         value="${ep.time_intro_end || ep.timeIntroEnd || 0}" 
+                         oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].time_intro_end = parseInt(this.value) || 0"/>
+                </div>
+                <div>
+                  <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Bỏ qua Outro (giây)</label>
+                  <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs focus:outline-none text-center" 
+                         value="${ep.time_outro_start || ep.timeOutroStart || 0}" 
+                         oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].time_outro_start = parseInt(this.value) || 0"/>
+                </div>
+                <div>
+                  <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Bỏ qua Outro đến (giây)</label>
+                  <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs focus:outline-none text-center" 
+                         value="${ep.time_outro_end || ep.timeOutroEnd || 0}" 
+                         oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].time_outro_end = parseInt(this.value) || 0"/>
+                </div>
+              </div>
+
+              <!-- Airing schedule for this episode -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-glass-stroke/30">
+                <div>
+                  <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Ngày chiếu tập này</label>
+                  <input type="date" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1 px-2.5 text-xs focus:outline-none text-zinc-200" 
+                         value="${ep.air_date || ep.airDate || ""}" 
+                         oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].air_date = this.value; movieData.episodes[${serverIdx}].server_data[${epIdx}].airDate = this.value"/>
+                </div>
+                <div>
+                  <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Giờ chiếu tập này</label>
+                  <input type="time" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1 px-2.5 text-xs focus:outline-none text-zinc-200" 
+                         value="${ep.air_time || ep.airTime || ""}" 
+                         oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].air_time = this.value; movieData.episodes[${serverIdx}].server_data[${epIdx}].airTime = this.value"/>
+                </div>
+              </div>
+
+              <!-- Subtitle lists -->
+              <div class="mt-2 space-y-2">
+                <span class="block text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Danh sách phụ đề tập</span>
+                <div class="space-y-1.5 subtitle-list">
+                  ${subsHtml}
+                  ${subsList.length === 0 ? '<p class="text-[10px] text-zinc-600 italic">Chưa có phụ đề nào.</p>' : ""}
+                </div>
+                <button type="button" onclick="addSubtitle(${serverIdx}, ${epIdx})" class="text-[10px] text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer">
+                  <span class="material-symbols-outlined text-[12px]">add</span> Thêm phụ đề
+                </button>
+              </div>
+
+            </div>
+          `;
+            })
+            .join("");
+
+          return `
+          <div class="p-5 bg-zinc-950/30 border border-glass-stroke rounded-2xl space-y-4">
+            <div class="flex justify-between items-center gap-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-zinc-500">dns</span>
+                <input type="text" class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-sm font-bold text-white w-48 focus:outline-none" 
+                       placeholder="Tên Server" value="${server.server_name}" 
+                       oninput="movieData.episodes[${serverIdx}].server_name = this.value"/>
+              </div>
+              <button type="button" onclick="deleteServer(${serverIdx})" class="text-red-400 hover:text-red-500 font-bold p-1 cursor-pointer flex items-center gap-1 text-xs">
+                <span class="material-symbols-outlined text-sm">close</span> Xóa Server
+              </button>
+            </div>
+            
+            <div class="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+              ${episodesHtml}
+              ${server.server_data.length === 0 ? '<p class="text-xs text-zinc-500 italic p-3 text-center bg-zinc-900/30 rounded-xl">Chưa có tập phim nào trên server này.</p>' : ""}
+            </div>
+
+            <button type="button" onclick="addEpisode(${serverIdx})" class="w-full py-2.5 bg-zinc-900 border border-dashed border-glass-stroke hover:bg-white/5 text-xs text-zinc-300 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer">
+              + Thêm tập phim mới vào Server này
+            </button>
+          </div>
+        `;
+        })
+        .join("");
+    }
+
+    // Load local movie if edit mode
+    function loadLocalMovieForEdit(slug) {
+      const listStr = localStorage.getItem("txa_crawled_movies") || "[]";
+      let list = [];
+      try {
+        list = JSON.parse(listStr);
+      } catch (e) {}
+
+      const found = list.find((m) => (m.movie?.slug || m.slug) === slug);
+      if (found) {
+        const m = found.movie || found;
+        movieData.movie = {
+          name: m.title || m.name || "",
+          origin_name: m.originalTitle || m.origin_name || "",
+          slug: m.slug || slug,
+          type: m.type || "series",
+          status: m.status || "ongoing",
+          poster_url: m.posterUrl || m.poster_url || "",
+          thumb_url: m.bannerUrl || m.thumb_url || m.posterUrl || "",
+          trailer_url: m.trailerUrl || m.trailer_url || "",
+          category: m.category || "",
+          country: m.country || "",
+          year: m.releaseYear || m.year || 2025,
+          time: m.durationMinutes || m.time || "",
+          quality: m.quality || "FHD",
+          lang: m.lang || "Vietsub",
+          episode_current: m.episodeCurrent || m.episode_current || "",
+          episode_total: m.episodeTotal || m.episode_total || "",
+          actor: m.actors || m.actor || [],
+          director: m.directors || m.director || [],
+          pinned: found.pinned || m.pinned || false,
+        };
+
+        // Load episodes
+        const rawEps = found.episodes || [];
+        movieData.episodes = rawEps.map((server) => {
+          const srvData = server.serverData || server.server_data || [];
+          return {
+            server_name:
+              server.serverName || server.server_name || "Server VIP",
+            server_data: srvData.map((ep) => {
+              return {
+                name: ep.name || "",
+                slug: ep.slug || `tap-${ep.name}`,
+                filename: ep.filename || "",
+                link_m3u8: ep.linkM3u8 || ep.link_m3u8 || "",
+                link_embed: ep.linkEmbed || ep.link_embed || "",
+                time_intro_start:
+                  ep.timeIntroStart !== undefined
+                    ? ep.timeIntroStart
+                    : ep.time_intro_start || 0,
+                time_intro_end:
+                  ep.timeIntroEnd !== undefined
+                    ? ep.timeIntroEnd
+                    : ep.time_intro_end || 0,
+                time_outro_start:
+                  ep.timeOutroStart !== undefined
+                    ? ep.timeOutroStart
+                    : ep.time_outro_start || 0,
+                time_outro_end:
+                  ep.timeOutroEnd !== undefined
+                    ? ep.timeOutroEnd
+                    : ep.time_outro_end || 0,
+                subtitles: ep.subtitles || ep.subtitles_data || [],
+              };
+            }),
+          };
+        });
+
+        // Fill form fields
+        document.getElementById("movieTitle").value = movieData.movie.name;
+        document.getElementById("movieOriginalTitle").value =
+          movieData.movie.origin_name;
+        document.getElementById("movieSlug").value = movieData.movie.slug;
+        document.getElementById("movieSlug").disabled = true;
+        document.getElementById("movieType").value = movieData.movie.type;
+        document.getElementById("movieStatus").value = movieData.movie.status;
+        document.getElementById("moviePosterUrl").value =
+          movieData.movie.poster_url;
+        document.getElementById("movieBannerUrl").value =
+          movieData.movie.thumb_url;
+        document.getElementById("movieTrailerUrl").value =
+          movieData.movie.trailer_url;
+        document.getElementById("movieCategory").value =
+          movieData.movie.category;
+        document.getElementById("movieCountry").value = movieData.movie.country;
+        document.getElementById("movieActors").value =
+          movieData.movie.actor.join(", ");
+        document.getElementById("movieDirectors").value =
+          movieData.movie.director.join(", ");
+        document.getElementById("movieDescription").value =
+          movieData.movie.content || found.description || "";
+        document.getElementById("movieQuality").value = movieData.movie.quality;
+        document.getElementById("movieLang").value = movieData.movie.lang;
+        document.getElementById("movieEpCurrent").value =
+          movieData.movie.episode_current;
+        document.getElementById("movieEpTotal").value =
+          movieData.movie.episode_total;
+        document.getElementById("movieYear").value = movieData.movie.year;
+        document.getElementById("movieTime").value = movieData.movie.time;
+        document.getElementById("moviePinned").checked =
+          !!movieData.movie.pinned;
+
+        // Fill broadcastSchedule if exists
+        if (found.broadcastSchedule) {
+          document.getElementById("scheduleDate").value =
+            found.broadcastSchedule.nextDate || "";
+          document.getElementById("scheduleTime").value =
+            found.broadcastSchedule.nextTime || "";
+          document.getElementById("scheduleNotice").value =
+            found.broadcastSchedule.notice || "";
+        }
+
+        renderServers();
+      } else {
+        // Check if there is an episode metadata config for this movie
+        const storedConfig = localStorage.getItem("txa_episodes_config");
+        if (storedConfig) {
+          const config = JSON.parse(storedConfig);
+          const movieConfig = config[slug];
+          if (movieConfig) {
+            // Edit mode for API config override
+            activeMode = "api";
+            isEditMode = true;
+            modeApiBtn.className =
+              "p-4 rounded-2xl border text-left transition-all cursor-pointer bg-primary/10 border-primary text-primary";
+            modeLocalBtn.className =
+              "p-4 rounded-2xl border text-left transition-all cursor-pointer bg-zinc-900 border-glass-stroke text-zinc-400 hover:text-white hover:border-zinc-700 pointer-events-none opacity-40";
+            apiLoadPanel.classList.remove("hidden");
+            document.getElementById("apiMovieSlug").value = slug;
+            document.getElementById("apiMovieSlug").disabled = true;
+            movieInfoCard.classList.add("opacity-40", "pointer-events-none");
+            formatCard.classList.add("opacity-40", "pointer-events-none");
+
+            // Allow broadcastSchedule input for API mode
+            const broadcastSec = document.getElementById(
+              "broadcastScheduleSection",
+            );
+            if (broadcastSec)
+              broadcastSec.style.cssText =
+                "pointer-events: auto !important; opacity: 1 !important;";
+
+            loadApiMovieEpisodes(slug, movieConfig);
+          }
+        }
+      }
+    }
+
+    // Quick Import API autofill
+    const quickImportBtn = document.getElementById("quickImportBtn");
+    quickImportBtn.addEventListener("click", async () => {
+      const urlInput = document.getElementById("quickImportUrl").value.trim();
+      if (!urlInput) {
+        if (window.showGlobalToast)
+          window.showGlobalToast("Vui lòng nhập link phim hoặc slug!", "error");
+        return;
+      }
+
+      let slug = urlInput;
+      // Extract slug from URL if pasted
+      try {
+        if (urlInput.startsWith("http://") || urlInput.startsWith("https://")) {
+          const url = new URL(urlInput);
+          const pathParts = url.pathname.split("/");
+          const phimIdx = pathParts.indexOf("phim");
+          if (phimIdx !== -1 && pathParts[phimIdx + 1]) {
+            slug = pathParts[phimIdx + 1];
+          } else {
+            slug = pathParts[pathParts.length - 1] || urlInput;
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing import URL:", e);
+      }
+
+      quickImportBtn.disabled = true;
+      quickImportBtn.innerHTML =
+        '<span class="animate-spin material-symbols-outlined text-sm">autorenew</span> Đang nạp...';
+
+      try {
+        const res = await fetch(`https://phimapi.com/phim/${slug}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (data && data.movie) {
+          const m = data.movie;
+
+          // Autofill form inputs
+          document.getElementById("movieTitle").value = m.name || "";
+          document.getElementById("movieOriginalTitle").value =
+            m.origin_name || "";
+          document.getElementById("movieSlug").value = m.slug || slug;
+
+          let movieTypeVal = "series";
+          if (m.type === "single") movieTypeVal = "movie";
+          else if (m.type === "hoathinh") movieTypeVal = "hoathinh";
+          else if (m.type === "tvshows") movieTypeVal = "tvshows";
+          document.getElementById("movieType").value = movieTypeVal;
+          document.getElementById("movieStatus").value =
+            m.status === "completed" ? "completed" : "ongoing";
+
+          const cdnDomain = "https://phimimg.com";
+          let posterUrl = m.poster_url || "";
+          if (posterUrl && !posterUrl.startsWith("http")) {
+            const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, "");
+            posterUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+          }
+          let bannerUrl = m.thumb_url || m.poster_url || "";
+          if (bannerUrl && !bannerUrl.startsWith("http")) {
+            const cleanPath = bannerUrl.replace(/^\/?uploads\/movies\//, "");
+            bannerUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+          }
+
+          document.getElementById("moviePosterUrl").value = posterUrl;
+          document.getElementById("movieBannerUrl").value = bannerUrl;
+          document.getElementById("movieTrailerUrl").value =
+            m.trailer_url || "";
+
+          let categoryName = "Khác";
+          if (Array.isArray(m.category) && m.category.length > 0) {
+            categoryName = m.category.map((c) => c.name).join(", ");
+          }
+          document.getElementById("movieCategory").value = categoryName;
+
+          let countryName = "";
+          if (Array.isArray(m.country) && m.country.length > 0) {
+            countryName = m.country[0].name;
+          }
+          document.getElementById("movieCountry").value = countryName;
+
+          const actors = Array.isArray(m.actor)
+            ? m.actor.filter(Boolean).join(", ")
+            : "";
+          document.getElementById("movieActors").value = actors;
+
+          const directors = Array.isArray(m.director)
+            ? m.director.filter(Boolean).join(", ")
+            : "";
+          document.getElementById("movieDirectors").value = directors;
+
+          document.getElementById("movieDescription").value = m.content
+            ? m.content.replace(/<[^>]*>/g, "")
+            : "";
+          document.getElementById("movieQuality").value = m.quality || "FHD";
+          document.getElementById("movieLang").value = m.lang || "Vietsub";
+          document.getElementById("movieEpCurrent").value =
+            m.episode_current || "";
+          document.getElementById("movieEpTotal").value = m.episode_total || "";
+          document.getElementById("movieYear").value = m.year || 2026;
+          document.getElementById("movieTime").value = m.time || "";
+
+          // Import episodes
+          if (Array.isArray(data.episodes)) {
+            movieData.episodes = data.episodes.map((server) => {
+              const srvData = server.server_data || [];
+              return {
+                server_name: server.server_name || "Server VIP",
+                server_data: srvData.map((ep) => {
+                  let epName = ep.name || "";
+                  if (epName.trim().match(/^\d+$/)) {
+                    epName = `Tập ${epName.padStart(2, "0")}`;
+                  }
+                  return {
+                    name: epName,
+                    slug: ep.slug || `tap-${ep.name}`,
+                    filename: ep.filename || `${m.name} - ${epName}`,
+                    link_m3u8: ep.link_m3u8 || "",
+                    link_embed: ep.link_embed || "",
+                    time_intro_start: 0,
+                    time_intro_end: 0,
+                    time_outro_start: 0,
+                    time_outro_end: 0,
+                    subtitles: [],
+                  };
+                }),
+              };
+            });
+            renderServers();
+          }
+
+          if (window.showGlobalToast)
+            window.showGlobalToast(
+              "Đã nạp và tự điền dữ liệu thành công!",
+              "success",
+            );
+        } else {
+          throw new Error("Dữ liệu API không chứa thông tin phim.");
+        }
+      } catch (e) {
+        if (window.showGlobalToast)
+          window.showGlobalToast("Lỗi nạp nhanh phim: " + e.message, "error");
+      } finally {
+        quickImportBtn.disabled = false;
+        quickImportBtn.innerHTML =
+          '<span class="material-symbols-outlined text-sm">bolt</span> Nạp & Tự điền';
+      }
+    });
+
+    // Load episodes from phimapi for metadata config override
+    const loadApiMovieBtn = document.getElementById("loadApiMovieBtn");
+    loadApiMovieBtn.addEventListener("click", async () => {
+      const slug = document.getElementById("apiMovieSlug").value.trim();
+      if (!slug) {
+        if (window.showGlobalToast)
+          window.showGlobalToast("Vui lòng nhập slug phim!", "error");
+        return;
+      }
+
+      loadApiMovieEpisodes(slug);
+    });
+
+    async function loadApiMovieEpisodes(slug, existingConfig = null) {
+      loadApiMovieBtn.disabled = true;
+      loadApiMovieBtn.innerHTML =
+        '<span class="animate-spin material-symbols-outlined text-sm">autorenew</span> Đang tải...';
+
+      try {
+        const res = await fetch(`https://phimapi.com/phim/${slug}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (data && data.movie && Array.isArray(data.episodes)) {
+          movieData.movie.slug = slug;
+
+          movieData.episodes = data.episodes.map((server) => {
+            const srvData = server.server_data || [];
+            return {
+              server_name: server.server_name || "Server VIP",
+              server_data: srvData.map((ep) => {
+                let epName = ep.name || "";
+                if (epName.trim().match(/^\d+$/)) {
+                  epName = `Tập ${epName.padStart(2, "0")}`;
+                }
+
+                // Read from existing config if available
+                const epSlug = ep.slug || `tap-${ep.name}`;
+                const localEpConfig = existingConfig
+                  ? existingConfig[epSlug]
+                  : null;
+
+                return {
+                  name: epName,
+                  slug: epSlug,
+                  filename: ep.filename || "",
+                  link_m3u8: ep.link_m3u8 || "",
+                  link_embed: ep.link_embed || "",
+                  time_intro_start: localEpConfig
+                    ? localEpConfig.timeIntroStart
+                    : 0,
+                  time_intro_end: localEpConfig
+                    ? localEpConfig.timeIntroEnd
+                    : 0,
+                  time_outro_start: localEpConfig
+                    ? localEpConfig.timeOutroStart
+                    : 0,
+                  time_outro_end: localEpConfig
+                    ? localEpConfig.timeOutroEnd
+                    : 0,
+                  subtitles: localEpConfig ? localEpConfig.subtitles : [],
+                  airDate: localEpConfig ? localEpConfig.airDate : "",
+                  airTime: localEpConfig ? localEpConfig.airTime : "",
+                };
+              }),
+            };
+          });
+
+          // Fill broadcastSchedule for API mode if exists
+          if (existingConfig && existingConfig.broadcastSchedule) {
+            document.getElementById("scheduleDate").value =
+              existingConfig.broadcastSchedule.nextDate || "";
+            document.getElementById("scheduleTime").value =
+              existingConfig.broadcastSchedule.nextTime || "";
+            document.getElementById("scheduleNotice").value =
+              existingConfig.broadcastSchedule.notice || "";
+          }
+
+          document.getElementById("moviePinned").checked = !!(
+            existingConfig && existingConfig.pinned
+          );
+
+          renderServers();
+          if (window.showGlobalToast)
+            window.showGlobalToast("Tải danh sách tập thành công!", "success");
+        } else {
+          throw new Error("Dữ liệu API không chứa tập phim.");
+        }
+      } catch (e) {
+        if (window.showGlobalToast)
+          window.showGlobalToast(
+            "Không thể tải tập phim API: " + e.message,
+            "error",
+          );
+      } finally {
+        loadApiMovieBtn.disabled = false;
+        loadApiMovieBtn.innerHTML =
+          '<span class="material-symbols-outlined text-sm">download</span> Tải tập phim';
+      }
+    }
+
+    // Save Data Click
+    saveMovieBtn.addEventListener("click", async () => {
+      const scheduleDate = document.getElementById("scheduleDate").value;
+      const scheduleTime = document.getElementById("scheduleTime").value;
+      const scheduleNotice = document
+        .getElementById("scheduleNotice")
+        .value.trim();
+
+      const broadcastSchedule =
+        scheduleDate || scheduleTime || scheduleNotice
+          ? {
+              nextDate: scheduleDate,
+              nextTime: scheduleTime,
+              notice: scheduleNotice,
+            }
+          : undefined;
+
+      if (activeMode === "local") {
+        const title = document.getElementById("movieTitle").value.trim();
+        if (!title) {
+          if (window.showGlobalToast)
+            window.showGlobalToast("Vui lòng điền tên phim!", "error");
+          return;
+        }
+
+        let slug = document.getElementById("movieSlug").value.trim();
+        if (!slug) {
+          slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        }
+
+        // Map inputs
+        movieData.movie.name = title;
+        movieData.movie.origin_name = document
+          .getElementById("movieOriginalTitle")
+          .value.trim();
+        movieData.movie.slug = slug;
+        movieData.movie.type = document.getElementById("movieType").value;
+        movieData.movie.status = document.getElementById("movieStatus").value;
+        movieData.movie.poster_url = document
+          .getElementById("moviePosterUrl")
+          .value.trim();
+        movieData.movie.thumb_url = document
+          .getElementById("movieBannerUrl")
+          .value.trim();
+        movieData.movie.trailer_url = document
+          .getElementById("movieTrailerUrl")
+          .value.trim();
+        movieData.movie.category = document
+          .getElementById("movieCategory")
+          .value.trim();
+        movieData.movie.country = document
+          .getElementById("movieCountry")
+          .value.trim();
+
+        movieData.movie.quality =
+          document.getElementById("movieQuality").value.trim() || "FHD";
+        movieData.movie.lang =
+          document.getElementById("movieLang").value.trim() || "Vietsub";
+        movieData.movie.episode_current = document
+          .getElementById("movieEpCurrent")
+          .value.trim();
+        movieData.movie.episode_total = document
+          .getElementById("movieEpTotal")
+          .value.trim();
+        movieData.movie.year =
+          parseInt(document.getElementById("movieYear").value) || 2025;
+        movieData.movie.time = document
+          .getElementById("movieTime")
+          .value.trim();
+
+        const actorsStr = document.getElementById("movieActors").value.trim();
+        movieData.movie.actor = actorsStr
+          ? actorsStr
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [];
+        const directorsStr = document
+          .getElementById("movieDirectors")
+          .value.trim();
+        movieData.movie.director = directorsStr
+          ? directorsStr
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [];
+        movieData.movie.content = document
+          .getElementById("movieDescription")
+          .value.trim();
+
+        // Construct final MovieDetail
+        const movieDetailObj = {
+          id: isEditMode
+            ? movieData.movie.id || `local-${slug}`
+            : `local-${slug}-${Date.now()}`,
+          title: movieData.movie.name,
+          originalTitle: movieData.movie.origin_name,
+          slug: movieData.movie.slug,
+          pinned: document.getElementById("moviePinned").checked,
+          description: movieData.movie.content,
+          posterUrl:
+            movieData.movie.poster_url ||
+            "https://png.pngtree.com/thumb_back/fh260/background/20250415/pngtree-a-glowing-film-reel-standing-vertically-in-front-image_17193146.jpg",
+          bannerUrl:
+            movieData.movie.thumb_url ||
+            movieData.movie.poster_url ||
+            "https://png.pngtree.com/thumb_back/fh260/background/20250415/pngtree-a-glowing-film-reel-standing-vertically-in-front-image_17193146.jpg",
+          releaseYear: movieData.movie.year,
+          durationMinutes: movieData.movie.time || "120 phút",
+          type: movieData.movie.type,
+          status: movieData.movie.status,
+          episodeCurrent: movieData.movie.episode_current || "Full",
+          episodeTotal: movieData.movie.episode_total || "1",
+          quality: movieData.movie.quality,
+          lang: movieData.movie.lang,
+          imdbScore: 8.0,
+          category: movieData.movie.category || "Khác",
+          genres: movieData.movie.category
+            ? movieData.movie.category
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [],
+          actors: movieData.movie.actor,
+          directors: movieData.movie.director,
+          trailerUrl: movieData.movie.trailer_url,
+          seasons: movieData.movie.type === "movie" ? "Bản Điện Ảnh" : "Phần 1",
+          broadcastSchedule: broadcastSchedule,
+          updatedAt: new Date().toISOString(),
+          episodes: movieData.episodes.map((server) => {
+            return {
+              serverName: server.server_name || "Server VIP",
+              serverData: server.server_data.map((ep) => {
+                return {
+                  name: ep.name,
+                  slug: ep.slug || `tap-${ep.name}`,
+                  filename:
+                    ep.filename || `${movieData.movie.name} - ${ep.name}`,
+                  linkEmbed: ep.link_embed || "",
+                  linkM3u8: ep.link_m3u8 || "",
+                  timeIntroStart: ep.time_intro_start || 0,
+                  timeIntroEnd: ep.time_intro_end || 0,
+                  timeOutroStart: ep.time_outro_start || 0,
+                  timeOutroEnd: ep.time_outro_end || 0,
+                  subtitles: ep.subtitles || [],
+                  airDate: ep.airDate || ep.air_date || "",
+                  airTime: ep.airTime || ep.air_time || "",
+                };
+              }),
+            };
+          }),
+        };
+
+        // Save
+        const listStr = localStorage.getItem("txa_crawled_movies") || "[]";
+        let list = [];
+        try {
+          list = JSON.parse(listStr);
+        } catch (e) {}
+
+        if (isEditMode) {
+          list = list.filter((m) => (m.movie?.slug || m.slug) !== editSlug);
+        } else {
+          // Check duplicate slug
+          const dup = list.find((m) => (m.movie?.slug || m.slug) === slug);
+          if (dup) {
+            if (window.showGlobalToast)
+              window.showGlobalToast(
+                "Slug phim bị trùng! Vui lòng nhập slug khác.",
+                "error",
+              );
+            return;
+          }
+        }
+
+        list.unshift(movieDetailObj);
+        localStorage.setItem("txa_crawled_movies", JSON.stringify(list));
+
+        if (window.showGlobalToast)
+          window.showGlobalToast("Lưu phim thủ công thành công!", "success");
+
+        setTimeout(() => {
+          window.location.href = "/admin";
+        }, 1200);
+      } else {
+        // API METADATA OVERRIDE MODE
+        const slug = document.getElementById("apiMovieSlug").value.trim();
+        if (!slug) {
+          if (window.showGlobalToast)
+            window.showGlobalToast("Vui lòng nhập slug phim!", "error");
+          return;
+        }
+
+        if (movieData.episodes.length === 0) {
+          if (window.showGlobalToast)
+            window.showGlobalToast(
+              "Chưa có thông tin tập phim để lưu!",
+              "error",
+            );
+          return;
+        }
+
+        // Construct map configuration
+        const epConfigMap = {};
+        if (broadcastSchedule) {
+          epConfigMap.broadcastSchedule = broadcastSchedule;
+        }
+        epConfigMap.pinned = document.getElementById("moviePinned").checked;
+        movieData.episodes.forEach((server) => {
+          server.server_data.forEach((ep) => {
+            epConfigMap[ep.slug] = {
+              timeIntroStart: ep.time_intro_start || 0,
+              timeIntroEnd: ep.time_intro_end || 0,
+              timeOutroStart: ep.time_outro_start || 0,
+              timeOutroEnd: ep.time_outro_end || 0,
+              subtitles: ep.subtitles || [],
+              airDate: ep.airDate || ep.air_date || "",
+              airTime: ep.airTime || ep.air_time || "",
+            };
+          });
+        });
+
+        // Load existing global registry
+        const registryStr = localStorage.getItem("txa_episodes_config") || "{}";
+        let registry = {};
+        try {
+          registry = JSON.parse(registryStr);
+        } catch (e) {}
+
+        // Merge keeping other metadata if needed, write config map
+        registry[slug] = epConfigMap;
+        localStorage.setItem("txa_episodes_config", JSON.stringify(registry));
+
+        if (window.showGlobalToast)
+          window.showGlobalToast(
+            "Đã lưu cấu hình tập phim API thành công!",
+            "success",
+          );
+
+        setTimeout(() => {
+          window.location.href = "/admin";
+        }, 1200);
+      }
+    });
+
+    // Run initial checks
+    checkURLMode();
+  </script>
+</AdminLayout>

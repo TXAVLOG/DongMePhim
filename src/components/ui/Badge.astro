@@ -1,0 +1,23 @@
+---
+interface Props {
+  variant?: 'default' | 'primary' | 'secondary' | 'outline';
+  class?: string;
+}
+
+const { variant = 'default', class: className } = Astro.props;
+
+const baseStyles = "inline-flex items-center rounded font-label-caps text-label-caps transition-colors";
+
+const variants = {
+  default: "bg-white/10 text-white px-2 py-1",
+  primary: "bg-primary/20 text-primary px-2 py-1",
+  secondary: "bg-secondary/20 text-secondary px-2 py-1",
+  outline: "text-zinc-300 border border-zinc-700 bg-black/50 backdrop-blur-sm px-2 py-1",
+};
+
+// For HD/quality badges, they often use solid primary. We can let the user override with `class`.
+---
+
+<div class={`${baseStyles} ${variants[variant]} ${className || ''}`}>
+  <slot />
+</div>

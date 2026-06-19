@@ -1,0 +1,1457 @@
+---
+import '../styles/index.css';
+import { SettingService } from '../services/SettingService';
+import { MovieService } from '../services/MovieService';
+import { ClientRouter } from 'astro:transitions';
+import Txatooltip from '../components/ui/txatooltip.astro';
+import Txaicon from '../components/ui/txaicon.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  isHome?: boolean;
+  useTransition?: boolean;
+}
+
+const settings = await SettingService.getSettings();
+const popularMovies = await MovieService.getMovies({ limit: 12 });
+
+const { 
+  title, 
+  description = settings.general.site_description, 
+  image = "/favicon.png",
+  isHome = false,
+  useTransition = true
+} = Astro.props;
+
+const defaultTitle = `${settings.general.site_name} - Trải nghiệm điện ảnh đỉnh cao`;
+const pageTitle = isHome 
+  ? defaultTitle 
+  : (title ? `${title} | ${settings.general.site_name}` : defaultTitle);
+
+const socialLinks = [];
+if (settings.social?.social_fb_enable && settings.social?.social_fb_url) {
+  socialLinks.push({ platform: "Facebook", url: settings.social.social_fb_url, icon: "facebook" });
+}
+if (settings.social?.social_fb_group_enable && settings.social?.social_fb_group_url) {
+  socialLinks.push({ platform: "Facebook Group", url: settings.social.social_fb_group_url, icon: "facebook-group" });
+}
+if (settings.social?.social_telegram_enable && settings.social?.social_telegram_url) {
+  socialLinks.push({ platform: "Telegram", url: settings.social.social_telegram_url, icon: "telegram" });
+}
+if (settings.social?.social_tiktok_enable && settings.social?.social_tiktok_url) {
+  socialLinks.push({ platform: "TikTok", url: settings.social.social_tiktok_url, icon: "tiktok" });
+}
+if (settings.social?.social_zalo_group_enable && settings.social?.social_zalo_group_url) {
+  socialLinks.push({ platform: "Zalo Group", url: settings.social.social_zalo_group_url, icon: "zalo" });
+}
+
+const allMoviesForNav = await MovieService.getMovies();
+const uniqueCountries = [...new Set(allMoviesForNav.map(m => m.category).filter(Boolean))] as string[];
+const uniqueGenres = [...new Set(allMoviesForNav.flatMap(m => m.genres || []).filter(Boolean))] as string[];
+
+const slugify = (text: string) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+};
+
+const currentPath = Astro.url.pathname;
+const isActive = (path: string) => {
+  if (path === '/tphim') {
+    return currentPath === '/tphim';
+  }
+  return currentPath.startsWith(path);
+};
+---
+
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    {useTransition && <ClientRouter />}
+    <script is:inline>
+      function applyTheme() {
+        document.documentElement.classList.add('dark');
+        window.localStorage.setItem('theme', 'dark');
+      }
+      function hydrateSettings() {
+        if (typeof localStorage === 'undefined') return;
+        const stored = localStorage.getItem('txa_site_settings');
+        if (!stored) return;
+        try {
+          const settings = JSON.parse(stored);
+          if (!settings || !settings.general) return;
+
+          // 1. Maintenance redirect
+          const path = window.location.pathname;
+          if (settings.general.maintenance_enable && !path.startsWith('/admin') && path !== '/bao-tri') {
+            window.location.href = '/bao-tri';
+            return;
+          }
+
+          // 2. Override title
+          const titleEl = document.querySelector('title');
+          if (titleEl) {
+            const isHome = path === '/' || path === '/tphim';
+            if (isHome) {
+              titleEl.textContent = settings.general.site_name + " - Trải nghiệm điện ảnh đỉnh cao";
+            } else {
+              const currentTitle = titleEl.textContent;
+              const parts = currentTitle.split(' | ');
+              if (parts.length > 0) {
+                titleEl.textContent = parts[0] + " | " + settings.general.site_name;
+              }
+            }
+          }
+
+          // 3. SEO Meta Tags
+          const descMeta = document.querySelector('meta[name="description"]');
+          if (descMeta && settings.general.site_description) {
+            descMeta.setAttribute('content', settings.general.site_description);
+          }
+          const keyMeta = document.querySelector('meta[name="keywords"]');
+          if (keyMeta && settings.general.site_keywords) {
+            keyMeta.setAttribute('content', settings.general.site_keywords);
+          }
+
+          // 4. Logo alt text
+          const logoImgs = document.querySelectorAll('.dyn-logo-img');
+          logoImgs.forEach(img => {
+            img.setAttribute('alt', settings.general.site_name + ' Logo');
+          });
+
+          // 5. Site Name text
+          const siteNames = document.querySelectorAll('.dyn-site-name');
+          siteNames.forEach(el => {
+            el.textContent = settings.general.site_name;
+          });
+
+          // 6. Copyright text
+          const copyrights = document.querySelectorAll('.dyn-copyright');
+          copyrights.forEach(el => {
+            el.textContent = '© ' + new Date().getFullYear() + ' ' + settings.general.site_name + '. Trải nghiệm điện ảnh đỉnh cao. Bản quyền thuộc về ' + settings.general.site_name + ' Group.';
+          });
+
+          // 7. Hydrate Social Links
+          const socialData = settings.social || {};
+          
+          const fbLink = document.getElementById('social-link-facebook');
+          if (fbLink) {
+            if (socialData.social_fb_enable && socialData.social_fb_url) {
+              fbLink.setAttribute('href', socialData.social_fb_url);
+              fbLink.classList.remove('hidden');
+            } else {
+              fbLink.classList.add('hidden');
+            }
+          }
+          
+          const fbGroupLink = document.getElementById('social-link-facebook-group');
+          if (fbGroupLink) {
+            if (socialData.social_fb_group_enable && socialData.social_fb_group_url) {
+              fbGroupLink.setAttribute('href', socialData.social_fb_group_url);
+              fbGroupLink.classList.remove('hidden');
+            } else {
+              fbGroupLink.classList.add('hidden');
+            }
+          }
+          
+          const teleLink = document.getElementById('social-link-telegram');
+          if (teleLink) {
+            if (socialData.social_telegram_enable && socialData.social_telegram_url) {
+              teleLink.setAttribute('href', socialData.social_telegram_url);
+              teleLink.classList.remove('hidden');
+            } else {
+              teleLink.classList.add('hidden');
+            }
+          }
+          
+          const tiktokLink = document.getElementById('social-link-tiktok');
+          if (tiktokLink) {
+            if (socialData.social_tiktok_enable && socialData.social_tiktok_url) {
+              tiktokLink.setAttribute('href', socialData.social_tiktok_url);
+              tiktokLink.classList.remove('hidden');
+            } else {
+              tiktokLink.classList.add('hidden');
+            }
+          }
+          
+          const zaloLink = document.getElementById('social-link-zalo');
+          if (zaloLink) {
+            if (socialData.social_zalo_group_enable && socialData.social_zalo_group_url) {
+              zaloLink.setAttribute('href', socialData.social_zalo_group_url);
+              zaloLink.classList.remove('hidden');
+            } else {
+              zaloLink.classList.add('hidden');
+            }
+          }
+        } catch (e) {
+          console.error('Error hydrating settings:', e);
+        }
+      }
+      applyTheme();
+      hydrateSettings();
+      document.addEventListener('astro:after-swap', () => {
+        applyTheme();
+        hydrateSettings();
+      });
+      document.addEventListener('astro:page-load', () => {
+        applyTheme();
+        hydrateSettings();
+      });
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="description" content={description} />
+    <meta name="keywords" content={settings.general.site_keywords} />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, Astro.url)} />
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  </head>
+  <body class="font-body-main text-on-surface bg-surface-deep overflow-x-hidden transition-colors duration-300">
+    {isHome && (
+      <div id="splash-screen" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0A0A0B] transition-all duration-500 ease-out">
+        <div class="flex flex-col items-center gap-6">
+          <img src="/logo-icon.gif" alt="Logo" class="h-20 w-auto animate-pulse" />
+          <div class="w-48 h-1 bg-white/5 rounded-full overflow-hidden relative">
+            <div class="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-primary to-secondary rounded-full animate-[shimmer_1.5s_infinite_linear]"></div>
+          </div>
+        </div>
+      </div>
+      <style>
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(300%); }
+        }
+      </style>
+      <script is:inline>
+        (function() {
+          const splash = document.getElementById('splash-screen');
+          if (splash) {
+            if (sessionStorage.getItem('dongphim_splash_shown')) {
+              splash.style.display = 'none';
+              splash.remove();
+            } else {
+              sessionStorage.setItem('dongphim_splash_shown', 'true');
+              setTimeout(() => {
+                splash.style.opacity = '0';
+                splash.style.pointerEvents = 'none';
+                setTimeout(() => {
+                  splash.remove();
+                }, 500);
+              }, 1500);
+            }
+          }
+        })();
+      </script>
+    )}
+
+    <!-- TopNavBar (Mobile Header like Image 1) -->
+    <nav class="fixed top-0 w-full z-50 backdrop-blur-[20px] bg-surface/60 border-b border-glass-stroke shadow-2xl transition-all duration-300 md:hidden" id="mobile-top-nav">
+        <div class="flex justify-between items-center px-6 py-3">
+            <a class="flex items-center gap-2" href="/tphim">
+                <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-8 w-auto dyn-logo-img" />
+            </a>
+            <div class="flex items-center gap-3">
+                <button onclick="window.showToast ? window.showToast('Chưa có thông báo mới', 'info') : console.log('No notifications')" class="p-2 rounded-xl bg-white/5 border border-white/10 text-on-surface flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all w-9 h-9 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">notifications</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- TopNavBar (Desktop) -->
+    <nav class="fixed top-0 w-full z-50 backdrop-blur-[20px] bg-surface/60 border-b border-glass-stroke shadow-2xl transition-all duration-300 hidden md:block" id="main-nav">
+        <div class="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto transition-all duration-300" id="nav-container">
+            <div class="flex items-center gap-8">
+                <a class="flex items-center gap-2" href="/tphim">
+                    <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-10 w-auto dyn-logo-img" />
+                </a>
+                <div class="hidden lg:flex gap-6 items-center">
+                    <a class={`font-label-caps text-label-caps pb-1 ${isActive('/tphim') ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`} href="/tphim">Trang Chủ</a>
+                    <a class={`font-label-caps text-label-caps pb-1 ${isActive('/phim-bo') ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`} href="/phim-bo">Phim Bộ</a>
+                    <a class={`font-label-caps text-label-caps pb-1 ${isActive('/phim-le') ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`} href="/phim-le">Phim Lẻ</a>
+                    
+                    <!-- Thể loại Dropdown -->
+                    <div class="relative group">
+                        <a href="/the-loai" class="font-label-caps text-label-caps pb-1 text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1 cursor-pointer">
+                            Thể Loại <span class="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">keyboard_arrow_down</span>
+                        </a>
+                        <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-zinc-950/95 border border-glass-stroke rounded-2xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 grid grid-cols-3 gap-2 backdrop-blur-xl z-50">
+                            {uniqueGenres.map(genre => (
+                                <a href={`/the-loai/${slugify(genre)}`} class="px-3 py-2 text-xs font-semibold rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">{genre}</a>
+                            ))}
+                        </div>
+                    </div>
+
+                    <!-- Quốc gia Dropdown -->
+                    <div class="relative group">
+                        <a href="/quoc-gia" class="font-label-caps text-label-caps pb-1 text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1 cursor-pointer">
+                            Quốc Gia <span class="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">keyboard_arrow_down</span>
+                        </a>
+                        <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-zinc-950/95 border border-glass-stroke rounded-2xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 grid grid-cols-2 gap-2 backdrop-blur-xl z-50">
+                            {uniqueCountries.map(country => (
+                                <a href={`/quoc-gia/${slugify(country)}`} class="px-3 py-2 text-xs font-semibold rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">{country}</a>
+                            ))}
+                        </div>
+                    </div>
+
+                    <a class={`font-label-caps text-label-caps pb-1 ${isActive('/moi-cap-nhat') ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`} href="/moi-cap-nhat">Mới Cập Nhật</a>
+
+                    <!-- Thêm Dropdown -->
+                    <div class="relative group">
+                        <button class="font-label-caps text-label-caps pb-1 text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1 cursor-pointer">
+                            Thêm <span class="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">keyboard_arrow_down</span>
+                        </button>
+                        <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-48 bg-zinc-950/95 border border-glass-stroke rounded-2xl shadow-2xl p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col gap-1 backdrop-blur-xl z-50">
+                            <a href="/lich-chieu" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">calendar_month</span> Lịch chiếu</a>
+                            <a href="/admin/dien-vien" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">group</span> Diễn viên</a>
+                            <a href="/chu-de" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">grid_view</span> Chủ đề</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative hidden md:block" id="search-container">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant z-10">search</span>
+                    <input id="nav-search-input" class="bg-white/5 border border-glass-stroke rounded-full py-2 pl-10 pr-4 w-64 focus:w-80 focus:ring-2 focus:ring-primary/50 transition-all outline-none text-sm text-on-surface" placeholder="Tìm phim, diễn viên..." type="text" autocomplete="off">
+                    
+                    <!-- Real-time Search Popup -->
+                    <div id="search-popup" class="absolute top-full right-0 mt-3 w-96 bg-[#0f111a]/95 border border-glass-stroke rounded-2xl shadow-2xl p-4 opacity-0 invisible scale-95 origin-top-right transition-all duration-300 backdrop-blur-xl z-50 flex flex-col gap-3">
+                        <div class="flex justify-between items-center text-xs border-b border-glass-stroke pb-2 text-on-surface-variant font-bold">
+                            <span>KẾT QUẢ TÌM KIẾM</span>
+                            <span id="search-loader" class="material-symbols-outlined text-sm animate-spin hidden">progress_activity</span>
+                        </div>
+                        <div id="search-results-list" class="flex flex-col gap-2.5 max-h-[350px] overflow-y-auto pr-1">
+                            <div class="text-xs text-on-surface-variant/60 py-4 text-center italic">Nhập từ khóa để tìm kiếm...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2 items-center">
+
+                    
+                    <!-- Guest View -->
+                    <div class="auth-guest flex gap-2 items-center">
+                      <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class="font-label-caps text-label-caps px-4 py-2 text-on-surface-variant hover:text-on-surface transition-all active:scale-95">Đăng nhập</button>
+                      <button onclick="window.dispatchEvent(new Event('open-register-modal'))" class="font-label-caps text-label-caps px-6 py-2 bg-gradient-to-br from-primary-container to-secondary-container text-white rounded-lg shadow-lg hover:brightness-110 transition-all active:scale-95 flex items-center">Đăng ký</button>
+                    </div>
+
+                    <!-- Logged In View -->
+                    <div class="auth-user hidden flex gap-4 items-center pl-2">
+                      <a href="/danh-sach-cua-toi" class="text-on-surface-variant hover:text-primary transition-colors flex items-center">
+                        <span class="material-symbols-outlined">bookmark</span>
+                      </a>
+                      <div class="relative group cursor-pointer">
+                        <div class="w-9 h-9 rounded-full bg-surface border-2 border-primary overflow-hidden flex items-center justify-center">
+                          <span class="material-symbols-outlined text-primary text-xl">person</span>
+                        </div>
+                        <div class="absolute right-0 top-full mt-2 w-48 bg-surface border border-glass-stroke rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col overflow-hidden">
+                          <a href="/thong-tin" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">account_circle</span> Tài khoản</a>
+                          <a href="/lich-su-xem" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">history</span> Lịch sử xem</a>
+                          <a href="/admin" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span> Quản trị</a>
+                          <button onclick="logout()" class="px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 text-left"><span class="material-symbols-outlined text-[18px]">logout</span> Đăng xuất</button>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- BottomNavBar (Mobile Pill) -->
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-[94%] max-w-md rounded-full backdrop-blur-[25px] bg-surface/80 border border-white/20 shadow-2xl overflow-hidden" style="box-shadow: 0 8px 32px rgba(0,0,0,0.3); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);">
+      <div class="flex justify-between items-center px-4 py-3">
+        <a href="/tphim" class={`flex flex-col items-center gap-1 ${isActive('/tphim') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">home</span>
+          <span class="text-[10px] font-medium">Trang chủ</span>
+        </a>
+        <a href="/tim-kiem" class={`flex flex-col items-center gap-1 ${isActive('/tim-kiem') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">search</span>
+          <span class="text-[10px] font-medium">Tìm kiếm</span>
+        </a>
+
+        <!-- Guest View Links -->
+        <a href="/danh-sach-cua-toi" class={`auth-guest flex flex-col items-center gap-1 ${isActive('/danh-sach-cua-toi') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">bookmark</span>
+          <span class="text-[10px] font-medium">Lưu</span>
+        </a>
+        <a href="/lich-chieu" class={`auth-guest flex flex-col items-center gap-1 ${isActive('/lich-chieu') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">calendar_month</span>
+          <span class="text-[10px] font-medium">Lịch chiếu</span>
+        </a>
+        <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class={`auth-guest flex flex-col items-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors`}>
+          <span class="material-symbols-outlined text-xl">person</span>
+          <span class="text-[10px] font-medium">Đăng nhập</span>
+        </button>
+
+        <!-- User View Links -->
+        <a href="/lich-su-xem" class={`auth-user hidden flex flex-col items-center gap-1 ${isActive('/lich-su-xem') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">history</span>
+          <span class="text-[10px] font-medium">Lịch sử</span>
+        </a>
+        <a href="/admin" class={`auth-user hidden flex flex-col items-center gap-1 ${isActive('/admin') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+          <span class="text-[10px] font-medium">Quản trị</span>
+        </a>
+        <a href="/thong-tin" class={`auth-user hidden flex flex-col items-center gap-1 ${isActive('/thong-tin') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">account_circle</span>
+          <span class="text-[10px] font-medium">Tài khoản</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PREMIUM UNIFIED AUTH MODAL (Redesigned Split Layout)            -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="login-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300" style="display:none;">
+      <div class="relative w-full max-w-[850px] mx-4 overflow-hidden rounded-[28px] border border-glass-stroke shadow-[0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#0f172a]/95 animate-[modalZoomIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)] grid grid-cols-1 md:grid-cols-12 min-h-[500px]">
+        
+        <!-- Left Panel: Movie Collage (Hidden on Mobile) -->
+        <div class="col-span-5 hidden md:block relative overflow-hidden bg-[#090d16] border-r border-glass-stroke select-none pointer-events-none">
+          <!-- Poster Grid -->
+          <div class="absolute inset-0 grid grid-cols-3 gap-2.5 p-4 opacity-[0.15] scale-110 rotate-[-6deg] blur-[0.5px]">
+            {popularMovies.map(movie => (
+              <img src={movie.posterUrl} alt="" class="w-full h-28 object-cover rounded-xl border border-white/5 shadow-lg shadow-black/40" />
+            ))}
+          </div>
+          <!-- Dark Overlay Gradient -->
+          <div class="absolute inset-0 bg-gradient-to-tr from-[#0b0f19] via-[#0b0f19]/90 to-transparent"></div>
+          
+          <!-- Center Branding Content -->
+          <div class="relative z-10 flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
+            <!-- Icon -->
+            <div class="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary shadow-lg shadow-primary/20">
+              <span class="material-symbols-outlined text-white text-3xl font-bold animate-[pulse_3s_infinite]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+            </div>
+            <div class="space-y-1">
+              <h3 class="font-display-hero text-2xl font-black text-white tracking-tight uppercase">{settings.general.site_name}</h3>
+              <p class="text-xs text-on-surface-variant font-semibold tracking-wide">Phim hay cả rổ</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Forms -->
+        <div class="col-span-12 md:col-span-7 p-8 sm:p-10 flex flex-col justify-center relative bg-[#0f172a]/95">
+          <!-- Close button -->
+          <button onclick="closeLoginModal()" class="absolute right-5 top-5 text-on-surface-variant hover:text-white hover:rotate-90 transition-all duration-300 z-50 p-2 cursor-pointer bg-transparent border-none">
+            <span class="material-symbols-outlined text-xl">close</span>
+          </button>
+
+          <!-- LOGIN TAB CONTENT -->
+          <div id="auth-tab-login" class="space-y-6">
+            <div>
+              <h2 class="text-2xl font-black text-white tracking-tight">Đăng nhập</h2>
+              <p class="text-xs text-on-surface-variant mt-2 font-semibold">
+                Nếu bạn chưa có tài khoản, <span onclick="switchAuthTab('register')" class="text-primary hover:underline cursor-pointer font-bold">đăng ký ngay</span>
+              </p>
+            </div>
+            
+            <form id="login-form" class="space-y-4" novalidate>
+              <div class="space-y-1.5 auth-field">
+                <input type="text" id="login-identity" placeholder="Email hoặc tên đăng nhập..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <p class="login-id-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
+              </div>
+
+              <div class="space-y-1.5 auth-field">
+                <div class="relative">
+                  <input type="password" id="login-password" placeholder="Mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-12 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                  <button type="button" id="login-toggle-pass" class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-white transition-colors cursor-pointer bg-transparent border-none">
+                    <span class="material-symbols-outlined text-lg">visibility_off</span>
+                  </button>
+                </div>
+                <p class="login-pass-msg text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
+              </div>
+
+              <!-- Turnstile Captcha Decoy Widget -->
+              <div class="turnstile-decoy border border-white/10 bg-[#1e293b]/40 rounded-xl p-3 flex items-center justify-between text-xs select-none mt-2">
+                <div class="flex items-center gap-3">
+                  <div class="turnstile-status-icon flex items-center justify-center w-5 h-5">
+                    <span class="material-symbols-outlined text-emerald-400 text-[18px] hidden turnstile-check">check_circle</span>
+                    <span class="material-symbols-outlined text-primary text-[18px] animate-spin turnstile-spinner">progress_activity</span>
+                  </div>
+                  <span class="turnstile-text text-zinc-300 font-bold">Đang xác minh...</span>
+                </div>
+                <div class="flex flex-col items-end opacity-60">
+                  <div class="flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+                    </svg>
+                    <span class="text-[9px] font-bold text-white tracking-wider">CLOUDFLARE</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-0.5 text-[8px] text-zinc-400">
+                    <a href="#" class="hover:underline">Quyền riêng tư</a>
+                    <span>•</span>
+                    <a href="#" class="hover:underline">Giúp đỡ</a>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" id="login-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none">
+                <span>Đăng nhập</span>
+              </button>
+
+              <div class="text-center pt-2">
+                <span class="text-xs font-semibold text-primary hover:underline cursor-pointer">Quên mật khẩu?</span>
+              </div>
+
+              <div class="relative flex py-2 items-center">
+                <div class="flex-grow border-t border-white/5"></div>
+                <span class="flex-shrink mx-4 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">hoặc</span>
+                <div class="flex-grow border-t border-white/5"></div>
+              </div>
+
+              <!-- Google Login Button -->
+              <button type="button" class="w-full bg-white hover:bg-zinc-100 text-zinc-800 font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 active:scale-95 cursor-pointer border-none shadow-md">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span class="text-xs">Đăng nhập bằng Google</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- REGISTER TAB CONTENT -->
+          <div id="auth-tab-register" class="space-y-6 hidden">
+            <div>
+              <h2 class="text-2xl font-black text-white tracking-tight">Đăng ký</h2>
+              <p class="text-xs text-on-surface-variant mt-2 font-semibold">
+                Nếu bạn đã có tài khoản, <span onclick="switchAuthTab('login')" class="text-primary hover:underline cursor-pointer font-bold">đăng nhập ngay</span>
+              </p>
+            </div>
+            
+            <form id="register-form" class="space-y-4" novalidate>
+              <div class="space-y-1.5 auth-field">
+                <input type="text" id="reg-username" name="username" placeholder="Tên tài khoản..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="username"></p>
+              </div>
+
+              <div class="space-y-1.5 auth-field">
+                <input type="email" id="reg-email" name="email" placeholder="Địa chỉ Email..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="email"></p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1.5 auth-field">
+                  <input type="password" id="reg-password" name="password" placeholder="Mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                  <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="password"></p>
+                </div>
+                <div class="space-y-1.5 auth-field">
+                  <input type="password" id="reg-confirm" name="confirmPassword" placeholder="Xác nhận mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                  <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="confirmPassword"></p>
+                </div>
+              </div>
+
+              <label class="flex items-start gap-2.5 cursor-pointer group pt-1">
+                <div class="relative flex items-center justify-center shrink-0 mt-0.5">
+                  <input type="checkbox" id="reg-terms" class="peer sr-only" required />
+                  <div class="h-4 w-4 rounded-md border border-glass-stroke bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary font-bold"></div>
+                  <span class="material-symbols-outlined absolute text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+                </div>
+                <span class="text-[10px] leading-snug font-semibold text-on-surface-variant group-hover:text-white select-none transition-colors">
+                  Tôi đồng ý với <a href="/terms" target="_blank" class="text-primary hover:underline font-bold">Điều khoản</a> và <a href="/privacy" target="_blank" class="text-primary hover:underline font-bold">Chính sách bảo mật</a>.
+                </span>
+              </label>
+
+              <button type="submit" id="reg-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none">
+                <span>Đăng ký tài khoản</span>
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container (global) -->
+    <div id="txa-toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-2"></div>
+
+    <div class="min-h-screen">
+      <slot />
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-surface-container-lowest py-section-gap border-t border-glass-stroke mt-10">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter px-gutter max-w-container-max mx-auto">
+            <div class="space-y-4">
+                <div class="flex items-center gap-2">
+                    <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-8 w-auto dyn-logo-img grayscale opacity-80" />
+                    <div class="font-display-hero text-title-md font-bold text-primary dyn-site-name">{settings.general.site_name}</div>
+                </div>
+                <p class="text-sm text-on-surface-variant leading-relaxed">
+                    Trải nghiệm điện ảnh đỉnh cao với kho phim khổng lồ, chất lượng 4K cực nét và tốc độ tải cực nhanh. Mang cả rạp chiếu phim về ngôi nhà của bạn.
+                </p>
+                <div class="flex gap-4" id="footer-social-links">
+                    <a id="social-link-facebook" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-facebook ${(settings.social?.social_fb_enable && settings.social?.social_fb_url) ? '' : 'hidden'}`} href={settings.social?.social_fb_url || "#"} target="_blank" rel="noopener noreferrer" title="Facebook">
+                        <Txaicon name="facebook" class="w-5 h-5 fill-current" />
+                    </a>
+                    <a id="social-link-facebook-group" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-facebook-group ${(settings.social?.social_fb_group_enable && settings.social?.social_fb_group_url) ? '' : 'hidden'}`} href={settings.social?.social_fb_group_url || "#"} target="_blank" rel="noopener noreferrer" title="Facebook Group">
+                        <Txaicon name="facebook-group" class="w-5 h-5 fill-current" />
+                    </a>
+                    <a id="social-link-telegram" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-telegram ${(settings.social?.social_telegram_enable && settings.social?.social_telegram_url) ? '' : 'hidden'}`} href={settings.social?.social_telegram_url || "#"} target="_blank" rel="noopener noreferrer" title="Telegram">
+                        <Txaicon name="telegram" class="w-5 h-5 fill-current" />
+                    </a>
+                    <a id="social-link-tiktok" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-tiktok ${(settings.social?.social_tiktok_enable && settings.social?.social_tiktok_url) ? '' : 'hidden'}`} href={settings.social?.social_tiktok_url || "#"} target="_blank" rel="noopener noreferrer" title="TikTok">
+                        <Txaicon name="tiktok" class="w-5 h-5 fill-current" />
+                    </a>
+                    <a id="social-link-zalo" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-zalo ${(settings.social?.social_zalo_group_enable && settings.social?.social_zalo_group_url) ? '' : 'hidden'}`} href={settings.social?.social_zalo_group_url || "#"} target="_blank" rel="noopener noreferrer" title="Zalo Group">
+                        <Txaicon name="zalo" class="w-5 h-5 fill-current" />
+                    </a>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <h4 class="font-title-md text-white font-bold">Khám phá</h4>
+                <ul class="space-y-2">
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/phim-bo">Phim Bộ Mới</a></li>
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/phim-le">Phim Lẻ Hay</a></li>
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/the-loai/chieu-rap">Phim Chiếu Rạp</a></li>
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/top-imdb">Top 10 Hôm Nay</a></li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <h4 class="font-title-md text-white font-bold">Hỗ trợ</h4>
+                <ul class="space-y-2">
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/ve-chung-toi">Về chúng tôi</a></li>
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/dieu-khoan">Điều khoản sử dụng</a></li>
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/bao-mat">Chính sách bảo mật</a></li>
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/lien-he">Liên hệ quảng cáo</a></li>
+                    <li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/sitemap.xml" target="_blank">Sitemap</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="mt-section-gap pt-8 border-t border-glass-stroke text-center px-gutter pb-24 md:pb-8">
+            <p class="text-xs text-on-surface-variant dyn-copyright">© {new Date().getFullYear()} {settings.general.site_name}. Trải nghiệm điện ảnh đỉnh cao. Bản quyền thuộc về {settings.general.site_name} Group.</p>
+        </div>
+    </footer>
+
+    <style>
+      @keyframes modalZoomIn {
+        from { opacity: 0; transform: scale(0.8); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      
+      .social-btn {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .social-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      }
+      
+      .social-facebook:hover {
+        background-color: rgba(24, 119, 242, 0.15) !important;
+        color: #1877F2 !important;
+        border-color: rgba(24, 119, 242, 0.4) !important;
+      }
+      
+      .social-facebook-group:hover {
+        background-color: rgba(24, 119, 242, 0.15) !important;
+        color: #1877F2 !important;
+        border-color: rgba(24, 119, 242, 0.4) !important;
+      }
+      
+      .social-telegram:hover {
+        background-color: rgba(38, 165, 228, 0.15) !important;
+        color: #26A5E4 !important;
+        border-color: rgba(38, 165, 228, 0.4) !important;
+      }
+      
+      .social-tiktok:hover {
+        background-color: rgba(254, 44, 85, 0.15) !important;
+        color: #FE2C55 !important;
+        border-color: rgba(254, 44, 85, 0.4) !important;
+      }
+      
+      .social-zalo:hover {
+        background-color: rgba(0, 104, 255, 0.15) !important;
+        color: #0068FF !important;
+        border-color: rgba(0, 104, 255, 0.4) !important;
+      }
+    </style>
+
+    <script is:inline>
+
+      // ══════════════════════════════════════════════════════════════
+      // Auth State Manager
+      // ══════════════════════════════════════════════════════════════
+      function updateAuthState() {
+        const isLoggedIn = document.cookie.includes('txa_gate_passed');
+        const guestViews = document.querySelectorAll('.auth-guest');
+        const userViews = document.querySelectorAll('.auth-user');
+        
+        if (isLoggedIn) {
+          guestViews.forEach(el => el.classList.add('hidden'));
+          userViews.forEach(el => el.classList.remove('hidden'));
+        } else {
+          guestViews.forEach(el => el.classList.remove('hidden'));
+          userViews.forEach(el => el.classList.add('hidden'));
+        }
+      }
+
+      updateAuthState();
+      window.addEventListener('auth-changed', updateAuthState);
+
+      window.logout = function() {
+        document.cookie = "txa_gate_passed=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('tlogged_in_as');
+          localStorage.removeItem('thistory');
+        }
+        window.dispatchEvent(new Event('auth-changed'));
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Đã đăng xuất', 'success');
+        }
+        
+        setTimeout(() => {
+          window.location.href = '/tphim';
+        }, 800);
+      };
+
+      // ══════════════════════════════════════════════════════════════
+      // Global Toast Manager (Stackable, supports calling via Console/JS)
+      // ══════════════════════════════════════════════════════════════
+      (function() {
+        window.showGlobalToast = function(message, type = 'success', duration = 3000) {
+          let container = document.getElementById('txa-toast-container');
+          if (!container) {
+            container = document.createElement('div');
+            container.id = 'txa-toast-container';
+            container.className = 'fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none';
+            document.body.appendChild(container);
+          }
+          
+          const toast = document.createElement('div');
+          toast.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border border-white/10 backdrop-blur-md bg-[#12141d]/90 text-white transition-all duration-300 transform translate-y-2 opacity-0';
+          
+          const icons = { success: 'check_circle', error: 'error', info: 'info' };
+          const colors = { success: 'text-emerald-400', error: 'text-red-400', info: 'text-blue-400' };
+          
+          toast.innerHTML = `
+            <span class="material-symbols-outlined ${colors[type] || colors.info}">${icons[type] || 'info'}</span>
+            <span class="text-sm font-medium">${message}</span>
+          `;
+          
+          container.appendChild(toast);
+          
+          // Trigger entry transition
+          requestAnimationFrame(() => {
+            toast.classList.remove('translate-y-2', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+          });
+          
+          // Remove timer
+          setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-2', 'opacity-0');
+            setTimeout(() => {
+              toast.remove();
+            }, 300);
+          }, duration);
+        };
+        
+        window.showToast = window.showGlobalToast;
+      })();
+
+      (function() {
+        window.showGlobalModal = function(options) {
+          const { title = '', content = '', onClose } = options;
+          
+          // Remove any existing active dynamic modals
+          const existing = document.getElementById('txa-global-modal');
+          if (existing) existing.remove();
+
+          const modal = document.createElement('div');
+          modal.id = 'txa-global-modal';
+          modal.className = 'fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm transition-all duration-300';
+          modal.style.opacity = '0';
+
+          modal.innerHTML = `
+            <div class="relative w-full max-w-[500px] mx-4 rounded-[24px] p-6 sm:p-8 bg-[#12141d]/95 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 transform scale-90 opacity-0">
+              <button class="absolute right-4 top-4 text-zinc-400 hover:text-white transition-colors p-2 cursor-pointer modal-close-btn">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+              ${title ? `<h3 class="text-xl font-bold text-white mb-4 pr-10 font-outfit">${title}</h3>` : ''}
+              <div class="text-zinc-300 text-sm leading-relaxed max-h-[70vh] overflow-y-auto pr-2 txaformat">
+                ${content}
+              </div>
+            </div>
+          `;
+
+          document.body.appendChild(modal);
+          document.body.style.overflow = 'hidden';
+
+          // Animate in
+          requestAnimationFrame(() => {
+            modal.style.opacity = '1';
+            const body = modal.querySelector('div');
+            if (body) {
+              body.classList.remove('scale-90', 'opacity-0');
+              body.classList.add('scale-100', 'opacity-100');
+            }
+          });
+
+          function closeModal() {
+            modal.style.opacity = '0';
+            const body = modal.querySelector('div');
+            if (body) {
+              body.classList.remove('scale-100', 'opacity-100');
+              body.classList.add('scale-90', 'opacity-0');
+            }
+            setTimeout(() => {
+              modal.remove();
+              document.body.style.overflow = '';
+              if (onClose) onClose();
+            }, 300);
+          }
+
+          // Close event handlers
+          modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+          });
+          
+          const closeBtn = modal.querySelector('.modal-close-btn');
+          if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+          // Esc key handler
+          const escHandler = function(e) {
+            if (e.key === 'Escape') {
+              closeModal();
+              document.removeEventListener('keydown', escHandler);
+            }
+          };
+          document.addEventListener('keydown', escHandler);
+        };
+      })();
+
+      // ══════════════════════════════════════════════════════════════
+      // Ultimate mouse-following Glassmorphism Tooltip System (TXA Tooltip)
+      // ══════════════════════════════════════════════════════════════
+      (function () {
+        'use strict';
+
+        if (window.isTxaTooltipInit) return;
+        window.isTxaTooltipInit = true;
+
+        const tooltip = document.getElementById('txa-tooltip') || document.createElement('div');
+        if (!tooltip.id) {
+          tooltip.id = 'txa-tooltip';
+          tooltip.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            z-index: 2147483647;
+            padding: 10px 16px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5), 0 0 15px rgba(109, 40, 217, 0.15);
+            opacity: 0;
+            transform: scale(0.95) translateY(6px);
+            transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: normal;
+            max-width: 300px;
+            line-height: 1.5;
+            text-align: center;
+            word-break: break-word;
+            font-family: 'Inter', sans-serif;
+          `;
+        }
+
+        function initTooltip() {
+          if (!document.body) {
+            window.addEventListener('DOMContentLoaded', initTooltip);
+            return;
+          }
+          if (!document.getElementById('txa-tooltip')) {
+            document.body.appendChild(tooltip);
+          }
+        }
+
+        window.initTxaTooltips = initTooltip;
+        initTooltip();
+        document.addEventListener('astro:page-load', initTooltip);
+
+        let currentTarget = null;
+        let hideTimeout = null;
+
+        function showTooltip(text, target, e = null) {
+          if (!text) return;
+          clearTimeout(hideTimeout);
+          
+          tooltip.innerHTML = `<div class="txa-tooltip-content">${text}</div>`;
+          
+          tooltip.style.opacity = '1';
+          tooltip.style.transform = 'scale(1) translateY(0)';
+          currentTarget = target;
+
+          if (e) {
+            updatePosition(e);
+          }
+        }
+
+        function hideTooltip() {
+          hideTimeout = setTimeout(() => {
+            tooltip.style.opacity = '0';
+            tooltip.style.transform = 'scale(0.95) translateY(6px)';
+            currentTarget = null;
+          }, 80);
+        }
+
+        function updatePosition(e) {
+          if (tooltip.style.opacity === '0') return;
+
+          const offset = 18;
+          const rect = tooltip.getBoundingClientRect();
+
+          let x = e.clientX - (rect.width / 2);
+          let y = e.clientY - rect.height - offset;
+
+          const padding = 12;
+
+          if (x < padding) x = padding;
+          if (x + rect.width + padding > window.innerWidth) {
+            x = window.innerWidth - rect.width - padding;
+          }
+
+          if (y < padding) {
+            y = e.clientY + offset;
+          }
+
+          tooltip.style.left = x + 'px';
+          tooltip.style.top = y + 'px';
+        }
+
+        // Global capture of hover states, supporting: data-txatooltip, data-txa-tooltip, .txatooltip, and title attributes
+        document.addEventListener('mouseover', (e) => {
+          const target = e.target.closest('[data-txatooltip], [data-txa-tooltip], .txatooltip, [title]');
+          if (target) {
+            const tooltipText = target.getAttribute('data-txatooltip') || target.getAttribute('data-txa-tooltip') || target.title;
+            if (tooltipText) {
+              if (target.title) {
+                target.setAttribute('data-original-title', target.title);
+                target.title = '';
+              }
+              showTooltip(tooltipText, target, e);
+            }
+          }
+        }, true);
+
+        document.addEventListener('mouseout', (e) => {
+          const target = e.target.closest('[data-txatooltip], [data-txa-tooltip], .txatooltip, [data-original-title]');
+          if (target) {
+            const originalTitle = target.getAttribute('data-original-title');
+            if (originalTitle) {
+              target.title = originalTitle;
+              target.removeAttribute('data-original-title');
+            }
+            hideTooltip();
+          }
+        }, true);
+
+        document.addEventListener('mousemove', (e) => {
+          if (currentTarget) updatePosition(e);
+        }, true);
+
+        document.addEventListener('click', () => {
+          hideTooltip();
+        });
+
+        // Fullscreen support
+        function handleFullscreenChange() {
+          const fsElem = document.fullscreenElement || document.webkitFullscreenElement;
+          if (fsElem) {
+            fsElem.appendChild(tooltip);
+          } else {
+            if (document.body && !document.body.contains(tooltip)) {
+              document.body.appendChild(tooltip);
+            }
+          }
+        }
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+        // Expose helper globally to call via Console/JS
+        window.showGlobalTooltip = function(targetElementOrSelector, text) {
+          const target = typeof targetElementOrSelector === 'string'
+            ? document.querySelector(targetElementOrSelector)
+            : targetElementOrSelector;
+          if (!target) return;
+          target.setAttribute('data-txatooltip', text);
+          showTooltip(text, target);
+          setTimeout(hideTooltip, 2500);
+        };
+      })();
+
+      // ══════════════════════════════════════════════════════════════
+      // Real-time Search Autocomplete Logic
+      // ══════════════════════════════════════════════════════════════
+      (function() {
+        const searchInput = document.getElementById('nav-search-input');
+        const searchPopup = document.getElementById('search-popup');
+        const searchLoader = document.getElementById('search-loader');
+        const resultsList = document.getElementById('search-results-list');
+        let debounceTimer;
+
+        if (!searchInput) return;
+
+        function hideSearchPopup() {
+          searchPopup?.classList.add('opacity-0', 'invisible', 'scale-95');
+        }
+
+        function showSearchPopup() {
+          searchPopup?.classList.remove('opacity-0', 'invisible', 'scale-95');
+        }
+
+        searchInput.addEventListener('input', function() {
+          const val = this.value.trim();
+          clearTimeout(debounceTimer);
+
+          if (val.length < 1) {
+            resultsList.innerHTML = '<div class="text-xs text-on-surface-variant/60 py-4 text-center italic">Nhập từ khóa để tìm kiếm...</div>';
+            hideSearchPopup();
+            return;
+          }
+
+          showSearchPopup();
+          searchLoader?.classList.remove('hidden');
+
+          debounceTimer = setTimeout(async () => {
+            try {
+              const res = await fetch(`/api/movies/search?q=${encodeURIComponent(val)}`);
+              if (!res.ok) throw new Error();
+              const payload = await res.json();
+              const movies = payload.data || [];
+
+              // Merge crawled movies client-side
+              let localCrawled = [];
+              try {
+                const stored = localStorage.getItem('txa_crawled_movies');
+                if (stored) {
+                  const list = JSON.parse(stored);
+                  if (Array.isArray(list)) {
+                    localCrawled = list.map(m => m.movie || m);
+                  }
+                }
+              } catch (e) {}
+
+              // Filter crawled movies matching the query
+              const queryLower = val.toLowerCase();
+              const matchedCrawled = localCrawled.filter(m => 
+                m.title.toLowerCase().includes(queryLower) ||
+                (m.originalTitle && m.originalTitle.toLowerCase().includes(queryLower)) ||
+                (m.description && m.description.toLowerCase().includes(queryLower))
+              );
+
+              // Combine and deduplicate by slug
+              let combined = [...matchedCrawled, ...movies];
+              const seen = new Set();
+              const uniqueMovies = combined.filter(m => {
+                if (seen.has(m.slug)) return false;
+                seen.add(m.slug);
+                return true;
+              }).slice(0, 6);
+
+              if (uniqueMovies.length === 0) {
+                resultsList.innerHTML = '<div class="text-xs text-on-surface-variant/60 py-4 text-center">Không tìm thấy kết quả phù hợp</div>';
+              } else {
+                resultsList.innerHTML = uniqueMovies.map(m => `
+                  <a href="/phim/${m.slug}" class="flex gap-3 p-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-glass-stroke transition-all duration-300 group/item cursor-pointer">
+                    <img src="${m.posterUrl}" class="w-10 h-14 object-cover rounded-lg border border-glass-stroke shrink-0" />
+                    <div class="flex-grow flex flex-col justify-center min-w-0">
+                      <div class="text-xs font-bold text-white group-hover/item:text-primary transition-colors truncate">${m.title}</div>
+                      ${m.originalTitle ? `<div class="text-[10px] text-on-surface-variant/75 truncate mt-0.5">${m.originalTitle}</div>` : ''}
+                      <div class="flex items-center gap-2 mt-1.5 text-[9px] text-on-surface-variant/50 font-bold">
+                        <span class="px-1.5 py-0.5 bg-white/5 border border-glass-stroke rounded text-primary">${m.quality || 'FHD'}</span>
+                        <span>${m.releaseYear || 2024}</span>
+                        <span>•</span>
+                        <span>${m.episodeCurrent || 'Full'}</span>
+                      </div>
+                    </div>
+                  </a>
+                `).join('');
+              }
+            } catch (err) {
+              resultsList.innerHTML = '<div class="text-xs text-red-400 py-4 text-center">Lỗi tải dữ liệu. Vui lòng thử lại.</div>';
+            } finally {
+              searchLoader?.classList.add('hidden');
+            }
+          }, 350);
+        });
+
+        // Enter key to search
+        searchInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            const val = this.value.trim();
+            if (val.length >= 1) {
+              window.location.href = `/tim-kiem?q=${encodeURIComponent(val)}`;
+            }
+          }
+        });
+
+        // Click outside search
+        document.addEventListener('click', function(e) {
+          if (!document.getElementById('search-container')?.contains(e.target)) {
+            hideSearchPopup();
+          }
+        });
+      })();
+
+      // ══════════════════════════════════════════════════════════════
+      // Premium Modal Open/Close & Tab Toggles
+      // ══════════════════════════════════════════════════════════════
+      function initTurnstileDecoy() {
+        const spinner = document.querySelector('.turnstile-spinner');
+        const check = document.querySelector('.turnstile-check');
+        const text = document.querySelector('.turnstile-text');
+        
+        if (spinner && check && text) {
+          spinner.classList.remove('hidden');
+          check.classList.add('hidden');
+          text.textContent = 'Đang xác minh...';
+          
+          setTimeout(() => {
+            spinner.classList.add('hidden');
+            check.classList.remove('hidden');
+            text.textContent = 'Đã xác minh';
+          }, 1500);
+        }
+      }
+
+      function switchAuthTab(tab) {
+        const loginTab = document.getElementById('auth-tab-login');
+        const registerTab = document.getElementById('auth-tab-register');
+
+        if (tab === 'login') {
+          loginTab?.classList.remove('hidden');
+          registerTab?.classList.add('hidden');
+        } else {
+          loginTab?.classList.add('hidden');
+          registerTab?.classList.remove('hidden');
+        }
+        
+        // Restart simulated Cloudflare Turnstile decoy verification
+        initTurnstileDecoy();
+      }
+
+      function openLoginModal() {
+        const m = document.getElementById('login-modal');
+        if (m) {
+          m.style.display = 'flex';
+          m.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+          switchAuthTab('login');
+        }
+      }
+
+      function openRegisterModal() {
+        const m = document.getElementById('login-modal');
+        if (m) {
+          m.style.display = 'flex';
+          m.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+          switchAuthTab('register');
+        }
+      }
+
+      function closeLoginModal() {
+        const m = document.getElementById('login-modal');
+        if (m) {
+          m.style.display = 'none';
+          m.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+      }
+
+      // Expose globally
+      window.openLoginModal = openLoginModal;
+      window.closeLoginModal = closeLoginModal;
+      window.openRegisterModal = openRegisterModal;
+      window.closeRegisterModal = closeLoginModal;
+      window.switchAuthTab = switchAuthTab;
+
+      window.addEventListener('open-login-modal', openLoginModal);
+      window.addEventListener('open-register-modal', openRegisterModal);
+
+      // Close on backdrop click or Escape
+      document.getElementById('login-modal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeLoginModal();
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeLoginModal();
+      });
+
+      // ══════════════════════════════════════════════════════════════
+      // Form Submission Actions
+      // ══════════════════════════════════════════════════════════════
+      (function() {
+        const loginForm = document.getElementById('login-form');
+        const regForm = document.getElementById('register-form');
+
+        // Validation states
+        const idInput = document.getElementById('login-identity');
+        const passInput = document.getElementById('login-password');
+        const togglePass = document.getElementById('login-toggle-pass');
+        let showPass = false;
+
+        if (togglePass && passInput) {
+          togglePass.addEventListener('click', function() {
+            showPass = !showPass;
+            passInput.type = showPass ? 'text' : 'password';
+            this.querySelector('.material-symbols-outlined').textContent = showPass ? 'visibility' : 'visibility_off';
+          });
+        }
+
+        // Real-time login validation
+        if (idInput) {
+          idInput.addEventListener('input', function() {
+            const msgEl = this.closest('.auth-field').querySelector('.login-id-error');
+            if (this.value.trim().length >= 3) {
+              this.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+              if (msgEl) msgEl.style.opacity = '0';
+            } else {
+              this.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+              if (msgEl) { msgEl.textContent = 'Tối thiểu 3 ký tự'; msgEl.style.opacity = '1'; }
+            }
+          });
+        }
+
+        if (passInput) {
+          passInput.addEventListener('input', function() {
+            const msgEl = this.closest('.auth-field').querySelector('.login-pass-msg');
+            if (this.value.length >= 6) {
+              this.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+              if (msgEl) msgEl.style.opacity = '0';
+            } else {
+              this.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+              if (msgEl) { msgEl.textContent = 'Tối thiểu 6 ký tự'; msgEl.style.opacity = '1'; }
+            }
+          });
+        }
+
+        if (loginForm) {
+          loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const identity = idInput?.value.trim() || '';
+            const password = passInput?.value || '';
+
+            if (identity.length < 3 || password.length < 6) {
+              showGlobalToast('Kiểm tra lại thông tin đăng nhập!', 'error');
+              return;
+            }
+
+            const submitBtn = document.getElementById('login-submit');
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span><span>Đang xác thực...</span>';
+            }
+
+            try {
+              const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identity, password })
+              });
+              const data = await res.json();
+              if (res.ok) {
+                showGlobalToast('Đăng nhập thành công!', 'success');
+                document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
+                if (typeof localStorage !== 'undefined') {
+                  localStorage.setItem('tlogged_in_as', identity);
+                  localStorage.removeItem('thistory');
+                  fetch('/api/user/history')
+                    .then(hRes => hRes.ok ? hRes.json() : [])
+                    .then(historyData => {
+                      if (Array.isArray(historyData)) {
+                        localStorage.setItem('thistory', JSON.stringify(historyData));
+                      }
+                    })
+                    .finally(() => {
+                      window.dispatchEvent(new Event('auth-changed'));
+                      closeLoginModal();
+                      window.location.reload();
+                    });
+                } else {
+                  window.dispatchEvent(new Event('auth-changed'));
+                  closeLoginModal();
+                  window.location.reload();
+                }
+              } else {
+                showGlobalToast(data.message || data.error || 'Sai thông tin tài khoản!', 'error');
+              }
+            } catch (err) {
+              showGlobalToast('Lỗi kết nối!', 'error');
+            } finally {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Đăng nhập</span>';
+              }
+            }
+          });
+        }
+
+        // Register Validation & Submit
+        const fields = ['reg-username', 'reg-email', 'reg-password', 'reg-confirm'];
+        const validation = { username: false, email: false, password: false, confirmPassword: false };
+
+        function validateRegisterField(id, val) {
+          const input = document.getElementById(id);
+          const parent = input?.closest('.auth-field');
+          const errP = parent?.querySelector('.reg-error');
+          let isValid = false, msg = '';
+
+          if (id === 'reg-username') {
+            if (val.length < 4) msg = 'Tối thiểu 4 ký tự';
+            else if (!/^[a-zA-Z0-9_]+$/.test(val)) msg = 'Chỉ dùng chữ cái, số, gạch dưới';
+            else isValid = true;
+            validation.username = isValid;
+          } else if (id === 'reg-email') {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) msg = 'Định dạng email không hợp lệ';
+            else isValid = true;
+            validation.email = isValid;
+          } else if (id === 'reg-password') {
+            if (val.length < 6) msg = 'Tối thiểu 6 ký tự';
+            else isValid = true;
+            validation.password = isValid;
+          } else if (id === 'reg-confirm') {
+            const pw = document.getElementById('reg-password')?.value || '';
+            if (val !== pw) msg = 'Mật khẩu xác nhận không khớp';
+            else if (val.length >= 6) isValid = true;
+            validation.confirmPassword = isValid;
+          }
+
+          if (input) input.style.borderColor = isValid ? 'rgba(16, 185, 129, 0.4)' : (val.length > 0 ? 'rgba(239, 68, 68, 0.4)' : '');
+          if (errP) { errP.textContent = msg; errP.style.opacity = msg ? '1' : '0'; }
+        }
+
+        fields.forEach(id => {
+          const input = document.getElementById(id);
+          input?.addEventListener('input', function() {
+            validateRegisterField(id, this.value);
+          });
+        });
+
+        if (regForm) {
+          regForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const allValid = Object.values(validation).every(v => v === true);
+            const terms = document.getElementById('reg-terms')?.checked;
+
+            if (!allValid) {
+              showGlobalToast('Vui lòng kiểm tra lại thông tin đăng ký!', 'error');
+              return;
+            }
+            if (!terms) {
+              showGlobalToast('Bạn cần đồng ý với điều khoản dịch vụ!', 'error');
+              return;
+            }
+
+            const submitBtn = document.getElementById('reg-submit');
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span><span>Đang khởi tạo...</span>';
+            }
+
+            try {
+              const body = {
+                username: document.getElementById('reg-username')?.value.trim(),
+                email: document.getElementById('reg-email')?.value.trim(),
+                password: document.getElementById('reg-password')?.value,
+                confirmPassword: document.getElementById('reg-confirm')?.value
+              };
+              const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+              });
+              const data = await res.json();
+              if (res.ok) {
+                showGlobalToast(data.message || 'Đăng ký thành công! Vui lòng đăng nhập.', 'success');
+                try {
+                  const regUsers = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+                  if (!regUsers.some(u => u.username === body.username)) {
+                    regUsers.push({
+                      username: body.username,
+                      email: body.email,
+                      createdAt: new Date().toISOString()
+                    });
+                    localStorage.setItem('tregistered_users', JSON.stringify(regUsers));
+                  }
+                } catch (e) {
+                  console.error('Error saving user registration locally:', e);
+                }
+                switchAuthTab('login');
+              } else {
+                showGlobalToast(data.message || data.error || 'Đăng ký thất bại!', 'error');
+              }
+            } catch (err) {
+              showGlobalToast('Lỗi hệ thống!', 'error');
+            } finally {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Đăng ký tài khoản</span><span class="material-symbols-outlined text-[14px]">rocket_launch</span>';
+              }
+            }
+          });
+        }
+      })();
+    </script>
+    <script is:inline>
+      // Scroll effect - using is:inline + astro:page-load for reliability
+      (function() {
+        var _scrollHandler;
+        function initScrollEffect() {
+          if (_scrollHandler) window.removeEventListener('scroll', _scrollHandler);
+          _scrollHandler = function() {
+            var nav = document.getElementById('main-nav');
+            var container = document.getElementById('nav-container');
+            if (window.scrollY > 50) {
+              container && container.classList.add('py-2');
+              container && container.classList.remove('py-4');
+              nav && nav.classList.add('bg-surface/95');
+              nav && nav.classList.remove('bg-surface/60');
+            } else {
+              container && container.classList.add('py-4');
+              container && container.classList.remove('py-2');
+              nav && nav.classList.add('bg-surface/60');
+              nav && nav.classList.remove('bg-surface/95');
+            }
+          };
+          window.addEventListener('scroll', _scrollHandler);
+          _scrollHandler();
+        }
+
+        // Run on initial load
+        initScrollEffect();
+
+        // Re-run on SPA navigation (Astro view transitions)
+        document.addEventListener('astro:page-load', function() {
+          initScrollEffect();
+        });
+      })();
+    </script>
+  </body>
+</html>

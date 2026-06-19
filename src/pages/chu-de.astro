@@ -1,0 +1,29 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { topics } from '../data/topics';
+import TopicCard from '../components/ui/TopicCard.astro';
+---
+
+<MainLayout title="Tất cả chủ đề phim | DongPhim">
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-28 space-y-8">
+    <!-- Header -->
+    <div class="border-b border-glass-stroke pb-6">
+      <h1 class="font-display-hero text-4xl text-white font-extrabold tracking-tight">Khám phá chủ đề phim</h1>
+      <p class="text-on-surface-variant mt-2 font-body-main text-sm">Tìm kiếm những bộ phim hay nhất được tổng hợp theo sở thích riêng biệt của bạn.</p>
+    </div>
+
+    <!-- Topics Grid -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {topics.map((topic) => (
+        <TopicCard
+          name={topic.name}
+          slug={topic.slug}
+          gradient={topic.gradient}
+          icon={topic.icon}
+          description={topic.description}
+          labelText="Khám phá ngay &rarr;"
+        />
+      ))}
+    </section>
+  </main>
+</MainLayout>

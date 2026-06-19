@@ -1,0 +1,43 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { SettingService } from '../services/SettingService';
+
+const settings = await SettingService.getSettings();
+---
+
+<MainLayout title={`Về chúng tôi | ${settings.general.site_name}`}>
+  <main class="max-w-4xl mx-auto px-6 py-24 md:py-32">
+    <div class="glass-panel p-8 md:p-12 rounded-[32px] border border-glass-stroke relative overflow-hidden">
+      <div class="absolute inset-0 bg-primary/5 blur-[80px] pointer-events-none"></div>
+      
+      <div class="relative z-10 space-y-6">
+        <header class="border-b border-glass-stroke pb-6">
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Về chúng tôi</h1>
+          <p class="text-zinc-500 text-xs font-bold uppercase tracking-wider mt-2 font-label-caps">Giới thiệu về DongMePhim</p>
+        </header>
+
+        <article class="prose prose-invert max-w-none text-zinc-300 text-sm leading-relaxed space-y-4">
+          <p>
+            Chào mừng bạn đến với <strong>{settings.general.site_name}</strong> - nền tảng xem phim trực tuyến hàng đầu Việt Nam. Chúng tôi tự hào mang đến cho hàng triệu người yêu điện ảnh một không gian giải trí đỉnh cao, chất lượng vượt trội và trải nghiệm mượt mà nhất.
+          </p>
+          
+          <h2 class="text-lg font-bold text-white pt-4">Sứ mệnh của chúng tôi</h2>
+          <p>
+            Sứ mệnh của {settings.general.site_name} là kết nối cộng đồng yêu phim, cung cấp các tác phẩm điện ảnh bom tấn trên toàn thế giới với chất lượng hình ảnh sắc nét từ FHD đến 4K, âm thanh sống động và hoàn toàn miễn phí. Chúng tôi không ngừng cập nhật và nâng cao công nghệ truyền tải để mang cả rạp chiếu phim về ngôi nhà của bạn.
+          </p>
+
+          <h2 class="text-lg font-bold text-white pt-4">Tại sao chọn {settings.general.site_name}?</h2>
+          <ul class="list-disc pl-5 space-y-2 text-zinc-400">
+            <li><strong>Kho phim đồ sộ:</strong> Hàng chục ngàn tựa phim lẻ, phim bộ, anime, và TV shows mới nhất được cập nhật liên tục hàng giờ.</li>
+            <li><strong>Chất lượng đỉnh cao:</strong> Tốc độ truyền tải nhanh, hỗ trợ đa dạng luồng phát dự phòng và phụ đề/thuyết minh chuẩn xác.</li>
+            <li><strong>Giao diện tối giản & hiện đại:</strong> Thiết kế kính mờ (glassmorphism) sang trọng, tương thích hoàn hảo trên mọi thiết bị di động, tablet và máy tính.</li>
+          </ul>
+
+          <p class="pt-6 text-zinc-400 italic">
+            Cảm ơn bạn đã đồng hành và ủng hộ {settings.general.site_name} Group!
+          </p>
+        </article>
+      </div>
+    </div>
+  </main>
+</MainLayout>

@@ -1,0 +1,17 @@
+---
+interface Props {
+  message: string;
+  type?: 'success' | 'error' | 'info';
+  class?: string;
+}
+
+const { message, type = 'success', class: className = '' } = Astro.props;
+
+const icons = { success: 'check_circle', error: 'error', info: 'info' };
+const colors = { success: 'text-emerald-400', error: 'text-red-400', info: 'text-blue-400' };
+---
+
+<div class={`txatoast ${className}`}>
+  <span class={`material-symbols-outlined ${colors[type]}`}>{icons[type]}</span>
+  <span>{message}</span>
+</div>

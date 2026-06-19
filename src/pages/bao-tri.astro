@@ -1,0 +1,198 @@
+---
+import { SettingService } from '../services/SettingService';
+const settings = await SettingService.getSettings();
+
+// If maintenance is NOT enabled, redirect to home
+if (!settings.general.maintenance_enable) {
+    return Astro.redirect('/');
+}
+
+const telegramUrl = settings.social.social_telegram_url || "https://t.me/dongphim_updates";
+const maintenanceMessage = settings.general.maintenance_message || "Hệ thống đang được nâng cấp để mang lại trải nghiệm điện ảnh đỉnh cao hơn";
+const maintenanceEndTime = settings.general.maintenance_end_time || new Date(Date.now() + 2 * 3600 * 1000).toISOString();
+import '../styles/index.css';
+---
+
+<!DOCTYPE html>
+<html class="dark" lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{settings.general.site_name} - Bảo Trì Hệ Thống</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        body {
+            background-color: #0A0A0B;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+        .light-leak-1 {
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+            filter: blur(60px);
+        }
+        .light-leak-2 {
+            background: radial-gradient(circle, rgba(0, 227, 253, 0.1) 0%, transparent 70%);
+            filter: blur(60px);
+        }
+        .premium-gradient {
+            background: linear-gradient(135deg, #00daf3 0%, #7c3aed 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .premium-gradient:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1) drop-shadow(0 0 15px rgba(0, 218, 243, 0.4));
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        .countdown-item {
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+    </style>
+
+</head>
+<body class="font-body-main text-on-surface min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+    <!-- Background Atmospheric Effects -->
+    <div class="fixed inset-0 z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] light-leak-1 animate-pulse"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] light-leak-2 animate-pulse" style="animation-delay: 2s;"></div>
+    </div>
+    
+    <!-- Main Content Canvas -->
+    <main class="relative z-10 w-full max-w-4xl px-4 md:px-6 flex flex-col items-center text-center gap-10">
+        <!-- Brand Anchor -->
+        <div class="mb-4">
+            <h1 class="font-display-hero text-2xl md:text-3xl font-bold tracking-tighter text-primary">
+                {settings.general.site_name}
+            </h1>
+        </div>
+        
+        <!-- Hero Illustration -->
+        <div class="relative w-full max-w-md animate-float">
+            <div class="glass-panel p-8 rounded-3xl relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent"></div>
+                <img class="w-full h-auto rounded-xl relative z-10 opacity-90 mix-blend-screen" alt="Maintenance robot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZpj0LHeAF_0Pc6ZM-jBx2rmunLhoWbP4LnK8nVhEbYZNzEne0PUIWxlGOkIMo6sR54ejfRUu33Kv7WLKLC0JUnVr_WWcPfTp5exaiIiEGvv8SOosKNnhyJvl7QDPbtzH9BLdwn4PET1XGEQIBwEJ5k-5KfqOc4BTEHzR3rJEfELjvLdz84NV7Wukc5gzdMq2BWhwoYj0kDYHsL9B6VWyQ-hH-1vIVtOxd6-7IJh1l8Mh69JqXNMtxJg1oabuCZ43C8HSjq_qTv20M"/>
+            </div>
+            <!-- Decorative rings -->
+            <div class="absolute -top-4 -right-4 w-24 h-24 border border-primary/20 rounded-full animate-ping"></div>
+            <div class="absolute -bottom-6 -left-6 w-16 h-16 border border-secondary/20 rounded-full animate-pulse" style="animation-duration: 4s;"></div>
+        </div>
+        
+        <!-- Status Message -->
+        <div class="space-y-4 max-w-2xl z-10">
+            <h2 class="font-bold text-2xl md:text-3xl text-on-surface leading-tight">
+                {maintenanceMessage}
+            </h2>
+            <p class="text-base text-on-surface-variant/80">
+                Chúng tôi đang thực hiện bảo trì định kỳ để tối ưu hóa hiệu suất. Vui lòng quay lại sau ít phút.
+            </p>
+        </div>
+        
+        <!-- Glassmorphism Countdown -->
+        <div class="flex gap-4 md:gap-8 justify-center w-full z-10">
+            <div class="countdown-item glass-panel flex flex-col items-center justify-center w-20 h-24 md:w-28 md:h-32 rounded-2xl">
+                <span class="font-display-hero text-2xl md:text-3xl font-bold text-primary" id="hours">02</span>
+                <span class="text-xs text-on-surface-variant uppercase tracking-widest mt-1">Giờ</span>
+            </div>
+            <div class="countdown-item glass-panel flex flex-col items-center justify-center w-20 h-24 md:w-28 md:h-32 rounded-2xl">
+                <span class="font-display-hero text-2xl md:text-3xl font-bold text-primary" id="minutes">45</span>
+                <span class="text-xs text-on-surface-variant uppercase tracking-widest mt-1">Phút</span>
+            </div>
+            <div class="countdown-item glass-panel flex flex-col items-center justify-center w-20 h-24 md:w-28 md:h-32 rounded-2xl">
+                <span class="font-display-hero text-2xl md:text-3xl font-bold text-secondary-fixed-dim" id="seconds">12</span>
+                <span class="text-xs text-on-surface-variant uppercase tracking-widest mt-1">Giây</span>
+            </div>
+        </div>
+        
+        <!-- Call to Action -->
+        <div class="mt-4 z-10">
+            <a class="premium-gradient inline-flex items-center gap-3 px-8 py-4 rounded-full font-bold text-white shadow-lg active:scale-95 transition-transform" href={telegramUrl}>
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+                Theo dõi cập nhật trên Telegram
+            </a>
+        </div>
+    </main>
+    
+    <!-- Simple Footer -->
+    <footer class="mt-auto py-12 text-center relative z-10 w-full px-4 opacity-50">
+        <p class="text-sm text-on-surface-variant">
+            © {new Date().getFullYear()} {settings.general.site_name}. All rights reserved. Cinematic Noir Experience.
+        </p>
+    </footer>
+
+    <script is:inline define:vars={{ maintenanceEndTime }}>
+        // Client-side override check: redirect if maintenance disabled in database
+        if (typeof localStorage !== 'undefined') {
+            const stored = localStorage.getItem('txa_site_settings');
+            if (stored) {
+                try {
+                    const settings = JSON.parse(stored);
+                    if (settings && settings.general && !settings.general.maintenance_enable) {
+                        window.location.href = '/';
+                    }
+                } catch(e) {}
+            }
+        }
+
+        // Micro-interaction: Countdown Timer Logic
+        function startCountdown() {
+            const hDisplay = document.getElementById('hours');
+            const mDisplay = document.getElementById('minutes');
+            const sDisplay = document.getElementById('seconds');
+
+            const targetTime = new Date(maintenanceEndTime).getTime();
+
+            const updateTimer = () => {
+                const now = new Date().getTime();
+                const distance = targetTime - now;
+
+                if (distance <= 0) {
+                    clearInterval(timer);
+                    hDisplay.textContent = '00';
+                    mDisplay.textContent = '00';
+                    sDisplay.textContent = '00';
+                    return;
+                }
+
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                hDisplay.textContent = String(hours).padStart(2, '0');
+                mDisplay.textContent = String(minutes).padStart(2, '0');
+                sDisplay.textContent = String(seconds).padStart(2, '0');
+            };
+
+            updateTimer(); // Initial call
+            const timer = setInterval(updateTimer, 1000);
+        }
+
+        // Initialize micro-interactions
+        document.addEventListener('DOMContentLoaded', () => {
+            startCountdown();
+
+            // Parallax effect for the illustration on mouse move
+            document.addEventListener('mousemove', (e) => {
+                const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+                const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+                const illustration = document.querySelector('.animate-float');
+                if (illustration) {
+                    illustration.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

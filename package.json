@@ -15,8 +15,19 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
-		"@astrojs/cloudflare": "^13.7.0",
-		"astro": "^6.4.7"
+		"@astrojs/cloudflare": "^13.1.1",
+		"@astrojs/react": "^5.0.7",
+		"@tailwindcss/vite": "^4.3.1",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"artplayer": "^5.4.0",
+		"astro": "^6.4.8",
+		"clsx": "^2.1.1",
+		"lucide-react": "^1.21.0",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"tailwind-merge": "^3.6.0",
+		"tailwindcss": "^4.3.1"
 	},
 	"devDependencies": {
 		"wrangler": "^4.101.0"

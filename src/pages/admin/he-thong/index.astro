@@ -1,0 +1,447 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+---
+
+<AdminLayout title="Cấu hình hệ thống">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý toàn bộ tham số cấu hình của ứng dụng.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Tabs Sidebar -->
+    <div class="lg:col-span-1 flex flex-col gap-2">
+      <button id="btn-tab-general" class="w-full text-left px-4 py-3 rounded-xl sidebar-active font-label-caps flex items-center gap-3 cursor-pointer">
+        <span class="material-symbols-outlined">settings</span> Chung
+      </button>
+      <button id="btn-tab-security" class="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 font-label-caps text-text-dim flex items-center gap-3 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined">security</span> API Security
+      </button>
+      <button id="btn-tab-app" class="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 font-label-caps text-text-dim flex items-center gap-3 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined">smartphone</span> App Mobile
+      </button>
+      <button id="btn-tab-smtp" class="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 font-label-caps text-text-dim flex items-center gap-3 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined">mail</span> SMTP Mail
+      </button>
+      <button id="btn-tab-telegram" class="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 font-label-caps text-text-dim flex items-center gap-3 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined">send</span> Telegram
+      </button>
+      <button id="btn-tab-login" class="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 font-label-caps text-text-dim flex items-center gap-3 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined">login</span> Đăng nhập
+      </button>
+      <button id="btn-tab-social" class="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 font-label-caps text-text-dim flex items-center gap-3 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined">share</span> Mạng xã hội
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8">
+      
+      <!-- Chung (General) -->
+      <div id="tab-general" class="space-y-6">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6">Cài đặt chung</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Tên Website</label>
+            <input type="text" id="general-site-name" value={settings.general.site_name} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">URL Website</label>
+            <input type="text" id="general-site-url" value={settings.general.site_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Mô tả SEO</label>
+            <textarea id="general-site-desc" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none min-h-[100px] text-white">{settings.general.site_description}</textarea>
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Từ khóa SEO (ngăn cách bằng dấu phẩy)</label>
+            <input type="text" id="general-site-keywords" value={settings.general.site_keywords} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Thông điệp bảo trì</label>
+            <input type="text" id="general-maintenance-msg" value={settings.general.maintenance_message} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Chế độ bảo trì</label>
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="general-maintenance-enable" checked={settings.general.maintenance_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm">Bật chế độ bảo trì hệ thống</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- API Security -->
+      <div id="tab-security" class="space-y-6 hidden">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6">API Security (AES-256-GCM)</h3>
+        <div class="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6">
+          <p class="text-xs text-primary font-body-main">Lưu ý: Bật tính năng này sẽ mã hóa toàn bộ dữ liệu trả về của API thành định dạng `&#123;"d": "...", "v": 1&#125;`. App Flutter phải được trang bị khóa giải mã tương ứng.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Mã hóa TXA Payload</label>
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="security-encrypt-enable" checked={settings.general.api_encrypt_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm">Bật mã hóa (api_encrypt_enable)</span>
+            </div>
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Passphrase (Khóa mã hóa)</label>
+            <input type="password" id="security-encrypt-pass" value={settings.general.api_encrypt_pass || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Nhập khóa mã hóa AES-256-GCM..." />
+          </div>
+        </div>
+      </div>
+
+      <!-- App Mobile -->
+      <div id="tab-app" class="space-y-6 hidden">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6">Thông số App Mobile</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Phiên bản hiện tại (Version)</label>
+            <input type="text" id="app-version" value={settings.app.app_version} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Release Notes (Ghi chú cập nhật)</label>
+            <textarea id="app-release-notes" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none min-h-[100px] text-white">{settings.app.app_release_notes}</textarea>
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Android Download URL</label>
+            <input type="url" id="app-android-url" value={settings.app.app_android_download_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">iOS IPA Download URL</label>
+            <input type="url" id="app-ios-ipa-url" value={settings.app.app_ios_ipa_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim font-bold">SHA256 File APK</label>
+            <input type="text" id="app-apk-sha" value={settings.app.app_apk_sha256} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SMTP Mail -->
+      <div id="tab-smtp" class="space-y-6 hidden">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6">Cấu hình SMTP Mail</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">SMTP Host</label>
+            <input type="text" id="smtp-host" value={settings.smtp.smtp_host} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">SMTP Port</label>
+            <input type="number" id="smtp-port" value={settings.smtp.smtp_port} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">SMTP Secure</label>
+            <select id="smtp-secure" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-zinc-300">
+              <option value="SSL" selected={settings.smtp.smtp_secure === "SSL"}>SSL</option>
+              <option value="TLS" selected={settings.smtp.smtp_secure === "TLS"}>TLS</option>
+              <option value="NONE" selected={settings.smtp.smtp_secure === "NONE"}>NONE</option>
+            </select>
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">SMTP User</label>
+            <input type="text" id="smtp-user" value={settings.smtp.smtp_user} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">SMTP Password</label>
+            <input type="password" id="smtp-pass" value={settings.smtp.smtp_pass} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">SMTP From Email</label>
+            <input type="email" id="smtp-from-email" value={settings.smtp.smtp_from_email} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">SMTP From Name</label>
+            <input type="text" id="smtp-from-name" value={settings.smtp.smtp_from_name} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Telegram -->
+      <div id="tab-telegram" class="space-y-6 hidden">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6">Cấu hình Telegram Bot</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Telegram Bot Token</label>
+            <input type="password" id="telegram-bot-token" value={settings.telegram.telegram_bot_token} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Chat ID Nhóm Quản trị</label>
+            <input type="text" id="telegram-chat-id" value={settings.telegram.telegram_chat_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Kênh Thông báo (Channel ID)</label>
+            <input type="text" id="telegram-channel-id" value={settings.telegram.telegram_channel_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Đăng nhập (Login settings) -->
+      <div id="tab-login" class="space-y-6 hidden">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6">Cổng Đăng Nhập</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2 md:col-span-2">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="login-standard-enable" checked={settings.login.login_standard_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm">Đăng nhập tài khoản thường (login_standard_enable)</span>
+            </div>
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="login-google-enable" checked={settings.login.login_google_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm">Đăng nhập Google (login_google_enable)</span>
+            </div>
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="login-fb-enable" checked={settings.login.login_fb_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm">Đăng nhập Facebook (login_fb_enable)</span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Google Client ID</label>
+            <input type="text" id="login-google-client-id" value={settings.login.login_google_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Facebook App ID</label>
+            <input type="text" id="login-fb-app-id" value={settings.login.login_fb_app_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Mạng xã hội (Social settings) -->
+      <div id="tab-social" class="space-y-6 hidden">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6">Liên kết kênh truyền thông & Mạng xã hội</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-fb-enable" checked={settings.social?.social_fb_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị Facebook Fanpage</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn trang Facebook (Fanpage)</label>
+              <input type="url" id="social-fb-url" value={settings.social?.social_fb_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://www.facebook.com/tphimx..." />
+            </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-fb-group-enable" checked={settings.social?.social_fb_group_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị nhóm cộng đồng Facebook (Group)</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn nhóm Facebook</label>
+              <input type="url" id="social-fb-group-url" value={settings.social?.social_fb_group_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://www.facebook.com/groups/..." />
+            </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-telegram-enable" checked={settings.social?.social_telegram_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị Telegram</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn kênh Telegram</label>
+              <input type="url" id="social-telegram-url" value={settings.social?.social_telegram_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://t.me/..." />
+            </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-tiktok-enable" checked={settings.social?.social_tiktok_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị TikTok</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn kênh TikTok</label>
+              <input type="url" id="social-tiktok-url" value={settings.social?.social_tiktok_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://tiktok.com/@..." />
+            </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-zalo-group-enable" checked={settings.social?.social_zalo_group_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị nhóm liên kết Zalo</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn nhóm Zalo</label>
+              <input type="url" id="social-zalo-group-url" value={settings.social?.social_zalo_group_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://zalo.me/g/..." />
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    // Tab switching client-side
+    (function() {
+      const tabIds = ['general', 'security', 'app', 'smtp', 'telegram', 'login', 'social'];
+      
+      tabIds.forEach(id => {
+        const btn = document.getElementById(`btn-tab-${id}`);
+        btn?.addEventListener('click', () => {
+          // Update button styles
+          tabIds.forEach(tId => {
+            const otherBtn = document.getElementById(`btn-tab-${tId}`);
+            if (otherBtn) {
+              otherBtn.className = "w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 font-label-caps text-text-dim flex items-center gap-3 transition-colors cursor-pointer";
+            }
+            const panel = document.getElementById(`tab-${tId}`);
+            if (panel) panel.classList.add('hidden');
+          });
+
+          if (btn) {
+            btn.className = "w-full text-left px-4 py-3 rounded-xl sidebar-active font-label-caps flex items-center gap-3 cursor-pointer";
+          }
+          const activePanel = document.getElementById(`tab-${id}`);
+          if (activePanel) activePanel.classList.remove('hidden');
+        });
+      });
+
+      // Save changes handler
+      const saveBtn = document.getElementById('save-settings-btn');
+      saveBtn?.addEventListener('click', () => {
+        // Load current config from storage or fallback to server settings
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) {
+          current = serverSettings;
+        }
+
+        // Build modified values
+        const siteName = document.getElementById('general-site-name').value;
+        const siteUrl = document.getElementById('general-site-url').value;
+        const siteDesc = document.getElementById('general-site-desc').value;
+        const siteKeywords = document.getElementById('general-site-keywords').value;
+        const maintenanceMsg = document.getElementById('general-maintenance-msg').value;
+        const maintenanceEnable = document.getElementById('general-maintenance-enable').checked;
+
+        const encryptEnable = document.getElementById('security-encrypt-enable').checked;
+        const encryptPass = document.getElementById('security-encrypt-pass').value;
+
+        const appVersion = document.getElementById('app-version').value;
+        const appReleaseNotes = document.getElementById('app-release-notes').value;
+        const appAndroidUrl = document.getElementById('app-android-url').value;
+        const appIosIpaUrl = document.getElementById('app-ios-ipa-url').value;
+        const appApkSha = document.getElementById('app-apk-sha').value;
+
+        const smtpHost = document.getElementById('smtp-host').value;
+        const smtpPort = parseInt(document.getElementById('smtp-port').value) || 465;
+        const smtpSecure = document.getElementById('smtp-secure').value;
+        const smtpUser = document.getElementById('smtp-user').value;
+        const smtpPass = document.getElementById('smtp-pass').value;
+        const smtpFromEmail = document.getElementById('smtp-from-email').value;
+        const smtpFromName = document.getElementById('smtp-from-name').value;
+
+        const telegramBotToken = document.getElementById('telegram-bot-token').value;
+        const telegramChatId = document.getElementById('telegram-chat-id').value;
+        const telegramChannelId = document.getElementById('telegram-channel-id').value;
+
+        const loginStandardEnable = document.getElementById('login-standard-enable').checked;
+        const loginGoogleEnable = document.getElementById('login-google-enable').checked;
+        const loginFbEnable = document.getElementById('login-fb-enable').checked;
+        const loginGoogleClientId = document.getElementById('login-google-client-id').value;
+        const loginFbAppId = document.getElementById('login-fb-app-id').value;
+
+        const socialFbEnable = document.getElementById('social-fb-enable').checked;
+        const socialFbUrl = document.getElementById('social-fb-url').value;
+        const socialFbGroupEnable = document.getElementById('social-fb-group-enable').checked;
+        const socialFbGroupUrl = document.getElementById('social-fb-group-url').value;
+        const socialTelegramEnable = document.getElementById('social-telegram-enable').checked;
+        const socialTelegramUrl = document.getElementById('social-telegram-url').value;
+        const socialTiktokEnable = document.getElementById('social-tiktok-enable').checked;
+        const socialTiktokUrl = document.getElementById('social-tiktok-url').value;
+        const socialZaloGroupEnable = document.getElementById('social-zalo-group-enable').checked;
+        const socialZaloGroupUrl = document.getElementById('social-zalo-group-url').value;
+
+        const updatedSettings = {
+          ...current,
+          general: {
+            ...current.general,
+            site_name: siteName,
+            site_url: siteUrl,
+            site_description: siteDesc,
+            site_keywords: siteKeywords,
+            maintenance_message: maintenanceMsg,
+            maintenance_enable: maintenanceEnable,
+            api_encrypt_enable: encryptEnable,
+            api_encrypt_pass: encryptPass,
+          },
+          app: {
+            ...current.app,
+            app_version: appVersion,
+            app_release_notes: appReleaseNotes,
+            app_android_download_url: appAndroidUrl,
+            app_ios_ipa_url: appIosIpaUrl,
+            app_apk_sha256: appApkSha,
+          },
+          smtp: {
+            smtp_host: smtpHost,
+            smtp_port: smtpPort,
+            smtp_secure: smtpSecure,
+            smtp_user: smtpUser,
+            smtp_pass: smtpPass,
+            smtp_from_email: smtpFromEmail,
+            smtp_from_name: smtpFromName,
+          },
+          telegram: {
+            ...current.telegram,
+            telegram_bot_token: telegramBotToken,
+            telegram_chat_id: telegramChatId,
+            telegram_channel_id: telegramChannelId,
+          },
+          login: {
+            ...current.login,
+            login_standard_enable: loginStandardEnable,
+            login_google_enable: loginGoogleEnable,
+            login_fb_enable: loginFbEnable,
+            login_google_client_id: loginGoogleClientId,
+            login_fb_app_id: loginFbAppId,
+          },
+          social: {
+            ...current.social,
+            social_fb_enable: socialFbEnable,
+            social_fb_url: socialFbUrl,
+            social_fb_group_enable: socialFbGroupEnable,
+            social_fb_group_url: socialFbGroupUrl,
+            social_telegram_enable: socialTelegramEnable,
+            social_telegram_url: socialTelegramUrl,
+            social_tiktok_enable: socialTiktokEnable,
+            social_tiktok_url: socialTiktokUrl,
+            social_zalo_group_enable: socialZaloGroupEnable,
+            social_zalo_group_url: socialZaloGroupUrl,
+          }
+        };
+
+        // Save back to local storage
+        localStorage.setItem('txa_site_settings', JSON.stringify(updatedSettings));
+
+        // Toast success message
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
+        } else {
+          alert('Lưu cấu hình hệ thống thành công!');
+        }
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      });
+    })();
+  </script>
+</AdminLayout>

@@ -1,0 +1,227 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { MovieService } from '../services/MovieService';
+import { Button } from '../components/ui/Button';
+
+// Dummy list of upcoming movies for schedule
+const upcomingMovies = await MovieService.getMovies({ type: 'movie', limit: 10 });
+// Filter some to make it look like schedule
+const scheduleList = upcomingMovies.map((m: any) => ({...m, releaseDate: "2026-06-20", time: "20:00"}));
+
+const currentYear = new Date().getFullYear();
+const currentMonth = new Date().getMonth() + 1;
+const currentDate = new Date().getDate();
+
+// Generate some days for the picker
+const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+const days = Array.from({length: daysInMonth}, (_, i) => i + 1);
+---
+
+<MainLayout title="Lịch chiếu phim | DongPhim">
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 space-y-8">
+    
+    <!-- Header & Reminder Button -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-glass-stroke pb-6">
+      <div>
+        <h1 class="font-display-hero text-4xl text-white font-bold tracking-tight">Lịch chiếu phim</h1>
+        <p class="text-on-surface-variant mt-2 font-body-main">Theo dõi các tác phẩm điện ảnh và truyền hình sắp ra mắt.</p>
+      </div>
+      <Button variant="premium" className="rounded-xl px-6 py-2.5 gap-2" id="btn-show-reminders">
+        <span class="material-symbols-outlined text-sm">notifications_active</span>
+        Xem tất cả lời nhắc
+      </Button>
+    </div>
+
+    <!-- 3-Level Filter: Year -> Month -> Day -->
+    <div class="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-6 space-y-6 shadow-xl">
+      <!-- Year & Month Picker -->
+      <div class="flex flex-wrap gap-4 items-center justify-between border-b border-glass-stroke pb-4">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-primary">calendar_month</span>
+          <select class="bg-surface border border-glass-stroke text-white font-title-md rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer">
+            <option value={currentYear - 1}>Năm {currentYear - 1}</option>
+            <option value={currentYear} selected>Năm {currentYear}</option>
+            <option value={currentYear + 1}>Năm {currentYear + 1}</option>
+          </select>
+          
+          <span class="text-text-dim px-2">/</span>
+          
+          <select class="bg-surface border border-glass-stroke text-white font-title-md rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer">
+            {Array.from({length: 12}).map((_, i) => (
+              <option value={i+1} selected={i+1 === currentMonth}>Tháng {i+1}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div class="text-sm font-label-caps text-on-surface-variant flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-primary inline-block shadow-[0_0_8px_#d2bbff]"></span>
+          Hôm nay: {currentDate}/{currentMonth}/{currentYear}
+        </div>
+      </div>
+
+      <!-- Centered Day Grid with Arrows -->
+      <div class="flex items-center justify-center gap-4">
+        <!-- Left Arrow -->
+        <button class="w-10 h-10 rounded-full glass-card border border-glass-stroke flex items-center justify-center text-on-surface hover:text-primary hover:border-primary transition-colors cursor-pointer shrink-0">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        
+        <!-- Days Grid -->
+        <div id="days-grid-container" class="flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory py-2 px-4 items-center justify-start md:justify-center max-w-[800px] flex-1">
+          {days.map(d => {
+            const isToday = d === currentDate;
+            return (
+              <button class={`snap-center shrink-0 w-14 h-16 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${isToday ? 'bg-primary text-on-primary shadow-[0_0_20px_rgba(210,187,255,0.4)] scale-110 border-0' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary/50'}`}>
+                <span class="text-[10px] font-label-caps uppercase">{`T${(d%7)+2}`}</span>
+                <span class="text-lg font-bold font-title-md">{d}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        <!-- Right Arrow -->
+        <button class="w-10 h-10 rounded-full glass-card border border-glass-stroke flex items-center justify-center text-on-surface hover:text-primary hover:border-primary transition-colors cursor-pointer shrink-0">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Movie List -->
+    <div class="space-y-6 pt-4">
+      <h3 class="text-xl text-white font-title-md border-l-4 border-primary pl-4">Lịch chiếu ngày {currentDate}/{currentMonth}/{currentYear}</h3>
+      
+      {scheduleList.length === 0 ? (
+        <div class="text-center py-20 text-on-surface-variant">Không có lịch chiếu nào cho ngày này.</div>
+      ) : (
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6">
+          {scheduleList.map((movie: any) => (
+            <div class="group relative flex flex-col gap-2 card-hover">
+              <a href={`/phim/${movie.slug}`} class="block w-full aspect-[2/3] relative rounded-lg overflow-hidden glass-card border border-glass-stroke transition-all duration-300">
+                <img src={movie.posterUrl} alt={movie.title} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-surface-deep/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                
+                <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end gap-1">
+                  <h3 class="text-white font-title-md text-sm line-clamp-2 leading-tight">{movie.title}</h3>
+                  <div class="flex items-center gap-2">
+                    <span class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] font-label-caps font-bold">{movie.time}</span>
+                    {movie.lang && <span class="text-text-dim text-[10px] font-label-caps">{movie.lang}</span>}
+                  </div>
+                </div>
+              </a>
+              <!-- Actions -->
+              <div class="flex items-center gap-2 mt-1">
+                <button class="flex-1 bg-surface border border-glass-stroke rounded-lg py-1.5 text-xs font-bold text-on-surface hover:text-secondary hover:border-secondary transition-all flex items-center justify-center gap-1 group/btn relative" onclick="showToast('Đã thêm vào lời nhắc', 'success')">
+                  <span class="material-symbols-outlined text-[14px]">notifications</span>
+                  Nhắc tôi
+                  <div class="txatooltip absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">Xem lời nhắc</div>
+                </button>
+                <button class="w-8 h-8 shrink-0 bg-surface border border-glass-stroke rounded-lg text-on-surface hover:text-primary hover:border-primary transition-all flex items-center justify-center relative group/btn btn-bookmark-schedule">
+                  <span class="material-symbols-outlined text-[16px]">bookmark_add</span>
+                  <div class="txatooltip absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">Add to Playlist</div>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </main>
+
+  <!-- Reminders Modal (Hidden by default) -->
+  <div id="reminders-modal" class="txamodal hidden">
+    <div class="txamodal-content">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl text-white font-title-md flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">notifications_active</span>
+          Lời nhắc của bạn
+        </h3>
+        <button id="btn-close-modal" class="text-on-surface-variant hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <div class="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+        {/* Mock reminders */}
+        {[1, 2, 3].map(i => (
+          <div class="flex items-center gap-4 bg-surface border border-glass-stroke p-3 rounded-xl hover:border-primary/50 transition-colors">
+            <div class="w-12 h-16 rounded overflow-hidden shrink-0">
+              <img src="https://icdn.darkbytes.xyz/file/cm9waGltbQ/images/con-trai-ban-me-poster.webp" class="w-full h-full object-cover" />
+            </div>
+            <div class="flex-1">
+              <h4 class="text-white text-sm font-bold line-clamp-1">Phim chờ chiếu {i}</h4>
+              <p class="text-xs text-text-dim font-label-caps mt-1">20:00 - 20/06/2026</p>
+            </div>
+            <button class="text-red-400 hover:text-red-300 transition-colors">
+              <span class="material-symbols-outlined text-lg">delete</span>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <div id="txa-toast-container"></div>
+</MainLayout>
+
+<style>
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    // Modal Logic
+    const modal = document.getElementById('reminders-modal');
+    const btnOpen = document.getElementById('btn-show-reminders');
+    const btnClose = document.getElementById('btn-close-modal');
+
+    if (btnOpen && modal && btnClose) {
+      btnOpen.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+      });
+      btnClose.addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+      modal.addEventListener('click', (e: Event) => {
+        if (e.target === modal) {
+          modal.classList.add('hidden');
+        }
+      });
+    }
+
+    // Bookmark buttons - check auth
+    document.querySelectorAll('.btn-bookmark-schedule').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const isLoggedIn = document.cookie.includes('txa_gate_passed');
+        if (!isLoggedIn) {
+          if ((window as any).showGlobalToast) (window as any).showGlobalToast('Yêu cầu đăng nhập để thêm vào Playlist', 'error');
+          setTimeout(() => { if ((window as any).openLoginModal) (window as any).openLoginModal(); }, 800);
+        } else {
+          if ((window as any).showGlobalToast) (window as any).showGlobalToast('Đã thêm vào Playlist!', 'success');
+        }
+      });
+    });
+
+    // Wire Day Grid scroll arrows
+    const grid = document.getElementById('days-grid-container');
+    const leftArrow = grid?.parentElement?.querySelector('button:first-of-type');
+    const rightArrow = grid?.parentElement?.querySelector('button:last-of-type');
+    
+    if (grid && leftArrow && rightArrow) {
+      leftArrow.addEventListener('click', () => {
+        grid.scrollBy({ left: -200, behavior: 'smooth' });
+      });
+      rightArrow.addEventListener('click', () => {
+        grid.scrollBy({ left: 200, behavior: 'smooth' });
+      });
+    }
+
+    // Auto-scroll active day button (today) into view
+    const activeDayBtn = document.querySelector('.snap-center.bg-primary');
+    if (activeDayBtn && grid) {
+      setTimeout(() => {
+        activeDayBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }, 150);
+    }
+  });
+</script>

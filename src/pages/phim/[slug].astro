@@ -1,0 +1,1553 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { MovieService } from '../../services/MovieService';
+import type { Movie } from '../../types/movie';
+import { Button } from '../../components/ui/Button';
+import NotFound from '../../components/ui/NotFound.astro';
+
+const { slug } = Astro.params;
+
+const movie = slug ? await MovieService.getMovieBySlug(slug) : null;
+
+if (!movie) {
+  Astro.response.status = 404;
+  Astro.response.statusText = 'Not Found';
+}
+
+// Logic for episode pagination & filtering unreleased episodes
+const rawServers = movie ? (movie.episodes || []) : [];
+let servers = [];
+let nextAiringEpisode = null;
+
+if (movie && rawServers.length > 0) {
+  // Check the first server episodes schedule
+  const firstServer = rawServers[0];
+  const allEps = firstServer.serverData || [];
+  
+  let firstUnreleasedIdx = -1;
+  
+  // Hide unreleased episodes only if status is "ongoing"
+  if (movie.status === 'ongoing') {
+    const nowTime = Date.now();
+    for (let i = 0; i < allEps.length; i++) {
+      const ep = allEps[i];
+      if (ep.airDate) {
+        let airDateTimeStr = `${ep.airDate}T00:00:00Z`;
+        if (ep.airTime) {
+          const parts = ep.airTime.split(':');
+          if (parts.length === 2) {
+            airDateTimeStr = `${ep.airDate}T${ep.airTime}:00Z`;
+          } else {
+            airDateTimeStr = `${ep.airDate}T${ep.airTime}Z`;
+          }
+        }
+        try {
+          const airDateObj = new Date(airDateTimeStr);
+          if (nowTime < airDateObj.getTime()) {
+            firstUnreleasedIdx = i;
+            break;
+          }
+        } catch (e) {
+          console.error('Error parsing air date:', e);
+        }
+      }
+    }
+  }
+
+  if (firstUnreleasedIdx !== -1) {
+    // Found first unreleased episode
+    nextAiringEpisode = allEps[firstUnreleasedIdx];
+    
+    // Slice serverData to hide unreleased episodes
+    servers = rawServers.map(server => ({
+      serverName: server.serverName,
+      serverData: (server.serverData || []).slice(0, firstUnreleasedIdx)
+    }));
+  } else {
+    servers = rawServers;
+  }
+} else {
+  servers = rawServers;
+}
+
+const totalEps = servers.length > 0 ? (servers[0].serverData.length) : 0;
+const episodesPerTab = totalEps >= 100 ? 100 : 25;
+
+// Fetch all movies to group seasons/parts of the same series
+const allMovies = await MovieService.getMovies();
+let relatedParts: Movie[] = [];
+if (movie) {
+  relatedParts = allMovies.filter(m => {
+    const normalize = (title: string) => {
+      return title
+        .toLowerCase()
+        .replace(/(?:phần|ss|season|part|tập|phim|bộ)\s*\d+/gi, '')
+        .replace(/\s+\d+$/g, '')
+        .trim();
+    };
+    const baseTitle = normalize(movie.title);
+    const mBaseTitle = normalize(m.title);
+    return baseTitle.length > 2 && mBaseTitle === baseTitle;
+  }).sort((a, b) => {
+    return a.releaseYear - b.releaseYear || a.title.localeCompare(b.title);
+  });
+}
+
+// Fetch related movies for the recommendations tab
+const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : [];
+---
+
+{movie ? (
+  <MainLayout title={`${movie.title}`}>
+    <!-- Background Hero Banner -->
+    <div class="absolute top-0 left-0 w-full h-[35vh] md:h-[45vh] overflow-hidden z-0">
+      <img id="movie-banner-img" src={movie.bannerUrl || movie.posterUrl} alt="Banner" class="w-full h-full object-cover opacity-20 blur-[1px]" />
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#0A0A0B]/60 to-[#0A0A0B]"></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-transparent to-[#0A0A0B]"></div>
+    </div>
+
+    <main class="max-w-container-max mx-auto px-gutter pt-24 md:pt-36 pb-16 relative z-10 space-y-8">
+      
+      <!-- Lưới hai cột hiển thị chi tiết phim -->
+      <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+        
+        <!-- Cột trái: Ảnh Poster & Mô tả chung -->
+        <div class="space-y-6">
+          <div class="aspect-[2/3] w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden shadow-2xl border border-glass-stroke relative group">
+            <img id="movie-poster-img" src={movie.posterUrl} alt={movie.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-550" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+          </div>
+
+          <div class="text-center lg:text-left space-y-2">
+            <h1 id="movie-title-display" class="text-2xl md:text-3xl font-display-hero font-bold text-white leading-tight">{movie.title}</h1>
+            <p id="movie-original-title-display" class="text-sm text-on-surface-variant font-medium">{movie.originalTitle || ''}</p>
+          </div>
+
+          <!-- Nút thu gọn / mở rộng thông tin phim cho mobile -->
+          <button id="toggle-mobile-info" class="lg:hidden w-full flex items-center justify-between py-3 px-4 bg-white/5 border border-glass-stroke rounded-xl text-xs font-bold text-on-surface-variant hover:text-white transition-colors cursor-pointer">
+            <span>Thông tin phim</span>
+            <span class="material-symbols-outlined transition-transform duration-300" id="mobile-info-chevron">keyboard_arrow_down</span>
+          </button>
+
+          <div id="mobile-info-content" class="hidden lg:block space-y-5">
+            <!-- Badges -->
+            <div id="movie-badges-container" class="flex flex-wrap gap-2 justify-center lg:justify-start">
+              <span class="bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded">{movie.quality}</span>
+              <span class="bg-white/5 text-on-surface-variant border border-glass-stroke text-[10px] font-bold px-2 py-0.5 rounded">{movie.lang}</span>
+              <span class="bg-white/5 text-on-surface-variant border border-glass-stroke text-[10px] font-bold px-2 py-0.5 rounded">{movie.releaseYear}</span>
+              {movie.imdbScore && (
+                <span class="bg-secondary/10 text-secondary border border-secondary/20 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[10px]">star</span> {movie.imdbScore}
+                </span>
+              )}
+            </div>
+
+            <!-- Genres -->
+            <div id="movie-genres-container" class="flex flex-wrap gap-1.5 justify-center lg:justify-start">
+              {movie.genres?.map(g => (
+                <span class="bg-white/5 border border-glass-stroke text-[10px] text-on-surface-variant px-2.5 py-1 rounded-full font-medium hover:border-primary/40 hover:text-primary transition-colors cursor-pointer">{g}</span>
+              ))}
+            </div>
+
+            <!-- Tóm tắt phim -->
+            <div class="space-y-2">
+              <h4 class="text-xs font-black uppercase tracking-widest text-primary">Giới thiệu</h4>
+              <div id="movie-description-display" class="text-xs text-on-surface-variant leading-relaxed txaformat" set:html={movie.description}></div>
+            </div>
+
+            <!-- Bảng thông tin chi tiết -->
+            <div class="border-t border-glass-stroke pt-4 space-y-2">
+              <div class="flex justify-between text-xs py-1">
+                <span class="text-on-surface-variant font-medium">Thời lượng:</span>
+                <span id="movie-duration-display" class="text-white font-semibold">{movie.durationMinutes}</span>
+              </div>
+              <div class="flex justify-between text-xs py-1">
+                <span class="text-on-surface-variant font-medium">Danh mục:</span>
+                <span id="movie-type-display" class="text-white font-semibold">{movie.type === 'movie' ? 'Phim Lẻ' : 'Phim Bộ'}</span>
+              </div>
+              <div class="flex justify-between text-xs py-1">
+                <span class="text-on-surface-variant font-medium">Quốc gia:</span>
+                <span id="movie-country-display" class="text-white font-semibold">{movie.category || 'Nước ngoài'}</span>
+              </div>
+              <div class="flex justify-between text-xs py-1">
+                <span class="text-on-surface-variant font-medium">Định dạng:</span>
+                <span id="movie-seasons-display" class="text-white font-semibold">{movie.seasons || (movie.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cột phải: Khu vực Tương tác, Lịch chiếu, Tabs tập phim & Bình luận -->
+        <div class="space-y-6">
+          
+          <!-- Thanh công cụ hành động (Action Bar) -->
+          <div class="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+            <!-- Nút chính "Xem Ngay" & Nút phụ -->
+            <div class="flex flex-wrap items-center gap-3">
+              <a href={`/xem/${movie.slug}?ep=tap-1`} id="btn-watch-now">
+                <Button className="rounded-full bg-gradient-to-br from-primary-container to-secondary-container hover:brightness-110 text-white font-bold px-7 py-3 gap-2 text-sm shadow-[0_4px_20px_rgba(124,58,237,0.25)] flex items-center active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                  Xem Ngay
+                </Button>
+              </a>
+
+              <div class="flex items-center gap-1.5">
+                <button class="relative group p-2.5 rounded-full border border-glass-stroke text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors cursor-pointer" id="btn-favorite-action">
+                  <span class="material-symbols-outlined text-lg" id="heart-icon">favorite</span>
+                  <div class="txatooltip absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none text-[10px]">Yêu thích</div>
+                </button>
+
+                <button class="relative group p-2.5 rounded-full border border-glass-stroke text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors cursor-pointer" id="btn-playlist-action">
+                  <span class="material-symbols-outlined text-lg" id="bookmark-icon">bookmark_add</span>
+                  <div class="txatooltip absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none text-[10px]">Thêm vào DS phát</div>
+                </button>
+
+                <button class="relative group p-2.5 rounded-full border border-glass-stroke text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors cursor-pointer" id="btn-share-action">
+                  <span class="material-symbols-outlined text-lg">share</span>
+                  <div class="txatooltip absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none text-[10px]">Chia sẻ</div>
+                </button>
+
+                <button class="relative group p-2.5 rounded-full border border-glass-stroke text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors cursor-pointer" id="btn-comments-scroll">
+                  <span class="material-symbols-outlined text-lg">chat_bubble</span>
+                  <div class="txatooltip absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none text-[10px]">Bình luận</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Điểm Đánh Giá -->
+            <div class="flex items-center gap-2">
+              <div class="bg-secondary/10 border border-secondary/20 text-secondary rounded-full py-1.5 px-4 text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer" id="badge-reviews-click">
+                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                <span id="average-rating-display">4.8</span> / 5 (<span id="reviews-count-display">12</span> đánh giá)
+              </div>
+            </div>
+          </div>
+
+          <!-- Lịch phát sóng phim (nếu có) -->
+          {nextAiringEpisode ? (
+            <div class="p-4 bg-gradient-to-r from-primary-container/20 via-primary-container/10 to-transparent border border-primary/20 rounded-2xl text-xs text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg relative overflow-hidden" id="broadcastScheduleBadge">
+              <div class="flex items-center gap-3 relative z-10">
+                <div class="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center border border-primary/20 shrink-0">
+                  <span class="material-symbols-outlined text-xl text-primary">notifications</span>
+                </div>
+                <div>
+                  <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-name={nextAiringEpisode.name} data-date={nextAiringEpisode.airDate} data-time={nextAiringEpisode.airTime}>
+                    {nextAiringEpisode.name} sẽ phát sóng ngày {
+                      (() => {
+                        if (!nextAiringEpisode.airDate) return '';
+                        const parts = nextAiringEpisode.airDate.split('-');
+                        return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : nextAiringEpisode.airDate;
+                      })()
+                    }. Hãy đón xem nhé!
+                  </span>
+                </div>
+              </div>
+              
+              {nextAiringEpisode.airTime && (
+                <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={nextAiringEpisode.airTime.split(':').length === 2 ? `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}:00Z` : `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}Z`}>
+                  <span class="text-[9px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">Đếm ngược phát sóng</span>
+                  <span class="font-mono text-[13px] font-black text-primary" id="countdownTimer">--:--:--</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            movie.broadcastSchedule && (movie.broadcastSchedule.notice || movie.broadcastSchedule.nextDate) && (
+              <div class="p-4 bg-gradient-to-r from-primary-container/20 via-primary-container/10 to-transparent border border-primary/20 rounded-2xl text-xs text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg relative overflow-hidden" id="broadcastScheduleBadge">
+                <div class="flex items-center gap-3 relative z-10">
+                  <div class="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center border border-primary/20 shrink-0">
+                    <span class="material-symbols-outlined text-xl text-primary">notifications</span>
+                  </div>
+                  <div>
+                    <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-notice={movie.broadcastSchedule.notice} data-date={movie.broadcastSchedule.nextDate} data-time={movie.broadcastSchedule.nextTime}>
+                      {movie.broadcastSchedule.notice || `Tập tiếp theo sẽ phát sóng ngày ${
+                        (() => {
+                          if (!movie.broadcastSchedule?.nextDate) return '';
+                          const parts = movie.broadcastSchedule.nextDate.split('-');
+                          return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : movie.broadcastSchedule.nextDate;
+                        })()
+                      }.`}
+                    </span>
+                  </div>
+                </div>
+                
+                {movie.broadcastSchedule.nextTime && movie.broadcastSchedule.nextDate && (
+                  <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={movie.broadcastSchedule.nextTime.split(':').length === 2 ? `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}:00Z` : `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}Z`}>
+                    <span class="text-[9px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">Đếm ngược phát sóng</span>
+                    <span class="font-mono text-[13px] font-black text-primary" id="countdownTimer">--:--:--</span>
+                  </div>
+                )}
+              </div>
+            )
+          )}
+
+          <!-- Dropdown Chọn Phần phim khác (Seasons Dropdown) -->
+          <div id="movie-seasons-dropdown-wrapper">
+            {relatedParts.length > 1 && (
+              <div class="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary text-base">layers</span>
+                  <span class="text-xs font-bold text-white">Xem các phần phim khác của tác phẩm:</span>
+                </div>
+                <div class="relative min-w-[200px]">
+                  <select id="seasons-redirect-select" class="w-full bg-zinc-900 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary cursor-pointer appearance-none">
+                    {relatedParts.map(part => (
+                      <option value={`/phim/${part.slug}`} selected={part.slug === movie.slug}>
+                        {part.title} ({part.seasons || `${part.releaseYear}`})
+                      </option>
+                    ))}
+                  </select>
+                  <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">keyboard_arrow_down</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <!-- Hệ thống Tab điều hướng -->
+          <div class="space-y-6">
+            <div class="border-b border-glass-stroke">
+              <div class="flex gap-6 md:gap-8 overflow-x-auto pb-px hide-scrollbar" id="detail-tabs">
+                <button data-tab="tab-episodes" class="detail-tab-btn pb-3 text-sm font-bold transition-all border-b-2 border-primary text-primary cursor-pointer shrink-0">
+                  Tập phim
+                </button>
+                <button data-tab="tab-gallery" class="detail-tab-btn pb-3 text-sm font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer shrink-0">
+                  Bộ sưu tập
+                </button>
+                <button data-tab="tab-cast" class="detail-tab-btn pb-3 text-sm font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer shrink-0">
+                  Diễn viên
+                </button>
+                <button data-tab="tab-related" class="detail-tab-btn pb-3 text-sm font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer shrink-0">
+                  Đề xuất
+                </button>
+              </div>
+            </div>
+
+            <!-- Tab Panels -->
+            <div id="tab-panels-container" class="space-y-6">
+              
+              <!-- Tab 1: Tập Phim -->
+              <div id="tab-episodes" class="detail-tab-panel space-y-4">
+                
+                {servers.length > 0 && servers[0].serverData.length > 0 && (
+                  <div>
+                    {movie.type === 'movie' ? (
+                      // Bố cục card server cho Phim Lẻ
+                      <div class="space-y-4">
+                        <h3 class="text-white font-title-md font-bold text-sm tracking-wider uppercase mb-3">Các bản chiếu</h3>
+                        <div id="movie-servers-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {servers.map((srv, idx) => (
+                            <div class="glass-card bg-surface-container-high/40 border border-glass-stroke rounded-2xl overflow-hidden flex transition-all duration-350 hover:border-primary/30 hover:scale-[1.01]">
+                              <div class="flex-1 p-4 flex flex-col justify-between min-w-0 bg-gradient-to-r from-black/30 to-transparent">
+                                <div class="space-y-1">
+                                  <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[14px] text-secondary">dns</span>
+                                    <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{srv.serverName}</span>
+                                  </div>
+                                  <h4 class="text-white font-title-md font-semibold truncate text-sm">{movie.title}</h4>
+                                </div>
+                                <a href={`/xem/${movie.slug}?sv=${idx}&ts=${encodeURIComponent(srv.serverName)}`} class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
+                                  Xem bản này
+                                </a>
+                              </div>
+                              <div class="w-1/3 aspect-[4/3] relative shrink-0">
+                                <img src={movie.bannerUrl || movie.posterUrl} alt={srv.serverName} class="w-full h-full object-cover" />
+                                <div class="absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-transparent to-transparent"></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      // Bố cục Phân trang & Đổi Server cho Phim Bộ
+                      <div class="space-y-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-glass-stroke/40 pb-3">
+                          <h3 class="text-white font-title-md font-bold text-sm tracking-wider uppercase">Danh sách tập</h3>
+                          <div id="server-selector-container" class="flex flex-wrap gap-1.5">
+                            {servers.map((srv, idx) => (
+                              <button data-server-idx={idx} class={`server-btn px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${idx === 0 ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary hover:text-primary'}`}>
+                                {srv.serverName}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Phân trang thông minh */}
+                        {servers[0].serverData.length > episodesPerTab && (
+                          <div class="flex gap-2 overflow-x-auto pb-2 hide-scrollbar" id="episode-tabs">
+                            {Array.from({ length: Math.ceil(servers[0].serverData.length / episodesPerTab) }).map((_, i) => (
+                              <button 
+                                data-tab-idx={i}
+                                class={`episode-tab shrink-0 px-3.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${i === 0 ? 'bg-secondary text-on-secondary active-tab' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-secondary hover:text-secondary'}`}
+                              >
+                                {i * episodesPerTab + 1} - {Math.min((i + 1) * episodesPerTab, servers[0].serverData.length)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar" id="episodes-container">
+                          {servers[0].serverData.map((ep, idx) => {
+                            const tabIdx = Math.floor(idx / episodesPerTab);
+                            return (
+                              <a 
+                                href={`/xem/${movie.slug}?ep=${ep.slug}&sv=0`}
+                                data-ep-idx={idx}
+                                data-tab-owner={tabIdx}
+                                data-ep-slug={ep.slug}
+                                class={`episode-item w-full aspect-square flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer ${tabIdx === 0 ? 'flex' : 'hidden'} ${idx === 0 ? 'bg-primary/20 border border-primary text-primary hover:bg-primary/30' : 'bg-surface border border-glass-stroke text-on-surface hover:bg-white/5 hover:border-primary hover:text-primary'}`}
+                              >
+                                {idx + 1}
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <!-- Tab 2: Bộ Sưu Tập -->
+              <div id="tab-gallery" class="detail-tab-panel hidden grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div class="aspect-video rounded-xl overflow-hidden glass-card">
+                  <img src={movie.bannerUrl || movie.posterUrl} alt="Phân cảnh 1" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                </div>
+                <div class="aspect-video rounded-xl overflow-hidden glass-card">
+                  <img src={movie.posterUrl} alt="Phân cảnh 2" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                </div>
+                <div class="aspect-video rounded-xl overflow-hidden glass-card">
+                  <img src={movie.bannerUrl || movie.posterUrl} alt="Phân cảnh 3" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                </div>
+              </div>
+
+              <!-- Tab 3: Diễn Viên -->
+              <div id="tab-cast" class="detail-tab-panel hidden grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                {movie.actors && movie.actors.length > 0 ? (
+                  movie.actors.map(actor => (
+                    <div class="flex flex-col items-center text-center space-y-2">
+                      <div class="w-14 h-14 rounded-full bg-surface-variant border border-glass-stroke flex items-center justify-center text-xs font-bold text-primary shadow-inner select-none">
+                        {actor.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                      </div>
+                      <div>
+                        <p class="text-xs font-bold text-white truncate max-w-[100px]">{actor}</p>
+                        <p class="text-[9px] text-on-surface-variant uppercase tracking-wider font-bold">Diễn viên</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p class="text-xs text-on-surface-variant col-span-full py-4 text-center">Chưa cập nhật thông tin diễn viên.</p>
+                )}
+              </div>
+
+              <!-- Tab 4: Đề Xuất Phim -->
+              <div id="tab-related" class="detail-tab-panel hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {relatedMovies.length > 0 ? (
+                  relatedMovies.map(m => (
+                    <a href={`/phim/${m.slug}`} class="glass-card bg-surface-container/60 border border-glass-stroke rounded-xl overflow-hidden group hover:border-primary/45 transition-colors">
+                      <div class="aspect-[2/3] overflow-hidden relative">
+                        <img src={m.posterUrl} alt={m.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                      <div class="p-3 space-y-1">
+                        <h4 class="text-xs font-bold text-white truncate">{m.title}</h4>
+                        <p class="text-[10px] text-on-surface-variant">{m.releaseYear} • {m.quality}</p>
+                      </div>
+                    </a>
+                  ))
+                ) : (
+                  <p class="text-xs text-on-surface-variant col-span-full py-4 text-center">Không có đề xuất nào phù hợp.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <!-- Khu vực bình luận & đánh giá -->
+          <div class="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-5" id="comments-section-anchor">
+            <div class="flex items-center justify-between border-b border-glass-stroke pb-3">
+              <h3 class="text-white font-title-md font-bold text-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">chat_bubble</span>
+                Bình luận (<span id="comments-count">2</span>)
+              </h3>
+              <div class="flex gap-2">
+                <button class="px-3.5 py-1 bg-primary/20 text-primary border border-primary/30 rounded-lg text-[10px] font-bold cursor-pointer transition-colors" id="btn-show-comments">Bình luận</button>
+                <button class="px-3.5 py-1 bg-surface border border-glass-stroke text-on-surface-variant rounded-lg text-[10px] font-bold hover:text-white cursor-pointer transition-colors" id="btn-show-rating">Đánh giá</button>
+              </div>
+            </div>
+
+            <!-- Khung Nhập Đánh Giá sao -->
+            <div id="rating-input-container" class="hidden p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
+              <span class="text-xs font-bold text-on-surface-variant">Chọn mức điểm đánh giá phim của bạn:</span>
+              <div class="flex gap-1" id="rating-stars-input">
+                <span data-star="1" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="2" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="3" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="4" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="5" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
+              </div>
+            </div>
+
+            <!-- Ô nhập liệu bình luận -->
+            <div class="space-y-3">
+              <div class="relative">
+                <textarea id="comment-textarea" placeholder="Viết bình luận của bạn tại đây..." rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all outline-none resize-none"></textarea>
+                <span class="absolute bottom-2.5 right-3 text-[9px] text-gray-500 font-bold" id="char-counter">0 / 1000</span>
+              </div>
+              
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer group">
+                    <div class="relative flex items-center justify-center shrink-0">
+                      <input type="checkbox" id="comment-anonymous" class="peer sr-only" />
+                      <div class="h-4 w-4 rounded border border-white/10 bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+                      <span class="material-symbols-outlined absolute text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-400 group-hover:text-gray-200 transition-colors select-none">Bình luận ẩn danh</span>
+                  </label>
+                  <label id="reply-to-lbl" class="hidden flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg px-2 py-0.5 text-[9px] text-primary">
+                    <span>Đang trả lời...</span>
+                    <button class="material-symbols-outlined text-[10px] hover:text-red-400" id="cancel-reply-btn">close</button>
+                  </label>
+                </div>
+                
+                <button id="btn-submit-comment" class="bg-primary text-on-primary hover:bg-primary/90 font-bold text-[11px] px-4.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95">
+                  Gửi bình luận
+                  <span class="material-symbols-outlined text-xs">send</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Danh sách các bình luận -->
+            <div class="space-y-4 pt-1" id="comments-list">
+              <!-- JS render ở client -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+    <script id="servers-data" type="application/json" set:html={JSON.stringify(servers)}></script>
+    <script id="movie-slug" type="application/json" set:html={JSON.stringify(movie.slug)}></script>
+    <script id="movie-title" type="application/json" set:html={JSON.stringify(movie.title)}></script>
+  </MainLayout>
+) : (
+  <MainLayout title="Không tìm thấy trang">
+    <NotFound />
+  </MainLayout>
+)}
+
+<style>
+  /* Custom Scrollbar for Episode List */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+
+<script>
+  declare global {
+    interface Window {
+      showGlobalToast: (message: string, type?: string) => void;
+      openLoginModal: () => void;
+    }
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    // Check elements
+    const serversDataEl = document.getElementById('servers-data');
+    const movieSlugEl = document.getElementById('movie-slug');
+    const movieTitleEl = document.getElementById('movie-title');
+    if (!serversDataEl || !movieSlugEl || !movieTitleEl) return;
+
+    let servers: any[] = [];
+    try { servers = JSON.parse(serversDataEl.textContent || '[]'); } catch (e) { return; }
+    const movieSlug = JSON.parse(movieSlugEl.textContent || '""');
+    const movieTitle = JSON.parse(movieTitleEl.textContent || '""');
+
+    // Check if the movie is a crawled movie in local storage
+    let localMovie: any = null;
+    try {
+      const stored = localStorage.getItem('txa_crawled_movies');
+      if (stored) {
+        const list = JSON.parse(stored);
+        if (Array.isArray(list)) {
+          localMovie = list.find((m: any) => {
+            const movieData = m.movie || m;
+            return movieData.slug === movieSlug;
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error reading crawled movies from local storage:', e);
+    }
+
+    if (localMovie) {
+      const movieData = localMovie.movie || localMovie;
+      // Overwrite servers
+      servers = localMovie.episodes || [];
+      
+      // Update DOM components with details from localMovie
+      const bannerImg = document.getElementById('movie-banner-img');
+      if (bannerImg) {
+        bannerImg.setAttribute('src', movieData.bannerUrl || movieData.posterUrl);
+      }
+      const posterImg = document.getElementById('movie-poster-img');
+      if (posterImg) {
+        posterImg.setAttribute('src', movieData.posterUrl);
+        posterImg.setAttribute('alt', movieData.title);
+      }
+      const titleEl = document.getElementById('movie-title-display');
+      if (titleEl) {
+        titleEl.textContent = movieData.title;
+      }
+      const origTitleEl = document.getElementById('movie-original-title-display');
+      if (origTitleEl) {
+        origTitleEl.textContent = movieData.originalTitle || '';
+      }
+      const descEl = document.getElementById('movie-description-display');
+      if (descEl) {
+        descEl.innerHTML = movieData.description || '';
+      }
+      const durationEl = document.getElementById('movie-duration-display');
+      if (durationEl) {
+        durationEl.textContent = movieData.durationMinutes || '';
+      }
+      const typeEl = document.getElementById('movie-type-display');
+      if (typeEl) {
+        typeEl.textContent = movieData.type === 'movie' ? 'Phim Lẻ' : 'Phim Bộ';
+      }
+      const countryEl = document.getElementById('movie-country-display');
+      if (countryEl) {
+        countryEl.textContent = movieData.category || 'Nước ngoài';
+      }
+      const seasonsEl = document.getElementById('movie-seasons-display');
+      if (seasonsEl) {
+        seasonsEl.textContent = movieData.seasons || (movieData.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1');
+      }
+
+      // Hide seasons selector dropdown since crawled movie won't match relatedParts
+      const seasonsDropdown = document.getElementById('movie-seasons-dropdown-wrapper');
+      if (seasonsDropdown) {
+        seasonsDropdown.style.display = 'none';
+      }
+
+      // Hydrate quality, lang, releaseYear badges
+      const badgesContainer = document.getElementById('movie-badges-container');
+      if (badgesContainer) {
+        let scoreHtml = '';
+        if (movieData.imdbScore) {
+          scoreHtml = `
+            <span class="bg-secondary/10 text-secondary border border-secondary/20 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+              <span class="material-symbols-outlined text-[10px]">star</span> ${movieData.imdbScore}
+            </span>
+          `;
+        }
+        badgesContainer.innerHTML = `
+          <span class="bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded">${movieData.quality || 'FHD'}</span>
+          <span class="bg-white/5 text-on-surface-variant border border-glass-stroke text-[10px] font-bold px-2 py-0.5 rounded">${movieData.lang || 'Vietsub'}</span>
+          <span class="bg-white/5 text-on-surface-variant border border-glass-stroke text-[10px] font-bold px-2 py-0.5 rounded">${movieData.releaseYear || 2024}</span>
+          ${scoreHtml}
+        `;
+      }
+
+      // Hydrate genres
+      const genresContainer = document.getElementById('movie-genres-container');
+      if (genresContainer && Array.isArray(movieData.genres)) {
+        genresContainer.innerHTML = movieData.genres.map((g: string) => `
+          <span class="bg-white/5 border border-glass-stroke text-[10px] text-on-surface-variant px-2.5 py-1 rounded-full font-medium hover:border-primary/40 hover:text-primary transition-colors cursor-pointer">${g}</span>
+        `).join('');
+      }
+
+      // If it is a movie (type === 'movie'), re-render movie servers card list
+      if (movieData.type === 'movie') {
+        const movieServersContainer = document.getElementById('movie-servers-container');
+        if (movieServersContainer) {
+          movieServersContainer.innerHTML = servers.map((srv: any, idx: number) => `
+            <div class="glass-card bg-surface-container-high/40 border border-glass-stroke rounded-2xl overflow-hidden flex transition-all duration-350 hover:border-primary/30 hover:scale-[1.01]">
+              <div class="flex-1 p-4 flex flex-col justify-between min-w-0 bg-gradient-to-r from-black/30 to-transparent">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px] text-secondary">dns</span>
+                    <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">${srv.serverName}</span>
+                  </div>
+                  <h4 class="text-white font-title-md font-semibold truncate text-sm">${movieData.title}</h4>
+                </div>
+                <a href="/xem/${movieSlug}?sv=${idx}&ts=${encodeURIComponent(srv.serverName)}" class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
+                  Xem bản này
+                </a>
+              </div>
+              <div class="w-1/3 aspect-[4/3] relative shrink-0">
+                <img src="${movieData.bannerUrl || movieData.posterUrl}" alt="${srv.serverName}" class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-transparent to-transparent"></div>
+              </div>
+            </div>
+          `).join('');
+        }
+      } else {
+        // It is a series, re-render the server buttons list
+        const serverSelector = document.getElementById('server-selector-container');
+        if (serverSelector) {
+          serverSelector.innerHTML = servers.map((srv: any, idx: number) => `
+            <button data-server-idx="${idx}" class="server-btn px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${idx === 0 ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary hover:text-primary'}">
+              ${srv.serverName}
+            </button>
+          `).join('');
+        }
+      }
+    }
+
+    // 1. Mobile Info Toggler
+    const toggleMobileBtn = document.getElementById('toggle-mobile-info');
+    const mobileContent = document.getElementById('mobile-info-content');
+    const mobileChevron = document.getElementById('mobile-info-chevron');
+    if (toggleMobileBtn && mobileContent && mobileChevron) {
+      toggleMobileBtn.addEventListener('click', () => {
+        mobileContent.classList.toggle('hidden');
+        mobileChevron.classList.toggle('rotate-180');
+      });
+    }
+
+    // 2. Interactive Navigation Tabs
+    const tabButtons = document.querySelectorAll('.detail-tab-btn');
+    const tabPanels = document.querySelectorAll('.detail-tab-panel');
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.getAttribute('data-tab');
+        
+        tabButtons.forEach(b => {
+          b.classList.remove('border-b-2', 'border-primary', 'text-primary');
+          b.classList.add('text-on-surface-variant', 'hover:text-white');
+        });
+        btn.classList.add('border-b-2', 'border-primary', 'text-primary');
+        btn.classList.remove('text-on-surface-variant', 'hover:text-white');
+
+        tabPanels.forEach(panel => {
+          if (panel.id === targetTab) {
+            panel.classList.remove('hidden');
+          } else {
+            panel.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    // 3. Seasons Dropdown redirects
+    const seasonsSelect = document.getElementById('seasons-redirect-select');
+    if (seasonsSelect) {
+      seasonsSelect.addEventListener('change', (e: any) => {
+        window.location.href = e.target.value;
+      });
+    }
+
+    // 4. Scroll to comments section
+    const commentsScrollBtn = document.getElementById('btn-comments-scroll');
+    const commentsAnchor = document.getElementById('comments-section-anchor');
+    if (commentsScrollBtn && commentsAnchor) {
+      commentsScrollBtn.addEventListener('click', () => {
+        commentsAnchor.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+
+    // State variables
+    let activeServerIdx = 0;
+    let activeEpisodeSlug = '';
+
+    const episodesContainer = document.getElementById('episodes-container');
+    const tabsContainer = document.getElementById('episode-tabs');
+
+    // Helper: Bind events to episode list page tabs
+    function bindTabEvents() {
+      if (!tabsContainer || !episodesContainer) return;
+      const tabs = tabsContainer.querySelectorAll('.episode-tab');
+      const episodes = episodesContainer.querySelectorAll('.episode-item');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabIdx = parseInt(tab.getAttribute('data-tab-idx') || '0');
+          
+          tabs.forEach(t => {
+            t.classList.remove('bg-secondary', 'text-on-secondary', 'active-tab');
+            t.classList.add('bg-surface', 'border', 'border-glass-stroke', 'text-on-surface-variant');
+          });
+          tab.classList.add('bg-secondary', 'text-on-secondary', 'active-tab');
+          tab.classList.remove('bg-surface', 'border', 'border-glass-stroke', 'text-on-surface-variant');
+          
+          episodes.forEach(ep => {
+            const epOwner = parseInt(ep.getAttribute('data-tab-owner') || '0');
+            if (epOwner === tabIdx) {
+              ep.classList.remove('hidden');
+              ep.classList.add('flex');
+            } else {
+              ep.classList.add('hidden');
+              ep.classList.remove('flex');
+            }
+          });
+        });
+      });
+    }
+
+    // Dynamic Render Episodes List
+    function renderEpisodes(serverIdx: number, targetEpSlug?: string) {
+      if (!episodesContainer || !tabsContainer || !servers[serverIdx]) return;
+      
+      activeServerIdx = serverIdx;
+      const currentServer = servers[serverIdx];
+      const episodesList = currentServer.serverData || [];
+      const totalEps = episodesList.length;
+      const epsPerTab = totalEps >= 100 ? 100 : 25;
+
+      let targetIdx = 0;
+      if (targetEpSlug) {
+        const found = episodesList.findIndex((ep: any) => ep.slug === targetEpSlug);
+        if (found !== -1) {
+          targetIdx = found;
+          activeEpisodeSlug = targetEpSlug;
+        }
+      }
+      
+      const activeTabIdx = Math.floor(targetIdx / epsPerTab);
+
+      // Render Pagination Tabs
+      if (totalEps > epsPerTab) {
+        const totalTabs = Math.ceil(totalEps / epsPerTab);
+        let tabsHtml = '';
+        for (let i = 0; i < totalTabs; i++) {
+          const isActive = i === activeTabIdx;
+          tabsHtml += `
+            <button 
+              data-tab-idx="${i}"
+              class="episode-tab shrink-0 px-3.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                isActive 
+                  ? 'bg-secondary text-on-secondary active-tab' 
+                  : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-secondary hover:text-secondary'
+              }"
+            >
+              ${i * epsPerTab + 1} - ${Math.min((i + 1) * epsPerTab, totalEps)}
+            </button>
+          `;
+        }
+        tabsContainer.innerHTML = tabsHtml;
+        tabsContainer.classList.remove('hidden');
+      } else {
+        tabsContainer.innerHTML = '';
+        tabsContainer.classList.add('hidden');
+      }
+
+      // Render Episodes Grid
+      let epsHtml = '';
+      episodesList.forEach((ep: any, idx: number) => {
+        const tabOwner = Math.floor(idx / epsPerTab);
+        const isTarget = ep.slug === activeEpisodeSlug && serverIdx === activeServerIdx;
+        const isHidden = tabOwner !== activeTabIdx;
+
+        epsHtml += `
+          <a 
+            href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}&ts=${encodeURIComponent(currentServer.serverName)}"
+            data-ep-idx="${idx}"
+            data-tab-owner="${tabOwner}"
+            data-ep-slug="${ep.slug}"
+            class="episode-item w-full aspect-square flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              isHidden ? 'hidden' : 'flex'
+            } ${
+              isTarget 
+                ? 'bg-primary/20 border border-primary text-primary hover:bg-primary/30' 
+                : 'bg-surface border border-glass-stroke text-on-surface hover:bg-white/5 hover:border-primary hover:text-primary'
+            }"
+          >
+            ${idx + 1}
+          </a>
+        `;
+      });
+      episodesContainer.innerHTML = epsHtml;
+
+      bindTabEvents();
+    }
+
+    // Load History to configure Watch Button link
+    function applyHistory(historyItem: any) {
+      if (!historyItem) return;
+
+      const serverIdx = historyItem.serverIndex || 0;
+      const epSlug = historyItem.episodeSlug;
+      const serverName = historyItem.serverName || 'Server VIP';
+
+      // Activate server button
+      const serverBtns = document.querySelectorAll('.server-btn');
+      serverBtns.forEach((btn, idx) => {
+        if (idx === serverIdx) {
+          btn.classList.add('bg-primary', 'text-on-primary', 'shadow-md');
+          btn.classList.remove('bg-surface', 'border', 'border-glass-stroke', 'text-on-surface-variant', 'hover:border-primary', 'hover:text-primary');
+        } else {
+          btn.classList.remove('bg-primary', 'text-on-primary', 'shadow-md');
+          btn.classList.add('bg-surface', 'border', 'border-glass-stroke', 'text-on-surface-variant', 'hover:border-primary', 'hover:text-primary');
+        }
+      });
+
+      renderEpisodes(serverIdx, epSlug);
+
+      // Setup "Xem Ngay" button to link to the watched position
+      const watchUrl = `/xem/${movieSlug}?ep=${epSlug}&sv=${serverIdx}&ts=${encodeURIComponent(serverName)}`;
+      const watchBtn = document.getElementById('btn-watch-now');
+      if (watchBtn) {
+        watchBtn.setAttribute('href', watchUrl);
+      }
+    }
+
+    // Helper: Read thistory from localStorage
+    const getLocalHistory = () => {
+      const stored = localStorage.getItem('thistory');
+      let list: any[] = [];
+      try { list = stored ? JSON.parse(stored) : []; } catch (e) {}
+      return list;
+    };
+
+    // Helper: Save thistory to localStorage
+    const saveLocalHistory = (list: any[]) => {
+      localStorage.setItem('thistory', JSON.stringify(list));
+    };
+
+    // Helper: Post watch history record to server
+    const postHistoryToServer = async (item: any): Promise<boolean> => {
+      try {
+        const res = await fetch('/api/user/history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug: item.slug,
+            episodeSlug: item.episodeSlug,
+            episodeName: item.episodeName || '',
+            currentTime: item.currentTime || 0,
+            duration: item.duration || 0,
+            serverIndex: item.serverIndex || 0,
+            serverName: item.serverName || 'Server VIP',
+            updatedAt: item.updatedAt || new Date().toISOString()
+          })
+        });
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    };
+
+    // Load & Sync Watch History from LocalStorage and Online Database (Cookie Mock)
+    const syncWatchHistory = async () => {
+      // 1. Load local history first for immediate render
+      let localList = getLocalHistory();
+      let movieHist = localList.find((x: any) => x.slug === movieSlug);
+
+      if (movieHist) {
+        applyHistory(movieHist);
+      } else {
+        const defaultEpSlug = (servers[0] && servers[0].serverData[0]) ? servers[0].serverData[0].slug : 'tap-1';
+        renderEpisodes(0, defaultEpSlug);
+        
+        // Setup "Xem Ngay" button to link to the first episode
+        const watchBtn = document.getElementById('btn-watch-now');
+        if (watchBtn) {
+          watchBtn.setAttribute('href', `/xem/${movieSlug}?ep=${defaultEpSlug}&sv=0`);
+        }
+      }
+
+      // 2. Fetch and merge online history if online
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        try {
+          const res = await fetch('/api/user/history');
+          if (res.ok) {
+            const onlineList = await res.json();
+            if (Array.isArray(onlineList)) {
+              let updatedLocal = false;
+              let localUpdatedList = getLocalHistory();
+              let curMovieHist = localUpdatedList.find((x: any) => x.slug === movieSlug);
+
+              // Find online record for this movie
+              const onlineMovieHist = onlineList.find((x: any) => x.slug === movieSlug);
+
+              if (onlineMovieHist) {
+                const onlineTime = new Date(onlineMovieHist.updatedAt).getTime();
+                const localTime = curMovieHist ? new Date(curMovieHist.updatedAt).getTime() : 0;
+
+                if (!curMovieHist || onlineTime > localTime) {
+                  // Online is newer, apply and update local
+                  applyHistory(onlineMovieHist);
+                  
+                  localUpdatedList = localUpdatedList.filter((x: any) => x.slug !== movieSlug);
+                  localUpdatedList.unshift({
+                    ...onlineMovieHist,
+                    synced: true
+                  });
+                  updatedLocal = true;
+                } else if (curMovieHist && localTime > onlineTime && !curMovieHist.synced) {
+                  // Local is newer and unsynced, post to server
+                  const ok = await postHistoryToServer(curMovieHist);
+                  if (ok) {
+                    curMovieHist.synced = true;
+                    updatedLocal = true;
+                  }
+                }
+              } else if (curMovieHist && !curMovieHist.synced) {
+                // Not in online history, but exists in local and unsynced -> push to server
+                const ok = await postHistoryToServer(curMovieHist);
+                if (ok) {
+                  curMovieHist.synced = true;
+                  updatedLocal = true;
+                }
+              }
+
+              // Also check for any other unsynced movies in the list and sync them to server
+              for (let i = 0; i < localUpdatedList.length; i++) {
+                const item = localUpdatedList[i];
+                if (item.slug !== movieSlug && !item.synced) {
+                  const success = await postHistoryToServer(item);
+                  if (success) {
+                    item.synced = true;
+                    updatedLocal = true;
+                  }
+                }
+              }
+
+              if (updatedLocal) {
+                saveLocalHistory(localUpdatedList);
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to sync history with server:', err);
+        }
+      }
+    };
+
+    // Run syncWatchHistory on load
+    syncWatchHistory();
+
+    // Set Server Buttons Click listeners using event delegation
+    const serverSelector = document.getElementById('server-selector-container');
+    if (serverSelector) {
+      serverSelector.addEventListener('click', (e: any) => {
+        const btn = e.target.closest('.server-btn');
+        if (!btn) return;
+        const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
+        
+        const btns = serverSelector.querySelectorAll('.server-btn');
+        btns.forEach((b: any) => {
+          b.classList.remove('bg-primary', 'text-on-primary', 'shadow-md');
+          b.classList.add('bg-surface', 'border', 'border-glass-stroke', 'text-on-surface-variant', 'hover:border-primary', 'hover:text-primary');
+        });
+        btn.classList.add('bg-primary', 'text-on-primary', 'shadow-md');
+        btn.classList.remove('bg-surface', 'border', 'border-glass-stroke', 'text-on-surface-variant', 'hover:border-primary', 'hover:text-primary');
+        
+        renderEpisodes(idx);
+      });
+    }
+
+    // 5. Auth Checks for Action Buttons & Tools
+    const checkLogin = () => {
+      return document.cookie.includes('txa_gate_passed');
+    };
+
+    const requireLogin = (action: () => void) => {
+      if (!checkLogin()) {
+        if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập để thực hiện chức năng này!', 'error');
+        setTimeout(() => {
+          if (window.openLoginModal) window.openLoginModal();
+        }, 800);
+        return false;
+      }
+      action();
+      return true;
+    };
+
+    // Action Favorites
+    const favBtn = document.getElementById('btn-favorite-action');
+    const heartIcon = document.getElementById('heart-icon');
+    const updateFavIcon = () => {
+      if (!heartIcon) return;
+      const favList = JSON.parse(localStorage.getItem('tfavorites') || '[]');
+      if (favList.includes(movieSlug)) {
+        heartIcon.classList.add('text-red-500');
+        heartIcon.textContent = 'favorite';
+      } else {
+        heartIcon.classList.remove('text-red-500');
+        heartIcon.textContent = 'favorite';
+      }
+    };
+    updateFavIcon();
+
+    if (favBtn) {
+      favBtn.addEventListener('click', () => {
+        requireLogin(() => {
+          const favList = JSON.parse(localStorage.getItem('tfavorites') || '[]');
+          const idx = favList.indexOf(movieSlug);
+          if (idx === -1) {
+            favList.push(movieSlug);
+            if (window.showGlobalToast) window.showGlobalToast('Đã thêm phim vào danh sách Yêu thích!', 'success');
+          } else {
+            favList.splice(idx, 1);
+            if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim khỏi danh sách Yêu thích!', 'success');
+          }
+          localStorage.setItem('tfavorites', JSON.stringify(favList));
+          updateFavIcon();
+        });
+      });
+    }
+
+    // Action Save Playlist
+    const playlistBtn = document.getElementById('btn-playlist-action');
+    const bookmarkIcon = document.getElementById('bookmark-icon');
+    const updatePlaylistIcon = () => {
+      if (!bookmarkIcon) return;
+      const playList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+      if (playList.includes(movieSlug)) {
+        bookmarkIcon.classList.add('text-primary');
+        bookmarkIcon.textContent = 'bookmark';
+      } else {
+        bookmarkIcon.classList.remove('text-primary');
+        bookmarkIcon.textContent = 'bookmark_add';
+      }
+    };
+    updatePlaylistIcon();
+
+    if (playlistBtn) {
+      playlistBtn.addEventListener('click', () => {
+        requireLogin(() => {
+          const playList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+          const idx = playList.indexOf(movieSlug);
+          if (idx === -1) {
+            playList.push(movieSlug);
+            if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
+          } else {
+            playList.splice(idx, 1);
+            if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
+          }
+          localStorage.setItem('tplaylist', JSON.stringify(playList));
+          updatePlaylistIcon();
+        });
+      });
+    }
+
+    // Action Share
+    const shareBtn = document.getElementById('btn-share-action');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(window.location.href)
+          .then(() => {
+            if (window.showGlobalToast) window.showGlobalToast('Đã sao chép liên kết chia sẻ phim!', 'success');
+          })
+          .catch(() => {
+            if (window.showGlobalToast) window.showGlobalToast('Không thể sao chép liên kết!', 'error');
+          });
+      });
+    }
+
+    // 6. Local interactive Comments Section
+    const initialComments = [
+      {
+        id: 1,
+        author: "Phong Phạm",
+        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80",
+        content: "Dàn diễn viên diễn rất hay và hợp vai, cốt truyện kịch tính nhiều cú twist bất ngờ. Mọi người nhất định phải xem nha!",
+        time: "10 ngày trước",
+        likes: 24,
+        dislikes: 2,
+        replies: [
+          {
+            author: "Thanh Bình",
+            content: "Đúng thế bạn ơi, tập cuối đỉnh thật sự luôn ấy.",
+            time: "9 ngày trước"
+          }
+        ]
+      },
+      {
+        id: 2,
+        author: "Minh Thư",
+        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80",
+        content: "Phim xem rất cảm động, màu phim và nhạc phim đỉnh của chóp luôn. Vote 5 sao!",
+        time: "3 ngày trước",
+        likes: 12,
+        dislikes: 0,
+        replies: []
+      }
+    ];
+
+    interface CommentReply {
+      author: string;
+      content: string;
+      time: string;
+    }
+
+    interface MovieComment {
+      id: number;
+      author: string;
+      avatar: string;
+      content: string;
+      time: string;
+      likes: number;
+      dislikes: number;
+      replies: CommentReply[];
+    }
+
+    // Read comments list from localStorage
+    const getCommentsFromStore = (): MovieComment[] => {
+      const stored = localStorage.getItem(`tcomments_${movieSlug}`);
+      if (stored) {
+        try { return JSON.parse(stored); } catch(e) { return initialComments; }
+      }
+      return initialComments;
+    };
+
+    const saveCommentsToStore = (list: MovieComment[]) => {
+      localStorage.setItem(`tcomments_${movieSlug}`, JSON.stringify(list));
+    };
+
+    let comments: MovieComment[] = getCommentsFromStore();
+    let currentReplyToId: number | null = null;
+    let selectedRatingStar = 0;
+
+    const commentsListContainer = document.getElementById('comments-list');
+    const commentsCountEl = document.getElementById('comments-count');
+    const commentTextarea = document.getElementById('comment-textarea') as HTMLTextAreaElement | null;
+    const charCounter = document.getElementById('char-counter');
+    const submitCommentBtn = document.getElementById('btn-submit-comment');
+    const commentAnonCheck = document.getElementById('comment-anonymous') as HTMLInputElement | null;
+    
+    const btnShowComments = document.getElementById('btn-show-comments');
+    const btnShowRating = document.getElementById('btn-show-rating');
+    const ratingContainer = document.getElementById('rating-input-container');
+    const ratingStars = document.querySelectorAll('#rating-stars-input span');
+    
+    const replyToLbl = document.getElementById('reply-to-lbl');
+    const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+
+    // Rating star handler
+    ratingStars.forEach(star => {
+      star.addEventListener('click', () => {
+        const val = parseInt(star.getAttribute('data-star') || '0');
+        selectedRatingStar = val;
+        ratingStars.forEach((s, i) => {
+          if (i < val) {
+            s.classList.add('text-amber-400');
+            s.classList.remove('text-gray-500');
+          } else {
+            s.classList.remove('text-amber-400');
+            s.classList.add('text-gray-500');
+          }
+        });
+      });
+    });
+
+    if (btnShowRating && ratingContainer) {
+      btnShowRating.addEventListener('click', () => {
+        requireLogin(() => {
+          ratingContainer.classList.toggle('hidden');
+          btnShowRating.classList.toggle('bg-primary/20');
+          btnShowRating.classList.toggle('text-primary');
+        });
+      });
+    }
+
+    if (btnShowComments) {
+      btnShowComments.addEventListener('click', () => {
+        if (ratingContainer) ratingContainer.classList.add('hidden');
+        if (btnShowRating) {
+          btnShowRating.classList.remove('bg-primary/20', 'text-primary');
+        }
+      });
+    }
+
+    // Textarea char counter
+    if (commentTextarea && charCounter) {
+      commentTextarea.addEventListener('input', () => {
+        const len = commentTextarea.value.length;
+        charCounter.textContent = `${len} / 1000`;
+        if (len > 1000) {
+          charCounter.classList.add('text-red-400');
+        } else {
+          charCounter.classList.remove('text-red-400');
+        }
+      });
+    }
+
+    // Render comments list
+    const renderComments = () => {
+      if (!commentsListContainer || !commentsCountEl) return;
+      
+      commentsCountEl.textContent = String(comments.length);
+      
+      let html = '';
+      comments.forEach((c: MovieComment) => {
+        let repliesHtml = '';
+        if (c.replies && c.replies.length > 0) {
+          c.replies.forEach((rep: CommentReply) => {
+            repliesHtml += `
+              <div class="mt-3 pl-4 border-l border-glass-stroke space-y-1">
+                <div class="flex items-center gap-2">
+                  <div class="w-5 h-5 rounded-full bg-zinc-800 text-[9px] font-bold text-secondary flex items-center justify-center select-none">
+                    ${rep.author.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                  </div>
+                  <span class="text-[10px] font-bold text-white">${rep.author}</span>
+                  <span class="text-[8px] text-on-surface-variant font-medium">${rep.time}</span>
+                </div>
+                <p class="text-[11px] text-on-surface-variant pl-7 leading-relaxed">${rep.content}</p>
+              </div>
+            `;
+          });
+        }
+
+        html += `
+          <div class="p-4 bg-white/[0.02] border border-glass-stroke rounded-xl space-y-2">
+            <!-- Author row -->
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-3">
+                <img src="${c.avatar}" alt="${c.author}" class="w-7 h-7 rounded-full object-cover border border-glass-stroke" onerror="this.src='https://lh3.googleusercontent.com/a/default-user=s40-c'" />
+                <div>
+                  <h4 class="text-xs font-bold text-white">${c.author}</h4>
+                  <span class="text-[9px] text-on-surface-variant font-medium">${c.time}</span>
+                </div>
+              </div>
+              
+              <!-- Like/Dislike actions -->
+              <div class="flex items-center gap-2 text-[10px] text-on-surface-variant">
+                <button class="flex items-center gap-0.5 hover:text-primary transition-colors cursor-pointer" onclick="window.likeComment(${c.id})">
+                  <span class="material-symbols-outlined text-[13px]">thumb_up</span>
+                  <span>(${c.likes})</span>
+                </button>
+                <button class="flex items-center gap-0.5 hover:text-red-400 transition-colors cursor-pointer" onclick="window.dislikeComment(${c.id})">
+                  <span class="material-symbols-outlined text-[13px]">thumb_down</span>
+                  <span>(${c.dislikes})</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Content -->
+            <p class="text-xs text-on-surface leading-relaxed pl-10">${c.content}</p>
+
+            <!-- Actions and replies -->
+            <div class="pl-10">
+              <button class="text-[10px] font-bold text-primary hover:underline cursor-pointer" onclick="window.setReplyTo(${c.id})">
+                Trả lời
+              </button>
+              
+              <div class="mt-2 space-y-2" id="replies-box-${c.id}">
+                ${repliesHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      commentsListContainer.innerHTML = html || '<p class="text-xs text-on-surface-variant py-4 text-center">Chưa có bình luận nào. Hãy gửi bình luận đầu tiên nhé!</p>';
+    };
+
+    // Make utility functions global for inline button calls
+    (window as any).likeComment = (id: number) => {
+      const target = comments.find((c: MovieComment) => c.id === id);
+      if (target) {
+        target.likes++;
+        saveCommentsToStore(comments);
+        renderComments();
+      }
+    };
+
+    (window as any).dislikeComment = (id: number) => {
+      const target = comments.find((c: MovieComment) => c.id === id);
+      if (target) {
+        target.dislikes++;
+        saveCommentsToStore(comments);
+        renderComments();
+      }
+    };
+
+    (window as any).setReplyTo = (id: number) => {
+      currentReplyToId = id;
+      if (replyToLbl && commentTextarea) {
+        replyToLbl.classList.remove('hidden');
+        commentTextarea.placeholder = `Trả lời bình luận của bạn viết tại đây...`;
+        commentTextarea.focus();
+      }
+    };
+
+    if (cancelReplyBtn) {
+      cancelReplyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        currentReplyToId = null;
+        if (replyToLbl && commentTextarea) {
+          replyToLbl.classList.add('hidden');
+          commentTextarea.placeholder = `Viết bình luận của bạn tại đây...`;
+        }
+      });
+    }
+
+    renderComments();
+
+    // Comment submission handler
+    if (submitCommentBtn && commentTextarea) {
+      submitCommentBtn.addEventListener('click', () => {
+        requireLogin(() => {
+          const text = commentTextarea.value.trim();
+          if (!text) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập nội dung bình luận!', 'error');
+            return;
+          }
+          if (text.length > 1000) {
+            if (window.showGlobalToast) window.showGlobalToast('Bình luận vượt quá giới hạn 1000 ký tự!', 'error');
+            return;
+          }
+
+          const loggedInUserStr = localStorage.getItem('tlogged_in_as');
+          let authorName = "Thành viên";
+          try { authorName = loggedInUserStr ? JSON.parse(loggedInUserStr).name : "Thành viên"; } catch(e){}
+
+          const isAnon = commentAnonCheck ? commentAnonCheck.checked : false;
+          const author = isAnon ? "Ẩn danh" : authorName;
+          
+          if (currentReplyToId !== null) {
+            // Add as a reply
+            const parent = comments.find((c: MovieComment) => c.id === currentReplyToId);
+            if (parent) {
+              if (!parent.replies) parent.replies = [];
+              parent.replies.push({
+                author: author,
+                content: text,
+                time: "Vừa xong"
+              });
+              if (window.showGlobalToast) window.showGlobalToast('Đã gửi trả lời bình luận thành công!', 'success');
+            }
+            // Reset reply context
+            currentReplyToId = null;
+            if (replyToLbl) replyToLbl.classList.add('hidden');
+            commentTextarea.placeholder = `Viết bình luận của bạn tại đây...`;
+          } else {
+            // Add as new main comment
+            const newComment = {
+              id: Date.now(),
+              author: author,
+              avatar: isAnon ? "https://lh3.googleusercontent.com/a/default-user=s40-c" : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80",
+              content: text,
+              time: "Vừa xong",
+              likes: 0,
+              dislikes: 0,
+              replies: []
+            };
+            comments.unshift(newComment);
+            if (window.showGlobalToast) window.showGlobalToast('Đã đăng bình luận thành công!', 'success');
+          }
+
+          // Reset text and save
+          commentTextarea.value = '';
+          if (charCounter) charCounter.textContent = '0 / 1000';
+          if (commentAnonCheck) commentAnonCheck.checked = false;
+          
+          saveCommentsToStore(comments);
+          renderComments();
+
+          // Reset stars if rated
+          if (selectedRatingStar > 0) {
+            selectedRatingStar = 0;
+            ratingStars.forEach(s => {
+              s.classList.remove('text-amber-400');
+              s.classList.add('text-gray-500');
+            });
+            if (ratingContainer) ratingContainer.classList.add('hidden');
+            if (btnShowRating) btnShowRating.classList.remove('bg-primary/20', 'text-primary');
+          }
+        });
+      });
+    }
+
+    // 7. Localize broadcast schedule time dynamically to user timezone
+    const noticeEl = document.getElementById('broadcastScheduleNotice');
+    if (noticeEl) {
+      const name = noticeEl.getAttribute('data-name');
+      const dateStr = noticeEl.getAttribute('data-date');
+      const timeStr = noticeEl.getAttribute('data-time');
+      const notice = noticeEl.getAttribute('data-notice');
+
+      if (dateStr) {
+        let isoStr = `${dateStr}T00:00:00Z`;
+        if (timeStr) {
+          const parts = timeStr.split(':');
+          if (parts.length === 2) {
+            isoStr = `${dateStr}T${timeStr}:00Z`;
+          } else {
+            isoStr = `${dateStr}T${timeStr}Z`;
+          }
+        }
+        try {
+          const d = new Date(isoStr);
+          const localHours = String(d.getHours()).padStart(2, '0');
+          const localMinutes = String(d.getMinutes()).padStart(2, '0');
+          const localDay = String(d.getDate()).padStart(2, '0');
+          const localMonth = String(d.getMonth() + 1).padStart(2, '0');
+          const localYear = d.getFullYear();
+
+          const formattedDate = `${localDay}-${localMonth}-${localYear}`;
+          const formattedTime = timeStr ? `${localHours}:${localMinutes}` : '';
+          const localText = timeStr ? `${formattedTime} ngày ${formattedDate}` : `ngày ${formattedDate}`;
+
+          if (name) {
+            noticeEl.textContent = `${name} sẽ phát sóng lúc ${localText}. Hãy đón xem nhé!`;
+          } else if (notice) {
+            noticeEl.textContent = notice;
+          } else {
+            noticeEl.textContent = `Tập tiếp theo sẽ phát sóng lúc ${localText}. Hãy đón xem nhé!`;
+          }
+        } catch (e) {
+          console.error("Error formatting local time:", e);
+        }
+      }
+    }
+
+    // 8. Countdown timer logic for broadcast schedule
+    const countdownEl = document.getElementById('broadcastCountdown');
+    if (countdownEl) {
+      const targetStr = countdownEl.getAttribute('data-target');
+      const timerEl = document.getElementById('countdownTimer');
+      
+      if (targetStr && timerEl) {
+        const targetDate = new Date(targetStr).getTime();
+        
+        const updateCountdown = () => {
+          const now = Date.now();
+          const diff = targetDate - now;
+          
+          if (diff <= 0) {
+            timerEl.textContent = "Đã phát sóng!";
+            clearInterval(countdownInterval);
+            setTimeout(() => {
+              window.location.reload();
+            }, 2500);
+            return;
+          }
+          
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          
+          let displayStr = '';
+          if (days > 0) displayStr += `${days.toString().padStart(2, '0')}d `;
+          displayStr += `${hours.toString().padStart(2, '0')}h : ${minutes.toString().padStart(2, '0')}m : ${seconds.toString().padStart(2, '0')}s`;
+          
+          timerEl.textContent = displayStr;
+        };
+        
+        updateCountdown();
+        const countdownInterval = setInterval(updateCountdown, 1000);
+      }
+    }
+  });
+</script>

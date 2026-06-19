@@ -1,0 +1,191 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Quản lý bình luận">
+  <div class="max-w-container-max mx-auto mt-4">
+    <!-- Page Header & Filters -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+      <div>
+        <h2 class="font-display-hero text-headline-lg-mobile md:text-headline-lg mb-2 text-primary">Quản lý bình luận</h2>
+        <p class="text-on-surface-variant font-body-main max-w-xl">Kiểm duyệt và phản hồi các đóng góp từ cộng đồng người xem trên hệ thống DongPhim.</p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <div class="flex bg-surface-container-low p-1 rounded-xl border border-glass-stroke">
+          <button class="px-4 py-2 rounded-lg bg-primary text-on-primary-fixed font-label-caps text-[11px] transition-all cursor-pointer">TẤT CẢ</button>
+          <button class="px-4 py-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-caps text-[11px] transition-all cursor-pointer">CHỜ DUYỆT</button>
+          <button class="px-4 py-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-caps text-[11px] transition-all cursor-pointer">ĐÃ DUYỆT</button>
+          <button class="px-4 py-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant font-label-caps text-[11px] transition-all cursor-pointer">SPAM / ẨN</button>
+        </div>
+        <button class="flex items-center gap-2 px-4 py-3 bg-surface-container border border-glass-stroke rounded-xl hover:border-primary/50 transition-all cursor-pointer text-on-surface">
+          <span class="material-symbols-outlined text-primary">filter_list</span>
+          <span class="text-[14px] font-medium">Lọc nâng cao</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Overview (Asymmetric Layout) -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="col-span-1 md:col-span-2 glass-panel p-6 rounded-2xl relative overflow-hidden group">
+        <div class="relative z-10">
+          <p class="text-on-surface-variant font-label-caps mb-1 uppercase">Tổng bình luận mới (24h)</p>
+          <h3 class="text-[40px] font-display-hero text-primary">1,284</h3>
+          <div class="flex items-center gap-2 mt-2 text-secondary">
+            <span class="material-symbols-outlined text-[18px]">trending_up</span>
+            <span class="text-[14px]">+12.5% so với hôm qua</span>
+          </div>
+        </div>
+      </div>
+      <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between">
+        <p class="text-on-surface-variant font-label-caps uppercase">Tỷ lệ tương tác</p>
+        <div>
+          <h3 class="text-[24px] font-display-hero text-on-surface">84%</h3>
+          <div class="w-full bg-surface-container-highest h-1 rounded-full mt-2">
+            <div class="bg-secondary h-full rounded-full w-[84%] shadow-[0_0_8px_rgba(0,218,243,0.5)]"></div>
+          </div>
+        </div>
+      </div>
+      <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between">
+        <p class="text-on-surface-variant font-label-caps uppercase">Cần xử lý gấp</p>
+        <div class="flex items-end justify-between">
+          <h3 class="text-[24px] font-display-hero text-error">42</h3>
+          <span class="material-symbols-outlined text-error/30 text-[40px]">warning</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comments List - Bento Grid Style Rows -->
+    <div class="space-y-4 mb-10">
+      <!-- Comment Item 1 -->
+      <div class="glass-panel p-5 md:p-6 rounded-2xl hover:bg-surface-container transition-all group border-l-4 border-l-secondary shadow-sm">
+        <div class="flex flex-col md:flex-row gap-6">
+          <div class="flex items-start gap-4 flex-1">
+            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-glass-stroke shadow-lg">
+              <img class="w-full h-full object-cover" alt="User avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcRjRR5-jWgg6emPv--R_0zFvgbSAYBPm312wO1EbR3VU8yaF2dGclcWA1J-WoVR6e-4yR6x5_N5dxPH5ku3YwhAA3-tDOvo7iQlgl73ETTlBzLElgvlYaCQpi_ct7Yoau9vsidfhHjXXJmo5Wwk0zVCrg0gge7Jk1qaL0V7y_nRFWWmAaHHx4OmpRV_G188Af9AyyfCUfjb7hH0jcmSkxzwDitE_ZD1by9KGVq9nlUq-8sWPJBqqQ1ArPWDwj_OaUgf11kcpbmqwM"/>
+            </div>
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
+                <h4 class="font-title-md text-primary hover:underline cursor-pointer">Hoàng Nam</h4>
+                <span class="text-on-surface-variant text-[12px]">• 5 phút trước</span>
+                <div class="px-2 py-0.5 rounded bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-bold uppercase tracking-wider">Chờ Duyệt</div>
+              </div>
+              <p class="text-on-surface font-body-main leading-relaxed mb-3">Phim này hay thực sự, kỹ xảo đỉnh cao luôn. Đoạn cuối làm mình bất ngờ quá trời. Mọi người nên xem bản HD để cảm nhận hết vẻ đẹp nhé!</p>
+              <div class="flex items-center gap-2 group/film cursor-pointer">
+                <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover/film:text-primary">movie</span>
+                <span class="text-on-surface-variant text-[13px] italic group-hover/film:text-primary transition-colors">Bình luận tại: <strong class="text-on-surface">Cyberpunk Edge: Rebirth</strong></span>
+              </div>
+            </div>
+          </div>
+          <div class="flex md:flex-col items-center justify-center gap-2 w-full md:w-auto">
+            <button class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-on-primary-fixed px-4 py-2 rounded-xl font-label-caps text-[11px] hover:brightness-110 active:scale-95 transition-all w-full cursor-pointer">
+              <span class="material-symbols-outlined text-[18px]">check_circle</span> DUYỆT
+            </button>
+            <div class="flex gap-2 w-full">
+              <button class="flex-1 flex items-center justify-center p-2 bg-surface-container-high rounded-xl hover:text-primary border border-glass-stroke transition-all cursor-pointer" title="Phản hồi">
+                <span class="material-symbols-outlined text-[18px]">reply</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center p-2 bg-surface-container-high rounded-xl hover:text-secondary border border-glass-stroke transition-all cursor-pointer" title="Ẩn">
+                <span class="material-symbols-outlined text-[18px]">visibility_off</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center p-2 bg-surface-container-high rounded-xl hover:text-error border border-glass-stroke transition-all cursor-pointer" title="Xóa">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comment Item 2 -->
+      <div class="glass-panel p-5 md:p-6 rounded-2xl hover:bg-surface-container transition-all group border-l-4 border-l-primary/30">
+        <div class="flex flex-col md:flex-row gap-6">
+          <div class="flex items-start gap-4 flex-1">
+            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-glass-stroke shadow-lg">
+              <img class="w-full h-full object-cover" alt="User avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4E9r0KSxWfdpGsnb0RiPEsx7tPGRVwAKS3jIzNq4-A7mt0Y_i-G0k2uL0PVYCt8_SL1xqUFEwVchfFtfS7ve33HbtFxblzEmU0OoWbL9waGWGnMXThmY-fZTNK3A-7U-3jteSzp35hA3AZTPqn1D7_25CA6kn-pjkOtYhbNgDR2YTOEGcNL9MJR_6Ug51h78FlWW_LVNsf9BCIBV0P9xOSwnaGrzCu2ZBQrgxJkfp_UasegI4ZWDHsBcRUI7tO3vq1OjQipg-V8iV"/>
+            </div>
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
+                <h4 class="font-title-md text-primary hover:underline cursor-pointer">Minh Thư</h4>
+                <span class="text-on-surface-variant text-[12px]">• 12 phút trước</span>
+                <div class="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider">Đã Duyệt</div>
+              </div>
+              <p class="text-on-surface font-body-main leading-relaxed mb-3">Tốc độ load phim của web mình dạo này nhanh quá, xem không bị khựng tí nào. Tuyệt vời!</p>
+              <div class="flex items-center gap-2 group/film cursor-pointer">
+                <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover/film:text-primary">movie</span>
+                <span class="text-on-surface-variant text-[13px] italic group-hover/film:text-primary transition-colors">Bình luận tại: <strong class="text-on-surface">Interstellar 2: Beyond Horizons</strong></span>
+              </div>
+            </div>
+          </div>
+          <div class="flex md:flex-col items-center justify-center gap-2 w-full md:w-auto">
+            <button class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-surface-container-highest text-on-surface-variant px-4 py-2 rounded-xl font-label-caps text-[11px] opacity-50 cursor-default w-full">
+              <span class="material-symbols-outlined text-[18px]">verified</span> ĐÃ DUYỆT
+            </button>
+            <div class="flex gap-2 w-full">
+              <button class="flex-1 flex items-center justify-center p-2 bg-surface-container-high rounded-xl hover:text-primary border border-glass-stroke transition-all cursor-pointer" title="Phản hồi">
+                <span class="material-symbols-outlined text-[18px]">reply</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center p-2 bg-surface-container-high rounded-xl hover:text-secondary border border-glass-stroke transition-all cursor-pointer" title="Ẩn">
+                <span class="material-symbols-outlined text-[18px]">visibility_off</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center p-2 bg-surface-container-high rounded-xl hover:text-error border border-glass-stroke transition-all cursor-pointer" title="Xóa">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comment Item 3 (Spam Alert) -->
+      <div class="glass-panel p-5 md:p-6 rounded-2xl hover:bg-surface-container transition-all group border-l-4 border-l-error shadow-lg shadow-error/5">
+        <div class="flex flex-col md:flex-row gap-6">
+          <div class="flex items-start gap-4 flex-1">
+            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-glass-stroke shadow-lg bg-surface-container-highest flex items-center justify-center">
+              <span class="material-symbols-outlined text-on-surface-variant">person</span>
+            </div>
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
+                <h4 class="font-title-md text-error hover:underline cursor-pointer">User_84920</h4>
+                <span class="text-on-surface-variant text-[12px]">• 1 giờ trước</span>
+                <div class="px-2 py-0.5 rounded bg-error/10 border border-error/20 text-error text-[10px] font-bold uppercase tracking-wider">Cảnh báo Spam</div>
+              </div>
+              <p class="text-on-surface-variant font-body-main leading-relaxed mb-3 blur-[2px] hover:blur-0 transition-all select-none">Click vào link này để nhận quà tặng miễn phí: http://bit.ly/spam-link-example...</p>
+              <div class="flex items-center gap-2 group/film cursor-pointer">
+                <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover/film:text-primary">movie</span>
+                <span class="text-on-surface-variant text-[13px] italic group-hover/film:text-primary transition-colors">Bình luận tại: <strong class="text-on-surface">Avengers: Endgame</strong></span>
+              </div>
+            </div>
+          </div>
+          <div class="flex md:flex-col items-center justify-center gap-2 w-full md:w-auto">
+            <button class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-error text-on-error-container px-4 py-2 rounded-xl font-label-caps text-[11px] hover:brightness-110 active:scale-95 transition-all w-full cursor-pointer">
+              <span class="material-symbols-outlined text-[18px]">block</span> CHẶN &amp; XÓA
+            </button>
+            <div class="flex gap-2 w-full">
+              <button class="flex-1 flex items-center justify-center p-2 bg-surface-container-high rounded-xl hover:text-primary border border-glass-stroke transition-all cursor-pointer" title="Giữ lại">
+                <span class="material-symbols-outlined text-[18px]">undo</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center p-2 bg-surface-container-high rounded-xl hover:text-secondary border border-glass-stroke transition-all cursor-pointer" title="Xem thêm">
+                <span class="material-symbols-outlined text-[18px]">info</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center mt-12 mb-10">
+      <nav class="flex items-center gap-2">
+        <button class="w-10 h-10 flex items-center justify-center rounded-xl border border-glass-stroke hover:bg-surface-container transition-all cursor-pointer text-on-surface-variant">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <button class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-on-primary-fixed font-bold cursor-pointer">1</button>
+        <button class="w-10 h-10 flex items-center justify-center rounded-xl border border-glass-stroke hover:bg-surface-container transition-all font-medium text-on-surface-variant cursor-pointer">2</button>
+        <button class="w-10 h-10 flex items-center justify-center rounded-xl border border-glass-stroke hover:bg-surface-container transition-all font-medium text-on-surface-variant cursor-pointer">3</button>
+        <span class="px-2 text-on-surface-variant">...</span>
+        <button class="w-10 h-10 flex items-center justify-center rounded-xl border border-glass-stroke hover:bg-surface-container transition-all font-medium text-on-surface-variant cursor-pointer">12</button>
+        <button class="w-10 h-10 flex items-center justify-center rounded-xl border border-glass-stroke hover:bg-surface-container transition-all cursor-pointer text-on-surface-variant">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+</AdminLayout>

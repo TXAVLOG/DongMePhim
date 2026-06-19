@@ -28,3 +28,24 @@ pnpm-debug.log*
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# Project Planning & Docs (ignored by user request)
+ROADMAP.md
+TODO.md
+ARCHITECTURE.md
+DATABASE.md
+API_STRATEGY.md
+CLAUDE.md
+tphimx_api_*
+
+# VS Code settings
+.vscode/
+
+# Temporary / raw files
+
+# Windows OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+scratch/

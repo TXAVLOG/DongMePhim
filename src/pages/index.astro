@@ -1,11 +1,327 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// src/pages/index.astro
+// Standalone Cinematic Splash & Landing Portal Page
+import '../styles/index.css';
+import { ClientRouter } from 'astro:transitions';
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<!DOCTYPE html>
+<html class="dark" lang="vi">
+<head>
+    <ClientRouter />
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>DongPhim | Trải nghiệm Điện ảnh Đỉnh cao</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-blue: #00e3fd;
+            --neon-pink: #d2bbff;
+            --bg-noir: #030303;
+        }
+
+        body {
+            background-color: var(--bg-noir);
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            color: #ffffff;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+
+        .bokeh-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bokeh {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.12;
+            animation: float 25s infinite alternate ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(12%, 18%) scale(1.15); }
+            100% { transform: translate(-8%, 8%) scale(0.9); }
+        }
+
+        .progress-shimmer {
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.4) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 2.2s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .glass-loading-bar {
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .entrance-anim {
+            animation: fadeInScale 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes fadeInScale {
+            0% { opacity: 0; transform: scale(0.96) translateY(15px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .glow-btn::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink), var(--neon-blue));
+            background-size: 200% auto;
+            border-radius: 20px;
+            z-index: -1;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            animation: borderGlow 4s linear infinite;
+        }
+
+        .glow-btn:hover::before {
+            opacity: 1;
+        }
+
+        @keyframes borderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .slider-bg {
+            position: fixed;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 2s ease-in-out, transform 8s ease-out;
+            transform: scale(1.05);
+            z-index: -2;
+            filter: brightness(0.25) blur(4px);
+        }
+
+        .slider-bg.active {
+            opacity: 0.35;
+            transform: scale(1);
+        }
+    </style>
+
+</head>
+<body class="bg-[#030303] min-h-screen flex items-center justify-center relative select-none overflow-hidden">
+    
+    <!-- Atmospheric Movie Backdrops Slider -->
+    <div id="backdrop-slider" class="fixed inset-0 pointer-events-none z-0">
+        <div class="slider-bg active" style="background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLs0cwmsQtUMxz8S1kYIBe2vdzk9wlKrAYAA0SaImKjlJwYFoNlbX5Ezes6Vk4D5W-ucCQ2T9RmBKbr_ZMBabRA9Ttc6dmERubqhLsdx1wunz3brbgXi5rroXOR2ruzik_0pwCF5YxH6Uvl1XXNB5hThMgn1BnmAaijvACGEDvmqkuTyiOamRT4EaIM9cR5bB6VIsLFANxSFbHoSZwiBE2ropgLTIEGcBH_t4b9HchPMwtxA3L-vMixjNaq2')"></div>
+        <div class="slider-bg" style="background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLsohDUhkIkESPFFcrxCvncMlDGTnF6SKHWfNvxemTj0ETR7_-uvCDT24bGETBUIYD2a9tI-TYDHRm9qyFTPVT2XI8acDiKKsgLkKT80JpCOom3QhHCd8uxHLPbKohufSlTCdZ6TCQXQNA8rrzkHtHEw4qpYA2xz0E6gNoc6Gxa5XpFLQzG9aNy5aM7GOk6dyggEuCGD5wfphNuFaXSvy4ah6VvDCwx1JQHfD-TI_EIYhdllGEZPE6TgFV0K')"></div>
+        <div class="slider-bg" style="background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLskEpjrTbHRx6Jj3TAoagePHNQcXAyfE57exarNW0uRrctCdcc2Ns3Gccg-Q-sHR-iGafdXbWGBY3VqNGMMuNWRowyO8JZHlFLslh1G5WNrcjJ3y-OsTKgIzQGIYkOO5N88CKrVCPSenE4g8yUwk_MMtWZukOp8Pey1U0z24BjmBKodM448SynZ3QPSKC1mnooHd98SJMI_XxGvi66yl7YdJWaJyz_WDpl2GVANjq5HCB5SoVUfM8sY3Auj')"></div>
+    </div>
+
+    <!-- Atmospheric Bokeh Layer -->
+    <div class="bokeh-container z-10">
+        <div class="bokeh w-[500px] h-[500px] bg-primary/20 top-[-10%] left-[-5%]"></div>
+        <div class="bokeh w-[600px] h-[600px] bg-secondary-container/10 bottom-[-20%] right-[-10%]" style="animation-delay: -5s;"></div>
+        <div class="bokeh w-[400px] h-[400px] bg-primary-container/10 top-[40%] right-[10%]" style="animation-delay: -2s;"></div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 1. SPLASH SCREEN (Loading state)                              -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <main id="splash-screen" class="relative z-20 flex flex-col items-center entrance-anim px-8 text-center transition-all duration-700 ease-in-out">
+        <div class="mb-12">
+            <!-- Logo GIF -->
+            <div class="mb-4 inline-flex items-center justify-center">
+                <img src="/logo-icon.gif" alt="DongPhim Logo" class="h-16 w-auto" />
+            </div>
+            <!-- Logo Gradient -->
+            <h1 class="font-display-hero text-5xl tracking-tighter leading-none mb-2 font-bold">
+                <span class="gradient-text">DongPhim</span>
+            </h1>
+            <p class="font-label-caps text-xs text-on-surface-variant/60 tracking-[0.3em] font-bold">
+                BEYOND CINEMA
+            </p>
+        </div>
+        
+        <!-- Loading bar -->
+        <div class="w-full max-w-[280px] space-y-6">
+            <div class="h-[2px] w-full glass-loading-bar overflow-hidden rounded-full relative">
+                <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-secondary-container to-primary-container transition-all duration-300 ease-out shadow-[0_0_15px_rgba(0,227,253,0.5)]" id="progress-bar" style="width: 0%;">
+                    <div class="absolute inset-0 progress-shimmer opacity-30"></div>
+                </div>
+            </div>
+            <div class="flex justify-between items-center font-label-caps text-[10px] font-bold text-on-surface-variant/40">
+                <span class="transition-opacity duration-300" id="loading-status">INITIALIZING...</span>
+                <span id="percent-text">0%</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 2. LANDING PAGE (Presented after load)                        -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <main id="landing-page" class="absolute z-20 hidden flex-col items-center justify-center px-4 max-w-4xl text-center transition-all duration-1000 opacity-0 transform scale-95">
+        <!-- Logo and Brand -->
+        <div class="mb-6 inline-flex items-center gap-3 bg-white/5 border border-white/10 rounded-full px-5 py-2 backdrop-blur-md">
+            <img src="/logo-icon.gif" alt="DongPhim Logo" class="h-8 w-auto" />
+            <span class="text-xs font-black tracking-[0.25em] uppercase text-white/90">DONGPHIM ENTERTAINMENT</span>
+        </div>
+
+        <h2 class="font-display-hero text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-none mb-6">
+            Thế Giới Điện Ảnh <br class="hidden sm:inline" />
+            <span class="gradient-text font-black">Trong Tầm Tay Bạn</span>
+        </h2>
+
+        <p class="font-sans text-sm sm:text-lg text-on-surface-variant/80 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Xem ngay hàng ngàn bộ phim bom tấn chiếu rạp, phim bộ dài tập đặc sắc với chất lượng 4K/HDR sắc nét, âm thanh sống động, cập nhật tập mới nhanh nhất mỗi ngày.
+        </p>
+
+        <!-- Main CTA Button -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-5 w-full mb-12">
+            <a href="/tphim" class="glow-btn relative inline-flex items-center justify-center gap-3 px-8 py-4.5 bg-zinc-950/80 hover:bg-zinc-900 border border-white/10 rounded-2xl font-black text-sm uppercase tracking-widest text-white shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 group cursor-pointer z-30">
+                <span>Khám phá ngay</span>
+                <span class="material-symbols-outlined text-sm transition-transform duration-300 group-hover:translate-x-1.5">arrow_forward</span>
+            </a>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl border-t border-white/10 pt-12 text-left w-full px-4">
+            <div class="glass-card p-6 rounded-2xl space-y-4 hover:border-secondary-container/40 hover:scale-[1.03] transition-all duration-300 cursor-pointer shadow-lg group">
+                <div class="w-12 h-12 rounded-xl bg-secondary-container/10 flex items-center justify-center text-secondary-container group-hover:bg-secondary-container/20 transition-colors">
+                    <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">hd</span>
+                </div>
+                <div class="space-y-1">
+                    <h4 class="text-lg font-bold text-white group-hover:text-secondary-container transition-colors font-title-md">4K UltraHD</h4>
+                    <p class="text-xs text-on-surface-variant/60 leading-relaxed font-body-main">Chất lượng hiển thị siêu nét, hỗ trợ HDR mang lại màu sắc sống động chân thực nhất.</p>
+                </div>
+            </div>
+            
+            <div class="glass-card p-6 rounded-2xl space-y-4 hover:border-primary/40 hover:scale-[1.03] transition-all duration-300 cursor-pointer shadow-lg group">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
+                    <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">schedule</span>
+                </div>
+                <div class="space-y-1">
+                    <h4 class="text-lg font-bold text-white group-hover:text-primary transition-colors font-title-md">Cập Nhật Hàng Ngày</h4>
+                    <p class="text-xs text-on-surface-variant/60 leading-relaxed font-body-main">Các tập phim mới, anime và phim bom tấn chiếu rạp được cập nhật liên tục từng giờ.</p>
+                </div>
+            </div>
+            
+            <div class="glass-card p-6 rounded-2xl space-y-4 hover:border-secondary-container/40 hover:scale-[1.03] transition-all duration-300 cursor-pointer shadow-lg group">
+                <div class="w-12 h-12 rounded-xl bg-secondary-container/10 flex items-center justify-center text-secondary-container group-hover:bg-secondary-container/20 transition-colors">
+                    <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">speed</span>
+                </div>
+                <div class="space-y-1">
+                    <h4 class="text-lg font-bold text-white group-hover:text-secondary-container transition-colors font-title-md">Tốc Độ Cực Nhanh</h4>
+                    <p class="text-xs text-on-surface-variant/60 leading-relaxed font-body-main">Trình phát video cao cấp tối ưu hóa băng thông, không quảng cáo gây khó chịu.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Noise Grain -->
+    <div class="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')] z-30"></div>
+
+    <script is:inline>
+        // Background Slider Logic
+        let currentBgIdx = 0;
+        const slides = document.querySelectorAll('.slider-bg');
+        function rotateBg() {
+            if (slides.length <= 1) return;
+            slides[currentBgIdx].classList.remove('active');
+            currentBgIdx = (currentBgIdx + 1) % slides.length;
+            slides[currentBgIdx].classList.add('active');
+        }
+        setInterval(rotateBg, 6000);
+
+        // Progress simulator
+        document.addEventListener('DOMContentLoaded', () => {
+            const progressBar = document.getElementById('progress-bar');
+            const percentText = document.getElementById('percent-text');
+            const statusLabel = document.getElementById('loading-status');
+            const splash = document.getElementById('splash-screen');
+            const landing = document.getElementById('landing-page');
+            
+            let progress = 0;
+            const statuses = [
+                "ESTABLISHING SECURE CONNECTION",
+                "OPTIMIZING CINEMATIC BUFFER",
+                "LOADING NEON INTERFACE",
+                "PREPARING YOUR EXPERIENCE"
+            ];
+
+            const updateLoading = () => {
+                if (progress < 100) {
+                    const increment = Math.random() * 3 + 0.8;
+                    progress = Math.min(progress + increment, 100);
+                    
+                    progressBar.style.width = `${progress}%`;
+                    percentText.textContent = `${Math.floor(progress)}%`;
+
+                    if (progress < 25) statusLabel.textContent = statuses[0];
+                    else if (progress < 50) statusLabel.textContent = statuses[1];
+                    else if (progress < 75) statusLabel.textContent = statuses[2];
+                    else statusLabel.textContent = statuses[3];
+
+                    requestAnimationFrame(updateLoading);
+                } else {
+                    statusLabel.textContent = "INITIALIZATION COMPLETE";
+                    statusLabel.classList.add('text-secondary', 'font-bold');
+                    
+                    // Transition from Splash Screen to Landing Page
+                    setTimeout(() => {
+                        // Fade out splash screen
+                        splash.style.opacity = '0';
+                        splash.style.transform = 'scale(0.95) translateY(-20px)';
+                        
+                        setTimeout(() => {
+                            splash.style.display = 'none';
+                            
+                            // Fade in landing page
+                            landing.style.display = 'flex';
+                            // Force reflow
+                            void landing.offsetHeight;
+                            landing.classList.remove('hidden', 'opacity-0', 'scale-95');
+                            landing.classList.add('opacity-100', 'scale-100');
+                        }, 500);
+                    }, 600);
+                }
+            };
+
+            setTimeout(updateLoading, 400);
+        });
+
+        // Mouse Move Bokeh Interaction
+        document.addEventListener('mousemove', (e) => {
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.015;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.015;
+            
+            document.querySelectorAll('.bokeh').forEach(bokeh => {
+                bokeh.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>

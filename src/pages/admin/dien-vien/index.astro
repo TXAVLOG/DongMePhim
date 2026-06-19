@@ -1,0 +1,77 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+const actors = [
+  { name: 'Tom Hardy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvFm3KqGpeiNWq9sKeEohjYu0kdGzCpfhWQ6J_i5PHfZGmAqHG7apHA4u8n8oQ6uAFSBr34oO_C4g-mXKXDLQU_QIoMk2URo_iL1SD-9z02lX5Is5pCCNnglK8Son9F4H3BINnMA16LHlXELPhjAxYvKtGG1W6yvA0peIdzeloexXxWXJ59eRjQEqECoNtN1wfMqBlLH2RUwCqPTsRzzUB7sOiYD_07NaszMh1BODDprxeGsZMja____3yGr3TVqQC9gwUbNOk4sTK', roles: 42 },
+  { name: 'Zendaya', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCgBr1cxTWREpn2t2SQ5DSU5nqybFKUMvYIka53XMLQS_JcE9qF8YOIDOg-riw2vczxj9QbmtoYkSarz97EwSyV-tW3M8KpbV-0RPP22y2YPj0QC0dtzBEZ2HCZBTmRw5lrlE8h1p8S3N2OL-oZB-09Ro61dd2zoYhNNY4xBIkA9ORNR4It5iVVDMfAKegFTTrxjpKPu-FecRQI9c1j27_DFrw78XehBU2ZAAGntGIPctjrIM5xnH8X9YL1DphO591GtBKvmSi9l0dm', roles: 28 },
+  { name: 'Cillian Murphy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAylybFf7FDCscOUGIWcc_uyMNxczxKY2mKDVnFcxBCTbWT_9Q1ZmU5xIT0qgGoFrybtnD0puVY40Ii75ZhIOQJRfWFd4tHDn-pHvdzanasfqPOXfFZs3m7mUzSZ6p35sw-GyG3a9Kxz81tO9lxmzEMCSJ1atg4xYlmu662174KtD6Oj_M2MtME2y8aFLLkVx0Hjt_6kaaYfTyXxHITA2HOayiSBz_8BlMduXKMAD_wc--JVmNWaPWRGqprmM6suLZkumoDDdddbowM', roles: 35 },
+  { name: 'Florence Pugh', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAPW_rHHDOPZUv_TfbV0n8fi4JCRTHpz-055hd2mobrUFKauMvCd43wCQV5KnBbIUbkpevYOLPniD5CxCu713SHoY7x7aR9jqpotlUQe_Tn0Urw7Sj1wRU2XcnWZt9N__lzJZkXWVGqzwCIdFB7VT6ULZPyBgFpqmu1cjaxnMz7JBXopwc3Xo9Hf__6uWgQwXshmrvNZHkYPYDoQGCFKi_I_hiyfUM6y3T_bagH6KagoQPkHYklO8G367TCO4y2kangVhCq--pqE3FH', roles: 19 },
+  { name: 'Timothée Chalamet', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCy_dXunSjsLQFtaQYajW0j_76FQY3o2hH2XmMe91Gjkg8b3l3E1nCMu-d-vj-q9uEqEgYyeNyeo9sE6Q0YaspL5_4WzpS_0dGH8NyugY3HET0jtAihZwR5AVqRRzkBZ8FEt0EKF3LTExXCM_Uedd5nDxVIp02Evn6wzJsZzrMamocXg4ujImfnojCwjkZTT1BeE8nkhR2iRu953_eF9NParNQQ7yFKRHQ2bbPWjTRd0hzaByJgmU832WiIXiD2QfRoAAAdqeRUFRCo', roles: 22 },
+  { name: 'Meryl Streep', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAFEQ6pSSePi7o4is-04Q6jg_ee1YKw5x8jLFth3yalEOvHWd9gD16isfRWQxtid_focuSk1WXtJ_nzV-TPic-uvfQ_mvk8bFf-YoB2-g4pljdAeCuCTRtpfwcESFk9FHtti1yynAIlOpS72VDxWPrE0PzWSox2DIeAD4Q0ZTxurDDNv80Q6HWunQTnaaHSnhDRK9FXX1jnIUJzD36JgJHAc6gbZPO3v8BI8gsebb8WVh-UuLvJXHS2YWosAVKPF5uO8CgE85YtDn-E', roles: 76 },
+  { name: 'Pedro Pascal', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQAXdxBMxqcKiD5ITbY1kLdxruhPs-11EN5oNWk1zmdegefiGiF4aSuzr6flzHj3PAMj1C3GQuCMEuZF1BmwW3eI2QYHQkosiofqxGaL6-jjlkWB9OB9pW2HjTdD6E1NQ3AOtICTueySlO86gunwQnhWdcJrWc_1FhPGKsm3XaEwOPcaG7Q5VE5t_GdvKqZJWSz5WIBAgHB9Bzu66u1FHOWndncrdSJetbcF-wWbM8rATvj34yDOtHRm45dqLAt-Vj17CWpd8bimm9', roles: 31 },
+  { name: 'Anya Taylor-Joy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBt8V-kXAffv-6ZMaUxMzMlW5UP72W9Twm8eBbta-grN6DyYFhnEQ_4EeU7QD7wbmzmyIVfZP6m_PMXHnmAaPS_GGpb4CD-Cb2tgZa9PFOs6fmn_on4FK6F-7JwtJPB6prZwk4HWQR_PBgPplnLso9qX6rFjNzPHcChYB3OqqfleARO_xirRZ2uENQR6oAX7PEhdTR32YldgC5Byb-EWoZehMP-m9SPzSqhYk-ul_TQU5UTTU9Q47eNLOODI9Bb9qZxqnlYFgO4bZRf', roles: 24 },
+  { name: 'John Boyega', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAC_rl0e_KxJH0YORL9Q6XN223-WLjgCvM3ZTdgRn6fleM5uY25TEHnje7e43oDmTvF5g7VjR3x9kKKPyVATDMZxTj3NfDWwX3g2QTeRH6I2jxjF_qCIF5cK7rQV477-_SkegOT7eCWkQFN0LQDM2xOtIKg22Iw9JE9OFJWOeivDYCtUCFmrOImBNKMMxkI2Tw13M7jWj7Tt0g-31tZSj_ecwhk1Z7WRVZPuJT_tW-t2wfFZwYldvA0aVhemw4qdbltX390AA3xzIsR', roles: 18 },
+  { name: 'Willem Dafoe', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA-H5uJwFEvdM3R6obx7wikXPfR5JXdf1OnTBc5o1Vid336S2uvHJMUCDMZZOyx4voEze32H1tfCPa1d4pw5OgfC-2Y1DKer2ewUad-ByGoGD4Bc36R4pYWxwFdLZmyBtA4jTh_JFnL1u3FQk38ZPY1P1iUOmE9se7n7HorlvvdeLQGUkJL6R39sR1H0GZwsljEFnBXS9TgGxoCB-M0O8xgMQqr7Tk7FncbQvrwawiyGnxyQoepTWeu7jxB3ahiz8fWFcyiEkjPR1Yu', roles: 94 },
+];
+---
+
+<AdminLayout title="Quản lý Diễn viên">
+  <!-- Top Toolbar -->
+  <header class="h-20 glass-panel sticky top-0 flex items-center justify-between px-margin-mobile md:px-gutter z-40 rounded-b-xl mb-6">
+    <div class="flex items-center gap-4 w-full max-w-xl">
+      <div class="relative w-full">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+        <input class="w-full bg-surface-container-low border border-glass-stroke rounded-full py-2.5 pl-12 pr-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-on-surface-variant/50 transition-all" placeholder="Tìm kiếm diễn viên..." type="text"/>
+      </div>
+    </div>
+    <div class="flex items-center gap-4 ml-4">
+      <button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-full font-title-md text-sm font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/20 cursor-pointer whitespace-nowrap">
+        <span class="material-symbols-outlined text-lg">add</span>
+        Thêm diễn viên
+      </button>
+    </div>
+  </header>
+
+  <!-- Content Area -->
+  <div class="px-margin-mobile md:px-gutter max-w-container-max mx-auto w-full">
+    <div class="mb-8">
+      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Danh sách Diễn viên</h2>
+      <p class="text-on-surface-variant font-body-main mt-1">Tổng cộng 248 diễn viên trong hệ thống</p>
+    </div>
+
+    <!-- Bento Grid of Actors -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      {actors.map(actor => (
+        <div class="actor-card group relative overflow-hidden rounded-xl bg-surface-container aspect-[3/4] border border-glass-stroke transition-all duration-300 hover:scale-[1.03] hover:border-primary">
+          <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-transparent to-transparent z-10"></div>
+          <div class="absolute inset-0 bg-cover bg-center" style={`background-image: url('${actor.image}')`}></div>
+          <div class="absolute bottom-0 left-0 right-0 p-4 z-20">
+            <h3 class="font-title-md text-on-surface text-lg truncate">{actor.name}</h3>
+            <p class="text-primary text-[10px] font-label-caps tracking-widest uppercase mt-1">{actor.roles} Phim đã tham gia</p>
+          </div>
+          
+          <!-- Action Hover Overlay -->
+          <div class="action-overlay absolute inset-0 bg-surface-deep/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex flex-col items-center justify-center gap-4">
+            <button class="w-12 h-12 rounded-full bg-primary text-on-primary-fixed flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Chỉnh sửa">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">edit</span>
+            </button>
+            <button class="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Chi tiết">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">visibility</span>
+            </button>
+            <button class="w-12 h-12 rounded-full bg-error-container text-on-error-container flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Xóa">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">delete</span>
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Pagination or Load More -->
+    <div class="mt-12 flex justify-center pb-10">
+      <button class="border border-glass-stroke bg-surface-container hover:bg-surface-container-high px-8 py-3 rounded-full font-body-main text-sm transition-all flex items-center gap-2 cursor-pointer">
+        Tải thêm diễn viên
+        <span class="material-symbols-outlined">expand_more</span>
+      </button>
+    </div>
+  </div>
+</AdminLayout>
