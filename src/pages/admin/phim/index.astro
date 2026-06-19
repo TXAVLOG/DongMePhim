@@ -70,8 +70,15 @@ const staticMovies = await MovieService.getMovies();
       </table>
     </div>
     
-    <div class="p-4 bg-surface-container/20 text-center border-t border-glass-stroke">
+    <div class="p-4 bg-surface-container/20 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-glass-stroke">
       <p id="show-count-text" class="text-xs text-text-dim font-label-caps font-bold">HIỂN THỊ 0 TRÊN TỔNG SỐ 0 PHIM</p>
+      <div id="movie-pagination" class="flex items-center gap-4">
+        <span id="movie-pagination-info" class="text-xs text-zinc-400 font-bold uppercase">Trang 1 / 1</span>
+        <div class="flex gap-2">
+          <button id="movie-prev-btn" class="px-3 py-1.5 bg-zinc-950 border border-glass-stroke text-zinc-400 hover:text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Trước</button>
+          <button id="movie-next-btn" class="px-3 py-1.5 bg-zinc-950 border border-glass-stroke text-zinc-400 hover:text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Sau</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -94,6 +101,14 @@ const staticMovies = await MovieService.getMovies();
       const filterSource = document.getElementById('filter-source');
       const summaryText = document.getElementById('movies-summary');
       const showCountText = document.getElementById('show-count-text');
+      const prevBtn = document.getElementById('movie-prev-btn');
+      const nextBtn = document.getElementById('movie-next-btn');
+      const paginationInfo = document.getElementById('movie-pagination-info');
+
+      // Pagination state
+      let currentPage = 1;
+      const itemsPerPage = 10;
+      let currentFilteredList = [];
 
       // Global delete handler
       window.deleteMovie = function(movieId) {
@@ -108,10 +123,21 @@ const staticMovies = await MovieService.getMovies();
         }
       };
 
-      function renderMovies(list) {
+      function displayPage(page) {
         if (!tbody) return;
-        
-        if (list.length === 0) {
+
+        const totalItems = currentFilteredList.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+        if (page > totalPages) page = totalPages;
+        if (page < 1) page = 1;
+        currentPage = page;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedList = currentFilteredList.slice(startIndex, endIndex);
+
+        if (paginatedList.length === 0) {
           tbody.innerHTML = `
             <tr>
               <td colspan="6" class="px-8 py-12 text-center text-xs text-text-dim italic">
@@ -120,10 +146,18 @@ const staticMovies = await MovieService.getMovies();
             </tr>
           `;
           if (showCountText) showCountText.textContent = 'HIỂN THỊ 0 PHIM';
+          if (paginationInfo) paginationInfo.textContent = 'Trang 1 / 1';
+          if (prevBtn) prevBtn.disabled = true;
+          if (nextBtn) nextBtn.disabled = true;
           return;
         }
 
-        tbody.innerHTML = list.map(m => {
+        // Apply fade-in animation
+        tbody.classList.remove('animate-fade-in');
+        void tbody.offsetWidth;
+        tbody.classList.add('animate-fade-in');
+
+        tbody.innerHTML = paginatedList.map(m => {
           const genresStr = Array.isArray(m.genres) ? m.genres.join(', ') : (m.genres || 'KỊCH TÍNH');
           const quality = m.quality || 'FHD';
           const lang = m.lang || 'Vietsub';
@@ -194,8 +228,15 @@ const staticMovies = await MovieService.getMovies();
         }).join('');
 
         if (showCountText) {
-          showCountText.textContent = `HIỂN THỊ ${list.length} TRÊN TỔNG SỐ ${allMovies.length} PHIM`;
+          showCountText.textContent = `HIỂN THỊ ${paginatedList.length} TRÊN TỔNG SỐ ${allMovies.length} PHIM`;
         }
+
+        if (paginationInfo) {
+          paginationInfo.textContent = `Trang ${currentPage} / ${totalPages}`;
+        }
+
+        if (prevBtn) prevBtn.disabled = (currentPage === 1);
+        if (nextBtn) nextBtn.disabled = (currentPage === totalPages);
       }
 
       function filterAndSearch() {
@@ -221,7 +262,8 @@ const staticMovies = await MovieService.getMovies();
           filtered = filtered.filter(m => m.source === source);
         }
 
-        renderMovies(filtered);
+        currentFilteredList = filtered;
+        displayPage(1);
       }
 
       // Initial stats count text
@@ -229,13 +271,37 @@ const staticMovies = await MovieService.getMovies();
         summaryText.textContent = `${staticList.length} Hệ thống + ${crawledList.length} Crawled`;
       }
 
-      // Initial render
-      renderMovies(allMovies);
+      // Set initial list & display
+      currentFilteredList = allMovies;
+      displayPage(1);
 
       // Event listeners
       searchInput?.addEventListener('input', filterAndSearch);
       filterType?.addEventListener('change', filterAndSearch);
       filterSource?.addEventListener('change', filterAndSearch);
+
+      prevBtn?.addEventListener('click', () => {
+        if (currentPage > 1) {
+          displayPage(currentPage - 1);
+        }
+      });
+
+      nextBtn?.addEventListener('click', () => {
+        const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage) || 1;
+        if (currentPage < totalPages) {
+          displayPage(currentPage + 1);
+        }
+      });
     })();
   </script>
+
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+  </style>
 </AdminLayout>

@@ -237,6 +237,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                 <th class="px-5 py-3 text-center w-12">
                   <input type="checkbox" id="selectAllSearch" class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer"/>
                 </th>
+                <th class="px-5 py-3">Ảnh</th>
                 <th class="px-5 py-3">Phim</th>
                 <th class="px-5 py-3">Chất lượng / Loại</th>
                 <th class="px-5 py-3">Trạng thái Cục bộ</th>
@@ -292,6 +293,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       <table class="w-full text-left">
         <thead class="bg-zinc-950/70 text-[10px] font-bold text-zinc-500 uppercase tracking-wider sticky top-0 backdrop-blur-md">
           <tr>
+            <th class="px-6 py-3">Ảnh</th>
             <th class="px-6 py-3">Tên Phim</th>
             <th class="px-6 py-3">Thể Loại</th>
             <th class="px-6 py-3">Quốc Gia / Năm</th>
@@ -304,6 +306,14 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <!-- Rendered dynamically -->
         </tbody>
       </table>
+    </div>
+    <!-- Local Crawled Pagination -->
+    <div id="crawledPagination" class="flex justify-between items-center mt-4 pt-4 border-t border-glass-stroke/50">
+      <span id="crawledPaginationInfo" class="text-xs text-zinc-500 font-bold uppercase">Trang 1 / 1</span>
+      <div class="flex gap-2">
+        <button id="crawledPrevBtn" class="px-3 py-1.5 bg-zinc-950 border border-glass-stroke text-zinc-400 hover:text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Trước</button>
+        <button id="crawledNextBtn" class="px-3 py-1.5 bg-zinc-950 border border-glass-stroke text-zinc-400 hover:text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Sau</button>
+      </div>
     </div>
     <div id="emptyCrawled" class="hidden flex flex-col items-center justify-center p-12 text-center text-zinc-500">
       <span class="material-symbols-outlined text-5xl opacity-20 mb-2">movie_filter</span>
@@ -320,6 +330,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     let shouldStop = false;
     let cartSlugs = new Map(); // slug -> name
     let existingMoviesMap = {};
+    let crawledCurrentPage = 1;
+    const crawledLimit = 10;
 
     // Elements
     const tabStandardBtn = document.getElementById('tabStandardBtn');
@@ -507,20 +519,38 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       document.getElementById('crawledCount').textContent = list.length;
       const crawledMoviesBody = document.getElementById('crawledMoviesBody');
       const emptyCrawled = document.getElementById('emptyCrawled');
+      const crawledPagination = document.getElementById('crawledPagination');
 
       if (list.length === 0) {
         crawledMoviesBody.innerHTML = '';
         emptyCrawled.classList.remove('hidden');
+        if (crawledPagination) crawledPagination.classList.add('hidden');
         return;
       }
       emptyCrawled.classList.add('hidden');
+      if (crawledPagination) crawledPagination.classList.remove('hidden');
+
+      // Pagination math
+      const totalItems = list.length;
+      const totalPages = Math.ceil(totalItems / crawledLimit) || 1;
+      if (crawledCurrentPage > totalPages) crawledCurrentPage = totalPages;
+      if (crawledCurrentPage < 1) crawledCurrentPage = 1;
+
+      const startIndex = (crawledCurrentPage - 1) * crawledLimit;
+      const endIndex = startIndex + crawledLimit;
+      const paginatedList = list.slice(startIndex, endIndex);
 
       // Load config mapping to show if there's custom settings
       const configStr = localStorage.getItem('txa_episodes_config') || '{}';
       let configs = {};
       try { configs = JSON.parse(configStr); } catch(e) {}
 
-      crawledMoviesBody.innerHTML = list.map((item) => {
+      // Trigger animation
+      crawledMoviesBody.classList.remove('animate-fade-in');
+      void crawledMoviesBody.offsetWidth;
+      crawledMoviesBody.classList.add('animate-fade-in');
+
+      crawledMoviesBody.innerHTML = paginatedList.map((item) => {
         const m = item.movie || item;
         const hasConfig = !!configs[m.slug];
         
@@ -561,6 +591,11 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
         return `
           <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
+            <td class="px-6 py-4">
+              <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
+                <img src="${m.posterUrl || '/logo-icon.png'}" class="w-full h-full object-cover" onerror="this.src='/logo-icon.png'" alt="Poster" />
+              </div>
+            </td>
             <td class="px-6 py-4 font-semibold text-white">
               <a href="/phim/${m.slug}" target="_blank" class="hover:text-primary transition-colors">${m.title || m.name}</a>
               <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${m.originalTitle || m.origin_name || ''}</div>
@@ -586,6 +621,10 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           </tr>
         `;
       }).join('');
+
+      document.getElementById('crawledPaginationInfo').textContent = `Trang ${crawledCurrentPage} / ${totalPages}`;
+      document.getElementById('crawledPrevBtn').disabled = (crawledCurrentPage === 1);
+      document.getElementById('crawledNextBtn').disabled = (crawledCurrentPage === totalPages);
     }
 
     window.deleteCrawledMovie = function(slug) {
@@ -652,11 +691,29 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           const isSelected = cartSlugs.has(item.slug);
           const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
 
+          let posterUrl = item.poster_url || '';
+          if (posterUrl) {
+            if (!posterUrl.startsWith('http')) {
+              if (posterUrl.startsWith('uploads/')) {
+                posterUrl = `https://phimimg.com/${posterUrl}`;
+              } else {
+                posterUrl = `https://phimimg.com/uploads/movies/${posterUrl}`;
+              }
+            }
+          } else {
+            posterUrl = '/logo-icon.png';
+          }
+
           return `
             <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
               <td class="px-5 py-3 text-center">
                 <input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${item.name.replace(/'/g, "\\'")}')" 
                        ${isSelected ? 'checked' : ''} class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer item-checkbox"/>
+              </td>
+              <td class="px-5 py-3">
+                <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
+                  <img src="${posterUrl}" class="w-full h-full object-cover" onerror="this.src='/logo-icon.png'" alt="Poster" />
+                </div>
               </td>
               <td class="px-5 py-3 font-semibold text-white">
                 <div>${item.name}</div>
@@ -1114,6 +1171,24 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       selectAllSearch.checked = false;
     });
 
+    document.getElementById('crawledPrevBtn').addEventListener('click', () => {
+      if (crawledCurrentPage > 1) {
+        crawledCurrentPage--;
+        renderCrawledList();
+      }
+    });
+
+    document.getElementById('crawledNextBtn').addEventListener('click', () => {
+      const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
+      let list = [];
+      try { list = JSON.parse(listStr); } catch (e) {}
+      const totalPages = Math.ceil(list.length / crawledLimit) || 1;
+      if (crawledCurrentPage < totalPages) {
+        crawledCurrentPage++;
+        renderCrawledList();
+      }
+    });
+
     // Initial runs
     renderCrawledList();
   </script>
@@ -1122,5 +1197,12 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #37333e; border-radius: 10px; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
   </style>
 </AdminLayout>
