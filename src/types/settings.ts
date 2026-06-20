@@ -55,6 +55,7 @@ export interface AppSettings {
 export interface UserSettings {
   allow_registration: boolean;
   require_email_verification: boolean;
+  verification_method?: 'link' | 'otp';
   verification_token_expiry: number;
   reset_password_token_expiry: number;
 }

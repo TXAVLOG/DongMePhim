@@ -77,6 +77,7 @@ const seedSettings: SiteSettings = {
   user: {
     allow_registration: true,
     require_email_verification: true,
+    verification_method: 'link',
     verification_token_expiry: 3600,
     reset_password_token_expiry: 1800,
   },
