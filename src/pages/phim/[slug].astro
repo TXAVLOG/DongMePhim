@@ -7,7 +7,11 @@ import NotFound from '../../components/ui/NotFound.astro';
 
 const { slug } = Astro.params;
 
-const movie = slug ? await MovieService.getMovieBySlug(slug) : null;
+if (!slug || slug === 'undefined' || slug === 'null') {
+  return Astro.redirect('/404');
+}
+
+const movie = await MovieService.getMovieBySlug(slug);
 
 if (!movie) {
   Astro.response.status = 404;

@@ -895,7 +895,7 @@ const allMoviesForClient = await MovieService.getMovies();
           const combinedMovies = [
             ...localMovies,
             ...(allMoviesForClient || []).filter(m => !localSlugs.has(m.slug))
-          ];
+          ].filter(m => m.slug && m.slug !== 'undefined' && m.slug !== 'null');
 
           const hasMovies = combinedMovies.length > 0;
 

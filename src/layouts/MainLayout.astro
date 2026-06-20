@@ -2375,7 +2375,7 @@ const isActive = (path: string) => {
               let combined = [...matchedCrawled, ...movies];
               const seen = new Set();
               const uniqueMovies = combined.filter(m => {
-                if (seen.has(m.slug)) return false;
+                if (!m.slug || m.slug === 'undefined' || m.slug === 'null' || seen.has(m.slug)) return false;
                 seen.add(m.slug);
                 return true;
               }).slice(0, 6);

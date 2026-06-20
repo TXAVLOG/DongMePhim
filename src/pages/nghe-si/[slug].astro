@@ -3,6 +3,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
 import Card from '../../components/ui/Card.astro';
 import { MovieService } from '../../services/MovieService';
 import { SettingService } from '../../services/SettingService';
+import type { Movie } from '../../types/movie';
 
 const { slug } = Astro.params;
 
@@ -38,7 +39,7 @@ const actor = actorMap[actorSlug] || {
 
 // Fetch movies that match this actor
 const allMovies = await MovieService.getMovies();
-const movies = allMovies.filter(m => actor.movies.includes(m.slug));
+const movies = allMovies.filter((m: Movie) => actor.movies.includes(m.slug));
 const settings = await SettingService.getSettings();
 ---
 
@@ -66,7 +67,7 @@ const settings = await SettingService.getSettings();
         </div>
       ) : (
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {movies.map((movie) => (
+          {movies.map((movie: Movie) => (
             <Card 
               title={movie.title}
               slug={movie.slug}

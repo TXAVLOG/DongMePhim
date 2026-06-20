@@ -52,6 +52,8 @@ export const MovieService = {
   },
 
   getMovieBySlug: async (slug: string) => {
+    if (!slug || slug === 'undefined' || slug === 'null') return null;
+
     const cacheKey = `detail_${slug}`;
     const cached = movieCache.get(cacheKey);
     if (cached) return cached;
