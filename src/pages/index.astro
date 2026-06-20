@@ -270,12 +270,14 @@ const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;
         setInterval(rotateBg, 6000);
 
         // Progress simulator
-        document.addEventListener('DOMContentLoaded', () => {
+        function runLoader() {
             const progressBar = document.getElementById('progress-bar');
             const percentText = document.getElementById('percent-text');
             const statusLabel = document.getElementById('loading-status');
             const splash = document.getElementById('splash-screen');
             const landing = document.getElementById('landing-page');
+            
+            if (!progressBar) return; // Not on page
             
             let progress = 0;
             const statuses = [
@@ -306,25 +308,32 @@ const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;
                     // Transition from Splash Screen to Landing Page
                     setTimeout(() => {
                         // Fade out splash screen
-                        splash.style.opacity = '0';
-                        splash.style.transform = 'scale(0.95) translateY(-20px)';
+                        if (splash) {
+                            splash.style.opacity = '0';
+                            splash.style.transform = 'scale(0.95) translateY(-20px)';
+                        }
                         
                         setTimeout(() => {
-                            splash.style.display = 'none';
+                            if (splash) splash.style.display = 'none';
                             
                             // Fade in landing page
-                            landing.style.display = 'flex';
-                            // Force reflow
-                            void landing.offsetHeight;
-                            landing.classList.remove('hidden', 'opacity-0', 'scale-95');
-                            landing.classList.add('opacity-100', 'scale-100');
+                            if (landing) {
+                                landing.style.display = 'flex';
+                                // Force reflow
+                                void landing.offsetHeight;
+                                landing.classList.remove('hidden', 'opacity-0', 'scale-95');
+                                landing.classList.add('opacity-100', 'scale-100');
+                            }
                         }, 500);
                     }, 600);
                 }
             };
 
             setTimeout(updateLoading, 400);
-        });
+        }
+
+        document.addEventListener('DOMContentLoaded', runLoader);
+        document.addEventListener('astro:page-load', runLoader);
 
         // Mouse Move Bokeh Interaction
         document.addEventListener('mousemove', (e) => {
