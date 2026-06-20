@@ -104,7 +104,7 @@ let activeTab = 'app-mobile';
           <!-- Chợ ứng dụng Store Cấu hình -->
           <div class="md:col-span-2 border-t border-glass-stroke/40 pt-4 space-y-4">
             <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><span class="material-symbols-outlined text-yellow-400" style="font-size:16px">store</span> Link Google Play Store</span>
+              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><svg class="w-4 h-4" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path fill="none" d="M0,0h40v40H0V0z"></path><g><path d="M19.7,19.2L4.3,35.3c0,0,0,0,0,0c0.5,1.7,2.1,3,4,3c0.8,0,1.5-0.2,2.1-0.6l0,0l17.4-9.9L19.7,19.2z" fill="#EA4335"></path><path d="M35.3,16.4L35.3,16.4l-7.5-4.3l-8.4,7.4l8.5,8.3l7.5-4.2c1.3-0.7,2.2-2.1,2.2-3.6C37.5,18.5,36.6,17.1,35.3,16.4z" fill="#FBBC04"></path><path d="M4.3,4.7C4.2,5,4.2,5.4,4.2,5.8v28.5c0,0.4,0,0.7,0.1,1.1l16-15.7L4.3,4.7z" fill="#4285F4"></path><path d="M19.8,20l8-7.9L10.5,2.3C9.9,1.9,9.1,1.7,8.3,1.7c-1.9,0-3.6,1.3-4,3c0,0,0,0,0,0L19.8,20z" fill="#34A853"></path></g></svg> Link Google Play Store</span>
               <label class="txa-switch"><input type="checkbox" id="app-gplay-enable" checked={settings.app.app_google_play_enable} /><span class="txa-slider"></span></label>
             </div>
             <div id="gplay-fields" class="space-y-2 pl-2 border-l-2 border-primary/20 ml-2" style={settings.app.app_google_play_enable ? '' : 'display:none'}>
@@ -115,7 +115,7 @@ let activeTab = 'app-mobile';
 
           <div class="md:col-span-2 border-t border-glass-stroke/40 pt-4 space-y-4">
             <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><span class="material-symbols-outlined text-blue-400" style="font-size:16px">storefront</span> Link Apple App Store</span>
+              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><svg class="w-4 h-4 text-blue-400" viewBox="0 0 170 170" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0" fill="currentColor"><path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.34.13-9.13-1.9-14.36-6.07-2.9-2.52-6.66-7.04-11.28-13.56-6.84-9.82-12.24-21.72-16.22-35.7-3.98-14-5.97-27.41-5.97-40.26 0-15.15 3.74-27.75 11.23-37.81 7.48-10.06 17.06-15.15 28.75-15.27 5.69 0 11.59 1.76 17.68 5.27 6.09 3.52 10.45 5.27 13.08 5.27 2.1 0 6.06-1.58 11.89-4.75 5.83-3.17 11.24-4.8 16.21-4.9 14.88-.26 26.68 5.12 35.39 16.14-12.21 7.43-18.25 17.3-18.15 29.6 0 9.71 3.59 17.9 10.77 24.58 7.18 6.68 15.7 10.4 25.55 11.16-2.12 6.29-4.64 12.38-7.55 18.27zM119.22 30.65c0-7.85 2.76-15.08 8.28-21.7C133 2.33 140.23-1 149.19 0c.26 8.35-2.6 15.89-8.58 22.62-5.98 6.74-13.43 10.23-22.35 10.48-.12-1.22-.19-1.89-.19-2.45z"/></svg> Link App Store</span>
               <label class="txa-switch"><input type="checkbox" id="app-appstore-enable" checked={settings.app.app_app_store_enable} /><span class="txa-slider"></span></label>
             </div>
             <div id="appstore-fields" class="space-y-2 pl-2 border-l-2 border-primary/20 ml-2" style={settings.app.app_app_store_enable ? '' : 'display:none'}>
