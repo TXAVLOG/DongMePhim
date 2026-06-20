@@ -110,7 +110,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
           <span class="material-symbols-outlined text-xl">cloud_download</span>
           <span class="font-label-caps text-xs">Thu thập phim</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-server" href="/admin/he-thong/server">
+        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-server" href="/admin/cai-dat/server">
           <span class="material-symbols-outlined text-xl">dns</span>
           <span class="font-label-caps text-xs">Quản lý Server</span>
         </a>
@@ -122,11 +122,11 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
           <span class="material-symbols-outlined text-xl">category</span>
           <span class="font-label-caps text-xs">Thể loại</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-ios" href="/admin/he-thong/ios-management">
+        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-ios" href="/admin/cai-dat/ios-management">
           <span class="material-symbols-outlined text-xl">phonelink_setup</span>
           <span class="font-label-caps text-xs">Thiết bị & Chứng chỉ iOS</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-error" href="/admin/he-thong/bao-cao-loi">
+        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-error" href="/admin/cai-dat/bao-cao-loi">
           <span class="material-symbols-outlined text-xl">report</span>
           <span class="font-label-caps text-xs">Báo cáo lỗi</span>
         </a>
@@ -138,7 +138,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
           <span class="material-symbols-outlined text-xl">card_membership</span>
           <span class="font-label-caps text-xs">Gói đăng ký</span>
         </a>
-          <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-email" href="/admin/he-thong/email-logs">
+          <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-email" href="/admin/cai-dat/email-logs">
           <span class="material-symbols-outlined text-xl">mail_lock</span>
           <span class="font-label-caps text-xs">Lịch sử mail gửi đi</span>
         </a>
@@ -149,10 +149,10 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
       </nav>
       
       <div class="px-4 mt-auto py-4 bg-surface-container-lowest/80 backdrop-blur-md">
-        <button class="w-full py-2 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 rounded-xl text-primary font-label-caps text-[10px] hover:from-primary/30 hover:to-secondary/30 transition-all flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-sm">auto_awesome</span>
-          Upgrade Pro
-        </button>
+        <a href="/admin/cai-dat" class="w-full py-2 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 rounded-xl text-primary font-label-caps text-[10px] hover:from-primary/30 hover:to-secondary/30 transition-all flex items-center justify-center gap-2 text-center decoration-none no-underline">
+          <span class="material-symbols-outlined text-sm">settings</span>
+          Cài đặt hệ thống
+        </a>
       </div>
     </aside>
 
@@ -189,7 +189,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
         <span class="material-symbols-outlined">group</span>
         <span class="text-[10px] font-label-caps">Users</span>
       </a>
-      <a class="flex flex-col items-center gap-1 text-on-surface-variant" href="/admin/he-thong">
+      <a class="flex flex-col items-center gap-1 text-on-surface-variant" href="/admin/cai-dat">
         <span class="material-symbols-outlined">settings</span>
         <span class="text-[10px] font-label-caps">Config</span>
       </a>
@@ -388,12 +388,12 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
           if (!container) {
             container = document.createElement('div');
             container.id = 'txa-toast-container';
-            container.className = 'fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none';
+            container.className = 'fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none';
             document.body.appendChild(container);
           }
 
           const toast = document.createElement('div');
-          toast.className = 'txatoast flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border border-white/10 backdrop-blur-md bg-zinc-900/95 text-white pointer-events-auto transform translate-y-4 opacity-0 transition-all duration-300';
+          toast.className = 'txatoast flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border border-white/10 backdrop-blur-md bg-zinc-900/95 text-white pointer-events-auto transform translate-x-4 opacity-0 transition-all duration-300';
           
           const icons = { success: 'check_circle', error: 'cancel', info: 'info' };
           const colors = { success: 'text-emerald-400', error: 'text-rose-500', info: 'text-cyan-400' };
@@ -406,11 +406,11 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
           container.appendChild(toast);
           
           setTimeout(() => {
-            toast.classList.remove('translate-y-4', 'opacity-0');
+            toast.classList.remove('translate-x-4', 'opacity-0');
           }, 10);
 
           setTimeout(() => {
-            toast.classList.add('translate-y-[-10px]', 'opacity-0');
+            toast.classList.add('translate-x-4', 'opacity-0');
             setTimeout(() => {
               toast.remove();
             }, 300);

@@ -1,0 +1,405 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const activeTab = 'payment';
+---
+
+<AdminLayout title="Cài đặt hệ thống - Cấu hình Thanh toán">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý toàn bộ tham số cấu hình của ứng dụng.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <div class="lg:col-span-1 flex flex-col gap-2">
+      <a href="/admin/cai-dat" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'general' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">settings</span> Chung
+      </a>
+      <a href="/admin/cai-dat/api-ser" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'api-ser' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">security</span> API Security
+      </a>
+      <a href="/admin/cai-dat/app-mobile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'app-mobile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">smartphone</span> App Mobile
+      </a>
+      <a href="/admin/cai-dat/smtp" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'smtp' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">mail</span> SMTP Mail
+      </a>
+      <a href="/admin/cai-dat/telegram" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'telegram' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">send</span> Telegram
+      </a>
+      <a href="/admin/cai-dat/dang-ky" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'dang-ky' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">login</span> Đăng nhập & Đăng ký
+      </a>
+      <a href="/admin/cai-dat/social" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'social' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">share</span> Mạng xã hội
+      </a>
+      <a href="/admin/cai-dat/thanh-toan" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'payment' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">payments</span> Cấu hình Thanh toán
+      </a>
+      <a href="/admin/cai-dat/turnstile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'turnstile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">verified_user</span> Turnstile Captcha
+      </a>
+    </div>
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8 space-y-8">
+      <div id="tab-payment" class="space-y-6">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6 text-xl font-bold">Cấu hình Thanh toán & Cổng mua gói</h3>
+
+        <!-- Sandbox Mode Global Toggle -->
+        <div class="glass-panel p-5 rounded-2xl border border-glass-stroke flex items-center justify-between mb-6">
+          <div class="space-y-1 col-span-2">
+            <h4 class="text-sm font-bold text-white uppercase flex items-center gap-2 text-[11px]">
+              <span class="material-symbols-outlined text-primary">bug_report</span>
+              Chế độ Sandbox (Thử nghiệm thanh toán)
+            </h4>
+            <p class="text-xs text-zinc-400 font-body-main">Khi bật, các cổng thanh toán tự động (Stripe, PayOS, v.v.) sẽ sử dụng cổng giả lập và không trừ tiền thật.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <input type="checkbox" id="payment-sandbox-enable" checked={settings.payments?.sandbox_mode} class="w-6 h-6 accent-primary bg-surface-container border-glass-stroke cursor-pointer" />
+            <span class="text-sm font-semibold text-primary">Kích hoạt</span>
+          </div>
+        </div>
+        
+        <!-- Cổng thanh toán -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-glass-stroke">
+          <!-- Manual Bank Transfer -->
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="payment-manual-enable" checked={settings.payments?.manual_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold text-white uppercase text-[10px]">Chuyển khoản VietQR thủ công</span>
+            </div>
+            <div class="space-y-3 pl-8">
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Tên Ngân hàng</label>
+                <input type="text" id="payment-manual-bank" value={settings.payments?.manual_bank_name} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Số tài khoản</label>
+                <input type="text" id="payment-manual-no" value={settings.payments?.manual_account_no} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Tên chủ tài khoản</label>
+                <input type="text" id="payment-manual-name" value={settings.payments?.manual_account_name} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+              </div>
+            </div>
+          </div>
+
+          <!-- PayOS -->
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="payment-payos-enable" checked={settings.payments?.payos_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng PayOS</span>
+            </div>
+            <div class="space-y-3 pl-8">
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="payment-payos-client" value={settings.payments?.payos_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">API Key</label><input type="password" id="payment-payos-key" value={settings.payments?.payos_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Checksum Key</label><input type="password" id="payment-payos-checksum" value={settings.payments?.payos_checksum_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+            </div>
+          </div>
+
+          <!-- PayPal -->
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="payment-paypal-enable" checked={settings.payments?.paypal_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng PayPal</span>
+            </div>
+            <div class="space-y-3 pl-8">
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="payment-paypal-client" value={settings.payments?.paypal_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+            </div>
+          </div>
+
+          <!-- SePay -->
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="payment-sepay-enable" checked={settings.payments?.sepay_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng SePay</span>
+            </div>
+            <div class="space-y-3 pl-8">
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">API Key</label><input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" /></div>
+            </div>
+          </div>
+
+          <!-- VNPAY -->
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="payment-vnpay-enable" checked={settings.payments?.vnpay_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng VNPAY</span>
+            </div>
+            <div class="space-y-3 pl-8">
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">TMN Code</label><input type="text" id="payment-vnpay-code" value={settings.payments?.vnpay_tmn_code} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key</label><input type="password" id="payment-vnpay-secret" value={settings.payments?.vnpay_hash_secret} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+            </div>
+          </div>
+
+          <!-- Stripe -->
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="payment-stripe-enable" checked={settings.payments?.stripe_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng Stripe</span>
+            </div>
+            <div class="space-y-3 pl-8">
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Publishable Key</label><input type="text" id="payment-stripe-pub" value={settings.payments?.stripe_publishable_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key</label><input type="password" id="payment-stripe-sec" value={settings.payments?.stripe_secret_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sandbox Transactions Table -->
+        <div class="space-y-4 pt-4">
+          <h4 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-lg">history</span>
+            Nhật ký Sandbox & Phê duyệt hóa đơn chuyển khoản
+          </h4>
+          
+          <div class="overflow-x-auto border border-glass-stroke rounded-2xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-950/40">
+                <tr>
+                  <th class="px-5 py-3 text-zinc-500 font-bold">MÃ GD</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold">USER</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold">GÓI VIP</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold">SỐ TIỀN</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold">PHƯƠNG THỨC</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold">ẢNH HÓA ĐƠN</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold">TRẠNG THÁI</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold text-right">HÀNH ĐỘNG</th>
+                </tr>
+              </thead>
+              <tbody id="sandboxLogsBody" class="divide-y divide-glass-stroke/40">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle Switch CSS -->
+  <style>
+    .txa-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .txa-switch input { opacity: 0; width: 0; height: 0; }
+    .txa-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); transition: 0.3s; border-radius: 24px; }
+    .txa-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background: #64748b; transition: 0.3s; border-radius: 50%; }
+    .txa-switch input:checked + .txa-slider { background: rgba(167,139,250,0.25); border-color: rgba(167,139,250,0.4); }
+    .txa-switch input:checked + .txa-slider:before { transform: translateX(20px); background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,0.5); }
+  </style>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function() {
+      // Hydrate form fields client-side
+      function hydrateFromLocalStorage() {
+        let stored = null;
+        try {
+          const raw = localStorage.getItem('txa_site_settings');
+          if (raw) stored = JSON.parse(raw);
+        } catch (e) {}
+        if (!stored) {
+          renderSandboxLogs();
+          return;
+        }
+
+        const s = stored;
+        setChecked('payment-sandbox-enable', s.payments?.sandbox_mode);
+        setChecked('payment-manual-enable', s.payments?.manual_enable);
+        setVal('payment-manual-bank', s.payments?.manual_bank_name);
+        setVal('payment-manual-no', s.payments?.manual_account_no);
+        setVal('payment-manual-name', s.payments?.manual_account_name);
+        setChecked('payment-payos-enable', s.payments?.payos_enable);
+        setVal('payment-payos-client', s.payments?.payos_client_id);
+        setVal('payment-payos-key', s.payments?.payos_api_key);
+        setVal('payment-payos-checksum', s.payments?.payos_checksum_key);
+        setChecked('payment-paypal-enable', s.payments?.paypal_enable);
+        setVal('payment-paypal-client', s.payments?.paypal_client_id);
+        setChecked('payment-sepay-enable', s.payments?.sepay_enable);
+        setVal('payment-sepay-key', s.payments?.sepay_api_key);
+        setChecked('payment-vnpay-enable', s.payments?.vnpay_enable);
+        setVal('payment-vnpay-code', s.payments?.vnpay_tmn_code);
+        setVal('payment-vnpay-secret', s.payments?.vnpay_hash_secret);
+        setChecked('payment-stripe-enable', s.payments?.stripe_enable);
+        setVal('payment-stripe-pub', s.payments?.stripe_publishable_key);
+        setVal('payment-stripe-sec', s.payments?.stripe_secret_key);
+
+        renderSandboxLogs();
+      }
+
+      function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
+      function setChecked(id, val) { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; }
+
+      // Save handler
+      document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) { current = serverSettings; }
+
+        const updatedSettings = {
+          ...current,
+          payments: {
+            sandbox_mode: document.getElementById('payment-sandbox-enable')?.checked || false,
+            payos_enable: document.getElementById('payment-payos-enable')?.checked || false,
+            payos_client_id: document.getElementById('payment-payos-client')?.value || '',
+            payos_api_key: document.getElementById('payment-payos-key')?.value || '',
+            payos_checksum_key: document.getElementById('payment-payos-checksum')?.value || '',
+            paypal_enable: document.getElementById('payment-paypal-enable')?.checked || false,
+            paypal_client_id: document.getElementById('payment-paypal-client')?.value || '',
+            sepay_enable: document.getElementById('payment-sepay-enable')?.checked || false,
+            sepay_api_key: document.getElementById('payment-sepay-key')?.value || '',
+            vnpay_enable: document.getElementById('payment-vnpay-enable')?.checked || false,
+            vnpay_tmn_code: document.getElementById('payment-vnpay-code')?.value || '',
+            vnpay_hash_secret: document.getElementById('payment-vnpay-secret')?.value || '',
+            stripe_enable: document.getElementById('payment-stripe-enable')?.checked || false,
+            stripe_publishable_key: document.getElementById('payment-stripe-pub')?.value || '',
+            stripe_secret_key: document.getElementById('payment-stripe-sec')?.value || '',
+            manual_enable: document.getElementById('payment-manual-enable')?.checked || false,
+            manual_bank_name: document.getElementById('payment-manual-bank')?.value || '',
+            manual_account_no: document.getElementById('payment-manual-no')?.value || '',
+            manual_account_name: document.getElementById('payment-manual-name')?.value || '',
+          }
+        };
+
+        localStorage.setItem('txa_site_settings', JSON.stringify(updatedSettings));
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
+        } else {
+          alert('Lưu cấu hình hệ thống thành công!');
+        }
+
+        setTimeout(() => { window.location.reload(); }, 800);
+      });
+
+      // Sandbox logs renderer
+      function renderSandboxLogs() {
+        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+        let logs = [];
+        try { logs = JSON.parse(logsStr); } catch (e) {}
+
+        const tbody = document.getElementById('sandboxLogsBody');
+        if (!tbody) return;
+
+        if (logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="px-5 py-6 text-center text-zinc-500 italic">Chưa có giao dịch thanh toán nào được thực hiện.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = logs.map(item => {
+          const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
+          let statusBadge = '';
+          if (item.status === 'approved') statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[9px]">APPROVED</span>';
+          else if (item.status === 'declined') statusBadge = '<span class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-bold uppercase text-[9px]">DECLINED</span>';
+          else statusBadge = '<span class="px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse">PENDING</span>';
+
+          let imgHtml = item.receiptImg
+            ? `<button onclick="viewReceiptImage('${item.txid}')" class="text-primary hover:underline font-bold text-[10px] cursor-pointer flex items-center gap-1"><span class="material-symbols-outlined text-xs">image</span>Xem hóa đơn</button>`
+            : '<span class="text-zinc-600">Trống (Auto)</span>';
+
+          const methodLabel = item.method === 'manual' ? 'Chuyển khoản' : item.method.toUpperCase();
+          const canApprove = item.status === 'pending';
+
+          return `
+            <tr class="hover:bg-white/5 transition-colors">
+              <td class="px-5 py-3 font-mono text-[10px] text-zinc-400">${item.txid.substring(0, 10)}...</td>
+              <td class="px-5 py-3 font-semibold text-white">${item.username}</td>
+              <td class="px-5 py-3 text-zinc-300 font-medium">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
+              <td class="px-5 py-3 text-zinc-300 font-bold">${formattedPrice}</td>
+              <td class="px-5 py-3 font-bold text-zinc-400">${methodLabel}</td>
+              <td class="px-5 py-3">${imgHtml}</td>
+              <td class="px-5 py-3">${statusBadge}</td>
+              <td class="px-5 py-3 text-right">
+                <div class="flex justify-end gap-1.5">
+                  ${canApprove ? `
+                    <button onclick="approveSandboxTx('${item.txid}')" class="px-2 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer">Duyệt</button>
+                    <button onclick="declineSandboxTx('${item.txid}')" class="px-2 py-1 rounded bg-red-500/10 border border-red-500/20 text-red-400 font-bold hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer">Từ chối</button>
+                  ` : '<span class="text-zinc-600 italic text-[10px]">Đã đối soát</span>'}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      window.viewReceiptImage = function(txid) {
+        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+        let logs = [];
+        try { logs = JSON.parse(logsStr); } catch (e) {}
+        const tx = logs.find(item => item.txid === txid);
+        if (!tx || !tx.receiptImg) return;
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Xem hóa đơn chuyển khoản thực tế',
+            message: `<div class="flex flex-col items-center gap-4"><p class="text-xs text-zinc-400 font-body-main">User: <strong class="text-white">${tx.username}</strong> | Mã GD: <strong class="text-white">${tx.txid}</strong></p><div class="max-w-xs border border-glass-stroke rounded-xl overflow-hidden bg-black flex items-center justify-center"><img src="${tx.receiptImg}" class="w-full h-auto object-contain max-h-[350px]" alt="Receipt" /></div></div>`,
+            type: 'info', confirmText: 'Đóng', cancelText: '', onConfirm: () => {}
+          });
+        }
+      };
+
+      window.approveSandboxTx = function(txid) {
+        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+        let logs = [];
+        try { logs = JSON.parse(logsStr); } catch (e) {}
+        const idx = logs.findIndex(item => item.txid === txid);
+        if (idx === -1) return;
+        const tx = logs[idx];
+        const performApprove = () => {
+          tx.status = 'approved';
+          localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
+          const cycleDays = tx.cycle === 'annual' ? 365 : 30;
+          const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
+          localStorage.setItem('txa_user_subscription', JSON.stringify({
+            username: tx.username, tier: tx.packageTitle, status: 'active',
+            price: tx.price, cycle: tx.cycle, expiry: expiryDate, updatedAt: new Date().toISOString()
+          }));
+          if (window.showGlobalToast) window.showGlobalToast('Đã duyệt giao dịch và kích hoạt gói VIP!', 'success');
+          renderSandboxLogs();
+        };
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Phê duyệt giao dịch thủ công',
+            message: `Bạn có chắc chắn muốn phê duyệt giao dịch số tiền ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.price)} của user "${tx.username}"? Quyền lợi VIP sẽ được kích hoạt ngay lập tức.`,
+            type: 'info', confirmText: 'Duyệt ngay', cancelText: 'Hủy bỏ', onConfirm: performApprove
+          });
+        } else if (confirm('Duyệt giao dịch này?')) performApprove();
+      };
+
+      window.declineSandboxTx = function(txid) {
+        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+        let logs = [];
+        try { logs = JSON.parse(logsStr); } catch (e) {}
+        const idx = logs.findIndex(item => item.txid === txid);
+        if (idx === -1) return;
+        const tx = logs[idx];
+        const performDecline = () => {
+          tx.status = 'declined';
+          localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
+          if (window.showGlobalToast) window.showGlobalToast('Đã từ chối giao dịch chuyển khoản.', 'info');
+          renderSandboxLogs();
+        };
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Từ chối giao dịch thủ công',
+            message: `Bạn chắc chắn từ chối giao dịch chuyển khoản này của user "${tx.username}"?`,
+            type: 'danger', confirmText: 'Từ chối', cancelText: 'Hủy bỏ', onConfirm: performDecline
+          });
+        } else if (confirm('Từ chối giao dịch này?')) performDecline();
+      };
+
+      // Init
+      hydrateFromLocalStorage();
+      document.addEventListener('astro:page-load', hydrateFromLocalStorage);
+    })();
+  </script>
+</AdminLayout>

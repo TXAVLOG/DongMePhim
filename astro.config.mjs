@@ -25,7 +25,8 @@ export default defineConfig({
       ],
       exclude: [
         'astro:transitions',
-        'astro:transitions/client'
+        'astro:transitions/client',
+        'artplayer'
       ]
     }
   }

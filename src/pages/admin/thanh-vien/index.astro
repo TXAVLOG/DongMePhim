@@ -6,31 +6,65 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
   <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 mt-4 gap-4">
     <div>
       <h2 class="font-headline-lg text-on-surface text-3xl">Quản lý Thành viên</h2>
-      <p class="text-text-dim text-body-main mt-1">Quản lý các tài khoản đã đăng ký thành viên trên hệ thống.</p>
+      <p class="text-text-dim text-body-main mt-1 font-outfit">Quản lý các tài khoản đã đăng ký thành viên trên hệ thống.</p>
     </div>
     <div>
       <button id="add-member-btn" class="px-4 py-2.5 bg-primary hover:brightness-110 text-slate-950 font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer border-none shadow-lg shadow-primary/10">
         <span class="material-symbols-outlined text-sm">person_add</span>
-        <span>Thêm thành viên thử nghiệm</span>
+        <span>Thêm thành viên</span>
       </button>
     </div>
   </header>
+
+  <!-- Bulk Action Panel (Slides/Reveals when items are selected) -->
+  <div id="bulk-action-panel" class="glass-panel px-6 py-4 rounded-3xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 hidden border-primary/20 bg-primary/5 transition-all duration-300">
+    <div class="flex items-center gap-3">
+      <span class="w-2.5 h-2.5 rounded-full bg-primary animate-ping"></span>
+      <span class="text-xs font-semibold text-white font-outfit"><span id="selected-count">0</span> thành viên được chọn</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+      <select id="bulk-action-select" class="bg-surface-container border border-glass-stroke rounded-xl px-3 py-2 text-xs focus:outline-none text-zinc-300 cursor-pointer w-full sm:w-auto">
+        <option value="">-- Chọn hành động hàng loạt --</option>
+        <option value="status-active">✓ Hoạt động (Kích hoạt)</option>
+        <option value="status-banned">🔒 Khóa tài khoản</option>
+        <option value="package-VIP">⭐ Nâng cấp VIP</option>
+        <option value="package-Free">⬇️ Hạ cấp Free</option>
+        <option value="role-admin">👑 Gán vai trò Admin</option>
+        <option value="role-users">👤 Gán vai trò Users</option>
+        <option value="verified-true">📧 Xác minh Email</option>
+        <option value="verified-false">❌ Hủy xác minh Email</option>
+        <option value="delete">🗑️ Xóa tài khoản vĩnh viễn</option>
+      </select>
+      <button id="bulk-action-run-btn" class="px-4 py-2 bg-primary hover:brightness-110 text-slate-950 font-bold rounded-xl text-xs transition-all active:scale-95 cursor-pointer border-none w-full sm:w-auto">
+        Áp dụng
+      </button>
+      <button id="bulk-action-clear-btn" class="px-3 py-2 bg-white/5 border border-glass-stroke hover:bg-white/10 text-zinc-400 font-bold rounded-xl text-xs transition-all active:scale-95 cursor-pointer w-full sm:w-auto">
+        Hủy chọn
+      </button>
+    </div>
+  </div>
 
   <!-- Filter & Search Panel -->
   <section class="glass-panel p-6 rounded-3xl mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
     <div class="relative group w-full md:w-80">
       <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-dim group-focus-within:text-primary transition-colors">search</span>
-      <input id="member-search" class="bg-surface-container border border-glass-stroke rounded-full pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary w-full transition-all focus:outline-none placeholder:text-zinc-500 text-white" placeholder="Tìm kiếm tên, email thành viên..." type="text"/>
+      <input id="member-search" class="bg-surface-container border border-glass-stroke rounded-full pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary w-full transition-all focus:outline-none placeholder:text-zinc-500 text-white font-outfit" placeholder="Tìm kiếm tên, email thành viên..." type="text"/>
     </div>
     
     <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-      <select id="filter-package" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
+      <select id="filter-package" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer font-outfit">
         <option value="all">Tất cả gói</option>
         <option value="VIP">Thành viên VIP</option>
         <option value="Free">Thành viên Miễn phí</option>
       </select>
+
+      <select id="filter-role" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer font-outfit">
+        <option value="all">Tất cả vai trò</option>
+        <option value="admin">Quản trị viên (admin)</option>
+        <option value="users">Thành viên (users)</option>
+      </select>
       
-      <select id="filter-status" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
+      <select id="filter-status" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer font-outfit">
         <option value="all">Tất cả trạng thái</option>
         <option value="active">Đang hoạt động</option>
         <option value="banned">Đã khóa</option>
@@ -49,9 +83,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       <table class="w-full text-left">
         <thead class="bg-surface-container/40">
           <tr>
+            <th class="px-4 py-4 w-10 text-center">
+              <input type="checkbox" id="select-all-members" class="rounded border-glass-stroke text-primary bg-surface-container w-4 h-4 cursor-pointer focus:ring-primary focus:ring-offset-0" />
+            </th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">TÊN TÀI KHOẢN / EMAIL</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">NGÀY ĐĂNG KÝ</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">GÓI DỊCH VỤ</th>
+            <th class="px-8 py-4 text-xs font-label-caps text-text-dim">XÁC MINH EMAIL</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">TRẠNG THÁI</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim text-right">HÀNH ĐỘNG</th>
           </tr>
@@ -83,6 +121,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             email: "hoang.nguyen@gmail.com",
             createdAt: getOffsetDate(1),
             package: "VIP",
+            roles: "users",
+            emailVerified: true,
             status: "active"
           },
           {
@@ -90,6 +130,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             email: "linh.tran.beauty@gmail.com",
             createdAt: getOffsetDate(3),
             package: "Free",
+            roles: "users",
+            emailVerified: false,
             status: "active"
           },
           {
@@ -97,6 +139,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             email: "ducanh.dev.ios@yahoo.com",
             createdAt: getOffsetDate(5),
             package: "VIP",
+            roles: "users",
+            emailVerified: true,
             status: "active"
           },
           {
@@ -104,13 +148,26 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             email: "hacker.lord@spambox.me",
             createdAt: getOffsetDate(12),
             package: "Free",
+            roles: "users",
+            emailVerified: false,
             status: "banned"
+          },
+          {
+            username: "admin_dongmephim",
+            email: "admin@dongmephim.com",
+            createdAt: getOffsetDate(30),
+            package: "VIP",
+            roles: "admin",
+            emailVerified: true,
+            status: "active"
           },
           {
             username: "mai_phuong_kute",
             email: "maiphuong9x@outlook.com",
             createdAt: getOffsetDate(18),
             package: "VIP",
+            roles: "users",
+            emailVerified: true,
             status: "active"
           }
         ];
@@ -127,12 +184,139 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
         const searchInput = document.getElementById('member-search');
         const filterPackage = document.getElementById('filter-package');
+        const filterRole = document.getElementById('filter-role');
         const filterStatus = document.getElementById('filter-status');
         const summaryText = document.getElementById('members-summary');
         const showCountText = document.getElementById('show-count-text');
         const addBtn = document.getElementById('add-member-btn');
 
+        const selectAllCheckbox = document.getElementById('select-all-members');
+        const bulkPanel = document.getElementById('bulk-action-panel');
+        const selectedCountEl = document.getElementById('selected-count');
+        const bulkActionSelect = document.getElementById('bulk-action-select');
+        const bulkRunBtn = document.getElementById('bulk-action-run-btn');
+        const bulkClearBtn = document.getElementById('bulk-action-clear-btn');
+
         let users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+        let selectedUsernames = [];
+
+        function updateBulkPanelState() {
+          const checkboxes = document.querySelectorAll('.member-checkbox');
+          selectedUsernames = [];
+          checkboxes.forEach(cb => {
+            if (cb.checked) {
+              selectedUsernames.push(cb.dataset.username);
+            }
+          });
+
+          if (selectedUsernames.length > 0) {
+            bulkPanel?.classList.remove('hidden');
+            bulkPanel?.classList.add('flex');
+            if (selectedCountEl) selectedCountEl.textContent = selectedUsernames.length;
+            if (selectAllCheckbox) {
+              selectAllCheckbox.checked = (selectedUsernames.length === checkboxes.length);
+            }
+          } else {
+            bulkPanel?.classList.add('hidden');
+            bulkPanel?.classList.remove('flex');
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+          }
+        }
+
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.member-checkbox');
+            checkboxes.forEach(cb => {
+              cb.checked = this.checked;
+            });
+            updateBulkPanelState();
+          });
+        }
+
+        // Event delegation for checkbox changes
+        tbody.addEventListener('change', (e) => {
+          if (e.target && e.target.classList.contains('member-checkbox')) {
+            updateBulkPanelState();
+          }
+        });
+
+        if (bulkClearBtn) {
+          bulkClearBtn.onclick = () => {
+            const checkboxes = document.querySelectorAll('.member-checkbox');
+            checkboxes.forEach(cb => {
+              cb.checked = false;
+            });
+            updateBulkPanelState();
+          };
+        }
+
+        if (bulkRunBtn) {
+          bulkRunBtn.onclick = () => {
+            const action = bulkActionSelect?.value;
+            if (!action) {
+              window.showGlobalToast('Vui lòng chọn một hành động để áp dụng!', 'error');
+              return;
+            }
+
+            if (selectedUsernames.length === 0) {
+              window.showGlobalToast('Không có thành viên nào được chọn!', 'error');
+              return;
+            }
+
+            const executeBulk = () => {
+              const [type, val] = action.split('-');
+              
+              if (type === 'delete') {
+                users = users.filter(u => !selectedUsernames.includes(u.username));
+                window.showGlobalToast(`Đã xóa thành công ${selectedUsernames.length} thành viên!`, 'success');
+              } else {
+                users = users.map(u => {
+                  if (selectedUsernames.includes(u.username)) {
+                    const updated = { ...u };
+                    if (type === 'status') updated.status = val;
+                    else if (type === 'package') updated.package = val;
+                    else if (type === 'role') updated.roles = val;
+                    else if (type === 'verified') updated.emailVerified = (val === 'true');
+                    return updated;
+                  }
+                  return u;
+                });
+                window.showGlobalToast(`Đã áp dụng hành động hàng loạt thành công!`, 'success');
+              }
+
+              localStorage.setItem('tregistered_users', JSON.stringify(users));
+              selectedUsernames = [];
+              if (selectAllCheckbox) selectAllCheckbox.checked = false;
+              if (bulkActionSelect) bulkActionSelect.value = '';
+              filterAndSearch();
+            };
+
+            if (window.txamodal) {
+              const actionLabels = {
+                'status-active': 'Kích hoạt tài khoản hàng loạt',
+                'status-banned': 'Khóa tài khoản hàng loạt',
+                'package-VIP': 'Nâng cấp VIP hàng loạt',
+                'package-Free': 'Hạ cấp Free hàng loạt',
+                'role-admin': 'Gán vai trò Admin hàng loạt',
+                'role-users': 'Gán vai trò Users hàng loạt',
+                'verified-true': 'Xác minh Email hàng loạt',
+                'verified-false': 'Hủy xác minh Email hàng loạt',
+                'delete': 'Xóa tài khoản hàng loạt'
+              };
+
+              window.txamodal.show({
+                title: 'Xác nhận hành động hàng loạt',
+                message: `Bạn có chắc chắn muốn thực hiện hành động <strong>${actionLabels[action]}</strong> cho <strong>${selectedUsernames.length}</strong> thành viên đã chọn không?`,
+                type: action === 'delete' ? 'danger' : 'info',
+                confirmText: 'Thực hiện ngay',
+                cancelText: 'Hủy bỏ',
+                onConfirm: executeBulk
+              });
+            } else if (confirm(`Bạn có chắc chắn muốn thực hiện hành động hàng loạt này không?`)) {
+              executeBulk();
+            }
+          };
+        }
 
         window.toggleUserStatus = function(username) {
           users = users.map(u => {
@@ -188,13 +372,97 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           filterAndSearch();
         };
 
+        window.showEditMemberModal = (username) => {
+          const u = users.find(user => user.username === username);
+          if (!u) return;
+
+          window.txamodal.show({
+            title: `Chỉnh sửa thành viên: ${username}`,
+            content: `
+              <div class="space-y-4 pt-2">
+                <div class="flex flex-col gap-1 opacity-60">
+                  <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Tên tài khoản (Không thể thay đổi)</label>
+                  <input type="text" id="modal-username" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none" value="${u.username}" readonly />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Email</label>
+                  <input type="email" id="modal-email" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" value="${u.email || ''}" required />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Gói dịch vụ</label>
+                    <select id="modal-package" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                      <option value="Free" ${u.package === 'Free' ? 'selected' : ''}>Miễn phí (Free)</option>
+                      <option value="VIP" ${u.package === 'VIP' ? 'selected' : ''}>Thành viên VIP</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Vai trò</label>
+                    <select id="modal-role" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                      <option value="users" ${u.roles === 'users' ? 'selected' : ''}>Thành viên (users)</option>
+                      <option value="admin" ${u.roles === 'admin' ? 'selected' : ''}>Quản trị viên (admin)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Xác minh Email</label>
+                    <select id="modal-verified" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                      <option value="false" ${!u.emailVerified ? 'selected' : ''}>Chưa xác minh</option>
+                      <option value="true" ${u.emailVerified ? 'selected' : ''}>Đã xác minh</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Trạng thái</label>
+                    <select id="modal-status" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                      <option value="active" ${u.status === 'active' ? 'selected' : ''}>Đang hoạt động</option>
+                      <option value="banned" ${u.status === 'banned' ? 'selected' : ''}>Đã khóa</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            `,
+            confirmText: 'Cập nhật',
+            cancelText: 'Hủy bỏ',
+            onConfirm: () => {
+              const email = document.getElementById('modal-email').value.trim();
+              const pack = document.getElementById('modal-package').value;
+              const role = document.getElementById('modal-role').value;
+              const verified = document.getElementById('modal-verified').value === 'true';
+              const status = document.getElementById('modal-status').value;
+
+              if (!email) {
+                window.showGlobalToast('Vui lòng điền email hợp lệ!', 'error');
+                return;
+              }
+
+              users = users.map(user => {
+                if (user.username === username) {
+                  return {
+                    ...user,
+                    email,
+                    package: pack,
+                    roles: role,
+                    emailVerified: verified,
+                    status
+                  };
+                }
+                return user;
+              });
+              localStorage.setItem('tregistered_users', JSON.stringify(users));
+              window.showGlobalToast(`Đã cập nhật thông tin thành viên ${username}!`, 'success');
+              filterAndSearch();
+            }
+          });
+        };
+
         function renderUsers(list) {
           if (!tbody) return;
           
           if (list.length === 0) {
             tbody.innerHTML = `
               <tr>
-                <td colspan="5" class="px-8 py-12 text-center text-xs text-text-dim italic">
+                <td colspan="7" class="px-8 py-12 text-center text-xs text-text-dim italic font-outfit">
                   Không tìm thấy thành viên nào khớp với bộ lọc của bạn.
                 </td>
               </tr>
@@ -217,40 +485,60 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             const packageText = isVIP ? 'VIP Member' : 'Free Member';
 
             const isActive = u.status === 'active';
-            const statusBg = isActive ? 'bg-emerald-500' : 'bg-error';
+            const statusBg = isActive ? 'bg-emerald-500' : 'bg-rose-500';
             const statusText = isActive ? 'Hoạt động' : 'Đã khóa';
+
+            const isVerified = !!u.emailVerified;
+            const verifiedColor = isVerified ? 'text-emerald-400' : 'text-zinc-500';
+            const verifiedText = isVerified ? 'Đã xác minh' : 'Chưa xác minh';
+            const verifiedIcon = isVerified ? 'verified' : 'mail';
 
             return `
               <tr class="hover:bg-white/5 transition-colors group">
+                <td class="px-4 py-4 text-center">
+                  <input type="checkbox" data-username="${u.username}" class="member-checkbox rounded border-glass-stroke text-primary bg-surface-container w-4 h-4 cursor-pointer focus:ring-primary focus:ring-offset-0" />
+                </td>
                 <td class="px-8 py-4">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-surface-container border border-glass-stroke flex items-center justify-center text-text-dim font-bold text-sm uppercase">
                       ${u.username.substring(0, 2)}
                     </div>
                     <div>
-                      <p class="text-sm font-semibold group-hover:text-primary transition-colors">${u.username}</p>
-                      <p class="text-[10px] text-text-dim mt-0.5">${u.email}</p>
+                      <div class="flex items-center gap-2">
+                        <p class="text-sm font-semibold group-hover:text-primary transition-colors font-outfit">${u.username}</p>
+                        ${u.roles === 'admin' ? '<span class="text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-black uppercase tracking-wider font-outfit">Admin</span>' : ''}
+                      </div>
+                      <p class="text-[10px] text-text-dim mt-0.5 font-outfit">${u.email}</p>
                     </div>
                   </div>
                 </td>
-                <td class="px-8 py-4 text-xs text-text-dim">${registeredDate}</td>
+                <td class="px-8 py-4 text-xs text-text-dim font-outfit">${registeredDate}</td>
                 <td class="px-8 py-4">
-                  <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold border ${packageBg} cursor-pointer hover:brightness-110" title="Click để thay đổi gói">
+                  <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold border ${packageBg} cursor-pointer hover:brightness-110 font-outfit" data-tooltip="Nhấp để đổi nhanh gói">
                     ${packageText}
                   </button>
                 </td>
                 <td class="px-8 py-4">
+                  <div class="flex items-center gap-2 cursor-pointer select-none" data-tooltip="Trạng thái xác minh email của thành viên">
+                    <span class="material-symbols-outlined text-sm ${verifiedColor}">${verifiedIcon}</span>
+                    <span class="text-xs text-text-dim font-outfit">${verifiedText}</span>
+                  </div>
+                </td>
+                <td class="px-8 py-4">
                   <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full ${statusBg}"></div>
-                    <span class="text-xs font-medium text-on-surface">${statusText}</span>
+                    <span class="text-xs font-medium text-on-surface font-outfit">${statusText}</span>
                   </div>
                 </td>
                 <td class="px-8 py-4 text-right">
                   <div class="flex gap-2 justify-end">
-                    <button onclick="toggleUserStatus('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="${isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}">
+                    <button onclick="showEditMemberModal('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-tooltip="Chỉnh sửa chi tiết">
+                      <span class="material-symbols-outlined text-sm">edit</span>
+                    </button>
+                    <button onclick="toggleUserStatus('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-tooltip="${isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}">
                       <span class="material-symbols-outlined text-sm">${isActive ? 'block' : 'lock_open'}</span>
                     </button>
-                    <button onclick="deleteUser('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa tài khoản">
+                    <button onclick="deleteUser('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" data-tooltip="Xóa vĩnh viễn">
                       <span class="material-symbols-outlined text-sm">delete</span>
                     </button>
                   </div>
@@ -267,6 +555,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         function filterAndSearch() {
           const query = searchInput?.value.trim().toLowerCase() || '';
           const pack = filterPackage?.value || 'all';
+          const role = filterRole?.value || 'all';
           const stat = filterStatus?.value || 'all';
 
           let filtered = users;
@@ -274,7 +563,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           if (query) {
             filtered = filtered.filter(u => 
               u.username.toLowerCase().includes(query) || 
-              u.email.toLowerCase().includes(query)
+              (u.email && u.email.toLowerCase().includes(query))
             );
           }
 
@@ -282,11 +571,17 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             filtered = filtered.filter(u => u.package === pack);
           }
 
+          if (role !== 'all') {
+            filtered = filtered.filter(u => u.roles === role);
+          }
+
           if (stat !== 'all') {
             filtered = filtered.filter(u => u.status === stat);
           }
 
           renderUsers(filtered);
+          if (selectAllCheckbox) selectAllCheckbox.checked = false;
+          updateBulkPanelState();
           
           if (summaryText) {
             const activeCount = users.filter(u => u.status === 'active').length;
@@ -294,32 +589,101 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           }
         }
 
-        // Add Test User
+        // Add Member Modal Form Trigger
         if (addBtn) {
           addBtn.onclick = () => {
-            const randId = Math.floor(Math.random() * 900) + 100;
-            const newU = {
-              username: `user_test_${randId}`,
-              email: `test.user.${randId}@dongphim.net`,
-              createdAt: new Date().toISOString(),
-              package: Math.random() > 0.5 ? "VIP" : "Free",
-              status: "active"
-            };
-            users.push(newU);
-            localStorage.setItem('tregistered_users', JSON.stringify(users));
-            if (window.showGlobalToast) {
-              window.showGlobalToast(`Đã thêm thành viên thử nghiệm: ${newU.username}`, 'success');
-            }
-            filterAndSearch();
+            window.txamodal.show({
+              title: 'Thêm thành viên mới',
+              content: `
+                <div class="space-y-4 pt-2">
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Tên tài khoản</label>
+                    <input type="text" id="modal-username" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập tên tài khoản..." required />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Email</label>
+                    <input type="email" id="modal-email" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập email..." required />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1">
+                      <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Gói dịch vụ</label>
+                      <select id="modal-package" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        <option value="Free">Miễn phí (Free)</option>
+                        <option value="VIP">Thành viên VIP</option>
+                      </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Vai trò</label>
+                      <select id="modal-role" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        <option value="users">Thành viên (users)</option>
+                        <option value="admin">Quản trị viên (admin)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1">
+                      <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Xác minh Email</label>
+                      <select id="modal-verified" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        <option value="false">Chưa xác minh</option>
+                        <option value="true">Đã xác minh</option>
+                      </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Trạng thái</label>
+                      <select id="modal-status" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        <option value="active">Đang hoạt động</option>
+                        <option value="banned">Đã khóa</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              `,
+              confirmText: 'Lưu lại',
+              cancelText: 'Hủy bỏ',
+              onConfirm: () => {
+                const username = document.getElementById('modal-username').value.trim();
+                const email = document.getElementById('modal-email').value.trim();
+                const pack = document.getElementById('modal-package').value;
+                const role = document.getElementById('modal-role').value;
+                const verified = document.getElementById('modal-verified').value === 'true';
+                const status = document.getElementById('modal-status').value;
+
+                if (!username || !email) {
+                  window.showGlobalToast('Vui lòng điền đầy đủ thông tin bắt buộc!', 'error');
+                  return;
+                }
+
+                // Check username duplicates
+                if (users.some(u => u.username === username)) {
+                  window.showGlobalToast('Tên tài khoản đã tồn tại!', 'error');
+                  return;
+                }
+
+                const newU = {
+                  username,
+                  email,
+                  createdAt: new Date().toISOString(),
+                  package: pack,
+                  roles: role,
+                  emailVerified: verified,
+                  status: status
+                };
+                users.push(newU);
+                localStorage.setItem('tregistered_users', JSON.stringify(users));
+                window.showGlobalToast(`Đã thêm thành viên ${username} thành công!`, 'success');
+                filterAndSearch();
+              }
+            });
           };
         }
 
         // Event listeners
         if (searchInput) searchInput.oninput = filterAndSearch;
         if (filterPackage) filterPackage.onchange = filterAndSearch;
+        if (filterRole) filterRole.onchange = filterAndSearch;
         if (filterStatus) filterStatus.onchange = filterAndSearch;
 
-        // Run
+        // Run initial load
         filterAndSearch();
       }
 

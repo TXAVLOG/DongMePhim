@@ -1077,12 +1077,17 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
     const updateFavIcon = () => {
       if (!heartIcon) return;
       const favList = JSON.parse(localStorage.getItem('tfavorites') || '[]');
-      if (favList.includes(movieSlug)) {
+      const isFav = favList.includes(movieSlug);
+      if (isFav) {
         heartIcon.classList.add('text-red-500');
         heartIcon.textContent = 'favorite';
       } else {
         heartIcon.classList.remove('text-red-500');
         heartIcon.textContent = 'favorite';
+      }
+      const favTooltip = favBtn?.querySelector('.txatooltip');
+      if (favTooltip) {
+        favTooltip.textContent = isFav ? 'Bỏ yêu thích' : 'Yêu thích';
       }
     };
     updateFavIcon();
@@ -1111,12 +1116,17 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
     const updatePlaylistIcon = () => {
       if (!bookmarkIcon) return;
       const playList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
-      if (playList.includes(movieSlug)) {
+      const isInPlaylist = playList.includes(movieSlug);
+      if (isInPlaylist) {
         bookmarkIcon.classList.add('text-primary');
         bookmarkIcon.textContent = 'bookmark';
       } else {
         bookmarkIcon.classList.remove('text-primary');
         bookmarkIcon.textContent = 'bookmark_add';
+      }
+      const playlistTooltip = playlistBtn?.querySelector('.txatooltip');
+      if (playlistTooltip) {
+        playlistTooltip.textContent = isInPlaylist ? 'Xóa khỏi DS phát' : 'Thêm vào DS phát';
       }
     };
     updatePlaylistIcon();

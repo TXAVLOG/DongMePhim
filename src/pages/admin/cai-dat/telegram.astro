@@ -1,0 +1,267 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const activeTab = 'telegram';
+---
+
+<AdminLayout title="Cài đặt hệ thống - Telegram">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý toàn bộ tham số cấu hình của ứng dụng.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <div class="lg:col-span-1 flex flex-col gap-2">
+      <a href="/admin/cai-dat" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'general' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">settings</span> Chung
+      </a>
+      <a href="/admin/cai-dat/api-ser" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'api-ser' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">security</span> API Security
+      </a>
+      <a href="/admin/cai-dat/app-mobile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'app-mobile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">smartphone</span> App Mobile
+      </a>
+      <a href="/admin/cai-dat/smtp" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'smtp' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">mail</span> SMTP Mail
+      </a>
+      <a href="/admin/cai-dat/telegram" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'telegram' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">send</span> Telegram
+      </a>
+      <a href="/admin/cai-dat/dang-ky" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'dang-ky' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">login</span> Đăng nhập & Đăng ký
+      </a>
+      <a href="/admin/cai-dat/social" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'social' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">share</span> Mạng xã hội
+      </a>
+      <a href="/admin/cai-dat/thanh-toan" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'payment' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">payments</span> Cấu hình Thanh toán
+      </a>
+      <a href="/admin/cai-dat/turnstile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'turnstile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">verified_user</span> Turnstile Captcha
+      </a>
+    </div>
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8 space-y-6">
+      <div id="tab-telegram" class="space-y-6">
+        <div class="flex items-center justify-between border-b border-glass-stroke pb-4 mb-6">
+          <h3 class="text-title-md text-xl font-bold">Cấu hình Telegram Bot & Notify</h3>
+          <!-- Verified Badge -->
+          <div id="telegram-verified-badge" class="hidden items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold shadow-inner">
+            <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">check_circle</span>
+            <span id="telegram-bot-name">Bot: @dongphimbot</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Bot Token (Lấy từ @BotFather)</label>
+            <input type="password" id="telegram-bot-token" value={settings.telegram?.telegram_bot_token} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Chat ID Admin (Nhận mã xác thực OTP)</label>
+            <input type="text" id="telegram-chat-id" value={settings.telegram?.telegram_chat_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" placeholder="Ví dụ: 123456789" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Channel Username / ID (Đăng bài tự động)</label>
+            <input type="text" id="telegram-channel-id" value={settings.telegram?.telegram_channel_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Ví dụ: @dongphimtxa" />
+          </div>
+
+          <!-- Connection Checker -->
+          <div class="md:col-span-2 pt-2 flex gap-3">
+            <button type="button" id="btn-telegram-check" class="px-5 py-2.5 bg-primary text-slate-950 rounded-xl text-xs font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 border-none">
+              <span class="material-symbols-outlined text-sm">wifi_tethering</span> Kiểm tra liên kết Bot
+            </button>
+            <button type="button" id="btn-telegram-disconnect" class="hidden px-5 py-2.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">link_off</span> Ngắt kết nối
+            </button>
+          </div>
+
+          <!-- Notifications Section -->
+          <div id="telegram-notify-section" class="md:col-span-2 border-t border-glass-stroke/40 pt-6 space-y-4 hidden" style={settings.telegram?.telegram_verified ? 'display:block' : ''}>
+            <h4 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-lg">notifications_active</span> Cấu hình cổng nhận thông báo tự động (Notify Channel)
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label class="glass-panel p-4 rounded-xl border border-glass-stroke flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="telegram-notify-report" checked={settings.telegram?.telegram_notify_report} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+                <span class="text-xs font-semibold">Báo cáo lỗi phát phim/phụ đề</span>
+              </label>
+              <label class="glass-panel p-4 rounded-xl border border-glass-stroke flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="telegram-notify-zalo" checked={settings.telegram?.telegram_notify_zalo} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+                <span class="text-xs font-semibold">Thông báo phê duyệt thành viên Zalo</span>
+              </label>
+              <label class="glass-panel p-4 rounded-xl border border-glass-stroke flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="telegram-notify-user" checked={settings.telegram?.telegram_notify_user} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+                <span class="text-xs font-semibold">Thông báo khi có thành viên đăng ký mới</span>
+              </label>
+              <label class="glass-panel p-4 rounded-xl border border-glass-stroke flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="telegram-notify-luckydraw" checked={settings.telegram?.telegram_notify_luckydraw} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+                <span class="text-xs font-semibold">Thông báo trúng thưởng Vòng quay may mắn</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function() {
+      function hydrateFromLocalStorage() {
+        let stored = null;
+        try {
+          const raw = localStorage.getItem('txa_site_settings');
+          if (raw) stored = JSON.parse(raw);
+        } catch (e) {}
+        if (!stored) return;
+
+        const s = stored;
+        setVal('telegram-bot-token', s.telegram?.telegram_bot_token);
+        setVal('telegram-chat-id', s.telegram?.telegram_chat_id);
+        setVal('telegram-channel-id', s.telegram?.telegram_channel_id);
+        setChecked('telegram-notify-report', s.telegram?.telegram_notify_report);
+        setChecked('telegram-notify-zalo', s.telegram?.telegram_notify_zalo);
+        setChecked('telegram-notify-user', s.telegram?.telegram_notify_user);
+        setChecked('telegram-notify-luckydraw', s.telegram?.telegram_notify_luckydraw);
+        
+        if (s.telegram?.telegram_verified && s.telegram?.telegram_bot_username) {
+          showTelegramVerified(s.telegram.telegram_bot_username);
+        }
+      }
+
+      function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
+      function setChecked(id, val) { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; }
+
+      function showTelegramVerified(botUsername) {
+        const badge = document.getElementById('telegram-verified-badge');
+        const botName = document.getElementById('telegram-bot-name');
+        const disconnectBtn = document.getElementById('btn-telegram-disconnect');
+        const checkBtn = document.getElementById('btn-telegram-check');
+        const notifySection = document.getElementById('telegram-notify-section');
+        if (badge) { badge.classList.remove('hidden'); badge.style.display = 'flex'; }
+        if (botName) botName.textContent = `Bot: @${botUsername}`;
+        if (disconnectBtn) disconnectBtn.classList.remove('hidden');
+        if (checkBtn) checkBtn.classList.add('hidden');
+        if (notifySection) {
+          notifySection.classList.remove('hidden');
+          notifySection.style.display = 'block';
+        }
+      }
+
+      // Check handler
+      document.getElementById('btn-telegram-check')?.addEventListener('click', () => {
+        const botToken = document.getElementById('telegram-bot-token')?.value;
+        const chatId = document.getElementById('telegram-chat-id')?.value;
+        if (!botToken || !chatId) {
+          if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập Bot Token và Chat ID trước!', 'error');
+          return;
+        }
+        
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Xác minh kết nối Telegram Bot',
+            message: `
+              <div style="display:flex;flex-direction:column;gap:12px;min-width:300px">
+                <p style="font-size:12px;color:#94a3b8">Đã gửi mã OTP tới Telegram. Nhập mã xác minh bên dưới:</p>
+                <input type="text" id="telegram-otp-input" placeholder="Nhập mã OTP..." style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:14px;text-align:center;letter-spacing:8px;font-weight:bold" maxlength="6" />
+                <p style="font-size:10px;color:#475569">* Demo: Nhập bất kỳ mã 4 ký tự để hoàn thành xác minh.</p>
+              </div>
+            `,
+            type: 'info', confirmText: 'Xác minh OTP', cancelText: 'Hủy bỏ',
+            onConfirm: () => {
+              const otp = document.getElementById('telegram-otp-input')?.value.trim();
+              if (!otp || otp.length < 4) {
+                if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập mã OTP hợp lệ!', 'error');
+                return;
+              }
+              showTelegramVerified('dongphimbot');
+              if (window.showGlobalToast) window.showGlobalToast('Xác minh Telegram Bot thành công! Đừng quên nhấn "Lưu thay đổi".', 'success');
+            }
+          });
+        }
+        if (window.showGlobalToast) window.showGlobalToast('Đang gửi mã xác minh đến Telegram...', 'info');
+      });
+
+      // Disconnect handler
+      document.getElementById('btn-telegram-disconnect')?.addEventListener('click', () => {
+        const doDisconnect = () => {
+          setVal('telegram-bot-token', '');
+          setVal('telegram-chat-id', '');
+          setVal('telegram-channel-id', '');
+          const badge = document.getElementById('telegram-verified-badge');
+          const disconnectBtn = document.getElementById('btn-telegram-disconnect');
+          const checkBtn = document.getElementById('btn-telegram-check');
+          const notifySection = document.getElementById('telegram-notify-section');
+          if (badge) badge.classList.add('hidden');
+          if (disconnectBtn) disconnectBtn.classList.add('hidden');
+          if (checkBtn) checkBtn.classList.remove('hidden');
+          if (notifySection) notifySection.classList.add('hidden');
+          if (window.showGlobalToast) window.showGlobalToast('Đã ngắt kết nối Telegram Bot. Nhấn "Lưu thay đổi" để cập nhật.', 'info');
+        };
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Ngắt kết nối Telegram Bot',
+            message: 'Bạn có chắc chắn muốn ngắt kết nối Telegram Bot? Toàn bộ cấu hình sẽ bị xóa.',
+            type: 'danger', confirmText: 'Ngắt kết nối', cancelText: 'Hủy bỏ',
+            onConfirm: doDisconnect
+          });
+        } else if (confirm('Ngắt kết nối Telegram Bot?')) doDisconnect();
+      });
+
+      // Save handler
+      document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) { current = serverSettings; }
+
+        const telegramVerifiedBadge = document.getElementById('telegram-verified-badge');
+        const isTelegramVerified = telegramVerifiedBadge && !telegramVerifiedBadge.classList.contains('hidden');
+        const telegramBotUsername = isTelegramVerified ? (document.getElementById('telegram-bot-name')?.textContent?.replace('Bot: @', '') || '') : '';
+
+        const updatedSettings = {
+          ...current,
+          telegram: {
+            ...current.telegram,
+            telegram_bot_token: document.getElementById('telegram-bot-token')?.value || '',
+            telegram_chat_id: document.getElementById('telegram-chat-id')?.value || '',
+            telegram_channel_id: document.getElementById('telegram-channel-id')?.value || '',
+            telegram_bot_username: telegramBotUsername,
+            telegram_verified: isTelegramVerified,
+            telegram_notify_report: document.getElementById('telegram-notify-report')?.checked ?? true,
+            telegram_notify_zalo: document.getElementById('telegram-notify-zalo')?.checked ?? true,
+            telegram_notify_user: document.getElementById('telegram-notify-user')?.checked ?? true,
+            telegram_notify_luckydraw: document.getElementById('telegram-notify-luckydraw')?.checked ?? true,
+          }
+        };
+
+        localStorage.setItem('txa_site_settings', JSON.stringify(updatedSettings));
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
+        } else {
+          alert('Lưu cấu hình hệ thống thành công!');
+        }
+
+        setTimeout(() => { window.location.reload(); }, 800);
+      });
+
+      // Init
+      hydrateFromLocalStorage();
+      document.addEventListener('astro:page-load', hydrateFromLocalStorage);
+    })();
+  </script>
+</AdminLayout>

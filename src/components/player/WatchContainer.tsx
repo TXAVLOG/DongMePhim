@@ -256,6 +256,517 @@ const findEpisodeIndexBySlug = (serverData: any[], targetSlug?: string): number 
   return 0;
 };
 
+// Rating Widget
+const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
+  const [rating, setRating] = useState<number>(0);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [totalRatings, setTotalRatings] = useState<number>(142);
+  const [avgRating, setAvgRating] = useState<number>(8.7);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`trating_${movieSlug}`);
+      if (stored) {
+        setRating(parseInt(stored, 10));
+      }
+      let seed = 0;
+      for (let i = 0; i < movieSlug.length; i++) seed += movieSlug.charCodeAt(i);
+      const calculatedTotal = 80 + (seed % 150);
+      const calculatedAvg = 7.5 + ((seed % 20) / 10);
+      setTotalRatings(calculatedTotal);
+      setAvgRating(parseFloat(calculatedAvg.toFixed(1)));
+    }
+  }, [movieSlug]);
+
+  const handleRating = (val: number) => {
+    setRating(val);
+    localStorage.setItem(`trating_${movieSlug}`, String(val));
+    setTotalRatings(prev => prev + 1);
+    if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+      (window as any).showGlobalToast(`Cảm ơn bạn đã đánh giá ${val}/10 sao!`, 'success');
+    }
+  };
+
+  return (
+    <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-4">
+      <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm">
+        <span className="material-symbols-outlined text-yellow-500" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+        Đánh Giá Phim
+      </h3>
+      <div className="flex flex-col items-center justify-center py-4 bg-zinc-900/40 rounded-xl border border-glass-stroke/40 space-y-2">
+        <div className="text-3xl font-black text-white font-mono">
+          {rating > 0 ? `${rating}.0` : `${avgRating}`}
+          <span className="text-zinc-500 text-sm font-normal font-sans">/10</span>
+        </div>
+        <p className="text-[10px] text-zinc-400 font-medium">({totalRatings} lượt đánh giá)</p>
+        
+        <div className="flex items-center gap-1 pt-2">
+          {Array.from({ length: 10 }).map((_, i) => {
+            const val = i + 1;
+            const isFilled = hoverRating >= val || (!hoverRating && rating >= val);
+            return (
+              <button
+                key={val}
+                type="button"
+                onMouseEnter={() => setHoverRating(val)}
+                onMouseLeave={() => setHoverRating(0)}
+                onClick={() => handleRating(val)}
+                className="focus:outline-none cursor-pointer transition-transform hover:scale-125 bg-transparent border-none p-0 flex"
+              >
+                <span 
+                  className={`material-symbols-outlined text-lg ${isFilled ? 'text-yellow-400' : 'text-zinc-600'}`}
+                  style={{ fontVariationSettings: isFilled ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  star
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[9px] text-zinc-500 pt-1">Di chuột và nhấp chọn từ 1 - 10 sao</p>
+      </div>
+    </div>
+  );
+};
+
+// Discord Banner
+const DiscordBanner: React.FC = () => {
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-tr from-[#5865F2] via-[#404eed] to-[#5865F2] p-5 text-white shadow-xl group border border-[#404eed]/40">
+      <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500"></div>
+      <div className="absolute -left-10 -top-10 w-24 h-24 bg-black/10 rounded-full blur-lg"></div>
+
+      <div className="relative z-10 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <svg className="w-6 h-6 fill-current text-white" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg">
+            <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c1,.07,2,.15,3,.21a72.82,72.82,0,0,0,72,0c1-.06,2-.14,3-.21a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.06-18.83C129,54.65,123.5,31.58,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+          </svg>
+          <span className="font-headline font-black text-sm uppercase tracking-widest">GIA NHẬP DISCORD</span>
+        </div>
+        <p className="text-[11px] text-white/80 leading-relaxed font-body-main">
+          Tham gia cộng đồng để chém gió cùng các mọt phim, đóng góp ý kiến và nhận thông báo phát sóng tập mới sớm nhất!
+        </p>
+        <a 
+          href="https://discord.gg" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="mt-2 w-full py-2 bg-white text-[#5865F2] hover:bg-white/95 transition-all text-xs font-bold rounded-xl text-center shadow-lg active:scale-95 flex items-center justify-center gap-1.5 border-none decoration-none no-underline"
+        >
+          <span className="material-symbols-outlined text-sm">open_in_new</span>
+          Tham gia ngay
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// Actors List
+const ActorsList: React.FC<{ actors?: string[] }> = ({ actors = [] }) => {
+  if (!actors || actors.length === 0) return null;
+
+  const getGradientByName = (name: string) => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const colors = [
+      'from-purple-500 to-indigo-500',
+      'from-pink-500 to-rose-500',
+      'from-blue-500 to-cyan-500',
+      'from-emerald-500 to-teal-500',
+      'from-amber-500 to-orange-500',
+      'from-violet-500 to-fuchsia-500'
+    ];
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  return (
+    <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-4">
+      <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm">
+        <span className="material-symbols-outlined text-primary">theater_comedy</span>
+        Diễn Viên
+      </h3>
+      <div className="flex flex-wrap gap-4 items-center justify-start">
+        {actors.map(actor => {
+          const nameTrimmed = actor.trim();
+          const firstLetter = nameTrimmed.charAt(0).toUpperCase();
+          const gradient = getGradientByName(nameTrimmed);
+
+          return (
+            <div key={actor} className="flex flex-col items-center justify-center w-[60px] text-center gap-1 group">
+              <div className={`w-11 h-11 rounded-full bg-gradient-to-tr ${gradient} flex items-center justify-center text-white font-bold text-sm border-2 border-white/10 shadow-md group-hover:scale-105 transition-transform duration-300`}>
+                {firstLetter}
+              </div>
+              <span className="text-[9px] text-zinc-400 font-medium line-clamp-2 w-full leading-tight group-hover:text-white transition-colors" title={nameTrimmed}>
+                {nameTrimmed}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// Collapsible Description
+const CollapsibleDescription: React.FC<{ htmlContent: string }> = ({ htmlContent }) => {
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [shouldShowButton, setShouldShowButton] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      if (contentRef.current.scrollHeight > 100) {
+        setShouldShowButton(true);
+      }
+    }
+  }, [htmlContent]);
+
+  return (
+    <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-3 relative overflow-hidden">
+      <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm">
+        <span className="material-symbols-outlined text-primary">description</span>
+        Mô Tả Phim
+      </h3>
+      <div 
+        ref={contentRef}
+        className={`text-xs text-zinc-300 leading-relaxed font-body-main transition-all duration-500 overflow-hidden relative ${
+          !isExpanded && shouldShowButton ? 'max-h-24 pb-4' : 'max-h-[2000px] pb-2'
+        }`}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+      {!isExpanded && shouldShowButton && (
+        <div className="absolute bottom-12 left-0 right-0 h-10 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-transparent pointer-events-none"></div>
+      )}
+      {shouldShowButton && (
+        <div className="flex justify-center pt-2">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-1 px-4 py-1.5 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[10px] font-bold uppercase hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+          >
+            {isExpanded ? (
+              <>
+                <span>Thu gọn</span>
+                <span className="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+              </>
+            ) : (
+              <>
+                <span>Đọc thêm</span>
+                <span className="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Comment System
+interface CommentItem {
+  id: number;
+  author: string;
+  content: string;
+  likes: number;
+  dislikes: number;
+  replies: ReplyItem[];
+  createdAt: string;
+}
+
+interface ReplyItem {
+  id: number;
+  author: string;
+  content: string;
+  createdAt: string;
+}
+
+const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [newComment, setNewComment] = useState<string>('');
+  const [authorName, setAuthorName] = useState<string>('');
+  const [replyTarget, setReplyTarget] = useState<number | null>(null);
+  const [replyContent, setReplyContent] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`tcomments_${movieSlug}`);
+      if (stored) {
+        setComments(JSON.parse(stored));
+      } else {
+        const seeds: CommentItem[] = [
+          {
+            id: 1,
+            author: "Hoàng Nam",
+            content: "Tập mới cuốn ghê, không uổng công ngóng cả tuần trời. Web dịch siêu chất lượng nha!",
+            likes: 12,
+            dislikes: 1,
+            replies: [
+              {
+                id: 101,
+                author: "Cô 3 Rổ",
+                content: "Cảm ơn bạn đã ủng hộ web nha! Nhớ giới thiệu cho bạn bè cùng xem nha bạn.",
+                createdAt: new Date(Date.now() - 3600000).toISOString()
+              }
+            ],
+            createdAt: new Date(Date.now() - 7200000).toISOString()
+          },
+          {
+            id: 2,
+            author: "Khánh Linh",
+            content: "Phim này càng xem càng cuốn, mong chờ tập sau quá đi thôiiii",
+            likes: 8,
+            dislikes: 0,
+            replies: [],
+            createdAt: new Date(Date.now() - 14400000).toISOString()
+          }
+        ];
+        setComments(seeds);
+        localStorage.setItem(`tcomments_${movieSlug}`, JSON.stringify(seeds));
+      }
+      
+      const loggedIn = localStorage.getItem('tlogged_in_as');
+      if (loggedIn) {
+        setAuthorName(loggedIn);
+      }
+    }
+  }, [movieSlug]);
+
+  const saveComments = (updated: CommentItem[]) => {
+    setComments(updated);
+    localStorage.setItem(`tcomments_${movieSlug}`, JSON.stringify(updated));
+  };
+
+  const handlePostComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    const name = authorName.trim() || 'Ẩn danh';
+    const commentRecord: CommentItem = {
+      id: Date.now(),
+      author: name,
+      content: newComment.trim(),
+      likes: 0,
+      dislikes: 0,
+      replies: [],
+      createdAt: new Date().toISOString()
+    };
+
+    const updated = [commentRecord, ...comments];
+    saveComments(updated);
+    setNewComment('');
+    if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+      (window as any).showGlobalToast('Đăng bình luận thành công!', 'success');
+    }
+  };
+
+  const handlePostReply = (commentId: number) => {
+    if (!replyContent.trim()) return;
+
+    const name = authorName.trim() || 'Ẩn danh';
+    const replyRecord: ReplyItem = {
+      id: Date.now(),
+      author: name,
+      content: replyContent.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    const updated = comments.map(c => {
+      if (c.id === commentId) {
+        return {
+          ...c,
+          replies: [...c.replies, replyRecord]
+        };
+      }
+      return c;
+    });
+
+    saveComments(updated);
+    setReplyContent('');
+    setReplyTarget(null);
+    if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+      (window as any).showGlobalToast('Đã trả lời bình luận!', 'success');
+    }
+  };
+
+  const handleLike = (commentId: number, isDislike: boolean = false) => {
+    const updated = comments.map(c => {
+      if (c.id === commentId) {
+        return {
+          ...c,
+          likes: isDislike ? c.likes : c.likes + 1,
+          dislikes: isDislike ? c.dislikes + 1 : c.dislikes
+        };
+      }
+      return c;
+    });
+    saveComments(updated);
+  };
+
+  const formatDate = (isoStr: string) => {
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleDateString('vi-VN', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      });
+    } catch (e) {
+      return 'Vừa xong';
+    }
+  };
+
+  return (
+    <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-6">
+      <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm">
+        <span className="material-symbols-outlined text-primary">forum</span>
+        Bình Luận ({comments.reduce((acc, c) => acc + 1 + c.replies.length, 0)})
+      </h3>
+
+      <form onSubmit={handlePostComment} className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input
+            type="text"
+            placeholder="Tên của bạn..."
+            value={authorName}
+            onChange={(e) => setAuthorName(e.target.value)}
+            className="md:col-span-1 bg-surface border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-semibold"
+          />
+          <textarea
+            rows={3}
+            placeholder="Nhập nội dung bình luận tại đây..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            className="md:col-span-3 bg-surface border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white"
+          />
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="px-5 py-2 bg-primary text-slate-950 rounded-xl text-xs font-bold hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 border-none cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">send</span>
+            Đăng bình luận
+          </button>
+        </div>
+      </form>
+
+      <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+        {comments.length === 0 ? (
+          <p className="text-xs text-zinc-500 text-center py-6">Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ cảm nghĩ!</p>
+        ) : (
+          comments.map(c => {
+            const isModerator = c.author.toLowerCase().includes('cô 3 rổ') || c.author.toLowerCase().includes('admin');
+            const initial = c.author.substring(0, 1).toUpperCase();
+
+            return (
+              <div key={c.id} className="border-b border-glass-stroke/30 pb-4 last:border-none space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full ${isModerator ? 'bg-pink-500' : 'bg-zinc-700'} flex items-center justify-center text-white font-bold text-xs shrink-0 shadow`}>
+                    {initial}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold ${isModerator ? 'text-pink-400' : 'text-zinc-200'}`}>
+                        {c.author}
+                      </span>
+                      {isModerator && (
+                        <span className="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider scale-90">
+                          Admin
+                        </span>
+                      )}
+                      <span className="text-[9px] text-zinc-500">{formatDate(c.createdAt)}</span>
+                    </div>
+                    <p className="text-xs text-zinc-300 font-body-main leading-relaxed">{c.content}</p>
+                    
+                    <div className="flex items-center gap-4 text-[10px] text-zinc-500 pt-1">
+                      <button 
+                        type="button"
+                        onClick={() => handleLike(c.id)}
+                        className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-500"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">thumb_up</span>
+                        <span>{c.likes}</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleLike(c.id, true)}
+                        className="flex items-center gap-1 hover:text-rose-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-500"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">thumb_down</span>
+                        <span>{c.dislikes}</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => setReplyTarget(replyTarget === c.id ? null : c.id)}
+                        className="flex items-center gap-1 hover:text-secondary transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-500"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">reply</span>
+                        <span>Trả lời</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reply Form */}
+                {replyTarget === c.id && (
+                  <div className="ml-11 flex gap-2 items-center bg-zinc-950/40 p-2.5 rounded-xl border border-glass-stroke/50">
+                    <input 
+                      type="text" 
+                      placeholder="Viết câu trả lời..." 
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      className="flex-1 bg-surface border border-glass-stroke rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => handlePostReply(c.id)}
+                      className="px-3 py-1.5 bg-primary text-slate-950 rounded-lg text-xs font-bold hover:brightness-110 active:scale-95 border-none cursor-pointer"
+                    >
+                      Gửi
+                    </button>
+                  </div>
+                )}
+
+                {/* Replies list */}
+                {c.replies.length > 0 && (
+                  <div className="ml-11 pl-3 border-l-2 border-primary/20 space-y-3 pt-2">
+                    {c.replies.map(r => {
+                      const isRepModerator = r.author.toLowerCase().includes('cô 3 rổ') || r.author.toLowerCase().includes('admin');
+                      const repInitial = r.author.substring(0, 1).toUpperCase();
+
+                      return (
+                        <div key={r.id} className="flex items-start gap-3 animate-[fadeIn_0.3s_ease-out]">
+                          <div className={`w-6.5 h-6.5 rounded-full ${isRepModerator ? 'bg-pink-500' : 'bg-zinc-700'} flex items-center justify-center text-white font-bold text-[10px] shrink-0`}>
+                            {repInitial}
+                          </div>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[11px] font-bold ${isRepModerator ? 'text-pink-400' : 'text-zinc-200'}`}>
+                                {r.author}
+                              </span>
+                              {isRepModerator && (
+                                <span className="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[7px] font-bold uppercase tracking-wider scale-90">
+                                  Admin
+                                </span>
+                              )}
+                              <span className="text-[8px] text-zinc-500">{formatDate(r.createdAt)}</span>
+                            </div>
+                            <p className="text-xs text-zinc-300 font-body-main leading-relaxed">{r.content}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const WatchContainer: React.FC<WatchContainerProps> = ({
   movie: initialMovie,
   initialEpisodeSlug,
@@ -270,7 +781,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [movie, setMovie] = useState<MovieDetail>(initialMovie);
   const servers = movie.episodes || [];
   
-  // States
   const [serverIndex, setServerIndex] = useState<number>(() => {
     if (initialServerIndex >= 0 && initialServerIndex < servers.length) {
       return initialServerIndex;
@@ -284,7 +794,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return findEpisodeIndexBySlug(currentServer?.serverData || [], initialEpisodeSlug);
   });
 
-  // Hydrate crawled movie details client-side
   useEffect(() => {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       try {
@@ -319,7 +828,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     }
   }, [initialMovie.slug]);
 
-
   const [activeTab, setActiveTab] = useState<number>(0);
   const [resumePrompt, setResumePrompt] = useState<{
     show: boolean;
@@ -330,58 +838,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [isHacked, setIsHacked] = useState<boolean>(false);
   const playerGetTimeRef = useRef<(() => number) | null>(null);
 
-  // DevTools detection loop (Temporarily commented out for debugging)
-  useEffect(() => {
-    /*
-    if (isHacked) {
-      const clearInt = setInterval(() => {
-        console.clear();
-      }, 50);
-      return () => clearInterval(clearInt);
-    }
-
-    let devtoolsOpenConsecutiveCount = 0;
-
-    const check = () => {
-      let isOpen = false;
-
-      const widthThreshold = window.outerWidth - window.innerWidth > 160;
-      const heightThreshold = window.outerHeight - window.innerHeight > 160;
-      if (widthThreshold || heightThreshold) {
-        isOpen = true;
-      }
-
-      const start = performance.now();
-      debugger;
-      const end = performance.now();
-      if (end - start > 100) {
-        isOpen = true;
-      }
-
-      const devtoolsTestObj = new Image();
-      Object.defineProperty(devtoolsTestObj, 'id', {
-        get: () => {
-          isOpen = true;
-        }
-      });
-      console.log(devtoolsTestObj);
-      console.clear();
-
-      if (isOpen) {
-        devtoolsOpenConsecutiveCount++;
-        if (devtoolsOpenConsecutiveCount >= 4) {
-          setIsHacked(true);
-        }
-      } else {
-        devtoolsOpenConsecutiveCount = 0;
-      }
-    };
-
-    const intervalId = setInterval(check, 500);
-    return () => clearInterval(intervalId);
-    */
-  }, [isHacked]);
-
   const currentServer = servers[serverIndex] || null;
   const currentEpisode = currentServer?.serverData[episodeIndex] || null;
 
@@ -389,13 +845,11 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const episodesPerTab = totalEps > 100 ? 100 : 25;
   const totalTabs = Math.ceil(totalEps / episodesPerTab);
 
-  // Sync active tab when episode changes
   useEffect(() => {
     const tab = Math.floor(episodeIndex / episodesPerTab);
     setActiveTab(tab);
   }, [episodeIndex, episodesPerTab]);
 
-  // Helper read thistory from localStorage
   const getLocalHistory = (): HistoryItem[] => {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       try {
@@ -408,14 +862,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return [];
   };
 
-  // Helper save thistory to localStorage
   const saveLocalHistory = (list: HistoryItem[]) => {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       localStorage.setItem('thistory', JSON.stringify(list));
     }
   };
 
-  // Sync offline unsynced histories to server
   const syncOfflineHistories = async () => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return;
     
@@ -441,7 +893,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           })
         });
         if (res.ok) {
-          // Update synced state in localStorage
           const currentList = getLocalHistory();
           const target = currentList.find(x => x.slug === item.slug);
           if (target) {
@@ -455,10 +906,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     }
   };
 
-  // Fetch online history and merge on mount
   useEffect(() => {
     const mergeHistoryOnLoad = async () => {
-      // 1. Load local history first
       const localList = getLocalHistory();
       const localMovieHist = localList.find(x => x.slug === movie.slug);
       
@@ -470,7 +919,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         });
       }
 
-      // 2. Fetch online history if online
       if (typeof navigator !== 'undefined' && navigator.onLine) {
         try {
           const res = await fetch('/api/user/history');
@@ -483,14 +931,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               onlineList.forEach((onlineItem: any) => {
                 const localIdx = freshLocalList.findIndex(x => x.slug === onlineItem.slug);
                 if (localIdx === -1) {
-                  // Not exists in local, add it
                   freshLocalList.unshift({
                     ...onlineItem,
                     synced: true
                   });
                   updated = true;
                 } else {
-                  // Exists, compare updatedAt
                   const localItem = freshLocalList[localIdx];
                   const localTime = new Date(localItem.updatedAt).getTime();
                   const onlineTime = new Date(onlineItem.updatedAt).getTime();
@@ -508,7 +954,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               if (updated) {
                 saveLocalHistory(freshLocalList);
                 
-                // If the current movie's history was updated from server, update state
                 const updatedMovieHist = freshLocalList.find(x => x.slug === movie.slug);
                 if (updatedMovieHist && currentEpisode && updatedMovieHist.episodeSlug === currentEpisode.slug) {
                   if (updatedMovieHist.currentTime > 10 && (updatedMovieHist.duration - updatedMovieHist.currentTime) > 10) {
@@ -527,7 +972,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         }
       }
 
-      // Trigger sync in background if online
       syncOfflineHistories();
     };
 
@@ -538,7 +982,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     }
   }, [movie.slug, currentEpisode?.slug]);
 
-  // Setup online network sync listeners
   useEffect(() => {
     const handleOnline = () => {
       syncOfflineHistories();
@@ -547,14 +990,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return () => window.removeEventListener('online', handleOnline);
   }, []);
 
-  // Update history progress on time update
   const handleTimeUpdate = async (time: number, duration: number) => {
     if (!currentEpisode) return;
 
     const timeRounded = Math.round(time);
     const durationRounded = Math.round(duration);
 
-    // Read and update localStorage list thistory
     const list = getLocalHistory();
     const existingIdx = list.findIndex(x => x.slug === movie.slug);
 
@@ -580,7 +1021,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     
     saveLocalHistory(list);
 
-    // Async POST online if online
     if (typeof navigator !== 'undefined' && navigator.onLine) {
       try {
         const res = await fetch('/api/user/history', {
@@ -600,7 +1040,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           })
         });
         if (res.ok) {
-          // Update local synced status
           const freshList = getLocalHistory();
           const target = freshList.find(x => x.slug === movie.slug);
           if (target) {
@@ -608,9 +1047,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             saveLocalHistory(freshList);
           }
         }
-      } catch (e) {
-        // Silent catch, will sync later
-      }
+      } catch (e) {}
     }
   };
 
@@ -649,7 +1086,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   };
 
   const selectServer = (idx: number) => {
-    // Capture current playback time from the player before switching
     let preservedTime = 0;
     if (playerGetTimeRef.current) {
       preservedTime = Math.floor(playerGetTimeRef.current());
@@ -661,7 +1097,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     setServerIndex(idx);
     setEpisodeIndex(validEpIdx);
 
-    // Set playback time so the new server's player starts from the same position
     if (preservedTime > 5) {
       setPlaybackTime(preservedTime);
       if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
@@ -674,7 +1109,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
       setPlaybackTime(0);
     }
     
-    // Reset the time getter ref since player will remount
     playerGetTimeRef.current = null;
     
     const ep = servers[idx].serverData[validEpIdx];
@@ -686,15 +1120,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     const min = Math.floor(seconds / 60);
     const sec = Math.floor(seconds % 60);
     return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-  };
-
-  const formatAirDate = (dateStr?: string) => {
-    if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return dateStr;
   };
 
   const showBadge = nextAiringEpisode || (movie.broadcastSchedule && (movie.broadcastSchedule.notice || movie.broadcastSchedule.nextDate));
@@ -771,14 +1196,16 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                     </div>
                     <div className="flex gap-3 justify-center pt-2">
                       <button 
+                        type="button"
                         onClick={handleDeclineResume}
-                        className="px-4 py-2 border border-glass-stroke rounded-xl text-xs font-bold text-on-surface hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+                        className="px-4 py-2 border border-glass-stroke rounded-xl text-xs font-bold text-on-surface hover:bg-white/5 active:scale-95 transition-all cursor-pointer bg-transparent"
                       >
                         Xem từ đầu
                       </button>
                       <button 
+                        type="button"
                         onClick={handleAcceptResume}
-                        className="px-5 py-2 bg-primary text-on-primary rounded-xl text-xs font-bold shadow-[0_0_15px_rgba(210,187,255,0.3)] hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                        className="px-5 py-2 bg-primary text-slate-950 rounded-xl text-xs font-bold shadow-[0_0_15px_rgba(210,187,255,0.3)] hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none"
                       >
                         Xem tiếp
                       </button>
@@ -791,189 +1218,138 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         </div>
       </div>
 
-      {/* Movie Details & Episodes switcher */}
+      {/* Main 2-Column layout under player */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* LEFT COLUMN: Main Film info & Episode grid & Description & Comments */}
         <div className="lg:col-span-2 space-y-6">
-          <div>
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              <span className="bg-primary/20 text-primary font-label-caps text-xs px-2 py-1 rounded border border-primary/20 font-bold">
-                {movie.quality}
-              </span>
-              <span className="bg-white/10 text-white font-label-caps text-xs px-2 py-1 rounded font-bold">
-                {movie.lang}
-              </span>
-              <span className="bg-white/10 text-white font-label-caps text-xs px-2 py-1 rounded font-bold">
-                {movie.releaseYear}
-              </span>
-              {movie.imdbScore && (
-                <span className="bg-secondary/20 text-secondary font-label-caps text-xs px-2 py-1 rounded flex items-center gap-1 font-bold">
-                  <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                  {movie.imdbScore}
-                </span>
-              )}
-              {movie.category && (
-                <a href={`/the-loai/${movie.category.toLowerCase().replace(/\s+/g, '-')}`} className="bg-white/5 border border-glass-stroke text-on-surface-variant hover:text-white hover:border-white/20 transition-all font-label-caps text-xs px-2 py-1 rounded">
-                  {movie.category}
-                </a>
-              )}
+          
+          {/* Film Poster Detail Block */}
+          <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row gap-5">
+            <div className="w-[150px] sm:w-[170px] aspect-[2/3] rounded-xl overflow-hidden border border-glass-stroke shrink-0 shadow-lg relative bg-zinc-900 mx-auto sm:mx-0">
+              <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover" />
             </div>
             
-            <h1 className="font-display-hero text-3xl md:text-4xl text-white font-bold mb-2">
-              {movie.title} <span className="text-on-surface-variant text-2xl font-light">({currentEpisode.name})</span>
-            </h1>
-            
-            {movie.originalTitle && (
-              <h2 className="text-on-surface-variant text-lg font-body-main mb-4">{movie.originalTitle}</h2>
-            )}
-
-            {(() => {
-              const actualEpCount = currentServer?.serverData.length || 0;
-              const totalEpNum = parseInt(movie.episodeTotal || '0');
-              const isActuallyOngoing = movie.status === 'ongoing' && (totalEpNum === 0 || actualEpCount < totalEpNum);
-              
-              return isActuallyOngoing ? (
-                <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 rounded-xl text-amber-200 text-xs font-semibold shadow-inner">
-                  <span className="material-symbols-outlined text-amber-400 text-[16px] shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <span>
-                    Đã chiếu: {(() => {
-                      const trimmed = (movie.episodeCurrent || '').trim();
-                      return trimmed.toLowerCase().startsWith('tập') ? trimmed : `Tập ${trimmed}`;
-                    })()} / {movie.episodeTotal || '?'}
+            <div className="flex-1 space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="bg-primary/20 text-primary font-label-caps text-[10px] px-2 py-0.5 rounded border border-primary/25 font-bold">
+                  {movie.quality}
+                </span>
+                <span className="bg-white/10 text-white font-label-caps text-[10px] px-2 py-0.5 rounded border border-white/15 font-bold">
+                  {movie.lang}
+                </span>
+                <span className="bg-white/10 text-white font-label-caps text-[10px] px-2 py-0.5 rounded border border-white/15 font-bold">
+                  {movie.releaseYear}
+                </span>
+                {movie.imdbScore && (
+                  <span className="bg-yellow-500/20 text-yellow-400 font-label-caps text-[10px] px-2 py-0.5 rounded border border-yellow-500/25 flex items-center gap-0.5 font-bold">
+                    <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    {movie.imdbScore.toFixed(1)}
                   </span>
-                </div>
-              ) : null;
-            })()}
-
-            {movie.broadcastSchedule && (movie.broadcastSchedule.notice || movie.broadcastSchedule.nextDate) && (
-              <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-2xl text-xs text-primary flex items-center gap-3 max-w-xl shadow-[0_0_20px_rgba(124,58,237,0.05)]">
-                <span className="material-symbols-outlined text-xl text-primary animate-pulse">calendar_month</span>
-                <div>
-                  <span className="font-bold text-white tracking-wide uppercase text-[10px] block mb-0.5 opacity-80">Lịch phát sóng tiếp theo</span>
-                  <span className="font-medium text-sm text-primary">{movie.broadcastSchedule.notice || `Tập mới sẽ phát sóng vào lúc ${movie.broadcastSchedule.nextTime || '00:00'} ngày ${movie.broadcastSchedule.nextDate}`}</span>
-                  {movie.broadcastSchedule.nextDate && movie.broadcastSchedule.notice && (
-                    <span className="block text-[10px] text-zinc-400 mt-1">
-                      Dự kiến: {movie.broadcastSchedule.nextTime || '00:00'} ngày {movie.broadcastSchedule.nextDate}
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
-            )}
-            
-            <div className="txaformat mt-6 border-t border-glass-stroke pt-4" dangerouslySetInnerHTML={{ __html: movie.description }} />
+              
+              <h1 className="font-display-hero text-2xl sm:text-3xl text-white font-bold leading-tight">
+                {movie.title} <span className="text-on-surface-variant text-lg sm:text-xl font-light">({currentEpisode?.name || 'Tập 1'})</span>
+              </h1>
+              
+              {movie.originalTitle && (
+                <h2 className="text-on-surface-variant text-sm font-semibold">{movie.originalTitle}</h2>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs border-t border-glass-stroke/40 pt-3 text-zinc-400 font-body-main">
+                {movie.durationMinutes && (
+                  <div>
+                    <span className="text-zinc-500">Thời lượng:</span> <span className="text-white font-semibold">{movie.durationMinutes}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-zinc-500">Trạng thái:</span> <span className="text-primary font-bold">{movie.status === 'completed' ? 'Hoàn thành' : 'Đang phát sóng'}</span>
+                </div>
+                {movie.category && (
+                  <div>
+                    <span className="text-zinc-500">Quốc gia:</span> <span className="text-white font-semibold">{movie.category}</span>
+                  </div>
+                )}
+                {movie.genres && movie.genres.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <span className="text-zinc-500">Thể loại:</span> <span className="text-white font-semibold">{movie.genres.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Related movies */}
-          {relatedMovies.length > 0 && (
-            <div className="space-y-4 pt-6 border-t border-glass-stroke">
-              <h3 className="text-xl text-white font-title-md border-l-4 border-primary pl-4 font-bold">Phim Liên Quan</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {relatedMovies.map((m: any) => (
-                  <div key={m.id} className="group relative flex flex-col gap-2 card-hover">
-                    <a href={`/phim/${m.slug}`} className="block w-full aspect-[2/3] relative rounded-lg overflow-hidden glass-card border border-glass-stroke transition-all duration-300">
-                      <img src={m.posterUrl} alt={m.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-surface-deep via-surface-deep/10 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end">
-                        <h4 className="text-white font-title-md text-xs line-clamp-2 leading-tight font-bold">{m.title}</h4>
-                      </div>
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right column: Servers and episodes */}
-        <div className="space-y-6">
-          {/* Server Selector */}
+          {/* Nguồn Phát (Servers selector) */}
           {servers.length > 0 && (
-            <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-title-md flex items-center gap-2 font-bold">
+            <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm">
                   <span className="material-symbols-outlined text-primary">dns</span>
                   Nguồn Phát
                 </h3>
                 <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1">
                   <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>swap_horiz</span>
-                  Giữ mốc thời gian khi đổi
+                  Giữ mốc thời gian khi đổi server
                 </span>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                 {servers.map((srv, idx) => {
                   const isActive = idx === serverIndex;
                   return (
                     <button 
                       key={srv.serverName}
+                      type="button"
                       onClick={() => selectServer(idx)}
-                      className={`group relative flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer ${
+                      className={`group relative flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer border ${
                         isActive
-                          ? 'bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/40 text-white shadow-[0_0_20px_rgba(124,58,237,0.15)]' 
-                          : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary/30 hover:bg-white/[0.03] hover:text-white'
+                          ? 'bg-gradient-to-r from-primary/20 to-primary/5 border-primary/50 text-white shadow-[0_0_15px_rgba(124,58,237,0.15)]' 
+                          : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-primary/30 hover:bg-white/[0.02] hover:text-white'
                       }`}
                     >
-                      {/* Equalizer animation for active server */}
                       {isActive ? (
-                        <div className="flex items-end gap-[2px] h-4 shrink-0">
-                          <span className="w-[3px] bg-primary rounded-full animate-[eqBar1_0.6s_ease-in-out_infinite]" style={{ height: '60%' }} />
-                          <span className="w-[3px] bg-primary rounded-full animate-[eqBar2_0.7s_ease-in-out_infinite]" style={{ height: '100%' }} />
-                          <span className="w-[3px] bg-primary rounded-full animate-[eqBar3_0.5s_ease-in-out_infinite]" style={{ height: '40%' }} />
+                        <div className="flex items-end gap-[2px] h-3.5 shrink-0">
+                          <span className="w-[2.5px] bg-primary rounded-full animate-[eqBar1_0.6s_ease-in-out_infinite]" style={{ height: '60%' }} />
+                          <span className="w-[2.5px] bg-primary rounded-full animate-[eqBar2_0.7s_ease-in-out_infinite]" style={{ height: '100%' }} />
+                          <span className="w-[2.5px] bg-primary rounded-full animate-[eqBar3_0.5s_ease-in-out_infinite]" style={{ height: '40%' }} />
                         </div>
                       ) : (
-                        <span className="material-symbols-outlined text-[18px] text-zinc-500 group-hover:text-primary transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>play_circle</span>
+                        <span className="material-symbols-outlined text-[16px] text-zinc-500 group-hover:text-primary transition-colors">play_circle</span>
                       )}
                       
-                      <span className="flex-1 text-left">{srv.serverName}</span>
-                      
-                      {isActive && (
-                        <span className="text-[10px] text-primary/80 font-medium px-2 py-0.5 bg-primary/10 rounded-full border border-primary/15">
-                          Đang phát
-                        </span>
-                      )}
+                      <span className="flex-1 text-left truncate">{srv.serverName}</span>
+                      {isActive && <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ping shrink-0" />}
                     </button>
                   );
                 })}
               </div>
-
-              <style>{`
-                @keyframes eqBar1 {
-                  0%, 100% { height: 40%; }
-                  50% { height: 100%; }
-                }
-                @keyframes eqBar2 {
-                  0%, 100% { height: 100%; }
-                  50% { height: 30%; }
-                }
-                @keyframes eqBar3 {
-                  0%, 100% { height: 60%; }
-                  50% { height: 90%; }
-                }
-              `}</style>
             </div>
           )}
 
-          {/* Episode Selector */}
+          {/* Danh Sách Tập */}
           {currentServer && currentServer.serverData.length > 0 && (
-            <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-title-md flex items-center gap-2 font-bold">
+            <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-glass-stroke/40 pb-2">
+                <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm">
                   <span className="material-symbols-outlined text-secondary">list</span>
-                  Danh Sách Tập
+                  Danh Sách Tập Phim
                 </h3>
-                <span className="text-[11px] text-zinc-400 font-semibold bg-white/5 px-2.5 py-1 rounded-full border border-glass-stroke">
+                <span className="text-[10px] text-zinc-400 font-semibold bg-white/5 px-2 py-0.5 rounded-full border border-glass-stroke">
                   {totalEps} tập
                 </span>
               </div>
               
               {totalEps > episodesPerTab && (
-                <div className="flex gap-2 overflow-x-auto pb-4 mb-2 hide-scrollbar">
+                <div className="flex gap-2 overflow-x-auto pb-3 hide-scrollbar">
                   {Array.from({ length: totalTabs }).map((_, i) => (
                     <button 
                       key={i}
+                      type="button"
                       onClick={() => setActiveTab(i)}
-                      className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
                         i === activeTab 
-                          ? 'bg-secondary text-on-secondary' 
-                          : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-secondary hover:text-secondary'
+                          ? 'bg-secondary text-slate-950 border-secondary' 
+                          : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-secondary hover:text-secondary'
                       }`}
                     >
                       {i * episodesPerTab + 1} - {Math.min((i + 1) * episodesPerTab, totalEps)}
@@ -982,7 +1358,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 </div>
               )}
               
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {currentServer.serverData
                   .map((ep, idx) => ({ ep, idx }))
                   .filter(({ idx }) => idx >= activeTab * episodesPerTab && idx < (activeTab + 1) * episodesPerTab)
@@ -991,16 +1367,17 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                     return (
                       <button 
                         key={ep.slug}
+                        type="button"
                         onClick={() => selectEpisode(idx)}
                         title={ep.name}
-                        className={`relative w-full aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                        className={`relative w-full aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border ${
                           isCurrent
-                            ? 'bg-primary/20 border-2 border-primary text-primary shadow-[0_0_12px_rgba(124,58,237,0.2)] scale-[1.02]' 
-                            : 'bg-surface border border-glass-stroke text-on-surface hover:bg-white/5 hover:border-white/15 hover:scale-[1.03] active:scale-95'
+                            ? 'bg-primary/20 border-primary text-primary shadow-[0_0_12px_rgba(124,58,237,0.2)] scale-[1.02]' 
+                            : 'bg-surface border-glass-stroke text-on-surface hover:bg-white/5 hover:border-white/15 hover:scale-[1.03] active:scale-95'
                         }`}
                       >
                         {isCurrent && (
-                          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
                         )}
                         {idx + 1}
                       </button>
@@ -1009,7 +1386,63 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               </div>
             </div>
           )}
+
+          {/* Mô tả phim */}
+          <CollapsibleDescription htmlContent={movie.description} />
+
+          {/* Bình luận */}
+          <CommentSystem movieSlug={movie.slug} />
+
         </div>
+
+        {/* RIGHT COLUMN: Ratings & Discord & Actors & Related Movies */}
+        <div className="space-y-6">
+          
+          {/* Đánh giá */}
+          <RatingWidget movieSlug={movie.slug} />
+
+          {/* Discord Banner */}
+          <DiscordBanner />
+
+          {/* Diễn viên */}
+          <ActorsList actors={movie.actors} />
+
+          {/* Phim Liên Quan */}
+          {relatedMovies.length > 0 && (
+            <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-4">
+              <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm border-b border-glass-stroke/40 pb-2">
+                <span className="material-symbols-outlined text-primary">dynamic_feed</span>
+                Phim Liên Quan
+              </h3>
+              <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                {relatedMovies.map((m: any) => (
+                  <a 
+                    key={m.id} 
+                    href={`/phim/${m.slug}`} 
+                    className="flex items-center gap-3 p-2 rounded-xl bg-zinc-950/30 border border-glass-stroke/30 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300 group cursor-pointer w-full text-current hover:no-underline no-underline decoration-none"
+                  >
+                    <div className="w-14 aspect-[2/3] rounded-lg overflow-hidden border border-glass-stroke shrink-0 relative bg-zinc-900 shadow-md">
+                      <img src={m.posterUrl} alt={m.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                    </div>
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <h4 className="text-white font-title-md text-xs font-bold line-clamp-2 leading-tight group-hover:text-primary transition-colors font-outfit">{m.title}</h4>
+                      <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-semibold">
+                        <span>{m.releaseYear || 2024}</span>
+                        {m.imdbScore && (
+                          <span className="flex items-center gap-0.5 text-yellow-500 font-bold">
+                            ★ {m.imdbScore.toFixed(1)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+
       </div>
     </div>
   );

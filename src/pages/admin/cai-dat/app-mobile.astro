@@ -1,0 +1,400 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const activeTab = 'app-mobile';
+---
+
+<AdminLayout title="Cài đặt hệ thống - App Mobile">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý toàn bộ tham số cấu hình của ứng dụng.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <div class="lg:col-span-1 flex flex-col gap-2">
+      <a href="/admin/cai-dat" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'general' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">settings</span> Chung
+      </a>
+      <a href="/admin/cai-dat/api-ser" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'api-ser' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">security</span> API Security
+      </a>
+      <a href="/admin/cai-dat/app-mobile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'app-mobile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">smartphone</span> App Mobile
+      </a>
+      <a href="/admin/cai-dat/smtp" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'smtp' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">mail</span> SMTP Mail
+      </a>
+      <a href="/admin/cai-dat/telegram" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'telegram' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">send</span> Telegram
+      </a>
+      <a href="/admin/cai-dat/dang-ky" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'dang-ky' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">login</span> Đăng nhập & Đăng ký
+      </a>
+      <a href="/admin/cai-dat/social" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'social' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">share</span> Mạng xã hội
+      </a>
+      <a href="/admin/cai-dat/thanh-toan" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'payment' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">payments</span> Cấu hình Thanh toán
+      </a>
+      <a href="/admin/cai-dat/turnstile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'turnstile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">verified_user</span> Turnstile Captcha
+      </a>
+    </div>
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8 space-y-8">
+      <div id="tab-app" class="space-y-6">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6 text-xl font-bold">Cấu hình App Mobile (TPhimX)</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Phiên bản hiện tại (app_version)</label>
+            <input type="text" id="app-version" value={settings.app.app_version} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Ví dụ: 4.6.0" />
+            <span class="text-[10px] text-zinc-500 font-semibold block">Tự động điền theo phiên bản mới nhất ở bảng Changelogs phía dưới.</span>
+          </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Mô tả phát hành (app_release_notes)</label>
+            <textarea id="app-release-notes" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none min-h-[100px] text-white" placeholder="Nội dung cập nhật mới...">{settings.app.app_release_notes}</textarea>
+          </div>
+
+          <!-- Android Cấu hình -->
+          <div class="md:col-span-2 border-t border-glass-stroke/40 pt-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><span class="material-symbols-outlined text-green-400" style="font-size:16px">android</span> Tải trực tiếp Android (file APK)</span>
+              <label class="txa-switch"><input type="checkbox" id="app-android-enable" checked={settings.app.app_android_download_enable} /><span class="txa-slider"></span></label>
+            </div>
+            <div id="android-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.app.app_android_download_enable ? '' : 'display:none'}>
+              <div class="space-y-1 md:col-span-2"><label class="text-[10px] text-zinc-500 font-bold uppercase">Đường dẫn tệp APK (app_android_download_url)</label><input type="text" id="app-android-url" value={settings.app.app_android_download_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Kích thước APK (Bytes)</label><input type="text" id="app-apk-size" value={settings.app.app_apk_size} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Mã băm SHA-256 tệp APK</label><input type="text" id="app-apk-sha" value={settings.app.app_apk_sha256} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" /></div>
+            </div>
+          </div>
+
+          <!-- iOS Cấu hình -->
+          <div class="md:col-span-2 border-t border-glass-stroke/40 pt-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><span class="material-symbols-outlined text-zinc-300" style="font-size:16px">phone_iphone</span> Cài đặt OTA trực tiếp iOS (Trang UDID)</span>
+              <label class="txa-switch"><input type="checkbox" id="app-ios-ota-enable" checked={settings.app.app_ios_direct_install_enable} /><span class="txa-slider"></span></label>
+            </div>
+            <div id="ios-ota-fields" class="space-y-2 pl-2 border-l-2 border-primary/20 ml-2" style={settings.app.app_ios_direct_install_enable ? '' : 'display:none'}>
+              <label class="text-[10px] text-zinc-500 font-bold uppercase block">Đường dẫn cài đặt OTA (app_ios_download_url)</label>
+              <input type="text" id="app-ios-download-url" value={settings.app.app_ios_download_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+            </div>
+          </div>
+
+          <div class="md:col-span-2 border-t border-glass-stroke/40 pt-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><span class="material-symbols-outlined text-zinc-400" style="font-size:16px">download_for_offline</span> Tải tệp IPA Sideload iOS</span>
+              <label class="txa-switch"><input type="checkbox" id="app-ios-ipa-enable" checked={settings.app.app_ios_ipa_download_enable} /><span class="txa-slider"></span></label>
+            </div>
+            <div id="ios-ipa-fields" class="space-y-2 pl-2 border-l-2 border-primary/20 ml-2" style={settings.app.app_ios_ipa_download_enable ? '' : 'display:none'}>
+              <label class="text-[10px] text-zinc-500 font-bold uppercase block">Đường dẫn tệp IPA (app_ios_ipa_url)</label>
+              <input type="text" id="app-ios-ipa-url" value={settings.app.app_ios_ipa_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+            </div>
+          </div>
+
+          <!-- Chợ ứng dụng Store Cấu hình -->
+          <div class="md:col-span-2 border-t border-glass-stroke/40 pt-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><span class="material-symbols-outlined text-yellow-400" style="font-size:16px">store</span> Link Google Play Store</span>
+              <label class="txa-switch"><input type="checkbox" id="app-gplay-enable" checked={settings.app.app_google_play_enable} /><span class="txa-slider"></span></label>
+            </div>
+            <div id="gplay-fields" class="space-y-2 pl-2 border-l-2 border-primary/20 ml-2" style={settings.app.app_google_play_enable ? '' : 'display:none'}>
+              <label class="text-[10px] text-zinc-500 font-bold uppercase block">URL Google Play (app_google_play_url)</label>
+              <input type="text" id="app-gplay-url" value={settings.app.app_google_play_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+            </div>
+          </div>
+
+          <div class="md:col-span-2 border-t border-glass-stroke/40 pt-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><span class="material-symbols-outlined text-blue-400" style="font-size:16px">storefront</span> Link Apple App Store</span>
+              <label class="txa-switch"><input type="checkbox" id="app-appstore-enable" checked={settings.app.app_app_store_enable} /><span class="txa-slider"></span></label>
+            </div>
+            <div id="appstore-fields" class="space-y-2 pl-2 border-l-2 border-primary/20 ml-2" style={settings.app.app_app_store_enable ? '' : 'display:none'}>
+              <label class="text-[10px] text-zinc-500 font-bold uppercase block">URL App Store (app_app_store_url)</label>
+              <input type="text" id="app-appstore-url" value={settings.app.app_app_store_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Nhật ký phát hành (Changelogs Table) -->
+      <div class="space-y-4 border-t border-glass-stroke/40 pt-6">
+        <div class="flex justify-between items-center">
+          <h4 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">history</span>
+            Nhật ký cập nhật ứng dụng (App Changelogs)
+          </h4>
+          <button id="btn-add-changelog" class="px-4 py-1.5 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-bold hover:bg-primary/30 transition-all flex items-center gap-1 cursor-pointer">
+            <span class="material-symbols-outlined text-sm">add</span> Thêm bản ghi
+          </button>
+        </div>
+        
+        <div class="overflow-x-auto border border-glass-stroke rounded-2xl">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-zinc-950/40">
+              <tr>
+                <th class="px-4 py-3 text-zinc-500 font-bold">PHIÊN BẢN</th>
+                <th class="px-4 py-3 text-zinc-500 font-bold">NGÀY PHÁT HÀNH</th>
+                <th class="px-4 py-3 text-zinc-500 font-bold">TIÊU ĐỀ</th>
+                <th class="px-4 py-3 text-zinc-500 font-bold hidden md:table-cell">NỘI DUNG</th>
+                <th class="px-4 py-3 text-zinc-500 font-bold text-right">THAO TÁC</th>
+              </tr>
+            </thead>
+            <tbody id="changelogTableBody" class="divide-y divide-glass-stroke/40">
+              <!-- JS render ở client -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle Switch CSS -->
+  <style>
+    .txa-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .txa-switch input { opacity: 0; width: 0; height: 0; }
+    .txa-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); transition: 0.3s; border-radius: 24px; }
+    .txa-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background: #64748b; transition: 0.3s; border-radius: 50%; }
+    .txa-switch input:checked + .txa-slider { background: rgba(167,139,250,0.25); border-color: rgba(167,139,250,0.4); }
+    .txa-switch input:checked + .txa-slider:before { transform: translateX(20px); background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,0.5); }
+  </style>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function() {
+      let changelogsState = [];
+
+      function hydrateFromLocalStorage() {
+        let stored = null;
+        try {
+          const raw = localStorage.getItem('txa_site_settings');
+          if (raw) stored = JSON.parse(raw);
+        } catch (e) {}
+        if (!stored) {
+          if (Array.isArray(serverSettings?.app?.app_changelogs)) changelogsState = [...serverSettings.app.app_changelogs];
+          renderChangelogs();
+          return;
+        }
+
+        const s = stored;
+        setVal('app-version', s.app?.app_version);
+        setTextarea('app-release-notes', s.app?.app_release_notes);
+        setVal('app-android-url', s.app?.app_android_download_url);
+        setVal('app-apk-size', s.app?.app_apk_size);
+        setVal('app-apk-sha', s.app?.app_apk_sha256);
+        setChecked('app-android-enable', s.app?.app_android_download_enable);
+        setChecked('app-ios-ota-enable', s.app?.app_ios_direct_install_enable);
+        setVal('app-ios-download-url', s.app?.app_ios_download_url);
+        setChecked('app-ios-ipa-enable', s.app?.app_ios_ipa_download_enable);
+        setVal('app-ios-ipa-url', s.app?.app_ios_ipa_url);
+        setChecked('app-gplay-enable', s.app?.app_google_play_enable);
+        setVal('app-gplay-url', s.app?.app_google_play_url);
+        setChecked('app-appstore-enable', s.app?.app_app_store_enable);
+        setVal('app-appstore-url', s.app?.app_app_store_url);
+        if (Array.isArray(s.app?.app_changelogs)) changelogsState = [...s.app.app_changelogs];
+        
+        syncToggleVisibility();
+        renderChangelogs();
+      }
+
+      function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
+      function setTextarea(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
+      function setChecked(id, val) { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; }
+
+      function syncToggleVisibility() {
+        const toggleMap = {
+          'app-android-enable': 'android-fields',
+          'app-ios-ota-enable': 'ios-ota-fields',
+          'app-ios-ipa-enable': 'ios-ipa-fields',
+          'app-gplay-enable': 'gplay-fields',
+          'app-appstore-enable': 'appstore-fields',
+        };
+        Object.entries(toggleMap).forEach(([checkboxId, fieldsId]) => {
+          const cb = document.getElementById(checkboxId);
+          const fields = document.getElementById(fieldsId);
+          if (!cb || !fields) return;
+          fields.style.display = cb.checked ? '' : 'none';
+          // Clean duplicate listeners
+          cb.replaceWith(cb.cloneNode(true));
+          const newCb = document.getElementById(checkboxId);
+          newCb.addEventListener('change', () => {
+            fields.style.display = newCb.checked ? '' : 'none';
+          });
+        });
+      }
+
+      function renderChangelogs() {
+        const tbody = document.getElementById('changelogTableBody');
+        if (!tbody) return;
+        if (changelogsState.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-zinc-500 italic">Chưa có bản ghi changelog nào.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = changelogsState.map((item, index) => {
+          const dateStr = item.date;
+          const contentPreview = (item.content || '').substring(0, 120) + ((item.content || '').length > 120 ? '...' : '');
+          return `
+            <tr class="hover:bg-white/5 transition-colors">
+              <td class="px-4 py-3 font-bold text-primary">v${item.version}</td>
+              <td class="px-4 py-3 text-zinc-400 font-semibold">${dateStr}</td>
+              <td class="px-4 py-3 text-white font-bold text-[12px]">${item.title}</td>
+              <td class="px-4 py-3 text-zinc-500 text-[11px] hidden md:table-cell cursor-pointer hover:text-zinc-300" onclick="editChangelog(${index})" style="white-space:pre-line;max-width:300px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${contentPreview}</td>
+              <td class="px-4 py-3 text-right">
+                <div class="flex justify-end gap-1.5">
+                  <button onclick="editChangelog(${index})" class="px-2 py-1 rounded bg-white/5 border border-glass-stroke text-zinc-400 font-bold hover:text-primary hover:bg-primary/10 transition-all cursor-pointer text-[10px]">
+                    <span class="material-symbols-outlined" style="font-size:14px">edit</span>
+                  </button>
+                  <button onclick="deleteChangelog(${index})" class="px-2 py-1 rounded bg-white/5 border border-glass-stroke text-zinc-400 font-bold hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer text-[10px]">
+                    <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      window.editChangelog = function(index) {
+        const item = changelogsState[index];
+        if (!item) return;
+        showChangelogModal(item, index);
+      };
+
+      window.deleteChangelog = function(index) {
+        const item = changelogsState[index];
+        if (!item) return;
+        const doDelete = () => {
+          changelogsState.splice(index, 1);
+          renderChangelogs();
+          if (window.showGlobalToast) window.showGlobalToast('Đã xóa tạm thời. Nhấn "Lưu thay đổi" để cập nhật!', 'info');
+        };
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Xóa Nhật Ký Cập Nhật',
+            message: `Bạn có chắc chắn muốn xóa bản ghi nhật ký của phiên bản v${item.version}? Thao tác này cần nhấn "Lưu thay đổi" để chính thức cập nhật.`,
+            type: 'danger', confirmText: 'Xóa bản ghi', cancelText: 'Hủy bỏ',
+            onConfirm: doDelete
+          });
+        } else if (confirm(`Xóa bản ghi v${item.version}?`)) doDelete();
+      };
+
+      function showChangelogModal(existingItem, editIndex) {
+        const isEdit = editIndex !== undefined && editIndex >= 0;
+        const title = isEdit ? `Chỉnh sửa changelog v${existingItem.version}` : 'Thêm bản ghi changelog mới';
+        const html = `
+          <div style="display:flex;flex-direction:column;gap:14px;min-width:350px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div><label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;display:block;margin-bottom:4px">Phiên bản</label>
+              <input type="text" id="cl-modal-version" value="${isEdit ? existingItem.version : ''}" style="width:100%;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: 4.7.0" /></div>
+              <div><label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;display:block;margin-bottom:4px">Ngày ra mắt</label>
+              <input type="date" id="cl-modal-date" value="${isEdit ? existingItem.date : new Date().toISOString().substring(0,10)}" style="width:100%;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" /></div>
+            </div>
+            <div><label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;display:block;margin-bottom:4px">Tiêu đề bản cập nhật</label>
+            <input type="text" id="cl-modal-title" value="${isEdit ? existingItem.title.replace(/"/g, '&quot;') : ''}" style="width:100%;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: Premium Streaming v4.7.0" /></div>
+            <div><label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;display:block;margin-bottom:4px">Nội dung chi tiết</label>
+            <textarea id="cl-modal-content" rows="6" style="width:100%;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:12px;resize:vertical;min-height:100px" placeholder="Mỗi dòng là một thay đổi...">${isEdit ? existingItem.content : ''}</textarea></div>
+          </div>
+        `;
+        if (window.txamodal) {
+          window.txamodal.show({
+            title, message: html, type: 'info',
+            confirmText: isEdit ? 'Cập nhật' : 'Thêm mới', cancelText: 'Hủy bỏ',
+            onConfirm: () => {
+              const v = document.getElementById('cl-modal-version')?.value.trim();
+              const d = document.getElementById('cl-modal-date')?.value.trim();
+              const t = document.getElementById('cl-modal-title')?.value.trim();
+              const c = document.getElementById('cl-modal-content')?.value.trim();
+              if (!v) { if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập phiên bản!', 'error'); return; }
+              if (!t) { if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập tiêu đề!', 'error'); return; }
+              const newItem = { version: v, date: d || new Date().toISOString().substring(0,10), title: t, content: c || '' };
+              if (isEdit) {
+                changelogsState[editIndex] = newItem;
+              } else {
+                changelogsState.unshift(newItem);
+              }
+              renderChangelogs();
+              
+              // Automatically sync version to input
+              if (changelogsState.length > 0) {
+                const verInput = document.getElementById('app-version');
+                if (verInput) verInput.value = changelogsState[0].version;
+                const releaseInput = document.getElementById('app-release-notes');
+                if (releaseInput) releaseInput.value = changelogsState[0].content;
+              }
+
+              if (window.showGlobalToast) window.showGlobalToast(isEdit ? 'Đã sửa. Đừng quên nhấn "Lưu thay đổi"!' : 'Đã thêm mới. Đừng quên nhấn "Lưu thay đổi"!', 'success');
+            }
+          });
+        }
+      }
+
+      document.getElementById('btn-add-changelog')?.addEventListener('click', () => {
+        showChangelogModal(null, -1);
+      });
+
+      // Save handler
+      document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) { current = serverSettings; }
+
+        let appVersion = document.getElementById('app-version')?.value || '';
+        let appReleaseNotes = document.getElementById('app-release-notes')?.value || '';
+        if (changelogsState.length > 0) {
+          appVersion = changelogsState[0].version || appVersion;
+          appReleaseNotes = changelogsState[0].content || appReleaseNotes;
+        }
+
+        const updatedSettings = {
+          ...current,
+          app: {
+            ...current.app,
+            app_version: appVersion,
+            app_release_notes: appReleaseNotes,
+            app_changelogs: changelogsState,
+            app_android_download_enable: document.getElementById('app-android-enable')?.checked || false,
+            app_android_download_url: document.getElementById('app-android-url')?.value || '',
+            app_apk_size: document.getElementById('app-apk-size')?.value || '',
+            app_apk_sha256: document.getElementById('app-apk-sha')?.value || '',
+            app_ios_direct_install_enable: document.getElementById('app-ios-ota-enable')?.checked || false,
+            app_ios_download_url: document.getElementById('app-ios-download-url')?.value || '',
+            app_ios_ipa_download_enable: document.getElementById('app-ios-ipa-enable')?.checked || false,
+            app_ios_ipa_url: document.getElementById('app-ios-ipa-url')?.value || '',
+            app_google_play_enable: document.getElementById('app-gplay-enable')?.checked || false,
+            app_google_play_url: document.getElementById('app-gplay-url')?.value || '',
+            app_app_store_enable: document.getElementById('app-appstore-enable')?.checked || false,
+            app_app_store_url: document.getElementById('app-appstore-url')?.value || '',
+          }
+        };
+
+        localStorage.setItem('txa_site_settings', JSON.stringify(updatedSettings));
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
+        } else {
+          alert('Lưu cấu hình hệ thống thành công!');
+        }
+
+        setTimeout(() => { window.location.reload(); }, 800);
+      });
+
+      // Init
+      hydrateFromLocalStorage();
+      document.addEventListener('astro:page-load', hydrateFromLocalStorage);
+    })();
+  </script>
+</AdminLayout>

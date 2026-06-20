@@ -1,0 +1,187 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const activeTab = 'social';
+---
+
+<AdminLayout title="Cài đặt hệ thống - Mạng xã hội">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý toàn bộ tham số cấu hình của ứng dụng.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <div class="lg:col-span-1 flex flex-col gap-2">
+      <a href="/admin/cai-dat" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'general' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">settings</span> Chung
+      </a>
+      <a href="/admin/cai-dat/api-ser" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'api-ser' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">security</span> API Security
+      </a>
+      <a href="/admin/cai-dat/app-mobile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'app-mobile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">smartphone</span> App Mobile
+      </a>
+      <a href="/admin/cai-dat/smtp" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'smtp' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">mail</span> SMTP Mail
+      </a>
+      <a href="/admin/cai-dat/telegram" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'telegram' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">send</span> Telegram
+      </a>
+      <a href="/admin/cai-dat/dang-ky" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'dang-ky' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">login</span> Đăng nhập & Đăng ký
+      </a>
+      <a href="/admin/cai-dat/social" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'social' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">share</span> Mạng xã hội
+      </a>
+      <a href="/admin/cai-dat/thanh-toan" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'payment' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">payments</span> Cấu hình Thanh toán
+      </a>
+      <a href="/admin/cai-dat/turnstile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'turnstile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">verified_user</span> Turnstile Captcha
+      </a>
+    </div>
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8">
+      <div id="tab-social" class="space-y-6">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6 text-xl font-bold">Liên kết mạng xã hội & Cộng đồng</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-fb-enable" checked={settings.social?.social_fb_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị Facebook Fanpage</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn trang Facebook (Fanpage)</label>
+              <input type="url" id="social-fb-url" value={settings.social?.social_fb_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://www.facebook.com/tphimx..." />
+            </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-fb-group-enable" checked={settings.social?.social_fb_group_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị nhóm cộng đồng Facebook (Group)</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn nhóm Facebook</label>
+              <input type="url" id="social-fb-group-url" value={settings.social?.social_fb_group_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://www.facebook.com/groups/..." />
+            </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-telegram-enable" checked={settings.social?.social_telegram_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị liên kết Telegram</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn kênh/nhóm Telegram</label>
+              <input type="url" id="social-telegram-url" value={settings.social?.social_telegram_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://t.me/..." />
+            </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-tiktok-enable" checked={settings.social?.social_tiktok_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị TikTok</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn kênh TikTok</label>
+              <input type="url" id="social-tiktok-url" value={settings.social?.social_tiktok_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://tiktok.com/@..." />
+            </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-zalo-group-enable" checked={settings.social?.social_zalo_group_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị nhóm liên kết Zalo</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn nhóm Zalo</label>
+              <input type="url" id="social-zalo-group-url" value={settings.social?.social_zalo_group_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://zalo.me/g/..." />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function() {
+      // Hydrate form fields client-side
+      function hydrateFromLocalStorage() {
+        let stored = null;
+        try {
+          const raw = localStorage.getItem('txa_site_settings');
+          if (raw) stored = JSON.parse(raw);
+        } catch (e) {}
+        if (!stored) return;
+
+        const s = stored;
+        setChecked('social-fb-enable', s.social?.social_fb_enable);
+        setVal('social-fb-url', s.social?.social_fb_url);
+        setChecked('social-fb-group-enable', s.social?.social_fb_group_enable);
+        setVal('social-fb-group-url', s.social?.social_fb_group_url);
+        setChecked('social-telegram-enable', s.social?.social_telegram_enable);
+        setVal('social-telegram-url', s.social?.social_telegram_url);
+        setChecked('social-tiktok-enable', s.social?.social_tiktok_enable);
+        setVal('social-tiktok-url', s.social?.social_tiktok_url);
+        setChecked('social-zalo-group-enable', s.social?.social_zalo_group_enable);
+        setVal('social-zalo-group-url', s.social?.social_zalo_group_url);
+      }
+
+      function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
+      function setChecked(id, val) { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; }
+
+      // Save handler
+      document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) { current = serverSettings; }
+
+        const updatedSettings = {
+          ...current,
+          social: {
+            ...current.social,
+            social_fb_enable: document.getElementById('social-fb-enable')?.checked || false,
+            social_fb_url: document.getElementById('social-fb-url')?.value || '',
+            social_fb_group_enable: document.getElementById('social-fb-group-enable')?.checked || false,
+            social_fb_group_url: document.getElementById('social-fb-group-url')?.value || '',
+            social_telegram_enable: document.getElementById('social-telegram-enable')?.checked || false,
+            social_telegram_url: document.getElementById('social-telegram-url')?.value || '',
+            social_tiktok_enable: document.getElementById('social-tiktok-enable')?.checked || false,
+            social_tiktok_url: document.getElementById('social-tiktok-url')?.value || '',
+            social_zalo_group_enable: document.getElementById('social-zalo-group-enable')?.checked || false,
+            social_zalo_group_url: document.getElementById('social-zalo-group-url')?.value || '',
+          }
+        };
+
+        localStorage.setItem('txa_site_settings', JSON.stringify(updatedSettings));
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
+        } else {
+          alert('Lưu cấu hình hệ thống thành công!');
+        }
+
+        setTimeout(() => { window.location.reload(); }, 800);
+      });
+
+      // Init
+      hydrateFromLocalStorage();
+      document.addEventListener('astro:page-load', hydrateFromLocalStorage);
+    })();
+  </script>
+</AdminLayout>

@@ -1130,7 +1130,9 @@ const isActive = (path: string) => {
               provider: profile.provider,
               address: addressInfo,
               package: 'Free',
-              status: 'active'
+              status: 'active',
+              roles: 'users',
+              emailVerified: true
             });
             localStorage.setItem('tregistered_users', JSON.stringify(users));
           }
@@ -1571,6 +1573,115 @@ const isActive = (path: string) => {
       })();
 
       // ══════════════════════════════════════════════════════════════
+      // Card Playlist Button Interaction System
+      // ══════════════════════════════════════════════════════════════
+      (function() {
+        'use strict';
+
+        const initCardPlaylistBtns = () => {
+          const playlistBtns = document.querySelectorAll('.card-playlist-btn');
+          const playList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+
+          playlistBtns.forEach(btn => {
+            const slug = btn.getAttribute('data-slug');
+            if (!slug) return;
+
+            const iconAdd = btn.querySelector('.card-icon-add');
+            const iconAdded = btn.querySelector('.card-icon-added');
+            if (!iconAdd || !iconAdded) return;
+
+            // Update initial state
+            const isInPlaylist = playList.includes(slug);
+            if (isInPlaylist) {
+              iconAdd.classList.add('hidden');
+              iconAdded.classList.remove('hidden');
+              btn.setAttribute('title', 'Xóa khỏi DS phát');
+            } else {
+              iconAdd.classList.remove('hidden');
+              iconAdded.classList.add('hidden');
+              btn.setAttribute('title', 'Thêm vào DS phát');
+            }
+
+            // Remove existing listener to avoid duplicates
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+
+            // Add click listener
+            newBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              const isLoggedIn = document.cookie.includes('txa_gate_passed');
+              if (!isLoggedIn) {
+                if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập để thực hiện chức năng này!', 'error');
+                setTimeout(() => {
+                  if (window.openLoginModal) window.openLoginModal();
+                }, 800);
+                return;
+              }
+
+              const currentPlayList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+              const idx = currentPlayList.indexOf(slug);
+              let msg = '';
+              if (idx === -1) {
+                currentPlayList.push(slug);
+                msg = 'Đã lưu phim vào Danh sách phát!';
+              } else {
+                currentPlayList.splice(idx, 1);
+                msg = 'Đã gỡ phim khỏi Danh sách phát!';
+              }
+              localStorage.setItem('tplaylist', JSON.stringify(currentPlayList));
+
+              if (window.showGlobalToast) window.showGlobalToast(msg, 'success');
+
+              // Sync all buttons on the page with the same slug
+              const allMatchingBtns = document.querySelectorAll(`.card-playlist-btn[data-slug="${slug}"]`);
+              allMatchingBtns.forEach(b => {
+                const bAdd = b.querySelector('.card-icon-add');
+                const bAdded = b.querySelector('.card-icon-added');
+                if (bAdd && bAdded) {
+                  if (idx === -1) {
+                    bAdd.classList.add('hidden');
+                    bAdded.classList.remove('hidden');
+                    b.setAttribute('title', 'Xóa khỏi DS phát');
+                  } else {
+                    bAdd.classList.remove('hidden');
+                    bAdded.classList.add('hidden');
+                    b.setAttribute('title', 'Thêm vào DS phát');
+                  }
+                }
+              });
+
+              // Also sync homepage hero playlist button if active
+              const heroBtn = document.getElementById('hero-playlist-btn');
+              if (heroBtn && window.updateHeroPlaylistBtn) {
+                window.updateHeroPlaylistBtn();
+              }
+            });
+          });
+        };
+
+        // Run on DOMContentLoaded and astro:page-load
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initCardPlaylistBtns);
+        } else {
+          initCardPlaylistBtns();
+        }
+        document.addEventListener('astro:page-load', initCardPlaylistBtns);
+        
+        // Also run when popovers are shown or dynamically added
+        document.addEventListener('mouseover', (e) => {
+          const popover = e.target.closest('.group');
+          if (popover) {
+            setTimeout(initCardPlaylistBtns, 100);
+          }
+        }, true);
+
+        // Expose init function globally
+        window.initCardPlaylistBtns = initCardPlaylistBtns;
+      })();
+
+      // ══════════════════════════════════════════════════════════════
       // Real-time Search Autocomplete Logic
       // ══════════════════════════════════════════════════════════════
       (function() {
@@ -1977,7 +2088,11 @@ const isActive = (path: string) => {
                     regUsers.push({
                       username: body.username,
                       email: body.email,
-                      createdAt: new Date().toISOString()
+                      createdAt: new Date().toISOString(),
+                      package: 'Free',
+                      status: 'active',
+                      roles: 'users',
+                      emailVerified: false
                     });
                     localStorage.setItem('tregistered_users', JSON.stringify(regUsers));
                   }

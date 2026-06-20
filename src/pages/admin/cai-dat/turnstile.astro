@@ -1,0 +1,177 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const activeTab = 'turnstile';
+---
+
+<AdminLayout title="Cài đặt hệ thống - Turnstile Captcha">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý toàn bộ tham số cấu hình của ứng dụng.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <div class="lg:col-span-1 flex flex-col gap-2">
+      <a href="/admin/cai-dat" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'general' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">settings</span> Chung
+      </a>
+      <a href="/admin/cai-dat/api-ser" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'api-ser' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">security</span> API Security
+      </a>
+      <a href="/admin/cai-dat/app-mobile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'app-mobile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">smartphone</span> App Mobile
+      </a>
+      <a href="/admin/cai-dat/smtp" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'smtp' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">mail</span> SMTP Mail
+      </a>
+      <a href="/admin/cai-dat/telegram" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'telegram' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">send</span> Telegram
+      </a>
+      <a href="/admin/cai-dat/dang-ky" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'dang-ky' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">login</span> Đăng nhập & Đăng ký
+      </a>
+      <a href="/admin/cai-dat/social" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'social' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">share</span> Mạng xã hội
+      </a>
+      <a href="/admin/cai-dat/thanh-toan" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'payment' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">payments</span> Cấu hình Thanh toán
+      </a>
+      <a href="/admin/cai-dat/turnstile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'turnstile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">verified_user</span> Turnstile Captcha
+      </a>
+    </div>
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8 space-y-6">
+      <div id="tab-turnstile" class="space-y-6">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6 text-xl font-bold">Cloudflare Turnstile Captcha</h3>
+        
+        <div class="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6">
+          <p class="text-xs text-primary font-body-main">
+            Cloudflare Turnstile cung cấp giải pháp xác thực captcha không xâm nhập và thân thiện với người dùng. 
+            Khi bật, các biểu mẫu Đăng ký & Đăng nhập sẽ yêu cầu xác thực Turnstile để ngăn chặn bot spam.
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke flex items-center justify-between hover:border-primary/20 transition-colors">
+            <div class="space-y-1">
+              <h4 class="text-sm font-bold text-white uppercase flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">verified_user</span>
+                Bật Cloudflare Turnstile (turnstile_enable)
+              </h4>
+              <p class="text-xs text-zinc-400 font-body-main">Kích hoạt Turnstile captcha bảo vệ trang đăng nhập/đăng ký.</p>
+            </div>
+            <label class="txa-switch">
+              <input type="checkbox" id="turnstile-enable" checked={settings.login?.turnstile_enable} />
+              <span class="txa-slider"></span>
+            </label>
+          </div>
+
+          <div id="turnstile-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.login?.turnstile_enable ? '' : 'display:none'}>
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Site Key (turnstile_site_key)</label>
+              <input type="text" id="turnstile-site-key" value={settings.login?.turnstile_site_key || ''} placeholder="1x00000000000000000000AA" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs font-mono" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Secret Key (turnstile_secret_key)</label>
+              <input type="password" id="turnstile-secret-key" value={settings.login?.turnstile_secret_key || ''} placeholder="1x0000000000000000000000000000000AA" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs font-mono" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle Switch CSS -->
+  <style>
+    .txa-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .txa-switch input { opacity: 0; width: 0; height: 0; }
+    .txa-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); transition: 0.3s; border-radius: 24px; }
+    .txa-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background: #64748b; transition: 0.3s; border-radius: 50%; }
+    .txa-switch input:checked + .txa-slider { background: rgba(167,139,250,0.25); border-color: rgba(167,139,250,0.4); }
+    .txa-switch input:checked + .txa-slider:before { transform: translateX(20px); background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,0.5); }
+  </style>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function() {
+      function toggleTurnstileFields() {
+        const checkbox = document.getElementById('turnstile-enable');
+        const fields = document.getElementById('turnstile-fields');
+        if (checkbox && fields) {
+          fields.style.display = checkbox.checked ? '' : 'none';
+        }
+      }
+
+      // Hydrate form fields client-side
+      function hydrateFromLocalStorage() {
+        let stored = null;
+        try {
+          const raw = localStorage.getItem('txa_site_settings');
+          if (raw) stored = JSON.parse(raw);
+        } catch (e) {}
+        if (!stored) {
+          toggleTurnstileFields();
+          return;
+        }
+
+        const s = stored;
+        setChecked('turnstile-enable', s.login?.turnstile_enable);
+        setVal('turnstile-site-key', s.login?.turnstile_site_key);
+        setVal('turnstile-secret-key', s.login?.turnstile_secret_key);
+
+        toggleTurnstileFields();
+      }
+
+      function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
+      function setChecked(id, val) { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; }
+
+      // Event listener
+      document.getElementById('turnstile-enable')?.addEventListener('change', toggleTurnstileFields);
+
+      // Save handler
+      document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) { current = serverSettings; }
+
+        const updatedSettings = {
+          ...current,
+          login: {
+            ...current.login,
+            turnstile_enable: document.getElementById('turnstile-enable')?.checked || false,
+            turnstile_site_key: document.getElementById('turnstile-site-key')?.value || '',
+            turnstile_secret_key: document.getElementById('turnstile-secret-key')?.value || '',
+          }
+        };
+
+        localStorage.setItem('txa_site_settings', JSON.stringify(updatedSettings));
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
+        } else {
+          alert('Lưu cấu hình hệ thống thành công!');
+        }
+
+        setTimeout(() => { window.location.reload(); }, 800);
+      });
+
+      // Init
+      hydrateFromLocalStorage();
+      document.addEventListener('astro:page-load', hydrateFromLocalStorage);
+    })();
+  </script>
+</AdminLayout>

@@ -1,5 +1,6 @@
 ---
 import { MovieService } from '../../services/MovieService';
+import Txaicon from './txaicon.astro';
 
 interface Props {
   title: string;
@@ -120,6 +121,14 @@ const getLangBadge = (lang?: string) => {
         </a>
         <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Thích">
           <span class="material-symbols-outlined text-sm">favorite</span>
+        </button>
+        <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer card-playlist-btn relative" data-slug={slug} title="Danh sách phát">
+          <span class="card-icon-add flex items-center justify-center">
+            <Txaicon name="playlist-add" class="w-4 h-4" />
+          </span>
+          <span class="card-icon-added flex items-center justify-center hidden text-primary">
+            <Txaicon name="playlist-added" class="w-4 h-4" />
+          </span>
         </button>
         <a href={`/phim/${slug}`} class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Chi tiết">
           <span class="material-symbols-outlined text-sm">info</span>

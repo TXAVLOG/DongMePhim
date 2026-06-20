@@ -23,7 +23,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       <p class="text-xs text-zinc-400 max-w-md mb-6 leading-relaxed">
         Để quản lý gói đăng ký và bán dịch vụ thành viên, vui lòng cấu hình ít nhất một phương thức thanh toán (chuyển khoản ngân hàng hoặc cổng tự động) trong phần cài đặt hệ thống.
       </p>
-      <a href="/admin/he-thong" class="px-6 py-3 bg-primary text-slate-950 rounded-xl font-bold text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer">
+      <a href="/admin/cai-dat" class="px-6 py-3 bg-primary text-slate-950 rounded-xl font-bold text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer">
         Đi đến Cấu hình hệ thống
       </a>
     </div>
@@ -230,10 +230,10 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         const usersStr = localStorage.getItem('tregistered_users');
         if (!usersStr || usersStr === '[]') {
           const defaultUsers = [
-            { username: "Anh Le", email: "anhle@gmail.com", package: "VIP 1 Month", joinDate: "2023-10-12", expiryDate: "2024-11-12", status: "active" },
-            { username: "Minh Hoang", email: "hoangm@hotmail.com", package: "VIP 1 Year", joinDate: "2024-01-05", expiryDate: "2025-01-05", status: "active" },
-            { username: "Duy Tung", email: "tungd@outlook.com", package: "Free", joinDate: "2024-05-20", expiryDate: "", status: "standard" },
-            { username: "Kim Phượng", email: "phuongk@gmail.com", package: "VIP 1 Month", joinDate: "2023-09-10", expiryDate: "2023-10-10", status: "expired" }
+            { username: "Anh Le", email: "anhle@gmail.com", package: "VIP 1 Month", joinDate: "2023-10-12", expiryDate: "2024-11-12", status: "active", roles: "users", emailVerified: true },
+            { username: "Minh Hoang", email: "hoangm@hotmail.com", package: "VIP 1 Year", joinDate: "2024-01-05", expiryDate: "2025-01-05", status: "active", roles: "users", emailVerified: true },
+            { username: "Duy Tung", email: "tungd@outlook.com", package: "Free", joinDate: "2024-05-20", expiryDate: "", status: "standard", roles: "users", emailVerified: false },
+            { username: "Kim Phượng", email: "phuongk@gmail.com", package: "VIP 1 Month", joinDate: "2023-09-10", expiryDate: "2023-10-10", status: "expired", roles: "users", emailVerified: true }
           ];
           localStorage.setItem('tregistered_users', JSON.stringify(defaultUsers));
         }

@@ -1,0 +1,663 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const activeTab = 'dang-ky';
+---
+
+<AdminLayout title="Cài đặt hệ thống - Đăng nhập & Đăng ký">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý toàn bộ tham số cấu hình của ứng dụng.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <div class="lg:col-span-1 flex flex-col gap-2">
+      <a href="/admin/cai-dat" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'general' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">settings</span> Chung
+      </a>
+      <a href="/admin/cai-dat/api-ser" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'api-ser' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">security</span> API Security
+      </a>
+      <a href="/admin/cai-dat/app-mobile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'app-mobile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">smartphone</span> App Mobile
+      </a>
+      <a href="/admin/cai-dat/smtp" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'smtp' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">mail</span> SMTP Mail
+      </a>
+      <a href="/admin/cai-dat/telegram" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'telegram' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">send</span> Telegram
+      </a>
+      <a href="/admin/cai-dat/dang-ky" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'dang-ky' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">login</span> Đăng nhập & Đăng ký
+      </a>
+      <a href="/admin/cai-dat/social" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'social' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">share</span> Mạng xã hội
+      </a>
+      <a href="/admin/cai-dat/thanh-toan" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'payment' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">payments</span> Cấu hình Thanh toán
+      </a>
+      <a href="/admin/cai-dat/turnstile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'turnstile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
+        <span class="material-symbols-outlined">verified_user</span> Turnstile Captcha
+      </a>
+    </div>
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8 space-y-6">
+      <div id="tab-login" class="space-y-6">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6 text-xl font-bold">Cấu hình Đăng nhập & Đăng ký</h3>
+        
+        <!-- Toggle Cho phép đăng ký (Registration Toggle) -->
+        <div class="glass-panel p-5 rounded-2xl border border-glass-stroke flex items-center justify-between mb-6">
+          <div class="space-y-1">
+            <h4 class="text-sm font-bold text-white uppercase flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">person_add</span>
+              Cho phép đăng ký tài khoản (allow_registration)
+            </h4>
+            <p class="text-xs text-zinc-400 font-body-main">Bật để cho phép khách tự tạo tài khoản mới trên website/app.</p>
+          </div>
+          <label class="txa-switch">
+            <input type="checkbox" id="user-allow-registration" checked={settings.user?.allow_registration} />
+            <span class="txa-slider"></span>
+          </label>
+        </div>
+
+        <!-- Form cấu hình đăng ký & đăng nhập (Ẩn nếu allow_registration = false) -->
+        <div id="registration-sub-form" class="space-y-6">
+          
+          <!-- Section Xác minh Email (Email Verification Settings) -->
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-5 relative overflow-hidden">
+            <!-- Lock Overlay if SMTP is not configured -->
+            <div id="smtp-lock-overlay" class="absolute inset-0 bg-zinc-950/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-center p-6 border border-glass-stroke rounded-2xl hidden">
+              <span class="material-symbols-outlined text-4xl text-yellow-500 mb-3 animate-bounce">lock</span>
+              <h4 class="text-sm font-bold text-white uppercase mb-1">Xác minh Email bị khóa</h4>
+              <p class="text-xs text-zinc-400 max-w-sm mb-4">Vui lòng hoàn tất cấu hình SMTP Mail trước khi kích hoạt tính năng xác minh địa chỉ email đăng ký.</p>
+              <a href="/admin/cai-dat/smtp" class="px-5 py-2 bg-primary text-slate-950 rounded-xl text-xs font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 border-none">
+                <span class="material-symbols-outlined text-sm">mail</span> Cấu hình SMTP
+              </a>
+            </div>
+
+            <!-- Header Xác minh Email -->
+            <div class="flex items-center justify-between relative z-10">
+              <div class="space-y-1">
+                <span class="text-sm font-bold text-white uppercase flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary" style="font-size:16px">verified</span> Yêu cầu xác minh mail (require_email_verification)
+                </span>
+                <p class="text-xs text-zinc-500 font-body-main">Gửi email kích hoạt tài khoản qua SMTP trước khi cho phép đăng nhập.</p>
+              </div>
+              <label class="txa-switch">
+                <input type="checkbox" id="user-require-verification" checked={settings.user?.require_email_verification} />
+                <span class="txa-slider"></span>
+              </label>
+            </div>
+
+            <!-- Email Expiry & Method (Ẩn nếu require_email_verification = false) -->
+            <div id="email-verification-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2 relative z-10" style={settings.user?.require_email_verification ? '' : 'display:none'}>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Phương thức xác minh</label>
+                <select id="user-verification-method" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white">
+                  <option value="link" selected={settings.user?.verification_method === 'link'}>Link xác minh (Nhấp liên kết để kích hoạt)</option>
+                  <option value="otp" selected={settings.user?.verification_method === 'otp'}>Mã xác minh (OTP gồm 6 chữ số)</option>
+                </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Mã hết hạn token (Giây - 180s đến 3000s)</label>
+                <div class="flex gap-3 items-center">
+                  <input type="number" id="user-verification-expiry" value={settings.user?.verification_token_expiry || 1800} min="180" max="3000" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+                  <span id="expiry-converted-label" class="bg-primary/20 text-primary text-[10px] font-bold px-3 py-2 rounded-xl border border-primary/30 shrink-0 whitespace-nowrap min-w-[70px] text-center">30 phút</span>
+                </div>
+                <span class="text-[9px] text-zinc-500 font-semibold block">Khoảng quy định: 3 phút (180 giây) -> 50 phút (3000 giây).</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- OAuth logins configuration -->
+          <div class="space-y-4">
+            <h4 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-lg">admin_panel_settings</span> Cấu hình các cổng đăng nhập & liên kết (OAuth 2.0)
+            </h4>
+            <div class="grid grid-cols-1 gap-4">
+              <!-- Standard login -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke flex items-center justify-between hover:border-primary/20 transition-colors">
+                <div class="space-y-0.5">
+                  <span class="text-sm font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined text-primary" style="font-size:16px">password</span> Đăng nhập tài khoản & mật khẩu (login_standard_enable)</span>
+                </div>
+                <label class="txa-switch"><input type="checkbox" id="login-standard-enable" checked={settings.login?.login_standard_enable} /><span class="txa-slider"></span></label>
+              </div>
+
+              <!-- Google -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-sm font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined text-red-400" style="font-size:16px">g_mobiledata</span> Đăng nhập Google</span>
+                  </div>
+                  <label class="txa-switch"><input type="checkbox" id="login-google-enable" checked={settings.login?.login_google_enable} /><span class="txa-slider"></span></label>
+                </div>
+                <div id="login-google-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.login?.login_google_enable ? '' : 'display:none'}>
+                  <div class="space-y-1 md:col-span-2">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase">Redirect / Callback URI</label>
+                    <div class="flex gap-2">
+                      <input type="text" readonly class="callback-uri-input w-full bg-surface-container/50 border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:outline-none text-zinc-400 cursor-not-allowed" value="" />
+                      <button type="button" class="copy-callback-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all">
+                        <span class="material-symbols-outlined text-sm">content_copy</span> Sao chép
+                      </button>
+                    </div>
+                  </div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="login-google-client-id" value={settings.login?.login_google_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client Secret</label><input type="password" id="login-google-client-secret" value={settings.login?.login_google_client_secret} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1 md:col-span-2 flex items-center gap-3">
+                    <input type="checkbox" id="login-google-onetap" checked={settings.login?.login_google_onetap_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+                    <span class="text-xs">Bật One-Tap popup đăng nhập nhanh (login_google_onetap_enable)</span>
+                  </div>
+                  <button type="button" class="test-login-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all" data-provider="Google"><span class="material-symbols-outlined text-sm">open_in_new</span> Test Login Google</button>
+                </div>
+              </div>
+
+              <!-- Facebook -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-sm font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined text-blue-400" style="font-size:16px">facebook</span> Đăng nhập Facebook</span>
+                  </div>
+                  <label class="txa-switch"><input type="checkbox" id="login-fb-enable" checked={settings.login?.login_fb_enable} /><span class="txa-slider"></span></label>
+                </div>
+                <div id="login-fb-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.login?.login_fb_enable ? '' : 'display:none'}>
+                  <div class="space-y-1 md:col-span-2">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase">Redirect / Callback URI</label>
+                    <div class="flex gap-2">
+                      <input type="text" readonly class="callback-uri-input w-full bg-surface-container/50 border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:outline-none text-zinc-400 cursor-not-allowed" value="" />
+                      <button type="button" class="copy-callback-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all">
+                        <span class="material-symbols-outlined text-sm">content_copy</span> Sao chép
+                      </button>
+                    </div>
+                  </div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">App ID</label><input type="text" id="login-fb-app-id" value={settings.login?.login_fb_app_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">App Secret</label><input type="password" id="login-fb-app-secret" value={settings.login?.login_fb_app_secret} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <button type="button" class="test-login-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all" data-provider="Facebook"><span class="material-symbols-outlined text-sm">open_in_new</span> Test Login Facebook</button>
+                </div>
+              </div>
+
+              <!-- Apple -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-sm font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined" style="font-size:16px">phone_iphone</span> Đăng nhập Apple</span>
+                  </div>
+                  <label class="txa-switch"><input type="checkbox" id="login-apple-enable" checked={settings.login?.login_apple_enable} /><span class="txa-slider"></span></label>
+                </div>
+                <div id="login-apple-fields" class="grid grid-cols-1 md:grid-cols-3 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.login?.login_apple_enable ? '' : 'display:none'}>
+                  <div class="space-y-1 md:col-span-3">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase">Redirect / Callback URI</label>
+                    <div class="flex gap-2">
+                      <input type="text" readonly class="callback-uri-input w-full bg-surface-container/50 border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:outline-none text-zinc-400 cursor-not-allowed" value="" />
+                      <button type="button" class="copy-callback-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all">
+                        <span class="material-symbols-outlined text-sm">content_copy</span> Sao chép
+                      </button>
+                    </div>
+                  </div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID (Service ID)</label><input type="text" id="login-apple-client-id" value={settings.login?.login_apple_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Team ID</label><input type="text" id="login-apple-team-id" value={settings.login?.login_apple_team_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Key ID</label><input type="text" id="login-apple-key-id" value={settings.login?.login_apple_key_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <button type="button" class="test-login-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all" data-provider="Apple"><span class="material-symbols-outlined text-sm">open_in_new</span> Test Login Apple</button>
+                </div>
+              </div>
+
+              <!-- Zalo -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col gap-0.5"><span class="text-sm font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined text-blue-500" style="font-size:16px">chat</span> Đăng nhập Zalo</span></div>
+                  <label class="txa-switch"><input type="checkbox" id="login-zalo-enable" checked={settings.login?.login_zalo_enable} /><span class="txa-slider"></span></label>
+                </div>
+                <div id="login-zalo-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.login?.login_zalo_enable ? '' : 'display:none'}>
+                  <div class="space-y-1 md:col-span-2">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase">Redirect / Callback URI</label>
+                    <div class="flex gap-2">
+                      <input type="text" readonly class="callback-uri-input w-full bg-surface-container/50 border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:outline-none text-zinc-400 cursor-not-allowed" value="" />
+                      <button type="button" class="copy-callback-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all">
+                        <span class="material-symbols-outlined text-sm">content_copy</span> Sao chép
+                      </button>
+                    </div>
+                  </div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">App ID</label><input type="text" id="login-zalo-app-id" value={settings.login?.login_zalo_app_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key</label><input type="password" id="login-zalo-secret-key" value={settings.login?.login_zalo_secret_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <button type="button" class="test-login-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all" data-provider="Zalo"><span class="material-symbols-outlined text-sm">open_in_new</span> Test Login Zalo</button>
+                </div>
+              </div>
+
+              <!-- Discord -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col gap-0.5"><span class="text-sm font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined text-indigo-400" style="font-size:16px">sports_esports</span> Đăng nhập Discord</span></div>
+                  <label class="txa-switch"><input type="checkbox" id="login-discord-enable" checked={settings.login?.login_discord_enable} /><span class="txa-slider"></span></label>
+                </div>
+                <div id="login-discord-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.login?.login_discord_enable ? '' : 'display:none'}>
+                  <div class="space-y-1 md:col-span-2">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase">Redirect / Callback URI</label>
+                    <div class="flex gap-2">
+                      <input type="text" readonly class="callback-uri-input w-full bg-surface-container/50 border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:outline-none text-zinc-400 cursor-not-allowed" value="" />
+                      <button type="button" class="copy-callback-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all">
+                        <span class="material-symbols-outlined text-sm">content_copy</span> Sao chép
+                      </button>
+                    </div>
+                  </div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="login-discord-client-id" value={settings.login?.login_discord_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client Secret</label><input type="password" id="login-discord-client-secret" value={settings.login?.login_discord_client_secret} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <button type="button" class="test-login-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all" data-provider="Discord"><span class="material-symbols-outlined text-sm">open_in_new</span> Test Login Discord</button>
+                </div>
+              </div>
+
+              <!-- GitHub -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col gap-0.5"><span class="text-sm font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined" style="font-size:16px">code</span> Đăng nhập GitHub</span></div>
+                  <label class="txa-switch"><input type="checkbox" id="login-github-enable" checked={settings.login?.login_github_enable} /><span class="txa-slider"></span></label>
+                </div>
+                <div id="login-github-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.login?.login_github_enable ? '' : 'display:none'}>
+                  <div class="space-y-1 md:col-span-2">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase">Redirect / Callback URI</label>
+                    <div class="flex gap-2">
+                      <input type="text" readonly class="callback-uri-input w-full bg-surface-container/50 border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:outline-none text-zinc-400 cursor-not-allowed" value="" />
+                      <button type="button" class="copy-callback-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all">
+                        <span class="material-symbols-outlined text-sm">content_copy</span> Sao chép
+                      </button>
+                    </div>
+                  </div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="login-github-client-id" value={settings.login?.login_github_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client Secret</label><input type="password" id="login-github-client-secret" value={settings.login?.login_github_client_secret} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <button type="button" class="test-login-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all" data-provider="GitHub"><span class="material-symbols-outlined text-sm">open_in_new</span> Test Login GitHub</button>
+                </div>
+              </div>
+
+              <!-- X/Twitter -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col gap-0.5"><span class="text-sm font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined" style="font-size:16px">tag</span> Đăng nhập X (Twitter)</span></div>
+                  <label class="txa-switch"><input type="checkbox" id="login-x-enable" checked={settings.login?.login_x_enable} /><span class="txa-slider"></span></label>
+                </div>
+                <div id="login-x-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.login?.login_x_enable ? '' : 'display:none'}>
+                  <div class="space-y-1 md:col-span-2">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase">Redirect / Callback URI</label>
+                    <div class="flex gap-2">
+                      <input type="text" readonly class="callback-uri-input w-full bg-surface-container/50 border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:outline-none text-zinc-400 cursor-not-allowed" value="" />
+                      <button type="button" class="copy-callback-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all">
+                        <span class="material-symbols-outlined text-sm">content_copy</span> Sao chép
+                      </button>
+                    </div>
+                  </div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="login-x-client-id" value={settings.login?.login_x_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client Secret</label><input type="password" id="login-x-client-secret" value={settings.login?.login_x_client_secret} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+                  <button type="button" class="test-login-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all" data-provider="X"><span class="material-symbols-outlined text-sm">open_in_new</span> Test Login X</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle Switch CSS -->
+  <style>
+    .txa-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .txa-switch input { opacity: 0; width: 0; height: 0; }
+    .txa-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); transition: 0.3s; border-radius: 24px; }
+    .txa-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background: #64748b; transition: 0.3s; border-radius: 50%; }
+    .txa-switch input:checked + .txa-slider { background: rgba(167,139,250,0.25); border-color: rgba(167,139,250,0.4); }
+    .txa-switch input:checked + .txa-slider:before { transform: translateX(20px); background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,0.5); }
+  </style>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function() {
+      // Helper function to format seconds using txaformat rules
+      function txaformat(seconds) {
+        if (seconds < 60) {
+          return `${seconds} s`;
+        } else {
+          return `${Math.round(seconds / 60)} phút`;
+        }
+      }
+
+      function updateExpiryLabel() {
+        const input = document.getElementById('user-verification-expiry');
+        const label = document.getElementById('expiry-converted-label');
+        if (!input || !label) return;
+        const val = parseInt(input.value) || 0;
+        label.textContent = txaformat(val);
+      }
+
+      function checkSmtpConfigured() {
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) { current = serverSettings; }
+
+        const overlay = document.getElementById('smtp-lock-overlay');
+        const isSmtpConfigured = !!(current.smtp?.smtp_host && current.smtp?.smtp_user && current.smtp?.smtp_pass);
+        
+        if (overlay) {
+          if (isSmtpConfigured) {
+            overlay.classList.add('hidden');
+          } else {
+            overlay.classList.remove('hidden');
+            overlay.style.display = 'flex';
+          }
+        }
+      }
+
+      function toggleRegistrationSubForm() {
+        const allowRegistrationCheckbox = document.getElementById('user-allow-registration');
+        const subForm = document.getElementById('registration-sub-form');
+        if (allowRegistrationCheckbox && subForm) {
+          subForm.style.display = allowRegistrationCheckbox.checked ? '' : 'none';
+        }
+      }
+
+      function toggleEmailVerificationFields() {
+        const requireVerificationCheckbox = document.getElementById('user-require-verification');
+        const fields = document.getElementById('email-verification-fields');
+        if (requireVerificationCheckbox && fields) {
+          fields.style.display = requireVerificationCheckbox.checked ? '' : 'none';
+        }
+      }
+
+      // Hydrate form fields client-side
+      function hydrateFromLocalStorage() {
+        let stored = null;
+        try {
+          const raw = localStorage.getItem('txa_site_settings');
+          if (raw) stored = JSON.parse(raw);
+        } catch (e) {}
+        if (!stored) {
+          checkSmtpConfigured();
+          toggleRegistrationSubForm();
+          toggleEmailVerificationFields();
+          updateExpiryLabel();
+          return;
+        }
+
+        const s = stored;
+        setChecked('user-allow-registration', s.user?.allow_registration);
+        setChecked('user-require-verification', s.user?.require_email_verification);
+        setSelect('user-verification-method', s.user?.verification_method || 'link');
+        setVal('user-verification-expiry', s.user?.verification_token_expiry !== undefined ? s.user.verification_token_expiry : 1800);
+
+        setChecked('login-standard-enable', s.login?.login_standard_enable);
+        setChecked('login-google-enable', s.login?.login_google_enable);
+        setVal('login-google-client-id', s.login?.login_google_client_id);
+        setVal('login-google-client-secret', s.login?.login_google_client_secret);
+        setChecked('login-google-onetap', s.login?.login_google_onetap_enable);
+        setChecked('login-fb-enable', s.login?.login_fb_enable);
+        setVal('login-fb-app-id', s.login?.login_fb_app_id);
+        setVal('login-fb-app-secret', s.login?.login_fb_app_secret);
+        setChecked('login-apple-enable', s.login?.login_apple_enable);
+        setVal('login-apple-client-id', s.login?.login_apple_client_id);
+        setVal('login-apple-team-id', s.login?.login_apple_team_id);
+        setVal('login-apple-key-id', s.login?.login_apple_key_id);
+        setChecked('login-zalo-enable', s.login?.login_zalo_enable);
+        setVal('login-zalo-app-id', s.login?.login_zalo_app_id);
+        setVal('login-zalo-secret-key', s.login?.login_zalo_secret_key);
+        setChecked('login-discord-enable', s.login?.login_discord_enable);
+        setVal('login-discord-client-id', s.login?.login_discord_client_id);
+        setVal('login-discord-client-secret', s.login?.login_discord_client_secret);
+        setChecked('login-github-enable', s.login?.login_github_enable);
+        setVal('login-github-client-id', s.login?.login_github_client_id);
+        setVal('login-github-client-secret', s.login?.login_github_client_secret);
+        setChecked('login-x-enable', s.login?.login_x_enable);
+        setVal('login-x-client-id', s.login?.login_x_client_id);
+        setVal('login-x-client-secret', s.login?.login_x_client_secret);
+
+        checkSmtpConfigured();
+        toggleRegistrationSubForm();
+        toggleEmailVerificationFields();
+        updateExpiryLabel();
+        syncToggleVisibility();
+        updateCallbackURIs();
+      }
+
+      function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
+      function setChecked(id, val) { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; }
+      function setSelect(id, val) { const el = document.getElementById(id); if (el && val) el.value = val; }
+
+      function syncToggleVisibility() {
+        const toggleMap = {
+          'login-google-enable': 'login-google-fields',
+          'login-fb-enable': 'login-fb-fields',
+          'login-apple-enable': 'login-apple-fields',
+          'login-zalo-enable': 'login-zalo-fields',
+          'login-discord-enable': 'login-discord-fields',
+          'login-github-enable': 'login-github-fields',
+          'login-x-enable': 'login-x-fields',
+        };
+        Object.entries(toggleMap).forEach(([checkboxId, fieldsId]) => {
+          const cb = document.getElementById(checkboxId);
+          const fields = document.getElementById(fieldsId);
+          if (!cb || !fields) return;
+          fields.style.display = cb.checked ? '' : 'none';
+          // Clean duplicate listeners
+          cb.replaceWith(cb.cloneNode(true));
+          const newCb = document.getElementById(checkboxId);
+          newCb.addEventListener('change', () => {
+            fields.style.display = newCb.checked ? '' : 'none';
+          });
+        });
+      }
+
+      function updateCallbackURIs() {
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) { current = serverSettings; }
+        const siteUrl = current.general?.site_url || window.location.origin;
+        const callbackUri = siteUrl.replace(/\/$/, '') + '/api/auth/txa-callback';
+        document.querySelectorAll('.callback-uri-input').forEach(input => {
+          input.value = callbackUri;
+        });
+      }
+
+      // Add event listeners
+      document.getElementById('user-allow-registration')?.addEventListener('change', toggleRegistrationSubForm);
+      document.getElementById('user-require-verification')?.addEventListener('change', toggleEmailVerificationFields);
+      document.getElementById('user-verification-expiry')?.addEventListener('input', updateExpiryLabel);
+
+      // PKCE helpers
+      function dec2hex(dec) { return dec.toString(16).padStart(2, "0"); }
+      function generateCodeVerifier() {
+        const array = new Uint32Array(56 / 2);
+        window.crypto.getRandomValues(array);
+        return Array.from(array, dec2hex).join("");
+      }
+      function sha256(plain) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(plain);
+        return window.crypto.subtle.digest("SHA-256", data);
+      }
+      function base64urlencode(a) {
+        let str = "";
+        const bytes = new Uint8Array(a);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) str += String.fromCharCode(bytes[i]);
+        return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      }
+      async function generateCodeChallenge(v) {
+        const hashed = await sha256(v);
+        return base64urlencode(hashed);
+      }
+
+      // Test login OAuth handler
+      document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.test-login-btn');
+        if (btn) {
+          const provider = btn.dataset.provider;
+          if (!provider) return;
+          const provLower = provider.toLowerCase();
+          let clientId = '';
+          if (provLower === 'google') clientId = document.getElementById('login-google-client-id')?.value;
+          else if (provLower === 'facebook') clientId = document.getElementById('login-fb-app-id')?.value;
+          else if (provLower === 'apple') clientId = document.getElementById('login-apple-client-id')?.value;
+          else if (provLower === 'zalo') clientId = document.getElementById('login-zalo-app-id')?.value;
+          else if (provLower === 'discord') clientId = document.getElementById('login-discord-client-id')?.value;
+          else if (provLower === 'github') clientId = document.getElementById('login-github-client-id')?.value;
+          else if (provLower === 'x') clientId = document.getElementById('login-x-client-id')?.value;
+
+          if (!clientId) {
+            if (window.showGlobalToast) window.showGlobalToast(`Vui lòng điền Client ID / App ID của ${provider} trước!`, 'error');
+            return;
+          }
+
+          if (window.showGlobalToast) window.showGlobalToast(`Đang mở popup kiểm thử đăng nhập ${provider}...`, 'info');
+
+          const w = 620, h = 650;
+          const left = screen.width / 2 - w / 2, top = screen.height / 2 - h / 2;
+          
+          let current = {};
+          try {
+            const raw = localStorage.getItem('txa_site_settings');
+            if (raw) current = JSON.parse(raw);
+          } catch (e) {}
+          const siteUrl = current.general?.site_url || window.location.origin;
+          const redirectUri = encodeURIComponent(siteUrl.replace(/\/$/, '') + '/api/auth/txa-callback');
+          let authUrl = '';
+
+          let verifier = '';
+          let challenge = '';
+          if (provLower === 'zalo' || provLower === 'x') {
+            verifier = generateCodeVerifier();
+            sessionStorage.setItem('txa_oauth_verifier', verifier);
+            challenge = await generateCodeChallenge(verifier);
+          }
+
+          if (provLower === 'google') authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${encodeURIComponent('openid email profile')}&state=google`;
+          else if (provLower === 'facebook') authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${encodeURIComponent('email,public_profile')}&state=facebook`;
+          else if (provLower === 'apple') authUrl = `https://appleid.apple.com/auth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&response_mode=form_post&scope=${encodeURIComponent('name email')}&state=apple`;
+          else if (provLower === 'discord') authUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${encodeURIComponent('identify email')}&state=discord`;
+          else if (provLower === 'github') authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${encodeURIComponent('user:email')}&state=github`;
+          else if (provLower === 'zalo') authUrl = `https://oauth.zaloapp.com/v4/permission?app_id=${clientId}&redirect_uri=${redirectUri}&code_challenge=${challenge}&state=zalo`;
+          else if (provLower === 'x') authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${encodeURIComponent('users.read tweet.read')}&state=x&code_challenge=${challenge}&code_challenge_method=S256`;
+
+          const popup = window.open(authUrl, 'TestLogin' + provider, `width=${w},height=${h},left=${left},top=${top},status=0,resizable=1`);
+          if (!popup) {
+            if (window.showGlobalToast) window.showGlobalToast('Popup bị chặn! Vui lòng cho phép popup trong trình duyệt.', 'error');
+          }
+        }
+      });
+
+      // Google sign-in testing GSI functions
+      let gsiLoaded = false;
+      window.initGoogleGSIAndButton = () => {
+        const clientId = document.getElementById('login-google-client-id')?.value.trim();
+        if (!clientId) return;
+
+        if (gsiLoaded) {
+          renderGoogleAdminButton(clientId);
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          gsiLoaded = true;
+          renderGoogleAdminButton(clientId);
+        };
+        document.head.appendChild(script);
+      };
+
+      function renderGoogleAdminButton(clientId) {
+        if (typeof google === 'undefined') return;
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: (response) => {
+            if (window.showGlobalToast) window.showGlobalToast('Google One-Tap JWT: ' + response.credential.substring(0, 30) + '...', 'success');
+          }
+        });
+      }
+
+      // Save handler
+      document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+        let current = {};
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) { current = serverSettings; }
+
+        // Token Expiry Validation (180s to 3000s)
+        const expiryInput = document.getElementById('user-verification-expiry');
+        let expiryVal = parseInt(expiryInput?.value) || 1800;
+        if (expiryVal < 180) {
+          expiryVal = 180;
+          if (window.showGlobalToast) window.showGlobalToast('Thời gian hết hạn tối thiểu là 180s (3 phút). Đã tự động đổi về 180s.', 'info');
+        } else if (expiryVal > 3000) {
+          expiryVal = 3000;
+          if (window.showGlobalToast) window.showGlobalToast('Thời gian hết hạn tối đa là 3000s (50 phút). Đã tự động đổi về 3000s.', 'info');
+        }
+        if (expiryInput) expiryInput.value = expiryVal;
+
+        const updatedSettings = {
+          ...current,
+          user: {
+            ...current.user,
+            allow_registration: document.getElementById('user-allow-registration')?.checked || false,
+            require_email_verification: document.getElementById('user-require-verification')?.checked || false,
+            verification_method: document.getElementById('user-verification-method')?.value || 'link',
+            verification_token_expiry: expiryVal,
+          },
+          login: {
+            ...current.login,
+            login_standard_enable: document.getElementById('login-standard-enable')?.checked || false,
+            login_google_enable: document.getElementById('login-google-enable')?.checked || false,
+            login_google_client_id: document.getElementById('login-google-client-id')?.value || '',
+            login_google_client_secret: document.getElementById('login-google-client-secret')?.value || '',
+            login_google_onetap_enable: document.getElementById('login-google-onetap')?.checked || false,
+            login_fb_enable: document.getElementById('login-fb-enable')?.checked || false,
+            login_fb_app_id: document.getElementById('login-fb-app-id')?.value || '',
+            login_fb_app_secret: document.getElementById('login-fb-app-secret')?.value || '',
+            login_apple_enable: document.getElementById('login-apple-enable')?.checked || false,
+            login_apple_client_id: document.getElementById('login-apple-client-id')?.value || '',
+            login_apple_team_id: document.getElementById('login-apple-team-id')?.value || '',
+            login_apple_key_id: document.getElementById('login-apple-key-id')?.value || '',
+            login_zalo_enable: document.getElementById('login-zalo-enable')?.checked || false,
+            login_zalo_app_id: document.getElementById('login-zalo-app-id')?.value || '',
+            login_zalo_secret_key: document.getElementById('login-zalo-secret-key')?.value || '',
+            login_discord_enable: document.getElementById('login-discord-enable')?.checked || false,
+            login_discord_client_id: document.getElementById('login-discord-client-id')?.value || '',
+            login_discord_client_secret: document.getElementById('login-discord-client-secret')?.value || '',
+            login_github_enable: document.getElementById('login-github-enable')?.checked || false,
+            login_github_client_id: document.getElementById('login-github-client-id')?.value || '',
+            login_github_client_secret: document.getElementById('login-github-client-secret')?.value || '',
+            login_x_enable: document.getElementById('login-x-enable')?.checked || false,
+            login_x_client_id: document.getElementById('login-x-client-id')?.value || '',
+            login_x_client_secret: document.getElementById('login-x-client-secret')?.value || '',
+          }
+        };
+
+        localStorage.setItem('txa_site_settings', JSON.stringify(updatedSettings));
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
+        } else {
+          alert('Lưu cấu hình hệ thống thành công!');
+        }
+
+        setTimeout(() => { window.location.reload(); }, 800);
+      });
+
+      // Init
+      hydrateFromLocalStorage();
+      document.addEventListener('astro:page-load', hydrateFromLocalStorage);
+    })();
+  </script>
+</AdminLayout>

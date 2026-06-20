@@ -5,6 +5,7 @@ import Card from '../components/ui/Card.astro';
 import TopicCard from '../components/ui/TopicCard.astro';
 import { topics } from '../data/topics';
 import { MovieService } from '../services/MovieService';
+import Txaicon from '../components/ui/txaicon.astro';
 
 const topSeries = await MovieService.getMovies({ type: 'series', sortBy: 'views_comments', limit: 10 });
 
@@ -85,12 +86,16 @@ const comments = [
               Xem Phim
             </Button>
           </a>
-          <a href="/danh-sach-cua-toi" class="cursor-pointer">
-            <Button variant="secondary" size="lg" className="rounded-xl px-8 py-4 gap-2 font-title-md">
-              <span class="material-symbols-outlined">add</span>
-              Danh sách
-            </Button>
-          </a>
+          <Button id="hero-playlist-btn" variant="secondary" size="lg" className="rounded-xl px-8 py-4 gap-2 font-title-md cursor-pointer relative group">
+            <span id="hero-playlist-icon-add" class="flex items-center justify-center">
+              <Txaicon name="playlist-add" class="w-5 h-5" />
+            </span>
+            <span id="hero-playlist-icon-added" class="flex items-center justify-center hidden">
+              <Txaicon name="playlist-added" class="w-5 h-5" />
+            </span>
+            <span id="hero-playlist-text">Danh sách</span>
+            <div class="txatooltip absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none text-[10px]">Thêm vào DS phát</div>
+          </Button>
         </div>
       </div>
     </div>
@@ -159,8 +164,8 @@ const comments = [
         </div>
       </div>
       
-      <!-- Horizontal Scroll Container -->
-      <div class="flex gap-6 overflow-x-auto pb-8 pt-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+      <!-- Horizontal Scroll Container with clipping protection -->
+      <div class="flex gap-6 overflow-x-auto pb-20 pt-20 -my-16 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
         {topSeries.map((movie, index) => (
           <div class="flex-shrink-0 w-44 md:w-52 relative pl-10 snap-center group">
             <!-- Large Rank Number -->
@@ -168,41 +173,16 @@ const comments = [
               {index + 1}
             </div>
             
-            <!-- Movie Card 3/4 -->
-            <a href={`/phim/${movie.slug}`} class="relative block w-full aspect-[3/4] rounded-2xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer z-10">
-              <img src={movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" loading="lazy" />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
-              
-              <!-- Badges -->
-              <div class="absolute top-2 left-2 flex flex-col gap-1 z-20">
-                {movie.imdbScore && <span class="bg-amber-500 text-black text-[9px] px-1.5 py-0.5 rounded font-black">★ {movie.imdbScore.toFixed(1)}</span>}
-                {movie.quality && <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-black">{movie.quality}</span>}
-              </div>
-
-              <!-- Episode Badge -->
-              <div class="absolute top-2 right-2 z-20">
-                <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 font-medium">
-                  {(() => {
-                    let cur = (movie.episodeCurrent || '').trim().replace(/^[tT]ập\s+/, '');
-                    if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
-                      return 'Full';
-                    }
-                    if (movie.episodeTotal) {
-                      let tot = movie.episodeTotal.trim().replace(/^[tT]ập\s+/, '');
-                      return `Tập ${cur}/${tot}`;
-                    }
-                    return `Tập ${cur}`;
-                  })()}
-                </span>
-              </div>
-              
-              <!-- Info Overlay -->
-              <div class="absolute bottom-0 left-0 p-4 w-full z-20">
-                <h4 class="font-title-md text-sm text-white line-clamp-1 group-hover:text-primary transition-colors">{movie.title}</h4>
-                {movie.originalTitle && <p class="text-[10px] text-on-surface-variant line-clamp-1 mt-0.5">{movie.originalTitle}</p>}
-                <p class="text-[9px] text-secondary mt-1 font-semibold">{movie.lang}</p>
-              </div>
-            </a>
+            <Card 
+              title={movie.title}
+              slug={movie.slug}
+              poster={movie.posterUrl}
+              year={movie.releaseYear}
+              quality={movie.quality}
+              status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}
+              aspect="aspect-[3/4]"
+              class="z-10 relative"
+            />
           </div>
         ))}
       </div>
@@ -941,6 +921,64 @@ const comments = [
           const bg1 = document.getElementById('hero-bg-1');
           const bg2 = document.getElementById('hero-bg-2');
 
+          let currentHeroSlug = 'bai-hoc-dang-doi';
+
+          const updateHeroPlaylistBtn = () => {
+            const playlistBtn = document.getElementById('hero-playlist-btn');
+            const iconAdd = document.getElementById('hero-playlist-icon-add');
+            const iconAdded = document.getElementById('hero-playlist-icon-added');
+            const playlistText = document.getElementById('hero-playlist-text');
+            const tooltip = playlistBtn?.querySelector('.txatooltip');
+            if (!playlistBtn || !iconAdd || !iconAdded || !playlistText) return;
+
+            const playList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+            const isInPlaylist = playList.includes(currentHeroSlug);
+
+            if (isInPlaylist) {
+              iconAdd.classList.add('hidden');
+              iconAdded.classList.remove('hidden');
+              playlistText.textContent = 'Đã lưu';
+              playlistBtn.classList.add('bg-primary/20', 'border-primary');
+              if (tooltip) tooltip.textContent = 'Xóa khỏi DS phát';
+            } else {
+              iconAdd.classList.remove('hidden');
+              iconAdded.classList.add('hidden');
+              playlistText.textContent = 'Danh sách';
+              playlistBtn.classList.remove('bg-primary/20', 'border-primary');
+              if (tooltip) tooltip.textContent = 'Thêm vào DS phát';
+            }
+          };
+          window.updateHeroPlaylistBtn = updateHeroPlaylistBtn;
+
+          const playlistBtn = document.getElementById('hero-playlist-btn');
+          if (playlistBtn) {
+            playlistBtn.addEventListener('click', () => {
+              const isLoggedIn = document.cookie.includes('txa_gate_passed');
+              if (!isLoggedIn) {
+                if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập để thực hiện chức năng này!', 'error');
+                setTimeout(() => {
+                  if (window.openLoginModal) window.openLoginModal();
+                }, 800);
+                return;
+              }
+
+              const playList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+              const idx = playList.indexOf(currentHeroSlug);
+              if (idx === -1) {
+                playList.push(currentHeroSlug);
+                if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
+              } else {
+                playList.splice(idx, 1);
+                if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
+              }
+              localStorage.setItem('tplaylist', JSON.stringify(playList));
+              updateHeroPlaylistBtn();
+            });
+          }
+
+          // Initial check
+          updateHeroPlaylistBtn();
+
           if (hasMovies && heroBanner && heroContent && heroTitle && heroDesc && heroPlayLink && bg1 && bg2) {
             // Check for pinned movies in list or in API override registry
             let apiRegistry = {};
@@ -965,6 +1003,7 @@ const comments = [
 
             const updateHero = (index) => {
               const movie = heroMovies[index];
+              currentHeroSlug = movie.slug || 'bai-hoc-dang-doi';
               const imgUrl = movie.bannerUrl || movie.posterUrl || '';
               
               // Cross-fade backgrounds
@@ -1006,6 +1045,9 @@ const comments = [
                 // Fade content back in
                 heroContent.style.opacity = '1';
                 heroContent.style.transform = 'translateY(0)';
+
+                // Update playlist button state
+                updateHeroPlaylistBtn();
               }, 400);
             };
 
