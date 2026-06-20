@@ -186,7 +186,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             'Loop': 'Lặp lại',
             'Airplay': 'Phát qua Airplay',
             'PIP': 'Hình trong hình'
-          }
+          } as any
         },
         // Tùy chỉnh menu chuột phải (thay thế menu mặc định)
         contextmenu: [
