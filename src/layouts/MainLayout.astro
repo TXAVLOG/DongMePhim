@@ -144,27 +144,12 @@ const isActive = (path: string) => {
         }
       }
 
-      // Read configuration from localStorage or server fallback
+      // Read configuration from server-injected config
       function getTxaApiConfig() {
-        let enable = false;
-        let pass = 'tphimx';
-        if (typeof localStorage !== 'undefined') {
-          try {
-            const stored = localStorage.getItem('txa_site_settings');
-            if (stored) {
-              const settings = JSON.parse(stored);
-              if (settings && settings.general) {
-                enable = settings.general.api_encrypt_enable ?? false;
-                pass = settings.general.api_encrypt_pass || pass;
-                return { encryptEnable: enable, encryptPass: pass };
-              }
-            }
-          } catch (e) {}
-        }
         if (window.TXA_API_CONFIG) {
           return window.TXA_API_CONFIG;
         }
-        return { encryptEnable: enable, encryptPass: pass };
+        return { encryptEnable: false, encryptPass: 'tphimx' };
       }
 
       // Monkey patch fetch
@@ -204,129 +189,7 @@ const isActive = (path: string) => {
         window.localStorage.setItem('theme', 'dark');
       }
       function hydrateSettings() {
-        if (typeof localStorage === 'undefined') return;
-        const stored = localStorage.getItem('txa_site_settings');
-        if (!stored) return;
-        try {
-          const settings = JSON.parse(stored);
-          if (!settings || !settings.general) return;
-
-          // Toggle Forgot Password link based on SMTP configuration in localStorage
-          const forgotLinkContainer = document.getElementById('forgot-password-link-container');
-          if (forgotLinkContainer) {
-            const hasSmtp = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
-            if (hasSmtp) {
-              forgotLinkContainer.classList.remove('hidden');
-            } else {
-              forgotLinkContainer.classList.add('hidden');
-            }
-          }
-
-          // 1. Maintenance redirect
-          const path = window.location.pathname;
-          if (settings.general.maintenance_enable && !path.startsWith('/admin') && path !== '/bao-tri') {
-            window.location.href = '/bao-tri';
-            return;
-          }
-
-          // 2. Override title
-          const titleEl = document.querySelector('title');
-          if (titleEl) {
-            const isHome = path === '/' || path === '/tphim';
-            if (isHome) {
-              titleEl.textContent = settings.general.site_name + " - Trải nghiệm điện ảnh đỉnh cao";
-            } else {
-              const currentTitle = titleEl.textContent;
-              const parts = currentTitle.split(' | ');
-              if (parts.length > 0) {
-                titleEl.textContent = parts[0] + " | " + settings.general.site_name;
-              }
-            }
-          }
-
-          // 3. SEO Meta Tags
-          const descMeta = document.querySelector('meta[name="description"]');
-          if (descMeta && settings.general.site_description) {
-            descMeta.setAttribute('content', settings.general.site_description);
-          }
-          const keyMeta = document.querySelector('meta[name="keywords"]');
-          if (keyMeta && settings.general.site_keywords) {
-            keyMeta.setAttribute('content', settings.general.site_keywords);
-          }
-
-          // 4. Logo alt text
-          const logoImgs = document.querySelectorAll('.dyn-logo-img');
-          logoImgs.forEach(img => {
-            img.setAttribute('alt', settings.general.site_name + ' Logo');
-          });
-
-          // 5. Site Name text
-          const siteNames = document.querySelectorAll('.dyn-site-name');
-          siteNames.forEach(el => {
-            el.textContent = settings.general.site_name;
-          });
-
-          // 6. Copyright text
-          const copyrights = document.querySelectorAll('.dyn-copyright');
-          copyrights.forEach(el => {
-            el.textContent = '© ' + new Date().getFullYear() + ' ' + settings.general.site_name + '. Trải nghiệm điện ảnh đỉnh cao. Bản quyền thuộc về ' + settings.general.site_name + ' Group.';
-          });
-
-          // 7. Hydrate Social Links
-          const socialData = settings.social || {};
-          
-          const fbLink = document.getElementById('social-link-facebook');
-          if (fbLink) {
-            if (socialData.social_fb_enable && socialData.social_fb_url) {
-              fbLink.setAttribute('href', socialData.social_fb_url);
-              fbLink.classList.remove('hidden');
-            } else {
-              fbLink.classList.add('hidden');
-            }
-          }
-          
-          const fbGroupLink = document.getElementById('social-link-facebook-group');
-          if (fbGroupLink) {
-            if (socialData.social_fb_group_enable && socialData.social_fb_group_url) {
-              fbGroupLink.setAttribute('href', socialData.social_fb_group_url);
-              fbGroupLink.classList.remove('hidden');
-            } else {
-              fbGroupLink.classList.add('hidden');
-            }
-          }
-          
-          const teleLink = document.getElementById('social-link-telegram');
-          if (teleLink) {
-            if (socialData.social_telegram_enable && socialData.social_telegram_url) {
-              teleLink.setAttribute('href', socialData.social_telegram_url);
-              teleLink.classList.remove('hidden');
-            } else {
-              teleLink.classList.add('hidden');
-            }
-          }
-          
-          const tiktokLink = document.getElementById('social-link-tiktok');
-          if (tiktokLink) {
-            if (socialData.social_tiktok_enable && socialData.social_tiktok_url) {
-              tiktokLink.setAttribute('href', socialData.social_tiktok_url);
-              tiktokLink.classList.remove('hidden');
-            } else {
-              tiktokLink.classList.add('hidden');
-            }
-          }
-          
-          const zaloLink = document.getElementById('social-link-zalo');
-          if (zaloLink) {
-            if (socialData.social_zalo_group_enable && socialData.social_zalo_group_url) {
-              zaloLink.setAttribute('href', socialData.social_zalo_group_url);
-              zaloLink.classList.remove('hidden');
-            } else {
-              zaloLink.classList.add('hidden');
-            }
-          }
-        } catch (e) {
-          console.error('Error hydrating settings:', e);
-        }
+        // All settings are now rendered server-side using Supabase. No client-side hydration from localStorage is needed.
       }
       applyTheme();
       hydrateSettings();

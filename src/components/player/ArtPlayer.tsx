@@ -152,8 +152,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         setting: true,
         loop: false,
         flip: false,
-        playbackRate: false,   // Tắt menu mặc định của artplayer
-        aspectRatio: false,    // Tắt menu mặc định của artplayer
+        playbackRate: true,
+        aspectRatio: true,
         fullscreen: true,
         fullscreenWeb: true,
         subtitleOffset: true,
@@ -165,7 +165,29 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         airplay: true,
         // JWPlayer style settings
         theme: '#1e88e5',
-        lang: 'zh-cn',
+        lang: 'vi',
+        i18n: {
+          'vi': {
+            'Play': 'Phát',
+            'Pause': 'Tạm dừng',
+            'Volume': 'Âm lượng',
+            'Mute': 'Tắt tiếng',
+            'Unmute': 'Bật tiếng',
+            'Mini Player': 'Trình phát thu nhỏ',
+            'Screenshot': 'Chụp màn hình',
+            'Setting': 'Cài đặt',
+            'Fullscreen': 'Toàn màn hình',
+            'Playback Rate': 'Tốc độ phát',
+            'Aspect Ratio': 'Tỷ lệ khung hình',
+            'Flip': 'Lật hình',
+            'Normal': 'Bình thường',
+            'Subtitle': 'Phụ đề',
+            'Auto': 'Tự động',
+            'Loop': 'Lặp lại',
+            'Airplay': 'Phát qua Airplay',
+            'PIP': 'Hình trong hình'
+          }
+        },
         // Tùy chỉnh menu chuột phải (thay thế menu mặc định)
         contextmenu: [
           {
@@ -305,22 +327,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       });
 
       // --- Menu Cài đặt (Gear icon) Tùy chỉnh thay thế toàn bộ mặc định ---
-      art.setting.add({
-        width: 200,
-        html: 'Tốc độ phát',
-        tooltip: '1.0x',
-        selector: [
-          { html: '0.5x', speed: 0.5 },
-          { html: 'Normal', speed: 1.0, default: true },
-          { html: '1.25x', speed: 1.25 },
-          { html: '1.5x', speed: 1.5 },
-          { html: '2.0x', speed: 2.0 },
-        ],
-        onSelect: function (item: any) {
-          art.playbackRate = item.speed;
-          return item.html;
-        }
-      });
 
       if (qualities && qualities.length > 0) {
         art.setting.add({
