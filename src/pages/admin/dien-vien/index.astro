@@ -149,7 +149,7 @@ const staticMovies = await MovieService.getMovies();
                     return;
                   }
                   if (!image) {
-                    image = 'https://img.dongmephim.online/avatars/user.jpg'; // default avatar
+                    image = '/logo-decoy.png'; // default avatar
                   }
                   
                   actorsState.unshift({ name, image });
@@ -262,7 +262,7 @@ const staticMovies = await MovieService.getMovies();
                 return;
               }
               
-              actorsState[index] = { name, image: image || 'https://img.dongmephim.online/avatars/user.jpg' };
+              actorsState[index] = { name, image: image || '/favicon.png' };
               localStorage.setItem('txa_actors', JSON.stringify(actorsState));
               
               // Reload search and render

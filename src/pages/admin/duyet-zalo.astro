@@ -340,6 +340,10 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
           <span class="text-zinc-300">🎬 Phim đã cào (Movies):</span>
           <span id="sync-movies-status" class="text-zinc-500">Chờ...</span>
         </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-300">🏷️ Thể loại phim (Genres):</span>
+          <span id="sync-genres-status" class="text-zinc-500">Chờ...</span>
+        </div>
       </div>
 
       <div class="flex flex-col gap-3">
@@ -988,6 +992,7 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
       const localZaloAccess = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
       const localZaloBypass = JSON.parse(localStorage.getItem('txa_zalo_bypass') || '[]');
       const localMovies = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+      const localGenres = JSON.parse(localStorage.getItem('txa_genres') || '[]');
 
       // Set status in progress
       document.getElementById('sync-settings-status').textContent = 'Đang đồng bộ...';
@@ -998,6 +1003,8 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
       document.getElementById('sync-whitelist-status').className = 'text-blue-400';
       document.getElementById('sync-movies-status').textContent = 'Đang đồng bộ...';
       document.getElementById('sync-movies-status').className = 'text-blue-400';
+      document.getElementById('sync-genres-status').textContent = 'Đang đồng bộ...';
+      document.getElementById('sync-genres-status').className = 'text-blue-400';
 
       try {
         // 2. Gửi request POST lên sync API
@@ -1008,7 +1015,8 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
             settings: localSettings,
             zalo_access: localZaloAccess,
             zalo_bypass: localZaloBypass,
-            movies: localMovies
+            movies: localMovies,
+            genres: localGenres
           })
         });
 
@@ -1032,6 +1040,10 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
           // Movies status
           document.getElementById('sync-movies-status').textContent = `Thành công (Đã lưu ${count.movies} mục)`;
           document.getElementById('sync-movies-status').className = 'text-emerald-400 font-bold';
+
+          // Genres status
+          document.getElementById('sync-genres-status').textContent = `Thành công (Đã lưu ${count.genres || 0} mục)`;
+          document.getElementById('sync-genres-status').className = 'text-emerald-400 font-bold';
 
           this.innerHTML = '<span class="material-symbols-outlined text-sm">done_all</span> Hoàn tất!';
           
@@ -1057,6 +1069,8 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
         document.getElementById('sync-whitelist-status').className = 'text-rose-500 font-bold';
         document.getElementById('sync-movies-status').textContent = 'Thất bại';
         document.getElementById('sync-movies-status').className = 'text-rose-500 font-bold';
+        document.getElementById('sync-genres-status').textContent = 'Thất bại';
+        document.getElementById('sync-genres-status').className = 'text-rose-500 font-bold';
 
         this.innerHTML = '<span class="material-symbols-outlined text-sm">gpp_maybe</span> Thử lại';
         this.disabled = false;

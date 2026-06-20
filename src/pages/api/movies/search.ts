@@ -11,7 +11,7 @@ export const GET: APIRoute = async ({ url, request }) => {
   try {
     const movies = await MovieService.searchMovies(query);
     // Limit to top 5-6 results for performance and UI constraints
-    const limited = movies.slice(0, 6).map(m => ({
+    const limited = movies.slice(0, 6).map((m: any) => ({
       title: m.title,
       originalTitle: m.originalTitle || '',
       slug: m.slug,

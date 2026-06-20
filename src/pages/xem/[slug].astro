@@ -7,11 +7,10 @@ import NotFound from '../../components/ui/NotFound.astro';
 
 const { slug } = Astro.params;
 
-if (!slug || slug === 'undefined' || slug === 'null') {
-  return Astro.redirect('/404');
+let movie = null;
+if (slug && slug !== 'undefined' && slug !== 'null') {
+  movie = await MovieService.getMovieBySlug(slug);
 }
-
-const movie = await MovieService.getMovieBySlug(slug);
 
 if (!movie) {
   Astro.response.status = 404;
@@ -73,7 +72,7 @@ if (movie && movie.episodes && movie.episodes.length > 0) {
     // Find target episode by slug
     let targetEpIdx = 0;
     if (epSlug) {
-      targetEpIdx = allEps.findIndex(e => e.slug === epSlug);
+      targetEpIdx = allEps.findIndex((e: any) => e.slug === epSlug);
     }
     
     if (targetEpIdx >= firstUnreleasedIdx && targetEpIdx !== -1) {
@@ -82,7 +81,7 @@ if (movie && movie.episodes && movie.episodes.length > 0) {
     }
     
     // Hide unreleased episodes from listing
-    const filteredServers = rawServers.map(server => ({
+    const filteredServers = rawServers.map((server: any) => ({
       serverName: server.serverName,
       serverData: (server.serverData || []).slice(0, firstUnreleasedIdx)
     }));
@@ -98,7 +97,7 @@ let svIdx = 0;
 if (filteredMovie && filteredMovie.episodes) {
   if (tsParam) {
     const idx = filteredMovie.episodes.findIndex(
-      s => s.serverName.toLowerCase() === tsParam.toLowerCase() || 
+      (s: any) => s.serverName.toLowerCase() === tsParam.toLowerCase() || 
            s.serverName.toLowerCase().includes(tsParam.toLowerCase())
     );
     if (idx !== -1) {

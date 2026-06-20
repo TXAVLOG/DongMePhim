@@ -7,11 +7,10 @@ import NotFound from '../../components/ui/NotFound.astro';
 
 const { slug } = Astro.params;
 
-if (!slug || slug === 'undefined' || slug === 'null') {
-  return Astro.redirect('/404');
+let movie = null;
+if (slug && slug !== 'undefined' && slug !== 'null') {
+  movie = await MovieService.getMovieBySlug(slug);
 }
-
-const movie = await MovieService.getMovieBySlug(slug);
 
 if (!movie) {
   Astro.response.status = 404;
@@ -63,7 +62,7 @@ if (movie && rawServers.length > 0) {
     nextAiringEpisode = allEps[firstUnreleasedIdx];
     
     // Slice serverData to hide unreleased episodes
-    servers = rawServers.map(server => ({
+    servers = rawServers.map((server: any) => ({
       serverName: server.serverName,
       serverData: (server.serverData || []).slice(0, firstUnreleasedIdx)
     }));
@@ -81,7 +80,7 @@ const episodesPerTab = totalEps >= 100 ? 100 : 25;
 const allMovies = await MovieService.getMovies();
 let relatedParts: Movie[] = [];
 if (movie) {
-  relatedParts = allMovies.filter(m => {
+  relatedParts = allMovies.filter((m: Movie) => {
     const normalize = (title: string) => {
       return title
         .toLowerCase()
@@ -92,7 +91,7 @@ if (movie) {
     const baseTitle = normalize(movie.title);
     const mBaseTitle = normalize(m.title);
     return baseTitle.length > 2 && mBaseTitle === baseTitle;
-  }).sort((a, b) => {
+  }).sort((a: Movie, b: Movie) => {
     return a.releaseYear - b.releaseYear || a.title.localeCompare(b.title);
   });
 }
@@ -148,7 +147,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
 
             <!-- Genres -->
             <div id="movie-genres-container" class="flex flex-wrap gap-1.5 justify-center lg:justify-start">
-              {movie.genres?.map(g => (
+              {movie.genres?.map((g: string) => (
                 <span class="bg-white/5 border border-glass-stroke text-[10px] text-on-surface-variant px-2.5 py-1 rounded-full font-medium hover:border-primary/40 hover:text-primary transition-colors cursor-pointer">{g}</span>
               ))}
             </div>
@@ -338,7 +337,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
                       <div class="space-y-4">
                         <h3 class="text-white font-title-md font-bold text-sm tracking-wider uppercase mb-3">Các bản chiếu</h3>
                         <div id="movie-servers-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {servers.map((srv, idx) => (
+                          {servers.map((srv: any, idx: number) => (
                             <div class="glass-card bg-surface-container-high/40 border border-glass-stroke rounded-2xl overflow-hidden flex transition-all duration-350 hover:border-primary/30 hover:scale-[1.01]">
                               <div class="flex-1 p-4 flex flex-col justify-between min-w-0 bg-gradient-to-r from-black/30 to-transparent">
                                 <div class="space-y-1">
@@ -366,7 +365,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-glass-stroke/40 pb-3">
                           <h3 class="text-white font-title-md font-bold text-sm tracking-wider uppercase">Danh sách tập</h3>
                           <div id="server-selector-container" class="flex flex-wrap gap-1.5">
-                            {servers.map((srv, idx) => (
+                            {servers.map((srv: any, idx: number) => (
                               <button data-server-idx={idx} class={`server-btn px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${idx === 0 ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary hover:text-primary'}`}>
                                 {srv.serverName}
                               </button>
@@ -389,7 +388,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
                         )}
 
                         <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar" id="episodes-container">
-                          {servers[0].serverData.map((ep, idx) => {
+                          {servers[0].serverData.map((ep: any, idx: number) => {
                             const tabIdx = Math.floor(idx / episodesPerTab);
                             return (
                               <a 
@@ -426,10 +425,10 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
               <!-- Tab 3: Diễn Viên -->
               <div id="tab-cast" class="detail-tab-panel hidden grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
                 {movie.actors && movie.actors.length > 0 ? (
-                  movie.actors.map(actor => (
+                  movie.actors.map((actor: string) => (
                     <div class="flex flex-col items-center text-center space-y-2">
                       <div class="w-14 h-14 rounded-full bg-surface-variant border border-glass-stroke flex items-center justify-center text-xs font-bold text-primary shadow-inner select-none">
-                        {actor.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                        {actor.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
                       </div>
                       <div>
                         <p class="text-xs font-bold text-white truncate max-w-[100px]">{actor}</p>
@@ -445,7 +444,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
               <!-- Tab 4: Đề Xuất Phim -->
               <div id="tab-related" class="detail-tab-panel hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {relatedMovies.length > 0 ? (
-                  relatedMovies.map(m => (
+                  relatedMovies.map((m: Movie) => (
                     <a href={`/phim/${m.slug}`} class="glass-card bg-surface-container/60 border border-glass-stroke rounded-xl overflow-hidden group hover:border-primary/45 transition-colors">
                       <div class="aspect-[2/3] overflow-hidden relative">
                         <img src={m.posterUrl} alt={m.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />

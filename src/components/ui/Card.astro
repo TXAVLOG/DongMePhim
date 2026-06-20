@@ -154,7 +154,7 @@ const getLangBadge = (lang?: string) => {
         if (!genres || genres.length === 0) return null;
         return (
           <div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">
-            {genres.map((genre, idx) => (
+            {genres.map((genre: string, idx: number) => (
               <>
                 <span>{genre}</span>
                 {idx < genres.length - 1 && <span class="text-zinc-600">•</span>}

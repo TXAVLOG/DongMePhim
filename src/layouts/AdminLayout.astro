@@ -93,7 +93,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
       <div class="px-4 mb-6">
         <div class="glass-panel rounded-2xl p-4 flex items-center gap-3">
           <div class="relative">
-            <img id="sidebar-avatar" alt="Admin Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-primary/20" src="https://img.dongmephim.online/avatars/user.jpg"/>
+            <img id="sidebar-avatar" alt="Admin Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-primary/20" src="/logo-decoy.png"/>
             <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-surface-deep rounded-full"></div>
           </div>
           <div class="overflow-hidden w-full">
@@ -436,7 +436,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
       // Dynamic Profile updates
       const loggedIn = localStorage.getItem('tlogged_in_as');
       if (loggedIn) {
-        let avatar = 'https://img.dongmephim.online/avatars/user.jpg';
+        let avatar = '/logo-decoy.png';
         let nameDisplay = loggedIn;
         let roleDisplay = 'Quản trị viên';
         

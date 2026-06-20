@@ -5,9 +5,9 @@ export const GET: APIRoute = async () => {
   return apiResponse({
     data: {
       id: 888,
-      name: "User Name",
-      email: "user@gmail.com",
-      avatar: "https://img.dongmephim.online/avatars/user.jpg"
+      name: "DongMePhim User",
+      email: "abc@gmail.com",
+      avatar: "/logo-decoy.png"
     }
   });
 };

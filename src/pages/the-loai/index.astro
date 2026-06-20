@@ -4,7 +4,7 @@ import { MovieService } from '../../services/MovieService';
 
 const movies = await MovieService.getMovies();
 // Extract unique genres
-const uniqueGenres = [...new Set(movies.flatMap(m => m.genres || []).filter(Boolean))] as string[];
+const uniqueGenres = [...new Set(movies.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
 
 // Simple slugify helper
 const slugify = (text: string) => {
@@ -62,7 +62,7 @@ const genreGradients = [
       {uniqueGenres.map((genre, idx) => {
         const slug = slugify(genre);
         const gradient = genreGradients[idx % genreGradients.length];
-        const genreMovies = movies.filter(m => m.genres?.includes(genre));
+        const genreMovies = movies.filter((m: any) => m.genres?.includes(genre));
         return (
           <a href={`/the-loai/${slug}`} class={`group relative overflow-hidden rounded-2xl border border-glass-stroke p-6 bg-gradient-to-br ${gradient} hover:scale-[1.03] hover:border-primary/40 transition-all duration-300 shadow-xl cursor-pointer flex flex-col justify-between h-40`}>
             <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>

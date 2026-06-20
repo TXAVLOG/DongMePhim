@@ -105,12 +105,15 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-xs font-label-caps text-outline uppercase mb-2">Thể loại</label>
-              <input type="text" id="movieCategory" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: Hành Động" />
-            </div>
-            <div>
               <label class="block text-xs font-label-caps text-outline uppercase mb-2">Quốc gia</label>
               <input type="text" id="movieCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: Nhật Bản" />
+            </div>
+            <div>
+              <label class="block text-xs font-label-caps text-outline uppercase mb-2">Thể loại</label>
+              <div id="genresCheckboxList" class="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto bg-zinc-950 border border-glass-stroke rounded-xl p-3 custom-scrollbar">
+                <!-- Rendered via JS -->
+              </div>
+              <input type="hidden" id="movieCategory" />
             </div>
           </div>
 
@@ -245,6 +248,44 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       const emptyServers = document.getElementById("emptyServers");
       const addServerBtn = document.getElementById("addServerBtn");
 
+      function renderGenresCheckboxes(selectedGenres = []) {
+        const storedGenres = localStorage.getItem('txa_genres');
+        let sysGenres = [];
+        try {
+          sysGenres = storedGenres ? JSON.parse(storedGenres) : [];
+        } catch (e) {}
+        if (sysGenres.length === 0) {
+          sysGenres = [
+            { name: "Hành động", slug: "hanh-dong" },
+            { name: "Tình cảm", slug: "tinh-cam" },
+            { name: "Kinh dị", slug: "kinh-di" },
+            { name: "Viễn tưởng", slug: "vien-tuong" },
+            { name: "Kịch tính", slug: "kich-tinh" },
+            { name: "Tâm lý", slug: "tam-ly" },
+            { name: "Hài hước", slug: "hai-huoc" },
+            { name: "Hình sự", slug: "hinh-su" },
+            { name: "Cổ trang", slug: "co-trang" },
+            { name: "Hoạt hình", slug: "hoat-hinh" },
+            { name: "Phiêu lưu", slug: "phieu-luu" }
+          ];
+        }
+
+        const container = document.getElementById("genresCheckboxList");
+        if (!container) return;
+
+        const normSelected = selectedGenres.map(g => g.trim().toLowerCase());
+
+        container.innerHTML = sysGenres.map(genre => {
+          const checked = normSelected.includes(genre.name.toLowerCase()) ? "checked" : "";
+          return `
+            <label class="flex items-center gap-2 cursor-pointer text-xs text-zinc-300 hover:text-white">
+              <input type="checkbox" name="movie-genres" value="${genre.name}" ${checked} class="accent-primary w-4 h-4 rounded border-glass-stroke bg-zinc-950 focus:ring-0 focus:outline-none" />
+              <span>${genre.name}</span>
+            </label>
+          `;
+        }).join("");
+      }
+
       // Auto-fill and Quick Import
       const quickImportBtn = document.getElementById("quickImportBtn");
       quickImportBtn.onclick = async () => {
@@ -301,7 +342,35 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
             document.getElementById("moviePosterUrl").value = poster;
             document.getElementById("movieBannerUrl").value = banner;
             document.getElementById("movieTrailerUrl").value = m.trailer_url || "";
-            document.getElementById("movieCategory").value = Array.isArray(m.category) ? m.category.map(c => c.name).join(", ") : "Khác";
+            const apiGenres = Array.isArray(m.category) ? m.category.map((c) => c.name) : ["Khác"];
+            document.getElementById("movieCategory").value = apiGenres.join(", ");
+            
+            // Automatically add new genres to the system list (txa_genres) if they don't exist
+            try {
+              const storedGenres = localStorage.getItem('txa_genres');
+              let sysGenres = storedGenres ? JSON.parse(storedGenres) : [];
+              let hasChanges = false;
+              apiGenres.forEach(gName => {
+                const normalizedGName = gName.trim();
+                if (normalizedGName && !sysGenres.some((g) => g.name.toLowerCase() === normalizedGName.toLowerCase())) {
+                  const newSlug = normalizedGName.toLowerCase()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/đ/g, "d").replace(/Đ/g, "d")
+                    .replace(/[^a-z0-9\s-]/g, "")
+                    .replace(/\s+/g, "-")
+                    .replace(/-+/g, "-");
+                  sysGenres.push({ name: normalizedGName, slug: newSlug });
+                  hasChanges = true;
+                }
+              });
+              if (hasChanges) {
+                localStorage.setItem('txa_genres', JSON.stringify(sysGenres));
+              }
+            } catch (err) {
+              console.error("Error updating crawled genres:", err);
+            }
+
+            renderGenresCheckboxes(apiGenres);
             document.getElementById("movieCountry").value = Array.isArray(m.country) && m.country.length > 0 ? m.country[0].name : "";
             document.getElementById("movieActors").value = Array.isArray(m.actor) ? m.actor.filter(Boolean).join(", ") : "";
             document.getElementById("movieDirectors").value = Array.isArray(m.director) ? m.director.filter(Boolean).join(", ") : "";
@@ -536,6 +605,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         const actorsStr = document.getElementById("movieActors").value.trim();
         const directorsStr = document.getElementById("movieDirectors").value.trim();
 
+        const checkedCheckboxes = Array.from(document.querySelectorAll('input[name="movie-genres"]:checked'));
+        const selectedGenreNames = checkedCheckboxes.map((cb) => cb.value);
+        const categoryVal = selectedGenreNames.join(", ") || "Khác";
+
         const movieDetailObj = {
           id: `local-${slug}-${Date.now()}`,
           title: title,
@@ -554,8 +627,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           quality: qualityVal,
           lang: langVal,
           imdbScore: 8.0,
-          category: document.getElementById("movieCategory").value.trim() || "Khác",
-          genres: (document.getElementById("movieCategory").value.trim() || "Khác").split(",").map(s => s.trim()).filter(Boolean),
+          category: categoryVal,
+          genres: selectedGenreNames.length > 0 ? selectedGenreNames : ["Khác"],
           actors: actorsStr ? actorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
           directors: directorsStr ? directorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
           trailerUrl: document.getElementById("movieTrailerUrl").value.trim(),
@@ -590,6 +663,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
       // Render initial empty state
       renderServers();
+      renderGenresCheckboxes([]);
     })();
   </script>
 </AdminLayout>

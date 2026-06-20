@@ -1,5 +1,8 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { MovieService } from '../../../services/MovieService';
+
+const staticMovies = await MovieService.getMovies();
 ---
 
 <AdminLayout title="Quản lý Thể loại">
@@ -9,7 +12,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       <h3 class="font-headline-lg-mobile md:text-headline-lg font-headline-lg text-primary tracking-tight">Danh sách Thể loại</h3>
       <p class="text-on-surface-variant text-body-main opacity-80">Quản lý và sắp xếp các danh mục phim trên toàn hệ thống.</p>
     </div>
-    <button class="bg-primary text-on-primary-fixed font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer">
+    <button id="addGenreBtn" class="bg-primary text-on-primary-fixed font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer border-none">
       <span class="material-symbols-outlined">add_circle</span>
       <span>Thêm thể loại</span>
     </button>
@@ -20,21 +23,21 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     <div class="glass-panel p-6 rounded-2xl">
       <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">TỔNG THỂ LOẠI</p>
       <div class="flex items-end justify-between">
-        <span class="text-3xl font-display-hero text-primary">24</span>
-        <span class="text-secondary text-xs flex items-center bg-secondary-container/10 px-2 py-1 rounded-full">+2 tháng này</span>
+        <span class="text-3xl font-display-hero text-primary" id="totalGenres">0</span>
+        <span class="text-secondary text-xs flex items-center bg-secondary-container/10 px-2 py-1 rounded-full" id="newGenresTag">+0 tháng này</span>
       </div>
     </div>
     <div class="glass-panel p-6 rounded-2xl">
       <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">PHỔ BIẾN NHẤT</p>
       <div class="flex items-end justify-between">
-        <span class="text-3xl font-display-hero text-primary">Hành động</span>
-        <span class="text-outline text-xs italic">1.2k phim</span>
+        <span class="text-lg font-bold text-primary truncate max-w-[150px]" id="popularGenre">Chưa có</span>
+        <span class="text-outline text-xs italic" id="popularGenreCount">0 phim</span>
       </div>
     </div>
     <div class="glass-panel p-6 rounded-2xl">
       <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">CHƯA CÓ PHIM</p>
       <div class="flex items-end justify-between">
-        <span class="text-3xl font-display-hero text-primary">03</span>
+        <span class="text-3xl font-display-hero text-primary" id="unusedGenres">0</span>
         <span class="text-error text-xs flex items-center bg-error-container/10 px-2 py-1 rounded-full">Cần kiểm tra</span>
       </div>
     </div>
@@ -57,158 +60,283 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Tên thể loại</th>
             <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Slug</th>
             <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider text-center">Số lượng phim</th>
-            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Trạng thái</th>
             <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider text-right">Hành động</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-glass-stroke">
-          <!-- Row 1 -->
-          <tr class="hover:bg-primary/5 transition-colors group">
-            <td class="px-6 py-4">
-              <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">1</span>
-            </td>
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
-                  <span class="material-symbols-outlined text-primary opacity-50">movie</span>
-                </div>
-                <span class="font-title-md text-sm text-on-surface">Hành động</span>
-              </div>
-            </td>
-            <td class="px-6 py-4">
-              <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">hanh-dong</code>
-            </td>
-            <td class="px-6 py-4 text-center font-bold text-on-surface">1,240</td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-container/20 text-secondary-fixed-dim">Hiển thị</span>
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">edit</span>
-                </button>
-                <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <!-- Row 2 -->
-          <tr class="hover:bg-primary/5 transition-colors group">
-            <td class="px-6 py-4">
-              <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">2</span>
-            </td>
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
-                  <span class="material-symbols-outlined text-primary opacity-50">favorite</span>
-                </div>
-                <span class="font-title-md text-sm text-on-surface">Tình cảm</span>
-              </div>
-            </td>
-            <td class="px-6 py-4">
-              <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">tinh-cam</code>
-            </td>
-            <td class="px-6 py-4 text-center font-bold text-on-surface">856</td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-container/20 text-secondary-fixed-dim">Hiển thị</span>
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">edit</span>
-                </button>
-                <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <!-- Row 3 -->
-          <tr class="hover:bg-primary/5 transition-colors group">
-            <td class="px-6 py-4">
-              <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">3</span>
-            </td>
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
-                  <span class="material-symbols-outlined text-primary opacity-50">skull</span>
-                </div>
-                <span class="font-title-md text-sm text-on-surface">Kinh dị</span>
-              </div>
-            </td>
-            <td class="px-6 py-4">
-              <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">kinh-di</code>
-            </td>
-            <td class="px-6 py-4 text-center font-bold text-on-surface">432</td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-container/20 text-secondary-fixed-dim">Hiển thị</span>
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">edit</span>
-                </button>
-                <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <!-- Row 4 -->
-          <tr class="hover:bg-primary/5 transition-colors group">
-            <td class="px-6 py-4">
-              <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">4</span>
-            </td>
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
-                  <span class="material-symbols-outlined text-primary opacity-50">rocket_launch</span>
-                </div>
-                <span class="font-title-md text-sm text-on-surface">Viễn tưởng</span>
-              </div>
-            </td>
-            <td class="px-6 py-4">
-              <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">vien-tuong</code>
-            </td>
-            <td class="px-6 py-4 text-center font-bold text-on-surface">310</td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-highest text-outline">Ẩn</span>
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">edit</span>
-                </button>
-                <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
+        <tbody class="divide-y divide-glass-stroke" id="genresTableBody">
+          <!-- Rendered via Client JavaScript -->
         </tbody>
       </table>
     </div>
     <!-- Pagination Footer -->
     <div class="px-6 py-4 border-t border-glass-stroke flex items-center justify-between bg-surface-container-low/30">
-      <p class="text-xs text-on-surface-variant">Hiển thị 1-10 của 24 thể loại</p>
-      <div class="flex items-center gap-1">
-        <button class="p-1.5 rounded-lg border border-glass-stroke text-outline disabled:opacity-30 disabled:cursor-not-allowed" disabled>
-          <span class="material-symbols-outlined text-[18px]">chevron_left</span>
-        </button>
-        <button class="w-8 h-8 rounded-lg bg-primary text-on-primary-fixed text-xs font-bold cursor-pointer">1</button>
-        <button class="w-8 h-8 rounded-lg border border-glass-stroke text-on-surface-variant hover:bg-surface-container text-xs transition-colors cursor-pointer">2</button>
-        <button class="w-8 h-8 rounded-lg border border-glass-stroke text-on-surface-variant hover:bg-surface-container text-xs transition-colors cursor-pointer">3</button>
-        <button class="p-1.5 rounded-lg border border-glass-stroke text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer">
-          <span class="material-symbols-outlined text-[18px]">chevron_right</span>
-        </button>
-      </div>
+      <p class="text-xs text-on-surface-variant" id="paginationText">Hiển thị 0 thể loại</p>
     </div>
   </div>
 
-  <!-- Drag & Drop Help Tip -->
+  <!-- Help Tip -->
   <div class="mt-6 mb-10 flex items-center gap-3 p-4 bg-surface-container-low rounded-xl border border-glass-stroke w-fit">
     <span class="material-symbols-outlined text-secondary">info</span>
-    <p class="text-sm text-on-surface-variant">Bạn có thể thay đổi thứ tự hiển thị bằng cách kéo thả các hàng trong danh sách.</p>
+    <p class="text-sm text-on-surface-variant">Bất cứ thay đổi nào ở đây sẽ được đồng bộ lên Cloud khi bạn bấm "Xác nhận đồng bộ" trong trang Duyệt Zalo.</p>
   </div>
+
+  <script is:inline define:vars={{ staticMovies }}>
+    (function() {
+      const defaultGenres = [
+        { name: "Hành động", slug: "hanh-dong" },
+        { name: "Tình cảm", slug: "tinh-cam" },
+        { name: "Kinh dị", slug: "kinh-di" },
+        { name: "Viễn tưởng", slug: "vien-tuong" },
+        { name: "Kịch tính", slug: "kich-tinh" },
+        { name: "Tâm lý", slug: "tam-ly" },
+        { name: "Hài hước", slug: "hai-huoc" },
+        { name: "Hình sự", slug: "hinh-su" },
+        { name: "Cổ trang", slug: "co-trang" },
+        { name: "Hoạt hình", slug: "hoat-hinh" },
+        { name: "Phiêu lưu", slug: "phieu-luu" },
+        { name: "Học đường", slug: "hoc-duong" },
+        { name: "Tội phạm", slug: "toi-pham" },
+        { name: "Giật gân", slug: "giat-gan" },
+        { name: "Đời thường", slug: "doi-thuong" },
+        { name: "Bí ẩn", slug: "bi-an" },
+        { name: "Y học", slug: "y-hoc" },
+        { name: "Đô thị", slug: "do-thi" },
+        { name: "Thương trường", slug: "thuong-truong" },
+        { name: "Giải cứu", slug: "giai-cuu" },
+        { name: "Trinh thám", slug: "trinh-tham" },
+        { name: "Pháp y", slug: "phap-y" },
+        { name: "Gia đấu", slug: "gia-dau" }
+      ];
+
+      let genres = [];
+      let allMovies = [];
+
+      function loadData() {
+        // Load genres
+        const storedGenres = localStorage.getItem('txa_genres');
+        if (storedGenres) {
+          try {
+            genres = JSON.parse(storedGenres);
+          } catch (e) {
+            genres = [...defaultGenres];
+          }
+        } else {
+          genres = [...defaultGenres];
+          localStorage.setItem('txa_genres', JSON.stringify(genres));
+        }
+
+        // Load movies to count
+        const crawledMoviesRaw = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+        const crawledMovies = crawledMoviesRaw.map(item => item.movie || item);
+        allMovies = [...(staticMovies || []), ...crawledMovies];
+
+        renderTable();
+        updateStats();
+      }
+
+      function countMoviesInGenre(genreName) {
+        return allMovies.filter(m => 
+          (m.category && m.category.toLowerCase().includes(genreName.toLowerCase())) ||
+          (Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase() === genreName.toLowerCase()))
+        ).length;
+      }
+
+      function renderTable() {
+        const tbody = document.getElementById('genresTableBody');
+        if (!tbody) return;
+
+        if (genres.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="px-6 py-8 text-center text-on-surface-variant opacity-60">
+                Chưa có thể loại nào. Bấm "Thêm thể loại" để tạo mới.
+              </td>
+            </tr>
+          `;
+          document.getElementById('paginationText').textContent = "Hiển thị 0 thể loại";
+          return;
+        }
+
+        tbody.innerHTML = genres.map((genre, index) => {
+          const movieCount = countMoviesInGenre(genre.name);
+          return `
+            <tr class="hover:bg-primary/5 transition-colors group">
+              <td class="px-6 py-4">
+                <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">${index + 1}</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary opacity-50">movie</span>
+                  </div>
+                  <span class="font-title-md text-sm text-on-surface font-semibold">${genre.name}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">${genre.slug}</code>
+              </td>
+              <td class="px-6 py-4 text-center font-bold text-on-surface">${movieCount}</td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer border-none bg-transparent" onclick="editGenre('${genre.slug}')">
+                    <span class="material-symbols-outlined text-[20px]">edit</span>
+                  </button>
+                  <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer border-none bg-transparent" onclick="deleteGenre('${genre.slug}')">
+                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('paginationText').textContent = `Hiển thị ${genres.length} thể loại`;
+      }
+
+      function updateStats() {
+        document.getElementById('totalGenres').textContent = genres.length;
+        
+        let popular = "Chưa có";
+        let maxCount = -1;
+        let unusedCount = 0;
+
+        genres.forEach(g => {
+          const count = countMoviesInGenre(g.name);
+          if (count > maxCount) {
+            maxCount = count;
+            popular = g.name;
+          }
+          if (count === 0) {
+            unusedCount++;
+          }
+        });
+
+        document.getElementById('popularGenre').textContent = popular;
+        document.getElementById('popularGenreCount').textContent = `${maxCount >= 0 ? maxCount : 0} phim`;
+        document.getElementById('unusedGenres').textContent = unusedCount;
+      }
+
+      // Add Genre Handler
+      const addGenreBtn = document.getElementById('addGenreBtn');
+      if (addGenreBtn) {
+        addGenreBtn.onclick = () => {
+          if (!window.txamodal) return;
+          window.txamodal.show({
+            title: "Thêm Thể loại Mới",
+            content: `
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-label-caps text-outline uppercase mb-2">Tên thể loại</label>
+                  <input type="text" id="modal-genre-name" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl text-white py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="Ví dụ: Học đường" required />
+                </div>
+                <div>
+                  <label class="block text-xs font-label-caps text-outline uppercase mb-2">Slug (để trống tự tạo)</label>
+                  <input type="text" id="modal-genre-slug" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl text-white py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm" placeholder="Ví dụ: hoc-duong" />
+                </div>
+              </div>
+            `,
+            confirmText: "Thêm thể loại",
+            cancelText: "Hủy",
+            onConfirm: () => {
+              const name = document.getElementById('modal-genre-name')?.value.trim();
+              let slug = document.getElementById('modal-genre-slug')?.value.trim();
+              if (!name) {
+                if (window.showGlobalToast) window.showGlobalToast("Tên thể loại không được bỏ trống!", "error");
+                return;
+              }
+              if (!slug) {
+                slug = name.toLowerCase()
+                  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                  .replace(/đ/g, "d").replace(/Đ/g, "d")
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .replace(/\s+/g, "-")
+                  .replace(/-+/g, "-");
+              }
+
+              if (genres.some(g => g.slug === slug || g.name.toLowerCase() === name.toLowerCase())) {
+                if (window.showGlobalToast) window.showGlobalToast("Thể loại này đã tồn tại!", "error");
+                return;
+              }
+
+              genres.push({ name, slug });
+              localStorage.setItem('txa_genres', JSON.stringify(genres));
+              loadData();
+
+              if (window.showGlobalToast) window.showGlobalToast(`Đã thêm thể loại ${name} thành công!`, "success");
+            }
+          });
+        };
+      }
+
+      // Edit Genre
+      window.editGenre = (slug) => {
+        const genre = genres.find(g => g.slug === slug);
+        if (!genre || !window.txamodal) return;
+
+        window.txamodal.show({
+          title: "Chỉnh sửa Thể loại",
+          content: `
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-label-caps text-outline uppercase mb-2">Tên thể loại</label>
+                <input type="text" id="modal-genre-name" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl text-white py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm" value="${genre.name}" required />
+              </div>
+              <div>
+                <label class="block text-xs font-label-caps text-outline uppercase mb-2">Slug</label>
+                <input type="text" id="modal-genre-slug" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl text-white py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm" value="${genre.slug}" required />
+              </div>
+            </div>
+          `,
+          confirmText: "Lưu thay đổi",
+          cancelText: "Hủy",
+          onConfirm: () => {
+            const name = document.getElementById('modal-genre-name')?.value.trim();
+            const newSlug = document.getElementById('modal-genre-slug')?.value.trim();
+            
+            if (!name || !newSlug) {
+              if (window.showGlobalToast) window.showGlobalToast("Các trường không được bỏ trống!", "error");
+              return;
+            }
+
+            if (genres.some(g => g.slug === newSlug && g.slug !== slug)) {
+              if (window.showGlobalToast) window.showGlobalToast("Slug này đã tồn tại!", "error");
+              return;
+            }
+
+            genre.name = name;
+            genre.slug = newSlug;
+            localStorage.setItem('txa_genres', JSON.stringify(genres));
+            loadData();
+
+            if (window.showGlobalToast) window.showGlobalToast("Cập nhật thể loại thành công!", "success");
+          }
+        });
+      };
+
+      // Delete Genre
+      window.deleteGenre = (slug) => {
+        const genre = genres.find(g => g.slug === slug);
+        if (!genre || !window.txamodal) return;
+
+        window.txamodal.show({
+          title: "Xóa Thể loại",
+          message: `Bạn có chắc chắn muốn xóa thể loại "<strong>${genre.name}</strong>"? Hành động này sẽ không ảnh hưởng trực tiếp đến phim, nhưng nhãn thể loại này sẽ biến mất khỏi bộ lọc.`,
+          type: "danger",
+          confirmText: "Xóa",
+          cancelText: "Hủy",
+          onConfirm: () => {
+            genres = genres.filter(g => g.slug !== slug);
+            localStorage.setItem('txa_genres', JSON.stringify(genres));
+            loadData();
+
+            if (window.showGlobalToast) window.showGlobalToast("Đã xóa thể loại thành công!", "success");
+          }
+        });
+      };
+
+      // Bind events and boot
+      loadData();
+      document.addEventListener('astro:page-load', loadData);
+    })();
+  </script>
 </AdminLayout>

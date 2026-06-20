@@ -104,12 +104,15 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-xs font-label-caps text-outline uppercase mb-2">Thể loại</label>
-              <input type="text" id="movieCategory" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: Hành Động" />
-            </div>
-            <div>
               <label class="block text-xs font-label-caps text-outline uppercase mb-2">Quốc gia</label>
               <input type="text" id="movieCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: Nhật Bản" />
+            </div>
+            <div>
+              <label class="block text-xs font-label-caps text-outline uppercase mb-2">Thể loại</label>
+              <div id="genresCheckboxList" class="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto bg-zinc-950 border border-glass-stroke rounded-xl p-3 custom-scrollbar">
+                <!-- Rendered via JS -->
+              </div>
+              <input type="hidden" id="movieCategory" />
             </div>
           </div>
 
@@ -252,6 +255,44 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       const apiSyncCard = document.getElementById("apiSyncCard");
       const btnApiSync = document.getElementById("btn-api-sync");
 
+      function renderGenresCheckboxes(selectedGenres = []) {
+        const storedGenres = localStorage.getItem('txa_genres');
+        let sysGenres = [];
+        try {
+          sysGenres = storedGenres ? JSON.parse(storedGenres) : [];
+        } catch (e) {}
+        if (sysGenres.length === 0) {
+          sysGenres = [
+            { name: "Hành động", slug: "hanh-dong" },
+            { name: "Tình cảm", slug: "tinh-cam" },
+            { name: "Kinh dị", slug: "kinh-di" },
+            { name: "Viễn tưởng", slug: "vien-tuong" },
+            { name: "Kịch tính", slug: "kich-tinh" },
+            { name: "Tâm lý", slug: "tam-ly" },
+            { name: "Hài hước", slug: "hai-huoc" },
+            { name: "Hình sự", slug: "hinh-su" },
+            { name: "Cổ trang", slug: "co-trang" },
+            { name: "Hoạt hình", slug: "hoat-hinh" },
+            { name: "Phiêu lưu", slug: "phieu-luu" }
+          ];
+        }
+
+        const container = document.getElementById("genresCheckboxList");
+        if (!container) return;
+
+        const normSelected = selectedGenres.map(g => g.trim().toLowerCase());
+
+        container.innerHTML = sysGenres.map(genre => {
+          const checked = normSelected.includes(genre.name.toLowerCase()) ? "checked" : "";
+          return `
+            <label class="flex items-center gap-2 cursor-pointer text-xs text-zinc-300 hover:text-white">
+              <input type="checkbox" name="movie-genres" value="${genre.name}" ${checked} class="accent-primary w-4 h-4 rounded border-glass-stroke bg-zinc-950 focus:ring-0 focus:outline-none" />
+              <span>${genre.name}</span>
+            </label>
+          `;
+        }).join("");
+      }
+
       // Check query params and bootstrap edit data
       async function checkURLMode() {
         const params = new URLSearchParams(window.location.search);
@@ -348,6 +389,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           document.getElementById("movieBannerUrl").value = movieData.movie.thumb_url;
           document.getElementById("movieTrailerUrl").value = movieData.movie.trailer_url;
           document.getElementById("movieCategory").value = movieData.movie.category;
+          const selectedGenres = m.genres || (m.category ? m.category.split(",").map(s => s.trim()) : []);
+          renderGenresCheckboxes(selectedGenres);
           document.getElementById("movieCountry").value = movieData.movie.country;
           document.getElementById("movieActors").value = movieData.movie.actor.join(", ");
           document.getElementById("movieDirectors").value = movieData.movie.director.join(", ");
@@ -392,6 +435,9 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
             document.getElementById("movieEpTotal").value = data.movie.episode_total || "";
             document.getElementById("movieYear").value = data.movie.year || 2026;
             document.getElementById("movieTime").value = data.movie.time || "";
+
+            const apiGenres = Array.isArray(data.movie.category) ? data.movie.category.map((c) => c.name) : [];
+            renderGenresCheckboxes(apiGenres);
 
             movieData.episodes = data.episodes.map(server => {
               const srvData = server.server_data || [];
@@ -687,6 +733,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           const actorsStr = document.getElementById("movieActors").value.trim();
           const directorsStr = document.getElementById("movieDirectors").value.trim();
 
+          const checkedCheckboxes = Array.from(document.querySelectorAll('input[name="movie-genres"]:checked'));
+          const selectedGenreNames = checkedCheckboxes.map((cb) => cb.value);
+          const categoryVal = selectedGenreNames.join(", ") || "Khác";
+
           const movieDetailObj = {
             id: `local-${slug}`,
             title: title,
@@ -705,8 +755,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
             quality: qualityVal,
             lang: langVal,
             imdbScore: 8.0,
-            category: document.getElementById("movieCategory").value.trim() || "Khác",
-            genres: (document.getElementById("movieCategory").value.trim() || "Khác").split(",").map(s => s.trim()).filter(Boolean),
+            category: categoryVal,
+            genres: selectedGenreNames.length > 0 ? selectedGenreNames : ["Khác"],
             actors: actorsStr ? actorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
             directors: directorsStr ? directorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
             trailerUrl: document.getElementById("movieTrailerUrl").value.trim(),

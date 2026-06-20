@@ -965,6 +965,33 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             const movieDetailObj = mapKKPhimToMovieDetail(detailData);
             movieDetailObj.updatedAt = new Date().toISOString();
             
+            // Automatically add new genres to the system list (txa_genres) if they don't exist
+            if (Array.isArray(movieDetailObj.genres)) {
+              try {
+                const storedGenres = localStorage.getItem('txa_genres');
+                let sysGenres = storedGenres ? JSON.parse(storedGenres) : [];
+                let hasChanges = false;
+                movieDetailObj.genres.forEach(gName => {
+                  const normalizedGName = gName.trim();
+                  if (normalizedGName && !sysGenres.some(g => g.name.toLowerCase() === normalizedGName.toLowerCase())) {
+                    const newSlug = normalizedGName.toLowerCase()
+                      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                      .replace(/đ/g, "d").replace(/Đ/g, "d")
+                      .replace(/[^a-z0-9\s-]/g, "")
+                      .replace(/\s+/g, "-")
+                      .replace(/-+/g, "-");
+                    sysGenres.push({ name: normalizedGName, slug: newSlug });
+                    hasChanges = true;
+                  }
+                });
+                if (hasChanges) {
+                  localStorage.setItem('txa_genres', JSON.stringify(sysGenres));
+                }
+              } catch (err) {
+                console.error("Error updating crawled genres:", err);
+              }
+            }
+            
             // Overwrite details or push new
             let freshListStr = localStorage.getItem('txa_crawled_movies') || '[]';
             let freshList = [];

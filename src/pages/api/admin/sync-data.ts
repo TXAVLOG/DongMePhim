@@ -9,8 +9,8 @@ export const POST: APIRoute = async ({ request }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { settings, zalo_access, zalo_bypass, movies } = body;
-    let syncCount = { settings: 0, zalo_access: 0, zalo_bypass: 0, movies: 0 };
+    const { settings, zalo_access, zalo_bypass, movies, genres } = body;
+    let syncCount = { settings: 0, zalo_access: 0, zalo_bypass: 0, movies: 0, genres: 0 };
 
     // 1. Đồng bộ Settings
     if (settings && typeof settings === 'object') {
@@ -113,6 +113,30 @@ export const POST: APIRoute = async ({ request }) => {
           syncCount.movies++;
         } else {
           console.error(`Sync error on movie slug ${m.slug}:`, error);
+        }
+      }
+    }
+
+    // 5. Đồng bộ Thể loại (Genres)
+    if (genres && Array.isArray(genres)) {
+      for (const g of genres) {
+        const { error } = await supabase
+          .from('genres')
+          .upsert({
+            name: g.name,
+            slug: g.slug || g.name.toLowerCase()
+              .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+              .replace(/đ/g, "d").replace(/Đ/g, "d")
+              .replace(/[^a-z0-9\s-]/g, "")
+              .replace(/\s+/g, "-")
+              .replace(/-+/g, "-"),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'slug' });
+        
+        if (!error) {
+          syncCount.genres++;
+        } else {
+          console.error(`Sync error on genre slug ${g.slug || g.name}:`, error);
         }
       }
     }

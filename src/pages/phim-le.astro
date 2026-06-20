@@ -102,7 +102,7 @@ const movies = await MovieService.getMovies({ type: 'movie' });
 
     <!-- Movie Grid -->
     <div id="movie-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-      {movies.map((movie) => (
+      {movies.map((movie: any) => (
         <Card 
           title={movie.title}
           slug={movie.slug}

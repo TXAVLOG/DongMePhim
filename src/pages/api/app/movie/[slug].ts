@@ -70,7 +70,7 @@ export const GET: APIRoute = async ({ params, cookies }) => {
     }
 
     if (firstUnreleasedIdx !== -1) {
-      filteredServers = filteredServers.map(server => ({
+      filteredServers = filteredServers.map((server: any) => ({
         serverName: server.serverName,
         serverData: (server.serverData || []).slice(0, firstUnreleasedIdx)
       }));
@@ -99,13 +99,13 @@ export const GET: APIRoute = async ({ params, cookies }) => {
       status: movie.status,
       broadcast_at: movie.broadcastSchedule?.notice || "",
       is_favorite: false,
-      categories: movie.genres?.map(g => ({ name: g })) || (movie.category ? [{ name: movie.category }] : []),
-      actors: movie.actors?.map(a => ({ name: a, role: "" })) || []
+      categories: movie.genres?.map((g: string) => ({ name: g })) || (movie.category ? [{ name: movie.category }] : []),
+      actors: movie.actors?.map((a: string) => ({ name: a, role: "" })) || []
     },
     history: historyData,
-    servers: filteredServers.map(srv => ({
+    servers: filteredServers.map((srv: any) => ({
       server_name: srv.serverName,
-      server_data: srv.serverData.map(ep => {
+      server_data: srv.serverData.map((ep: any) => {
         // Build intro/outro skip markers
         const intro = (ep.timeIntroStart !== undefined || ep.timeIntroEnd !== undefined)
           ? [ep.timeIntroStart || 0, ep.timeIntroEnd || 0]
@@ -115,7 +115,7 @@ export const GET: APIRoute = async ({ params, cookies }) => {
           : [];
 
         // Build subtitles list
-        const subtitles = (ep.subtitles || []).map(sub => ({
+        const subtitles = (ep.subtitles || []).map((sub: any) => ({
           label: sub.label,
           lang: sub.label?.includes("Việt") ? "vi" : "en",
           file: sub.file
@@ -137,7 +137,7 @@ export const GET: APIRoute = async ({ params, cookies }) => {
         };
       })
     })),
-    related: relatedMovies.map(m => ({
+    related: relatedMovies.map((m: any) => ({
       id: cleanId(m.id),
       name: m.title,
       slug: m.slug,
