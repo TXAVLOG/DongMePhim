@@ -64,7 +64,7 @@ const staticMovies = await MovieService.getMovies();
         <div class="w-12 h-12 rounded-2xl bg-tertiary/10 flex items-center justify-center text-tertiary">
           <span class="material-symbols-outlined">group_add</span>
         </div>
-        <p class="font-label-caps text-xs text-text-dim uppercase tracking-wider">Thành viên mới</p>
+        <p class="font-label-caps text-xs text-text-dim uppercase tracking-wider">Tổng thành viên</p>
       </div>
       <div class="flex items-end justify-between">
         <h3 id="stat-members" class="text-3xl font-display-hero">1,244</h3>
@@ -208,11 +208,28 @@ const staticMovies = await MovieService.getMovies();
           }).filter(m => m.slug && m.slug !== 'undefined' && m.slug !== 'null');
           const regUsers = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
           
-          const totalMovies = staticMovies.length + crawledList.length;
+          // 1. Movies Stats
+          const baseMoviesCount = 42800;
+          const totalMovies = baseMoviesCount + staticMovies.length + crawledList.length;
           
+          const moviesThisWeek = crawledList.filter(m => {
+            const d = new Date(m.updatedAt || now);
+            return (now - d) < 7 * 24 * 60 * 60 * 1000;
+          }).length;
+          const moviesLastWeek = crawledList.filter(m => {
+            const d = new Date(m.updatedAt || now);
+            const diff = now - d;
+            return diff >= 7 * 24 * 60 * 60 * 1000 && diff < 14 * 24 * 60 * 60 * 1000;
+          }).length;
+          
+          const simulatedMoviesThisWeek = 450 + moviesThisWeek;
+          const simulatedMoviesLastWeek = 400 + moviesLastWeek;
+          const moviesGrowthPct = ((simulatedMoviesThisWeek - simulatedMoviesLastWeek) / simulatedMoviesLastWeek) * 100;
+
+          // 2. Views Stats
           const staticViewsSum = staticMovies.reduce((acc, m) => acc + (m.views || 0), 0);
           const crawledViewsSum = crawledList.reduce((acc, m) => acc + (m.views || 2500), 0);
-          const totalViews = (staticViewsSum + crawledViewsSum) * 12;
+          const totalViews = (staticViewsSum + crawledViewsSum) * 12 + historyList.length * 150;
           
           let formattedViews = totalViews >= 1000000 
             ? (totalViews / 1000000).toFixed(1) + 'M' 
@@ -220,8 +237,38 @@ const staticMovies = await MovieService.getMovies();
               ? (totalViews / 1000).toFixed(1) + 'K' 
               : totalViews;
 
+          const viewsThisWeek = historyList.filter(h => {
+            const d = new Date(h.updatedAt);
+            return (now - d) < 7 * 24 * 60 * 60 * 1000;
+          }).length;
+          const viewsLastWeek = historyList.filter(h => {
+            const d = new Date(h.updatedAt);
+            const diff = now - d;
+            return diff >= 7 * 24 * 60 * 60 * 1000 && diff < 14 * 24 * 60 * 60 * 1000;
+          }).length;
+
+          const simulatedViewsThisWeek = 11400 + viewsThisWeek * 50;
+          const simulatedViewsLastWeek = 10800 + viewsLastWeek * 50;
+          const viewsGrowthPct = ((simulatedViewsThisWeek - simulatedViewsLastWeek) / simulatedViewsLastWeek) * 100;
+
+          // 3. Members Stats
           const membersCount = 1240 + regUsers.length;
           
+          const membersThisWeek = regUsers.filter(u => {
+            const d = new Date(u.createdAt);
+            return (now - d) < 7 * 24 * 60 * 60 * 1000;
+          }).length;
+          const membersLastWeek = regUsers.filter(u => {
+            const d = new Date(u.createdAt);
+            const diff = now - d;
+            return diff >= 7 * 24 * 60 * 60 * 1000 && diff < 14 * 24 * 60 * 60 * 1000;
+          }).length;
+
+          const simulatedMembersThisWeek = 12 + membersThisWeek;
+          const simulatedMembersLastWeek = 11 + membersLastWeek;
+          const membersGrowthPct = ((simulatedMembersThisWeek - simulatedMembersLastWeek) / simulatedMembersLastWeek) * 100;
+
+          // 4. Broken Movies Stats
           let brokenMoviesCount = 0;
           crawledList.forEach(m => {
             if (!m.posterUrl || m.posterUrl.trim() === '' || m.posterUrl.includes('error')) {
@@ -237,6 +284,9 @@ const staticMovies = await MovieService.getMovies();
           });
           if (brokenMoviesCount === 0) brokenMoviesCount = 2; // base static broken items
 
+          const baselineBroken = 10;
+          const brokenGrowthPct = ((brokenMoviesCount - baselineBroken) / baselineBroken) * 100;
+
           // Update DOM values
           const viewsH3 = document.getElementById('stat-views');
           if (viewsH3) viewsH3.textContent = formattedViews;
@@ -250,13 +300,50 @@ const staticMovies = await MovieService.getMovies();
           const brokenH3 = document.getElementById('stat-broken');
           if (brokenH3) brokenH3.textContent = brokenMoviesCount;
 
+          // Update growth badges with dynamic percentage & styling
+          const viewsGrowth = document.getElementById('stat-views-growth');
+          if (viewsGrowth) {
+            const prefix = viewsGrowthPct >= 0 ? '+' : '';
+            viewsGrowth.textContent = `${prefix}${viewsGrowthPct.toFixed(1)}%`;
+            if (viewsGrowthPct >= 0) {
+              viewsGrowth.className = "text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-full";
+            } else {
+              viewsGrowth.className = "text-error text-xs font-bold bg-error/10 px-2 py-1 rounded-full";
+            }
+          }
+
           const moviesGrowth = document.getElementById('stat-movies-growth');
           if (moviesGrowth) {
-            moviesGrowth.textContent = `+${crawledList.length} Crawled`;
+            const prefix = moviesGrowthPct >= 0 ? '+' : '';
+            moviesGrowth.textContent = `${prefix}${moviesGrowthPct.toFixed(1)}%`;
+            if (moviesGrowthPct >= 0) {
+              moviesGrowth.className = "text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-full";
+            } else {
+              moviesGrowth.className = "text-error text-xs font-bold bg-error/10 px-2 py-1 rounded-full";
+            }
           }
+
           const membersGrowth = document.getElementById('stat-members-growth');
           if (membersGrowth) {
-            membersGrowth.textContent = `+${regUsers.length} Mới`;
+            const prefix = membersGrowthPct >= 0 ? '+' : '';
+            membersGrowth.textContent = `${prefix}${membersGrowthPct.toFixed(1)}%`;
+            if (membersGrowthPct >= 0) {
+              membersGrowth.className = "text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-full";
+            } else {
+              membersGrowth.className = "text-error text-xs font-bold bg-error/10 px-2 py-1 rounded-full";
+            }
+          }
+
+          const brokenGrowth = document.getElementById('stat-broken-growth');
+          if (brokenGrowth) {
+            const prefix = brokenGrowthPct >= 0 ? '+' : '';
+            brokenGrowth.textContent = `${prefix}${brokenGrowthPct.toFixed(1)}%`;
+            // Broken movies going down is a good thing (green), going up is a bad thing (red)
+            if (brokenGrowthPct <= 0) {
+              brokenGrowth.className = "text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-full";
+            } else {
+              brokenGrowth.className = "text-error text-xs font-bold bg-error/10 px-2 py-1 rounded-full";
+            }
           }
 
           // Populate Recent Movies Table

@@ -229,7 +229,7 @@ const staticMovies = await MovieService.getMovies();
               const clean = String(val).replace(/^[tT]ập\s+/, '').trim();
               if (clean.toLowerCase() === 'full') return 'Full';
               const parsed = parseInt(clean, 10);
-              return !isNaN(parsed) ? (parsed < 10 ? `0${parsed}` : `${parsed}`) : clean;
+              return !isNaN(parsed) && String(parsed) === clean ? (parsed < 10 ? `0${parsed}` : `${parsed}`) : clean;
             };
 
             let statusText = '';
@@ -240,8 +240,16 @@ const staticMovies = await MovieService.getMovies();
             } else {
               const xx = format2Digits(m.episodeCurrent);
               const yy = format2Digits(m.episodeTotal);
-              statusText = `Tập ${xx}/${yy}`;
-              if (m.status === 'completed') {
+              
+              if (xx.toLowerCase() === 'full' || xx.toLowerCase() === 'hoàn tất') {
+                statusText = 'Hoàn tất';
+              } else if (xx.includes('/') || xx.toLowerCase().includes('hoàn tất') || xx.toLowerCase().includes('full')) {
+                statusText = xx.startsWith('Tập') || xx.startsWith('tập') ? xx : `Tập ${xx}`;
+              } else {
+                statusText = `Tập ${xx}/${yy}`;
+              }
+              
+              if (m.status === 'completed' || xx.toLowerCase().includes('hoàn tất') || xx.toLowerCase() === 'full') {
                 statusBg = 'bg-emerald-500';
               }
             }

@@ -83,7 +83,7 @@ const isActive = (path: string) => {
     {useTransition && <ClientRouter />}
     <script define:vars={{ 
       apiEncryptEnable: settings.general?.api_encrypt_enable ?? false, 
-      apiEncryptPass: settings.general?.api_encrypt_pass || 'tphimx-mobile-2026-secure'
+      apiEncryptPass: settings.general?.api_encrypt_pass || 'tphimx'
     }}>
       window.TXA_API_CONFIG = {
         encryptEnable: apiEncryptEnable,
@@ -147,7 +147,7 @@ const isActive = (path: string) => {
       // Read configuration from localStorage or server fallback
       function getTxaApiConfig() {
         let enable = false;
-        let pass = 'tphimx-mobile-2026-secure';
+        let pass = 'tphimx';
         if (typeof localStorage !== 'undefined') {
           try {
             const stored = localStorage.getItem('txa_site_settings');
@@ -396,13 +396,16 @@ const isActive = (path: string) => {
       zaloGroupUrl
     })} />
     <script is:inline>
-      (function() {
+      function checkTxaGate() {
         const configEl = document.getElementById('txa-gate-config');
         if (!configEl) return;
         const config = JSON.parse(configEl.textContent);
         const decoyEnable = config.decoyEnable;
         const zaloLockEnable = config.zaloLockEnable;
         
+        // Clear old classes before applying new one to avoid conflicts
+        document.documentElement.classList.remove('gate-passed', 'gate-decoy', 'gate-zalo');
+
         if (decoyEnable === false) {
           document.documentElement.classList.add('gate-passed');
           return;
@@ -450,7 +453,11 @@ const isActive = (path: string) => {
         } else {
           document.documentElement.classList.add('gate-zalo');
         }
-      })();
+      }
+
+      checkTxaGate();
+      document.addEventListener('astro:after-swap', checkTxaGate);
+      document.addEventListener('astro:page-load', checkTxaGate);
     </script>
 
     <!-- Google Fonts -->

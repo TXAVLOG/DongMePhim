@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArtPlayer } from './ArtPlayer';
 import type { MovieDetail, Episode } from '../../types/movie';
+import { TxaModal } from '../ui/txamodal';
+import { supabase } from '../../lib/supabase';
 
 const formatLocalAirDateTime = (dateStr?: string, timeStr?: string) => {
   if (!dateStr) return { date: '', time: '', text: '' };
@@ -534,7 +536,7 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
     localStorage.setItem(`tcomments_${movieSlug}`, JSON.stringify(updated));
   };
 
-  const handlePostComment = (e: React.FormEvent) => {
+  const handlePostComment = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
@@ -775,12 +777,69 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   isUnreleased = false,
   unreleasedEpisode = null,
   nextAiringEpisode = null,
-  siteName = 'DongMePhim',
-  siteUrl = 'https://dongmephim.com'
+  siteName = '',
+  siteUrl = ''
 }) => {
   const [movie, setMovie] = useState<MovieDetail>(initialMovie);
   const servers = movie.episodes || [];
   
+  const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
+  const [reportReason, setReportReason] = useState<string>('Không load được video');
+  const [customReason, setCustomReason] = useState<string>('');
+  const [isReporting, setIsReporting] = useState<boolean>(false);
+
+  const handleReportSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsReporting(true);
+
+    const reasonSelected = reportReason === 'Khác' ? customReason.trim() : reportReason;
+    if (reportReason === 'Khác' && customReason.trim().length < 5) {
+      if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+        (window as any).showGlobalToast('Gửi báo cáo thất bại: Lý do báo lỗi quá ngắn (tối thiểu 5 ký tự)!', 'error');
+      }
+      setIsReporting(false);
+      return;
+    }
+
+    try {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        throw new Error('Không có kết nối mạng. Vui lòng kiểm tra lại đường truyền internet!');
+      }
+
+      const loggedInUser = (typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null) || 'Ẩn danh';
+      
+      const { error } = await supabase
+        .from('txa_error_reports')
+        .insert({
+          movie_title: movie.title,
+          movie_slug: movie.slug,
+          episode_name: currentEpisode?.name || 'Tập 1',
+          episode_slug: currentEpisode?.slug || 'tap-1',
+          server_name: currentServer?.serverName || 'Server VIP',
+          reason: reasonSelected,
+          user_username: loggedInUser,
+          status: 'pending'
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+        (window as any).showGlobalToast('Gửi báo cáo lỗi thành công! Cảm ơn bạn.', 'success');
+      }
+      setIsReportModalOpen(false);
+      setCustomReason('');
+      setReportReason('Không load được video');
+    } catch (err: any) {
+      if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+        (window as any).showGlobalToast(`Gửi báo cáo thất bại: ${err.message || 'Lỗi cơ sở dữ liệu'}`, 'error');
+      }
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   const [serverIndex, setServerIndex] = useState<number>(() => {
     if (initialServerIndex >= 0 && initialServerIndex < servers.length) {
       return initialServerIndex;
@@ -1249,8 +1308,15 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 )}
               </div>
               
-              <h1 className="font-display-hero text-2xl sm:text-3xl text-white font-bold leading-tight">
-                {movie.title} <span className="text-on-surface-variant text-lg sm:text-xl font-light">({currentEpisode?.name || 'Tập 1'})</span>
+              <h1 className="font-display-hero text-2xl sm:text-3xl text-white font-bold leading-tight flex flex-wrap items-center gap-3">
+                <span>{movie.title} <span className="text-on-surface-variant text-lg sm:text-xl font-light">({currentEpisode?.name || 'Tập 1'})</span></span>
+                <button 
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500/50 text-rose-400 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <span className="material-symbols-outlined text-xs">report_problem</span>
+                  Báo lỗi
+                </button>
               </h1>
               
               {movie.originalTitle && (
@@ -1444,6 +1510,88 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         </div>
 
       </div>
+      {/* Report Error Modal */}
+      <TxaModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => {
+          if (!isReporting) {
+            setIsReportModalOpen(false);
+            setCustomReason('');
+          }
+        }} 
+        title="Báo Cáo Lỗi Tập Phim"
+      >
+        <form onSubmit={handleReportSubmit} className="space-y-4">
+          <div className="space-y-1.5 text-left">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Thông tin lỗi</label>
+            <div className="text-xs text-zinc-300 bg-zinc-900/50 border border-glass-stroke/50 p-3 rounded-xl space-y-1 leading-relaxed">
+              <div>Phim: <span className="text-white font-bold">{movie.title}</span></div>
+              <div>Tập: <span className="text-white font-bold">{currentEpisode?.name || 'Tập 1'}</span></div>
+              <div>Nguồn: <span className="text-white font-bold">{currentServer?.serverName || 'Server VIP'}</span></div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5 text-left">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Lý do báo lỗi</label>
+            <select 
+              value={reportReason} 
+              onChange={(e) => setReportReason(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+            >
+              <option value="Không load được video">Không load được video (Đứng hình, màn hình đen)</option>
+              <option value="Lỗi âm thanh">Lỗi âm thanh (Mất tiếng, lệch tiếng)</option>
+              <option value="Phụ đề sai/lệch">Phụ đề bị sai hoặc lệch nhịp</option>
+              <option value="Sai tập phim">Tập phim bị sai nội dung</option>
+              <option value="Khác">Lý do khác (Nhập chi tiết bên dưới)</option>
+            </select>
+          </div>
+
+          {reportReason === 'Khác' && (
+            <div className="flex flex-col gap-1.5 text-left">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Mô tả lý do khác</label>
+              <textarea 
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                placeholder="Nhập mô tả cụ thể về lỗi phim tại đây..."
+                rows={3}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-primary outline-none resize-none font-sans"
+                required
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button 
+              type="button"
+              onClick={() => {
+                setIsReportModalOpen(false);
+                setCustomReason('');
+              }}
+              disabled={isReporting}
+              className="px-4 py-2 border border-zinc-800 rounded-xl text-xs font-semibold hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all cursor-pointer bg-transparent disabled:opacity-50"
+            >
+              Hủy bỏ
+            </button>
+            <button 
+              type="submit"
+              disabled={isReporting}
+              className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold active:scale-95 transition-all cursor-pointer border-none disabled:opacity-75 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              {isReporting ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Đang gửi...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-sm">send</span>
+                  Gửi báo cáo
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </TxaModal>
     </div>
   );
 };

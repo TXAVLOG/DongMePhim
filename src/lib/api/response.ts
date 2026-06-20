@@ -42,7 +42,7 @@ export async function apiResponse(
 
     if (!isApp) {
         let enableEncryption = false;
-        let passphrase = 'tphimx-mobile-2026-secure';
+        let passphrase = 'tphimx';
         try {
             const settings = await SettingService.getSettings();
             enableEncryption = settings.general?.api_encrypt_enable ?? false;

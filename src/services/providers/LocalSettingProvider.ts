@@ -10,7 +10,7 @@ export const seedSettings: SiteSettings = {
     maintenance_message: "Hệ thống đang được nâng cấp để mang lại trải nghiệm điện ảnh đỉnh cao hơn.",
     maintenance_end_time: new Date(Date.now() + 3600 * 1000 * 2).toISOString(),
     api_encrypt_enable: true,
-    api_encrypt_pass: "mock_passphrase",
+    api_encrypt_pass: "tphimx",
   },
   smtp: {
     smtp_host: "smtp.gmail.com",
