@@ -8,6 +8,12 @@ export interface Subtitle {
   default?: boolean;
 }
 
+interface QualityItem {
+  html: string;
+  url: string;
+  default?: boolean;
+}
+
 interface ArtPlayerProps {
   url: string;
   title: string;
@@ -17,6 +23,8 @@ interface ArtPlayerProps {
   onEnded?: () => void;
   onPlayerReady?: (getTime: () => number) => void;
   subtitles?: Subtitle[];
+  qualities?: QualityItem[];
+  onChangeQuality?: (quality: QualityItem) => void;
   timeIntroStart?: number;
   timeIntroEnd?: number;
   timeOutroStart?: number;
@@ -60,6 +68,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   onEnded,
   onPlayerReady,
   subtitles = [],
+  qualities = [],
+  onChangeQuality,
   timeIntroStart = 0,
   timeIntroEnd = 0,
   timeOutroStart = 0,
@@ -73,7 +83,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   useEffect(() => {
     if (!artRef.current) return;
 
-    // Helper to extract real stream URL from third party wrapped URLs
     const getRealStreamUrl = (rawUrl: string): string => {
       if (!rawUrl) return '';
       if (rawUrl.includes('player.phimapi.com/player/?url=')) {
@@ -92,11 +101,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
     const realUrl = getRealStreamUrl(url);
 
-    // Load Hls.js dynamically from CDN if not already loaded
     const initPlayer = (HlsClass: any) => {
       if (!artRef.current) return;
 
-      // Clean up previous instance if any
       if (playerInstanceRef.current) {
         playerInstanceRef.current.destroy(false);
       }
@@ -121,7 +128,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         return `/api/proxy-subtitle?url=${encodeURIComponent(u)}`;
       };
 
-      // Validate subtitle URL before passing to ArtPlayer to prevent Failed to fetch
       const isValidSubUrl = (u?: string) => {
         if (!u) return false;
         try {
@@ -141,13 +147,13 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         autoplay: false,
         pip: true,
         autoSize: false,
-        autoMini: true,
+        autoMini: false,
         screenshot: false,
         setting: true,
         loop: false,
-        flip: true,
-        playbackRate: true,
-        aspectRatio: true,
+        flip: false,
+        playbackRate: false,   // Tắt menu mặc định của artplayer
+        aspectRatio: false,    // Tắt menu mặc định của artplayer
         fullscreen: true,
         fullscreenWeb: true,
         subtitleOffset: true,
@@ -157,6 +163,24 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         playsInline: true,
         autoPlayback: false,
         airplay: true,
+        // JWPlayer style settings
+        theme: '#1e88e5',
+        lang: 'zh-cn',
+        // Tùy chỉnh menu chuột phải (thay thế menu mặc định)
+        contextmenu: [
+          {
+            html: `<b>${siteName}</b>`,
+            click: () => window.open(siteUrl, '_blank')
+          },
+          {
+            html: 'Tắt / Bật tiếng',
+            click: () => { art.muted = !art.muted; }
+          },
+          {
+            html: 'Bật / Tắt hình trong hình (PiP)',
+            click: () => { art.pip = !art.pip; }
+          }
+        ],
         ...(validDefaultSub ? {
           subtitle: {
             url: proxySubtitleUrl(validDefaultSub.file),
@@ -181,7 +205,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               hls.loadSource(url);
               hls.attachMedia(video);
               
-              // Clean up hls on destroy
               art.on('destroy', () => {
                 hls.destroy();
               });
@@ -193,14 +216,14 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           },
         },
         type: isM3u8 ? 'm3u8' : undefined,
-        // Watermark and Skip layers
+        // Watermark (Logo tĩnh cố định + Watermark bay ngẫu nhiên)
         layers: [
           {
-            name: 'txa-watermark',
+            name: 'txa-watermark-fixed',
             html: `
               <div class="txa-watermark-wrapper" style="pointer-events: none; user-select: none;">
-                <div class="txa-watermark-text" style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 800; color: rgba(255, 255, 255, 0.45); text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.25); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px);">
-                  ${siteName} - ${siteUrl}
+                <div style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 800; color: rgba(255, 255, 255, 0.45); text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.25); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px);">
+                  ${siteName}
                 </div>
               </div>
             `,
@@ -212,9 +235,19 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             },
           },
           {
+            name: 'txa-watermark-floating',
+            html: `<div style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.25); background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px); white-space: nowrap;">${siteName} - ${title}</div>`,
+            style: {
+              position: 'absolute',
+              zIndex: '25',
+              pointerEvents: 'none',
+              animation: 'floatWatermark 16s ease-in-out infinite alternate'
+            }
+          },
+          {
             name: 'txa-skip-intro',
             html: `
-              <button class="txa-skip-btn" style="display: none; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; color: white; background: rgba(124, 58, 237, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px 18px; border-radius: 12px; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); transition: all 0.2s ease-in-out;">
+              <button class="txa-skip-btn" style="display: none; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; color: white; background: rgba(30, 136, 229, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px 18px; border-radius: 12px; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); transition: all 0.2s ease-in-out;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="5 4 15 12 5 20 5 4" fill="currentColor"></polygon>
                   <line x1="19" y1="5" x2="19" y2="19"></line>
@@ -241,7 +274,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           {
             name: 'txa-skip-outro',
             html: `
-              <button class="txa-skip-btn" style="display: none; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; color: white; background: rgba(124, 58, 237, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px 18px; border-radius: 12px; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); transition: all 0.2s ease-in-out;">
+              <button class="txa-skip-btn" style="display: none; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; color: white; background: rgba(30, 136, 229, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px 18px; border-radius: 12px; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); transition: all 0.2s ease-in-out;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="5 4 15 12 5 20 5 4" fill="currentColor"></polygon>
                   <line x1="19" y1="5" x2="19" y2="19"></line>
@@ -271,21 +304,39 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         ],
       });
 
-      playerInstanceRef.current = art;
-
-      // Handle seeking to current time
-      art.on('ready', () => {
-        if (currentTime > 0) {
-          art.currentTime = currentTime;
-          art.notice.show = `Đã khôi phục tiến trình xem: ${Math.floor(currentTime / 60)} phút ${Math.floor(currentTime % 60)} giây`;
-        }
-        // Expose getter for current time to parent component
-        if (onPlayerReady) {
-          onPlayerReady(() => art.currentTime || 0);
+      // --- Menu Cài đặt (Gear icon) Tùy chỉnh thay thế toàn bộ mặc định ---
+      art.setting.add({
+        width: 200,
+        html: 'Tốc độ phát',
+        tooltip: '1.0x',
+        selector: [
+          { html: '0.5x', speed: 0.5 },
+          { html: 'Normal', speed: 1.0, default: true },
+          { html: '1.25x', speed: 1.25 },
+          { html: '1.5x', speed: 1.5 },
+          { html: '2.0x', speed: 2.0 },
+        ],
+        onSelect: function (item: any) {
+          art.playbackRate = item.speed;
+          return item.html;
         }
       });
 
-      // Add Subtitle switcher in Setting menu if multiple subtitles exist
+      if (qualities && qualities.length > 0) {
+        art.setting.add({
+          width: 200,
+          html: 'Chất lượng',
+          tooltip: qualities.find(q => q.default)?.html || qualities[0]?.html || 'Auto',
+          selector: qualities,
+          onSelect: function (item: any) {
+            if (onChangeQuality) {
+              onChangeQuality(item);
+            }
+            return item.html;
+          }
+        });
+      }
+
       const validSubs = (subtitles || []).filter(s => isValidSubUrl(s.file));
       if (validSubs.length > 0) {
         art.setting.add({
@@ -316,38 +367,53 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         });
       }
 
-      // Add Auto Skip Intro/Outro setting
+      // Sửa lỗi toggle update dom ngay lập tức
       art.setting.add({
         width: 200,
         html: 'Tự động Skip',
         tooltip: isAutoSkipEnabled ? 'Bật' : 'Tắt',
         switch: isAutoSkipEnabled,
         onSelect: function (item: any) {
-          const newValue = !isAutoSkipEnabled;
-          setAutoSkipSetting(newValue);
-          isAutoSkipEnabled = newValue;
-          art.notice.show = `Tự động Skip: ${newValue ? 'Bật' : 'Tắt'}`;
-          item.switch = newValue;
-          item.tooltip = newValue ? 'Bật' : 'Tắt';
-          
-          // Update tooltip text in settings panel DOM immediately
-          const settingItems = art.template.$container.querySelectorAll('.art-setting-item');
-          if (settingItems) {
-            settingItems.forEach((el: any) => {
+          const newValue = !isAutoSkipEnabled; // Đồng bộ logic
+          const nextValue = !isAutoSkipEnabled;
+          setAutoSkipSetting(nextValue);
+          isAutoSkipEnabled = nextValue;
+          item.switch = nextValue;
+          item.tooltip = nextValue ? 'Bật' : 'Tắt';
+          art.notice.show = `Tự động Skip: ${nextValue ? 'Bật' : 'Tắt'}`;
+
+          const settingPanel = art.template.$setting;
+          if (settingPanel) {
+            const items = settingPanel.querySelectorAll('.art-setting-item');
+            items.forEach((el: any) => {
               if (el.textContent?.includes('Tự động Skip')) {
                 const tooltipEl = el.querySelector('.art-setting-tooltip');
                 if (tooltipEl) {
-                  tooltipEl.textContent = newValue ? 'Bật' : 'Tắt';
+                  tooltipEl.textContent = nextValue ? 'Bật' : 'Tắt';
+                }
+                const switchEl = el.querySelector('.art-setting-switch input') as HTMLInputElement;
+                if (switchEl) {
+                  switchEl.checked = nextValue;
                 }
               }
             });
           }
-          
-          return newValue;
+          return nextValue;
         },
       });
 
-      // Throttle time update notifications (every 5 seconds) & Skip Intro/Outro
+      playerInstanceRef.current = art;
+
+      art.on('ready', () => {
+        if (currentTime > 0) {
+          art.currentTime = currentTime;
+          art.notice.show = `Đã khôi phục tiến trình xem: ${Math.floor(currentTime / 60)} phút ${Math.floor(currentTime % 60)} giây`;
+        }
+        if (onPlayerReady) {
+          onPlayerReady(() => art.currentTime || 0);
+        }
+      });
+
       let lastUpdatedTime = 0;
       let hasAutoSkippedIntro = false;
       let hasAutoSkippedOutro = false;
@@ -356,13 +422,11 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         const now = art.currentTime;
         const duration = art.duration;
 
-        // Skip Intro logic
         if (timeIntroStart > 0 && timeIntroEnd > 0 && timeIntroEnd > timeIntroStart) {
           const skipIntroBtn = art.template.$container.querySelector('.art-layer-txa-skip-intro button') as HTMLElement;
 
           if (now >= timeIntroStart && now < timeIntroEnd) {
             if (isAutoSkipEnabled) {
-              // Auto-skip
               if (!hasAutoSkippedIntro) {
                 art.currentTime = timeIntroEnd;
                 hasAutoSkippedIntro = true;
@@ -370,7 +434,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                 if (skipIntroBtn) skipIntroBtn.style.display = 'none';
               }
             } else {
-              // Manual skip button
               if (skipIntroBtn && skipIntroBtn.style.display !== 'flex') {
                 skipIntroBtn.style.display = 'flex';
               }
@@ -382,13 +445,11 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           }
         }
 
-        // Skip Outro logic
         if (timeOutroStart > 0 && duration && timeOutroStart < duration) {
           const skipOutroBtn = art.template.$container.querySelector('.art-layer-txa-skip-outro button') as HTMLElement;
 
           if (now >= timeOutroStart && now < duration - 2) {
             if (isAutoSkipEnabled) {
-              // Auto-skip
               if (!hasAutoSkippedOutro) {
                 art.currentTime = duration;
                 hasAutoSkippedOutro = true;
@@ -396,7 +457,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                 if (skipOutroBtn) skipOutroBtn.style.display = 'none';
               }
             } else {
-              // Manual skip button
               if (skipOutroBtn && skipOutroBtn.style.display !== 'flex') {
                 skipOutroBtn.style.display = 'flex';
               }
@@ -408,7 +468,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           }
         }
 
-        // Save progress trigger
         if (Math.abs(now - lastUpdatedTime) >= 5) {
           lastUpdatedTime = now;
           if (onTimeUpdate) {
@@ -417,17 +476,14 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         }
       });
 
-      // Handle ended
       art.on('video:ended', () => {
         if (onEnded) {
           onEnded();
         }
       });
 
-      // --- Anti-Inspect Protection for Watermark ---
       const checkWatermarkIntegrity = () => {
-        const watermarkEl = art.template.$container.querySelector('.art-layer-txa-watermark');
-
+        const watermarkEl = art.template.$container.querySelector('.art-layer-txa-watermark-fixed');
         if (!watermarkEl) {
           triggerViolation('Thiếu bản quyền! Vui lòng không can thiệp mã nguồn.');
           return;
@@ -470,7 +526,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           overlay.innerHTML = `
             <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 12px;">warning</span>
             <div>${message}</div>
-            <button onclick="window.location.reload()" style="margin-top: 15px; background: #7c3aed; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s;">
+            <button onclick="window.location.reload()" style="margin-top: 15px; background: #1e88e5; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s;">
               Tải lại trang
             </button>
           `;
@@ -478,15 +534,13 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         }
       };
 
-      // Periodic check every 3 seconds
       const intervalId = setInterval(checkWatermarkIntegrity, 3000);
       
-      // MutationObserver to detect element deletions or attribute modifications
       const observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
           if (mutation.removedNodes.length > 0) {
             const hasWatermarkRemoved = Array.from(mutation.removedNodes).some(node => {
-              return (node as HTMLElement).classList?.contains('art-layer-txa-watermark') || 
+              return (node as HTMLElement).classList?.contains('art-layer-txa-watermark-fixed') || 
                      (node as HTMLElement).querySelector?.('.txa-watermark-wrapper');
             });
             if (hasWatermarkRemoved) {
@@ -495,7 +549,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           }
           if (mutation.type === 'attributes') {
             const target = mutation.target as HTMLElement;
-            if (target.classList?.contains('art-layer-txa-watermark') || target.querySelector?.('.txa-watermark-wrapper')) {
+            if (target.classList?.contains('art-layer-txa-watermark-fixed') || target.querySelector?.('.txa-watermark-wrapper')) {
               checkWatermarkIntegrity();
             }
           }
@@ -515,7 +569,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       });
     };
 
-    // Load hls.js script dynamically
     let checkInterval: any = null;
     if (realUrl.includes('.m3u8') || realUrl.includes('stream')) {
       if ((window as any).Hls) {
@@ -566,10 +619,21 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   }, [url, title]);
 
   return (
-    <div 
-      ref={artRef} 
-      className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke" 
-      style={{ minHeight: '350px' }}
-    />
+    <>
+      <style>{`
+        @keyframes floatWatermark {
+          0% { top: 10%; left: 5%; }
+          25% { top: 75%; left: 30%; }
+          50% { top: 40%; left: 75%; }
+          75% { top: 85%; left: 60%; }
+          100% { top: 15%; left: 80%; }
+        }
+      `}</style>
+      <div 
+        ref={artRef} 
+        className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke" 
+        style={{ minHeight: '350px' }}
+      />
+    </>
   );
 };

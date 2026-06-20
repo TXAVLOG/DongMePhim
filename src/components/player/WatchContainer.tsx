@@ -216,11 +216,9 @@ interface HistoryItem {
 const findEpisodeIndexBySlug = (serverData: any[], targetSlug?: string): number => {
   if (!targetSlug || !serverData || serverData.length === 0) return 0;
   
-  // 1. Try exact match
   let idx = serverData.findIndex(ep => ep.slug === targetSlug);
   if (idx !== -1) return idx;
 
-  // 2. Try matching by removing prefix like 'tap-' or 'tập-' or 'ep-'
   const normalizeSlug = (s: string) => {
     return s.toLowerCase().replace(/^(tap|tập|ep|episode|ep-|-)+/g, '').trim();
   };
@@ -228,7 +226,6 @@ const findEpisodeIndexBySlug = (serverData: any[], targetSlug?: string): number 
   idx = serverData.findIndex(ep => normalizeSlug(ep.slug) === normTarget);
   if (idx !== -1) return idx;
 
-  // 3. Try parsing numbers
   const extractNum = (str: string) => {
     const match = str.match(/\d+/);
     return match ? parseInt(match[0], 10) : null;
@@ -238,7 +235,6 @@ const findEpisodeIndexBySlug = (serverData: any[], targetSlug?: string): number 
     idx = serverData.findIndex(ep => extractNum(ep.slug) === targetNum);
     if (idx !== -1) return idx;
     
-    // 4. Try matching by name containing the number
     idx = serverData.findIndex(ep => {
       const epNum = extractNum(ep.name);
       return epNum === targetNum;
@@ -246,7 +242,6 @@ const findEpisodeIndexBySlug = (serverData: any[], targetSlug?: string): number 
     if (idx !== -1) return idx;
   }
 
-  // 5. Try lowercase fuzzy comparison
   const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const cleanTarget = clean(targetSlug);
   idx = serverData.findIndex(ep => {
@@ -258,7 +253,6 @@ const findEpisodeIndexBySlug = (serverData: any[], targetSlug?: string): number 
   return 0;
 };
 
-// Rating Widget
 const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
   const [rating, setRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
@@ -331,7 +325,6 @@ const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
   );
 };
 
-// Discord Banner
 const DiscordBanner: React.FC = () => {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-tr from-[#5865F2] via-[#404eed] to-[#5865F2] p-5 text-white shadow-xl group border border-[#404eed]/40">
@@ -362,7 +355,6 @@ const DiscordBanner: React.FC = () => {
   );
 };
 
-// Actors List
 const ActorsList: React.FC<{ actors?: string[] }> = ({ actors = [] }) => {
   if (!actors || actors.length === 0) return null;
 
@@ -408,7 +400,6 @@ const ActorsList: React.FC<{ actors?: string[] }> = ({ actors = [] }) => {
   );
 };
 
-// Collapsible Description
 const CollapsibleDescription: React.FC<{ htmlContent: string }> = ({ htmlContent }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -462,7 +453,13 @@ const CollapsibleDescription: React.FC<{ htmlContent: string }> = ({ htmlContent
   );
 };
 
-// Comment System
+interface ReplyItem {
+  id: number;
+  author: string;
+  content: string;
+  createdAt: string;
+}
+
 interface CommentItem {
   id: number;
   author: string;
@@ -470,13 +467,6 @@ interface CommentItem {
   likes: number;
   dislikes: number;
   replies: ReplyItem[];
-  createdAt: string;
-}
-
-interface ReplyItem {
-  id: number;
-  author: string;
-  content: string;
   createdAt: string;
 }
 
@@ -709,7 +699,6 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
                   </div>
                 </div>
 
-                {/* Reply Form */}
                 {replyTarget === c.id && (
                   <div className="ml-11 flex gap-2 items-center bg-zinc-950/40 p-2.5 rounded-xl border border-glass-stroke/50">
                     <input 
@@ -729,10 +718,9 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
                   </div>
                 )}
 
-                {/* Replies list */}
                 {c.replies.length > 0 && (
                   <div className="ml-11 pl-3 border-l-2 border-primary/20 space-y-3 pt-2">
-                    {c.replies.map(r => {
+                    {c.replies.map((r: ReplyItem) => {
                       const isRepModerator = r.author.toLowerCase().includes('cô 3 rổ') || r.author.toLowerCase().includes('admin');
                       const repInitial = r.author.substring(0, 1).toUpperCase();
 
@@ -1234,6 +1222,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   playerGetTimeRef.current = getTime;
                 }}
                 subtitles={currentEpisode?.subtitles}
+                qualities={[
+                  { html: 'Auto', url: currentEpisode?.linkM3u8 || '', default: true }
+                ]}
+                onChangeQuality={(item) => {
+                  console.log('Chất lượng phát: ', item.html);
+                }}
                 timeIntroStart={currentEpisode?.timeIntroStart}
                 timeIntroEnd={currentEpisode?.timeIntroEnd}
                 timeOutroStart={currentEpisode?.timeOutroStart}
