@@ -102,21 +102,35 @@ export const MovieService = {
     let genres: string[] = ["Hành Động", "Viễn Tưởng", "Kinh Dị", "Tình Cảm", "Hài Hước", "Cổ Trang", "Võ Thuật", "Hình Sự", "Phiêu Lưu", "Tâm Lý", "Học Đường", "Chính Kịch", "Gia Đình", "Chiến Tranh", "Hoạt Hình"];
 
     try {
+      // 1. Gọi API phimapi.com lấy danh sách thể loại và quốc gia
+      const [genresRes, countriesRes] = await Promise.all([
+        fetch('https://phimapi.com/the-loai').then(r => r.ok ? r.json() : null),
+        fetch('https://phimapi.com/quoc-gia').then(r => r.ok ? r.json() : null)
+      ]);
+
+      if (genresRes && Array.isArray(genresRes)) {
+        genres = genresRes.map((g: any) => g.name);
+      }
+      if (countriesRes && Array.isArray(countriesRes)) {
+        countries = countriesRes.map((c: any) => c.name);
+      }
+
+      // 2. Kết hợp thêm thể loại trong database
       if (providerType === 'supabase') {
         const { supabase } = await import('../lib/supabase');
         const { data, error } = await supabase
           .from('movies')
-          .select('category, genres');
+          .select('genres');
         
         if (!error && data) {
-          const dbCountries = [...new Set(data.map((m: any) => m.category).filter(Boolean))] as string[];
           const dbGenres = [...new Set(data.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
-          if (dbCountries.length > 0) countries = dbCountries;
-          if (dbGenres.length > 0) genres = dbGenres;
+          if (dbGenres.length > 0) {
+            genres = [...new Set([...genres, ...dbGenres])];
+          }
         }
       }
     } catch (e) {
-      console.warn("Lỗi khi lấy genres/countries từ database, dùng static fallback:", e);
+      console.warn("Lỗi khi lấy genres/countries từ API/database, dùng static fallback:", e);
     }
 
     const result = { countries, genres };

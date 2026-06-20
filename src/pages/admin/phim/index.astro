@@ -31,6 +31,12 @@ const staticMovies = await MovieService.getMovies();
     </div>
     
     <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+      <!-- Bulk Action Button -->
+      <button id="bulk-delete-btn" class="hidden px-4 py-2.5 bg-rose-600/10 border border-rose-500/20 hover:bg-rose-600/20 text-rose-400 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+        <span class="material-symbols-outlined text-sm">delete_sweep</span>
+        <span id="bulk-delete-text">Xóa đã chọn (0)</span>
+      </button>
+
       <select id="filter-type" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
         <option value="all">Tất cả định dạng</option>
         <option value="movie">Phim Lẻ</option>
@@ -56,7 +62,14 @@ const staticMovies = await MovieService.getMovies();
       <table class="w-full text-left">
         <thead class="bg-surface-container/40">
           <tr>
-            <th class="px-8 py-4 text-xs font-label-caps text-text-dim">PHIM</th>
+            <th class="pl-8 pr-4 py-4 w-10">
+              <label class="relative flex items-center justify-center shrink-0 cursor-pointer">
+                <input type="checkbox" id="select-all-checkbox" class="peer sr-only" />
+                <div class="h-4 w-4 rounded border border-white/10 bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+                <span class="material-symbols-outlined absolute text-[12px] text-zinc-950 font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+              </label>
+            </th>
+            <th class="pl-4 pr-8 py-4 text-xs font-label-caps text-text-dim">PHIM</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">ĐỊNH DẠNG</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">CHẤT LƯỢNG</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">NGUỒN</th>
@@ -98,85 +111,110 @@ const staticMovies = await MovieService.getMovies();
         const nextBtn = document.getElementById('movie-next-btn');
         const paginationInfo = document.getElementById('movie-pagination-info');
 
-        let staticList = staticMovies.map(m => ({ ...m, source: 'static' }));
-        let crawledList = [];
+        let staticList = staticMovies.map(m => ({ ...m, source: m.isStatic ? 'static' : 'crawled' }));
         let allMovies = [];
         let currentFilteredList = [];
         let currentPage = 1;
         const itemsPerPage = 10;
 
-        function loadMoviesData() {
-          const crawledMovies = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
-          crawledList = crawledMovies.map(item => {
-            const m = item.movie || item;
-            let type = 'series';
-            if (m.type === 'single' || m.type === 'movie') {
-              type = 'movie';
-            } else if (m.type === 'hoathinh') {
-              type = 'hoathinh';
-            } else if (m.type === 'tvshows') {
-              type = 'tvshows';
+        // Selection State
+        let selectedMovies = [];
+
+        window.toggleSelectMovie = function(slug, isStatic, checked) {
+          if (checked) {
+            if (!selectedMovies.some(m => m.slug === slug)) {
+              selectedMovies.push({ slug: slug, isStatic: isStatic });
             }
-            return {
-              id: m.id || `local-${m.slug}`,
-              title: m.title || m.name,
-              originalTitle: m.originalTitle || m.origin_name || '',
-              slug: m.slug,
-              description: m.description || m.content || '',
-              posterUrl: m.posterUrl || m.poster_url || m.poster || '',
-              bannerUrl: m.bannerUrl || m.thumb_url || m.posterUrl || m.poster_url || m.poster || '',
-              releaseYear: m.releaseYear || parseInt(m.year) || 2024,
-              durationMinutes: m.durationMinutes || m.time || '120 phút',
-              type: type,
-              status: m.status === 'completed' ? 'completed' : 'ongoing',
-              episodeCurrent: m.episodeCurrent || m.episode_current || 'Full',
-              episodeTotal: m.episodeTotal || m.episode_total || '1',
-              quality: m.quality || 'FHD',
-              lang: m.lang || 'Vietsub',
-              imdbScore: m.imdbScore || 8.0,
-              views: m.views || 0,
-              commentCount: m.commentCount || 0,
-              category: m.category || 'Khác',
-              genres: m.genres || [],
-              updatedAt: m.updatedAt || new Date().toISOString(),
-              source: 'crawled'
-            };
-          });
-          allMovies = [...crawledList, ...staticList].filter(m => m.slug && m.slug !== 'undefined' && m.slug !== 'null');
-          
-          if (summaryText) {
-            summaryText.textContent = `${staticList.length} Hệ thống + ${crawledList.length} Crawled`;
+          } else {
+            selectedMovies = selectedMovies.filter(m => m.slug !== slug);
+          }
+          updateBulkActionButton();
+        };
+
+        function updateBulkActionButton() {
+          const bulkBtn = document.getElementById('bulk-delete-btn');
+          const bulkText = document.getElementById('bulk-delete-text');
+          if (bulkBtn && bulkText) {
+            const count = selectedMovies.length;
+            if (count > 0) {
+              bulkText.textContent = `Xóa đã chọn (${count})`;
+              bulkBtn.classList.remove('hidden');
+            } else {
+              bulkBtn.classList.add('hidden');
+            }
           }
         }
 
-        window.deleteMovie = function(movieId) {
-          const performDelete = () => {
-            let list = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
-            list = list.filter(m => m.id !== movieId);
-            localStorage.setItem('txa_crawled_movies', JSON.stringify(list));
-            if (window.showGlobalToast) {
-              window.showGlobalToast('Đã xóa phim thành công!', 'success');
+        function resetSelections() {
+          selectedMovies = [];
+          const selectAll = document.getElementById('select-all-checkbox');
+          if (selectAll) selectAll.checked = false;
+          updateBulkActionButton();
+        }
+
+        function loadMoviesData() {
+          allMovies = staticList.filter(m => m.slug && m.slug !== 'undefined' && m.slug !== 'null');
+          
+          if (summaryText) {
+            const sysCount = allMovies.filter(m => m.source === 'static').length;
+            const dbCount = allMovies.filter(m => m.source === 'crawled').length;
+            summaryText.textContent = `${sysCount} Hệ thống + ${dbCount} Database`;
+          }
+        }
+
+        window.deleteMovie = function(movieId, slug, isStatic, btnElement) {
+          const performDelete = async () => {
+            let oldHtml = '';
+            if (btnElement) {
+              oldHtml = btnElement.innerHTML;
+              btnElement.disabled = true;
+              btnElement.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">autorenew</span>';
             }
-            loadMoviesData();
-            filterAndSearch();
+            try {
+              const res = await fetch('/api/admin/movie-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', slug: slug, isStatic: isStatic })
+              });
+              const result = await res.json();
+              if (res.ok) {
+                if (window.showGlobalToast) {
+                  window.showGlobalToast('Đã xóa phim thành công!', 'success');
+                }
+                setTimeout(() => window.location.reload(), 800);
+              } else {
+                if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi khi xóa phim', 'error');
+                if (btnElement) {
+                  btnElement.disabled = false;
+                  btnElement.innerHTML = oldHtml;
+                }
+              }
+            } catch (e) {
+              if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+              if (btnElement) {
+                btnElement.disabled = false;
+                btnElement.innerHTML = oldHtml;
+              }
+            }
           };
 
           if (window.txamodal) {
             window.txamodal.show({
               title: 'Xóa phim khỏi hệ thống',
-              message: 'Bạn có chắc chắn muốn xóa phim này khỏi danh sách đã thu thập không? Thao tác này không thể khôi phục.',
+              message: `Bạn có chắc chắn muốn xóa phim "${slug || movieId}" khỏi hệ thống không?`,
               type: 'danger',
               confirmText: 'Xóa phim',
               cancelText: 'Hủy bỏ',
               onConfirm: performDelete
             });
-          } else if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách đã thu thập không?')) {
+          } else if (confirm(`Bạn có chắc chắn muốn xóa phim "${slug || movieId}" khỏi hệ thống không?`)) {
             performDelete();
           }
         };
 
         function displayPage(page) {
           if (!tbody) return;
+          resetSelections();
 
           const totalItems = currentFilteredList.length;
           const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -192,7 +230,7 @@ const staticMovies = await MovieService.getMovies();
           if (paginatedList.length === 0) {
             tbody.innerHTML = `
               <tr>
-                <td colspan="6" class="px-8 py-12 text-center text-xs text-text-dim italic">
+                <td colspan="7" class="px-8 py-12 text-center text-xs text-text-dim italic">
                   Không tìm thấy phim nào khớp với bộ lọc của bạn.
                 </td>
               </tr>
@@ -258,7 +296,14 @@ const staticMovies = await MovieService.getMovies();
 
             return `
               <tr class="hover:bg-white/5 transition-colors group">
-                <td class="px-8 py-4">
+                <td class="pl-8 pr-4 py-4 w-10">
+                  <label class="relative flex items-center justify-center shrink-0 cursor-pointer">
+                    <input type="checkbox" class="movie-select-checkbox peer sr-only" data-slug="${m.slug}" data-is-static="${isStatic}" onclick="window.toggleSelectMovie('${m.slug}', ${isStatic}, this.checked)" />
+                    <div class="h-4 w-4 rounded border border-white/10 bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+                    <span class="material-symbols-outlined absolute text-[12px] text-zinc-950 font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+                  </label>
+                </td>
+                <td class="pl-4 pr-8 py-4">
                   <div class="flex items-center gap-4">
                     <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
                       <img alt="${m.title} Poster" class="w-full h-full object-cover" src="${m.posterUrl}" onerror="this.src='/logo-icon.png'" />
@@ -289,18 +334,12 @@ const staticMovies = await MovieService.getMovies();
                     <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Xem trên web">
                       <span class="material-symbols-outlined text-sm">visibility</span>
                     </a>
-                    <a href="${m.source === 'crawled' ? `/admin/phim/edit?th=${m.slug}` : `/admin/phim/edit?m=${m.slug}`}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa phim / Cấu hình tập">
+                    <a href="/admin/phim/edit?th=${m.slug}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa phim / Cấu hình tập">
                       <span class="material-symbols-outlined text-sm">edit</span>
                     </a>
-                    ${isStatic ? `
-                      <button class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-zinc-600 cursor-not-allowed" title="Không thể xóa phim hệ thống" disabled>
-                        <span class="material-symbols-outlined text-sm">delete</span>
-                      </button>
-                    ` : `
-                      <button onclick="deleteMovie('${m.id}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa phim crawled">
-                        <span class="material-symbols-outlined text-sm">delete</span>
-                      </button>
-                    `}
+                    <button onclick="deleteMovie('${m.id}', '${m.slug}', ${isStatic}, this)" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa phim này">
+                      <span class="material-symbols-outlined text-sm">delete</span>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -320,6 +359,7 @@ const staticMovies = await MovieService.getMovies();
         }
 
         function filterAndSearch() {
+          resetSelections();
           const query = searchInput?.value.trim().toLowerCase() || '';
           const type = filterType?.value || 'all';
           const source = filterSource?.value || 'all';
@@ -354,6 +394,70 @@ const staticMovies = await MovieService.getMovies();
         if (searchInput) searchInput.oninput = filterAndSearch;
         if (filterType) filterType.onchange = filterAndSearch;
         if (filterSource) filterSource.onchange = filterAndSearch;
+
+        // Bind Select All Checkbox
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            const checkboxes = tbody.querySelectorAll('.movie-select-checkbox');
+            checkboxes.forEach(cb => {
+              cb.checked = checked;
+              const slug = cb.getAttribute('data-slug');
+              const isStatic = cb.getAttribute('data-is-static') === 'true';
+              window.toggleSelectMovie(slug, isStatic, checked);
+            });
+          });
+        }
+
+        // Bind Bulk Delete Button
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        if (bulkDeleteBtn) {
+          bulkDeleteBtn.addEventListener('click', () => {
+            if (selectedMovies.length === 0) return;
+
+            const performBulkDelete = async () => {
+              let oldHtml = bulkDeleteBtn.innerHTML;
+              bulkDeleteBtn.disabled = true;
+              bulkDeleteBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">autorenew</span> Xóa đã chọn...';
+              try {
+                const res = await fetch('/api/admin/movie-action', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'delete', items: selectedMovies })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast(`Đã xóa thành công ${selectedMovies.length} phim!`, 'success');
+                  }
+                  setTimeout(() => window.location.reload(), 800);
+                } else {
+                  if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi khi xóa phim', 'error');
+                  bulkDeleteBtn.disabled = false;
+                  bulkDeleteBtn.innerHTML = oldHtml;
+                }
+              } catch (e) {
+                if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.innerHTML = oldHtml;
+              }
+            };
+
+            if (window.txamodal) {
+              window.txamodal.show({
+                title: 'Xóa hàng loạt phim',
+                message: `Bạn có chắc chắn muốn xóa ${selectedMovies.length} phim đã chọn khỏi hệ thống không?`,
+                type: 'danger',
+                confirmText: 'Xóa tất cả',
+                cancelText: 'Hủy bỏ',
+                onConfirm: performBulkDelete
+              });
+            } else if (confirm(`Bạn có chắc chắn muốn xóa ${selectedMovies.length} phim đã chọn khỏi hệ thống không?`)) {
+              performBulkDelete();
+            }
+          });
+        }
 
         if (prevBtn) {
           prevBtn.onclick = () => {

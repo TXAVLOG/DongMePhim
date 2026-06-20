@@ -762,7 +762,7 @@ const isActive = (path: string) => {
                             Thể Loại <span class="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">keyboard_arrow_down</span>
                         </a>
                         <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-zinc-950/95 border border-glass-stroke rounded-2xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 grid grid-cols-3 gap-2 backdrop-blur-xl z-50">
-                            {uniqueGenres.map(genre => (
+                            {uniqueGenres.map((genre: string) => (
                                 <a href={`/the-loai/${slugify(genre)}`} class="px-3 py-2 text-xs font-semibold rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">{genre}</a>
                             ))}
                         </div>
@@ -774,7 +774,7 @@ const isActive = (path: string) => {
                             Quốc Gia <span class="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-300">keyboard_arrow_down</span>
                         </a>
                         <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-zinc-950/95 border border-glass-stroke rounded-2xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 grid grid-cols-2 gap-2 backdrop-blur-xl z-50">
-                            {uniqueCountries.map(country => (
+                            {uniqueCountries.map((country: string) => (
                                 <a href={`/quoc-gia/${slugify(country)}`} class="px-3 py-2 text-xs font-semibold rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">{country}</a>
                             ))}
                         </div>
@@ -1357,6 +1357,7 @@ const isActive = (path: string) => {
             setTimeout(() => {
               modal.classList.add('hidden');
               modal.classList.remove('flex');
+              bodyEl.innerHTML = '';
             }, 200);
             document.body.style.overflow = '';
           };
@@ -2220,30 +2221,8 @@ const isActive = (path: string) => {
                 const payload = await res.json();
                 const movies = payload.data || [];
 
-                // Merge crawled movies client-side
-                let localCrawled = [];
-                try {
-                  const stored = localStorage.getItem('txa_crawled_movies');
-                  if (stored) {
-                    const list = JSON.parse(stored);
-                    if (Array.isArray(list)) {
-                      localCrawled = list.map(m => m.movie || m);
-                    }
-                  }
-                } catch (e) {}
-
-                // Filter crawled movies matching the query
-                const queryLower = val.toLowerCase();
-                const matchedCrawled = localCrawled.filter(m => 
-                  m.title.toLowerCase().includes(queryLower) ||
-                  (m.originalTitle && m.originalTitle.toLowerCase().includes(queryLower)) ||
-                  (m.description && m.description.toLowerCase().includes(queryLower))
-                );
-
-                // Combine and deduplicate by slug
-                let combined = [...matchedCrawled, ...movies];
                 const seen = new Set();
-                const uniqueMovies = combined.filter(m => {
+                const uniqueMovies = movies.filter((m) => {
                   if (!m.slug || m.slug === 'undefined' || m.slug === 'null' || seen.has(m.slug)) return false;
                   seen.add(m.slug);
                   return true;

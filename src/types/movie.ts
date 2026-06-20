@@ -39,6 +39,7 @@ export interface Movie {
   trailerUrl?: string;
   broadcastSchedule?: BroadcastSchedule;
   updatedAt?: string;
+  isStatic?: boolean;
 }
 
 export interface Episode {

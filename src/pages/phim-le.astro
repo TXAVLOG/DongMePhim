@@ -123,50 +123,9 @@ const movies = await MovieService.getMovies({ type: 'movie' });
 
   <script is:inline define:vars={{ staticMovies: movies }}>
     (function() {
-      // 1. Merge crawled movies client-side
-      const crawledMovies = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
-      
-      const staticList = staticMovies.map(m => ({ ...m, source: 'static' }));
-      const crawledList = crawledMovies.map(item => {
-        const m = item.movie || item;
-        let type = 'series';
-        if (m.type === 'single' || m.type === 'movie') {
-          type = 'movie';
-        } else if (m.type === 'hoathinh') {
-          type = 'hoathinh';
-        } else if (m.type === 'tvshows') {
-          type = 'tvshows';
-        }
-        return {
-          id: m.id || `local-${m.slug}`,
-          title: m.title || m.name,
-          originalTitle: m.originalTitle || m.origin_name || '',
-          slug: m.slug,
-          description: m.description || m.content || '',
-          posterUrl: m.posterUrl || m.poster_url || m.poster || '',
-          bannerUrl: m.bannerUrl || m.thumb_url || m.posterUrl || m.poster_url || m.poster || '',
-          releaseYear: m.releaseYear || parseInt(m.year) || 2024,
-          durationMinutes: m.durationMinutes || m.time || '120 phút',
-          type: type,
-          status: m.status === 'completed' ? 'completed' : 'ongoing',
-          episodeCurrent: m.episodeCurrent || m.episode_current || 'Full',
-          episodeTotal: m.episodeTotal || m.episode_total || '1',
-          quality: m.quality || 'FHD',
-          lang: m.lang || 'Vietsub',
-          imdbScore: m.imdbScore || 8.0,
-          views: m.views || 0,
-          commentCount: m.commentCount || 0,
-          category: m.category || 'Khác',
-          genres: m.genres || [],
-          updatedAt: m.updatedAt || new Date().toISOString(),
-          source: 'crawled'
-        };
-      });
-      const allMovies = [...crawledList, ...staticList];
-      
-      // Deduplicate slugs
+      // Deduplicate slugs và lọc danh sách phim nhận trực tiếp từ server
       const seen = new Set();
-      let uniqueMovies = allMovies.filter(m => {
+      let uniqueMovies = (staticMovies || []).filter(m => {
         if (!m.slug || m.slug === 'undefined' || m.slug === 'null' || seen.has(m.slug)) return false;
         seen.add(m.slug);
         return true;

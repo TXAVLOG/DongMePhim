@@ -37,15 +37,21 @@ export class SupabaseMovieProvider implements IMovieProvider {
           commentCount: 0,
           category: m.broadcast_at || 'Khác',
           genres: Array.isArray(m.genres) ? m.genres : [],
-          updatedAt: m.updated_at || new Date().toISOString()
+          updatedAt: m.updated_at || new Date().toISOString(),
+          isStatic: false,
+          broadcastSchedule: m.broadcast_schedule || undefined
         }));
       }
 
-      // Kết hợp với seedMovies để đảm bảo có phim mẫu nếu db trống
+      // Lấy danh sách phim hệ thống đã bị xóa từ database
+      const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
+      const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
+
+      // Kết hợp với seedMovies để đảm bảo có phim mẫu nếu db trống, loại bỏ phim đã bị xóa
       const dbSlugs = new Set(moviesList.map(m => m.slug));
       const combined = [
         ...moviesList,
-        ...seedMovies.filter(m => !dbSlugs.has(m.slug))
+        ...seedMovies.filter(m => !dbSlugs.has(m.slug) && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
       ];
 
       let result = combined;
@@ -86,6 +92,17 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
   async getMovieBySlug(slug: string): Promise<MovieDetail | null> {
     try {
+      // 0. Kiểm tra xem phim hệ thống đã bị xóa chưa
+      const { data: deletedMovie } = await supabase
+        .from('txa_deleted_movies')
+        .select('slug')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (deletedMovie) {
+        return null;
+      }
+
       // 1. Kiểm tra database Supabase
       const { data: dbMovie, error } = await supabase
         .from('movies')
@@ -121,7 +138,9 @@ export class SupabaseMovieProvider implements IMovieProvider {
           actors: Array.isArray(dbMovie.actors) ? dbMovie.actors : [],
           directors: Array.isArray(dbMovie.directors) ? dbMovie.directors : [],
           trailerUrl: dbMovie.trailer_url || '',
-          episodes: Array.isArray(dbMovie.episodes) ? dbMovie.episodes : []
+          episodes: Array.isArray(dbMovie.episodes) ? dbMovie.episodes : [],
+          isStatic: false,
+          broadcastSchedule: dbMovie.broadcast_schedule || undefined
         };
       }
 
@@ -173,7 +192,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
           actors: [],
           directors: [],
           trailerUrl: '',
-          episodes: rawEpisodes
+          episodes: rawEpisodes,
+          isStatic: true
         };
       }
 
@@ -182,7 +202,13 @@ export class SupabaseMovieProvider implements IMovieProvider {
       if (res.ok) {
         const data = await res.json() as any;
         if (data && data.status && data.movie) {
-          return mapKKPhimToMovieDetail(data);
+          const detail = mapKKPhimToMovieDetail(data);
+          if (detail) {
+            return {
+              ...detail,
+              isStatic: false
+            };
+          }
         }
       }
     } catch (e) {
@@ -203,8 +229,13 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
       if (error) throw error;
 
+      // Lấy danh sách phim hệ thống đã bị xóa từ database
+      const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
+      const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
+
+      let list: Movie[] = [];
       if (dbMovies && dbMovies.length > 0) {
-        let list = dbMovies.map((m: any) => ({
+        list = dbMovies.map((m: any) => ({
           id: m.id,
           title: m.title,
           originalTitle: m.original_title,
@@ -225,18 +256,35 @@ export class SupabaseMovieProvider implements IMovieProvider {
           commentCount: 0,
           category: m.broadcast_at || 'Khác',
           genres: Array.isArray(m.genres) ? m.genres : [],
-          updatedAt: m.updated_at || new Date().toISOString()
+          updatedAt: m.updated_at || new Date().toISOString(),
+          isStatic: false,
+          broadcastSchedule: m.broadcast_schedule || undefined
         }));
 
         if (!isUuid) {
           list = list.filter(m => m.id !== movieId);
         }
-        return list.slice(0, 4);
+        list = list.filter(m => !deletedSlugs.has(m.slug));
       }
+
+      const dbSlugs = new Set(list.map(m => m.slug));
+      const combined = [
+        ...list,
+        ...seedMovies.filter(m => m.id !== movieId && !dbSlugs.has(m.slug) && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
+      ];
+      return combined.slice(0, 4);
+
     } catch (e) {
       console.warn('Lỗi khi lấy phim liên quan từ Supabase:', e);
     }
-    return seedMovies.filter(m => m.id !== movieId).slice(0, 4);
+    
+    try {
+      const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
+      const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
+      return seedMovies.filter(m => m.id !== movieId && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true })).slice(0, 4);
+    } catch (e) {
+      return seedMovies.filter(m => m.id !== movieId).map(m => ({ ...m, isStatic: true })).slice(0, 4);
+    }
   }
 
   async searchMovies(query: string): Promise<Movie[]> {

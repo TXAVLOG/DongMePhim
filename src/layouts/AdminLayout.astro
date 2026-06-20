@@ -367,6 +367,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
             setTimeout(() => {
               modal.classList.add('hidden');
               modal.classList.remove('flex');
+              bodyEl.innerHTML = '';
             }, 200);
             document.body.style.overflow = '';
           };

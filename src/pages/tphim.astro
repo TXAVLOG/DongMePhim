@@ -840,7 +840,7 @@ const allMoviesForClient = await MovieService.getMovies();
       }
 
       // Bind all initialization to 'astro:page-load' for view transition compatibility
-      document.addEventListener('astro:page-load', () => {
+      document.addEventListener('astro:page-load', async () => {
         // Comments carousel sliding
         const carousel = document.getElementById('comments-carousel');
         const slideLeft = document.getElementById('slide-left');
@@ -856,47 +856,7 @@ const allMoviesForClient = await MovieService.getMovies();
 
         // Hydration logic
         try {
-          const stored = localStorage.getItem('txa_crawled_movies');
-          const list = stored ? JSON.parse(stored) : [];
-          
-          // Map local items to standard movie schema
-          const localMovies = list.map(item => {
-            const m = item.movie || item;
-            let type = 'series';
-            if (m.type === 'single' || m.type === 'movie') {
-              type = 'movie';
-            } else if (m.type === 'hoathinh') {
-              type = 'hoathinh';
-            } else if (m.type === 'tvshows') {
-              type = 'tvshows';
-            }
-            return {
-              title: m.title || m.name,
-              slug: m.slug,
-              posterUrl: m.posterUrl || m.poster_url || m.poster,
-              bannerUrl: m.bannerUrl || m.thumb_url || m.posterUrl || m.poster_url || m.poster,
-              releaseYear: m.releaseYear || parseInt(m.year) || 2024,
-              type: type,
-              status: m.status === 'completed' ? 'completed' : 'ongoing',
-              episodeCurrent: m.episodeCurrent || m.episode_current || 'Full',
-              episodeTotal: m.episodeTotal || m.episode_total || '1',
-              quality: m.quality || 'FHD',
-              lang: m.lang || 'Vietsub',
-              imdbScore: m.imdbScore || 8.0,
-              views: m.views || 0,
-              commentCount: m.commentCount || 0,
-              category: m.category || 'Khác',
-              genres: m.genres || []
-            };
-          });
-
-          // Merge local movies and server seed movies, avoiding duplicates
-          const localSlugs = new Set(localMovies.map(m => m.slug));
-          const combinedMovies = [
-            ...localMovies,
-            ...(allMoviesForClient || []).filter(m => !localSlugs.has(m.slug))
-          ].filter(m => m.slug && m.slug !== 'undefined' && m.slug !== 'null');
-
+          const combinedMovies = (allMoviesForClient || []).filter(m => m.slug && m.slug !== 'undefined' && m.slug !== 'null');
           const hasMovies = combinedMovies.length > 0;
 
           // 1. Update existing card images/banners (fallback sync)
@@ -1057,36 +1017,32 @@ const allMoviesForClient = await MovieService.getMovies();
             'one-piece': { title: 'ONE PIECE', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLskEpjrTbHRx6Jj3TAoagePHNQcXAyfE57exarNW0uRrctCdcc2Ns3Gccg-Q-sHR-iGafdXbWGBY3VqNGMMuNWRowyO8JZHlFLslh1G5WNrcjJ3y-OsTKgIzQGIYkOO5N88CKrVCPSenE4g8yUwk_MMtWZukOp8Pey1U0z24BjmBKodM448SynZ3QPSKC1mnooHd98SJMI_XxGvi66yl7YdJWaJyz_WDpl2GVANjq5HCB5SoVUfM8sY3Auj' }
           };
 
-          // 4. Collect comments
-          const allComments = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('tcomments_')) {
-              const slug = key.substring('tcomments_'.length);
-              try {
-                const storedComments = localStorage.getItem(key);
-                if (storedComments) {
-                  const commentsArr = JSON.parse(storedComments);
-                  if (Array.isArray(commentsArr)) {
-                    commentsArr.forEach(c => {
-                      const movieObj = moviesMap[slug] || seedMoviesLookup[slug] || { title: slug.replace(/-/g, ' '), posterUrl: '/favicon.png' };
-                      allComments.push({
-                        ...c,
-                        movieSlug: slug,
-                        movieTitle: movieObj.title,
-                        moviePoster: movieObj.posterUrl || movieObj.bannerUrl
-                      });
-                    });
-                  }
-                }
-              } catch(e) {
-                console.error('Error parsing comments:', e);
+          // 4. Fetch comments from Supabase API
+          let allComments = [];
+          try {
+            const res = await fetch('/api/comments');
+            if (res.ok) {
+              const result = await res.json();
+              if (result && result.status === 'success' && Array.isArray(result.data)) {
+                allComments = result.data.map(c => {
+                  const slug = c.movieSlug || '';
+                  const movieObj = moviesMap[slug] || seedMoviesLookup[slug] || { title: slug.replace(/-/g, ' '), posterUrl: '/favicon.png' };
+                  return {
+                    id: c.id,
+                    author: c.author,
+                    content: c.content,
+                    likes: c.likes || 0,
+                    replies: c.replies || [],
+                    movieSlug: slug,
+                    movieTitle: movieObj.title,
+                    moviePoster: movieObj.posterUrl || movieObj.bannerUrl
+                  };
+                });
               }
             }
+          } catch(e) {
+            console.error('Error fetching comments from API:', e);
           }
-
-          // Sort by timestamp/ID descending
-          allComments.sort((a, b) => b.id - a.id);
 
           // 5. Render Carousel Top Bình Luận
           const carouselContainer = document.getElementById('comments-carousel');

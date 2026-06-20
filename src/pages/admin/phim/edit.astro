@@ -1,5 +1,8 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { MovieService } from "../../../services/MovieService";
+
+const { genres, countries } = await MovieService.getGenresAndCountries();
 ---
 
 <AdminLayout title="Chỉnh sửa phim & Cấu hình tập">
@@ -105,7 +108,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-xs font-label-caps text-outline uppercase mb-2">Quốc gia</label>
-              <input type="text" id="movieCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: Nhật Bản" />
+              <input type="text" id="movieCountry" list="countriesList" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: Nhật Bản" />
+              <datalist id="countriesList"></datalist>
             </div>
             <div>
               <label class="block text-xs font-label-caps text-outline uppercase mb-2">Thể loại</label>
@@ -229,7 +233,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     </div>
   </div>
 
-  <script is:inline>
+  <script define:vars={{ genres, countries }}>
     (function() {
       let movieData = {
         movie: {
@@ -238,10 +242,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           year: 2026, time: "", quality: "FHD", lang: "Vietsub", episode_current: "",
           episode_total: "", actor: [], director: [],
         },
-        episodes: []
+        episodes: [],
+        isStatic: false
       };
 
-      let activeMode = "local"; // "local" (thủ công) | "api" (phim API)
       let editSlug = "";
 
       const pageTitle = document.getElementById("pageTitle");
@@ -256,27 +260,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       const btnApiSync = document.getElementById("btn-api-sync");
 
       function renderGenresCheckboxes(selectedGenres = []) {
-        const storedGenres = localStorage.getItem('txa_genres');
-        let sysGenres = [];
-        try {
-          sysGenres = storedGenres ? JSON.parse(storedGenres) : [];
-        } catch (e) {}
-        if (sysGenres.length === 0) {
-          sysGenres = [
-            { name: "Hành động", slug: "hanh-dong" },
-            { name: "Tình cảm", slug: "tinh-cam" },
-            { name: "Kinh dị", slug: "kinh-di" },
-            { name: "Viễn tưởng", slug: "vien-tuong" },
-            { name: "Kịch tính", slug: "kich-tinh" },
-            { name: "Tâm lý", slug: "tam-ly" },
-            { name: "Hài hước", slug: "hai-huoc" },
-            { name: "Hình sự", slug: "hinh-su" },
-            { name: "Cổ trang", slug: "co-trang" },
-            { name: "Hoạt hình", slug: "hoat-hinh" },
-            { name: "Phiêu lưu", slug: "phieu-luu" }
-          ];
-        }
-
+        const sysGenres = genres.map(g => ({ name: g, slug: g.toLowerCase().replace(/[^a-z0-9]+/g, '-') }));
         const container = document.getElementById("genresCheckboxList");
         if (!container) return;
 
@@ -293,73 +277,72 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         }).join("");
       }
 
+      function renderCountriesDatalist() {
+        const datalist = document.getElementById("countriesList");
+        if (!datalist || !countries) return;
+        datalist.innerHTML = countries.map(c => `<option value="${c}"></option>`).join("");
+      }
+
       // Check query params and bootstrap edit data
       async function checkURLMode() {
         const params = new URLSearchParams(window.location.search);
-        const th = params.get("th"); // edit thủ công
-        const m = params.get("m"); // edit API
+        const th = params.get("th");
+        const m = params.get("m");
+        const slug = th || m;
 
-        if (th) {
-          activeMode = "local";
-          editSlug = th;
-          pageTitle.textContent = `Chỉnh sửa phim: ${th}`;
-          pageSubtitle.textContent = "Chỉnh sửa thông tin phim thủ công và danh sách tập phim.";
-          apiSyncCard.classList.add("hidden");
-          loadLocalMovieForEdit(th);
-        } else if (m) {
-          activeMode = "api";
-          editSlug = m;
-          pageTitle.textContent = `Cấu hình tập phim: ${m}`;
-          pageSubtitle.textContent = "Chỉ cấu hình phụ đề, intro/outro và ghim hiển thị cho phim cào từ API.";
-          apiSyncCard.classList.remove("hidden");
-          
-          // Dim info card but enable status & quality
-          movieInfoCard.classList.add("opacity-40", "pointer-events-none");
-          const broadcastSec = document.getElementById("broadcastScheduleSection");
-          if (broadcastSec) broadcastSec.style.cssText = "pointer-events: auto !important; opacity: 1 !important;";
-
-          // Load episodes API and mix with config
-          const configStr = localStorage.getItem("txa_episodes_config") || "{}";
-          const config = JSON.parse(configStr);
-          const movieConfig = config[m];
-          await loadApiMovieEpisodes(m, movieConfig);
+        if (slug) {
+          editSlug = slug;
+          pageTitle.textContent = `Chỉnh sửa phim: ${slug}`;
+          pageSubtitle.textContent = "Chỉnh sửa thông tin chi tiết phim và cấu hình các tập phát sóng.";
+          await loadMovieForEdit(slug);
         } else {
-          // Fallback redirect
           window.location.href = "/admin/phim";
         }
       }
 
-      function loadLocalMovieForEdit(slug) {
-        const listStr = localStorage.getItem("txa_crawled_movies") || "[]";
-        let list = [];
-        try { list = JSON.parse(listStr); } catch (e) {}
+      async function loadMovieForEdit(slug) {
+        try {
+          const res = await fetch(`/api/admin/movie-action?action=get&slug=${slug}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const responseData = await res.json();
+          if (responseData.status !== "success" || !responseData.data) {
+            throw new Error(responseData.message || "Lỗi tải chi tiết phim");
+          }
 
-        const found = list.find(item => (item.movie?.slug || item.slug) === slug);
-        if (found) {
-          const m = found.movie || found;
+          const m = responseData.data;
+          
+          const isStatic = !!m.isStatic;
+          movieData.isStatic = isStatic;
+
+          if (isStatic) {
+            apiSyncCard.classList.add("hidden");
+          } else {
+            apiSyncCard.classList.remove("hidden");
+          }
+
           movieData.movie = {
-            name: m.title || m.name || "",
-            origin_name: m.originalTitle || m.origin_name || "",
+            name: m.title || "",
+            origin_name: m.originalTitle || "",
             slug: m.slug || slug,
             type: m.type || "series",
             status: m.status || "ongoing",
-            poster_url: m.posterUrl || m.poster_url || "",
-            thumb_url: m.bannerUrl || m.thumb_url || m.posterUrl || "",
-            trailer_url: m.trailerUrl || m.trailer_url || "",
+            poster_url: m.posterUrl || "",
+            thumb_url: m.bannerUrl || m.posterUrl || "",
+            trailer_url: m.trailerUrl || "",
             category: m.category || "",
             country: m.country || "",
-            year: m.releaseYear || m.year || 2026,
-            time: m.durationMinutes || m.time || "",
+            year: m.releaseYear || 2026,
+            time: m.durationMinutes || "",
             quality: m.quality || "FHD",
             lang: m.lang || "Vietsub",
-            episode_current: m.episodeCurrent || m.episode_current || "",
-            episode_total: m.episodeTotal || m.episode_total || "",
+            episode_current: m.episodeCurrent || "",
+            episode_total: m.episodeTotal || "",
             actor: m.actors || m.actor || [],
             director: m.directors || m.director || [],
-            pinned: found.pinned || m.pinned || false,
+            pinned: m.pinned || false,
           };
 
-          const rawEps = found.episodes || [];
+          const rawEps = m.episodes || [];
           movieData.episodes = rawEps.map(server => {
             const srvData = server.serverData || server.server_data || [];
             return {
@@ -375,6 +358,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
                 time_outro_start: ep.timeOutroStart ?? ep.time_outro_start ?? 0,
                 time_outro_end: ep.timeOutroEnd ?? ep.time_outro_end ?? 0,
                 subtitles: ep.subtitles || ep.subtitles_data || [],
+                airDate: ep.airDate || ep.air_date || "",
+                airTime: ep.airTime || ep.air_time || "",
               }))
             };
           });
@@ -389,12 +374,14 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           document.getElementById("movieBannerUrl").value = movieData.movie.thumb_url;
           document.getElementById("movieTrailerUrl").value = movieData.movie.trailer_url;
           document.getElementById("movieCategory").value = movieData.movie.category;
+          
           const selectedGenres = m.genres || (m.category ? m.category.split(",").map(s => s.trim()) : []);
           renderGenresCheckboxes(selectedGenres);
+          
           document.getElementById("movieCountry").value = movieData.movie.country;
-          document.getElementById("movieActors").value = movieData.movie.actor.join(", ");
-          document.getElementById("movieDirectors").value = movieData.movie.director.join(", ");
-          document.getElementById("movieDescription").value = m.description || movieData.movie.content || "";
+          document.getElementById("movieActors").value = Array.isArray(movieData.movie.actor) ? movieData.movie.actor.join(", ") : "";
+          document.getElementById("movieDirectors").value = Array.isArray(movieData.movie.director) ? movieData.movie.director.join(", ") : "";
+          document.getElementById("movieDescription").value = m.description || "";
           document.getElementById("movieQuality").value = movieData.movie.quality;
           document.getElementById("movieLang").value = movieData.movie.lang;
           document.getElementById("movieEpCurrent").value = movieData.movie.episode_current;
@@ -403,86 +390,15 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           document.getElementById("movieTime").value = movieData.movie.time;
           document.getElementById("moviePinned").checked = !!movieData.movie.pinned;
 
-          if (found.broadcastSchedule) {
-            document.getElementById("scheduleDate").value = found.broadcastSchedule.nextDate || "";
-            document.getElementById("scheduleTime").value = found.broadcastSchedule.nextTime || "";
-            document.getElementById("scheduleNotice").value = found.broadcastSchedule.notice || "";
+          if (m.broadcastSchedule) {
+            document.getElementById("scheduleDate").value = m.broadcastSchedule.nextDate || "";
+            document.getElementById("scheduleTime").value = m.broadcastSchedule.nextTime || "";
+            document.getElementById("scheduleNotice").value = m.broadcastSchedule.notice || "";
           }
 
           renderServers();
-        } else {
-          if (window.showGlobalToast) window.showGlobalToast("Không tìm thấy dữ liệu phim thủ công này!", "error");
-        }
-      }
-
-      async function loadApiMovieEpisodes(slug, existingConfig = null) {
-        try {
-          const res = await fetch(`https://phimapi.com/phim/${slug}`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-
-          if (data && data.movie && Array.isArray(data.episodes)) {
-            movieData.movie.slug = slug;
-            movieData.movie.name = data.movie.name;
-
-            // Prefill some fields even in API mode
-            document.getElementById("movieTitle").value = data.movie.name || "";
-            document.getElementById("movieOriginalTitle").value = data.movie.origin_name || "";
-            document.getElementById("movieSlug").value = slug;
-            document.getElementById("movieQuality").value = existingConfig?.quality || data.movie.quality || "FHD";
-            document.getElementById("movieLang").value = existingConfig?.lang || data.movie.lang || "Vietsub";
-            document.getElementById("movieEpCurrent").value = data.movie.episode_current || "";
-            document.getElementById("movieEpTotal").value = data.movie.episode_total || "";
-            document.getElementById("movieYear").value = data.movie.year || 2026;
-            document.getElementById("movieTime").value = data.movie.time || "";
-
-            const apiGenres = Array.isArray(data.movie.category) ? data.movie.category.map((c) => c.name) : [];
-            renderGenresCheckboxes(apiGenres);
-
-            movieData.episodes = data.episodes.map(server => {
-              const srvData = server.server_data || [];
-              return {
-                server_name: server.server_name || "Server VIP",
-                server_data: srvData.map(ep => {
-                  let epName = ep.name || "";
-                  if (epName.trim().match(/^\d+$/)) {
-                    epName = `Tập ${epName.padStart(2, "0")}`;
-                  }
-
-                  const epSlug = ep.slug || `tap-${ep.name}`;
-                  const localEpConfig = existingConfig ? existingConfig[epSlug] : null;
-
-                  return {
-                    name: epName,
-                    slug: epSlug,
-                    filename: ep.filename || "",
-                    link_m3u8: localEpConfig?.link_m3u8 || ep.link_m3u8 || "",
-                    link_embed: localEpConfig?.link_embed || ep.link_embed || "",
-                    time_intro_start: localEpConfig ? localEpConfig.timeIntroStart : 0,
-                    time_intro_end: localEpConfig ? localEpConfig.timeIntroEnd : 0,
-                    time_outro_start: localEpConfig ? localEpConfig.timeOutroStart : 0,
-                    time_outro_end: localEpConfig ? localEpConfig.timeOutroEnd : 0,
-                    subtitles: localEpConfig ? localEpConfig.subtitles : [],
-                    airDate: localEpConfig ? localEpConfig.airDate : "",
-                    airTime: localEpConfig ? localEpConfig.airTime : "",
-                  };
-                })
-              };
-            });
-
-            if (existingConfig) {
-              if (existingConfig.broadcastSchedule) {
-                document.getElementById("scheduleDate").value = existingConfig.broadcastSchedule.nextDate || "";
-                document.getElementById("scheduleTime").value = existingConfig.broadcastSchedule.nextTime || "";
-                document.getElementById("scheduleNotice").value = existingConfig.broadcastSchedule.notice || "";
-              }
-              document.getElementById("moviePinned").checked = !!existingConfig.pinned;
-            }
-
-            renderServers();
-          }
         } catch (e) {
-          if (window.showGlobalToast) window.showGlobalToast("Lỗi tải phim từ API: " + e.message, "error");
+          if (window.showGlobalToast) window.showGlobalToast("Lỗi tải phim: " + e.message, "error");
         }
       }
 
@@ -706,24 +622,20 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       };
 
       // Save handlers
-      saveMovieBtn.onclick = () => {
-        const scheduleDate = document.getElementById("scheduleDate").value;
-        const scheduleTime = document.getElementById("scheduleTime").value;
-        const scheduleNotice = document.getElementById("scheduleNotice").value.trim();
-        const broadcastSchedule = (scheduleDate || scheduleTime || scheduleNotice) ? { nextDate: scheduleDate, nextTime: scheduleTime, notice: scheduleNotice } : undefined;
+      saveMovieBtn.onclick = async () => {
+        saveMovieBtn.disabled = true;
+        saveMovieBtn.innerHTML = '<span class="animate-spin material-symbols-outlined text-lg">autorenew</span> Đang lưu...';
 
-        if (activeMode === "local") {
+        try {
           const title = document.getElementById("movieTitle").value.trim();
           if (!title) {
             if (window.showGlobalToast) window.showGlobalToast("Vui lòng điền tên phim!", "error");
+            saveMovieBtn.disabled = false;
+            saveMovieBtn.innerHTML = '<span class="material-symbols-outlined text-lg">save</span> Lưu thay đổi';
             return;
           }
 
           const slug = document.getElementById("movieSlug").value;
-          const listStr = localStorage.getItem("txa_crawled_movies") || "[]";
-          let list = [];
-          try { list = JSON.parse(listStr); } catch (e) {}
-
           const qualityVal = document.getElementById("movieQuality").value.trim() || "FHD";
           const langVal = document.getElementById("movieLang").value.trim() || "Vietsub";
           const epCur = document.getElementById("movieEpCurrent").value.trim();
@@ -737,32 +649,37 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           const selectedGenreNames = checkedCheckboxes.map((cb) => cb.value);
           const categoryVal = selectedGenreNames.join(", ") || "Khác";
 
-          const movieDetailObj = {
-            id: `local-${slug}`,
-            title: title,
-            originalTitle: document.getElementById("movieOriginalTitle").value.trim(),
-            slug: slug,
-            pinned: document.getElementById("moviePinned").checked,
-            description: document.getElementById("movieDescription").value.trim(),
-            posterUrl: document.getElementById("moviePosterUrl").value.trim() || "https://png.pngtree.com/thumb_back/fh260/background/20250415/pngtree-a-glowing-film-reel-standing-vertically-in-front-image_17193146.jpg",
-            bannerUrl: document.getElementById("movieBannerUrl").value.trim() || document.getElementById("moviePosterUrl").value.trim(),
-            releaseYear: yearVal,
-            durationMinutes: timeVal || "120 phút",
-            type: document.getElementById("movieType").value,
-            status: document.getElementById("movieStatus").value,
-            episodeCurrent: epCur || "Full",
-            episodeTotal: epTot || "1",
-            quality: qualityVal,
-            lang: langVal,
-            imdbScore: 8.0,
-            category: categoryVal,
-            genres: selectedGenreNames.length > 0 ? selectedGenreNames : ["Khác"],
-            actors: actorsStr ? actorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
-            directors: directorsStr ? directorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
-            trailerUrl: document.getElementById("movieTrailerUrl").value.trim(),
-            seasons: document.getElementById("movieType").value === "movie" ? "Bản Điện Ảnh" : "Phần 1",
-            broadcastSchedule,
-            updatedAt: new Date().toISOString(),
+          const scheduleDate = document.getElementById("scheduleDate").value;
+          const scheduleTime = document.getElementById("scheduleTime").value;
+          const scheduleNotice = document.getElementById("scheduleNotice").value.trim();
+          const broadcastSchedule = (scheduleDate || scheduleTime || scheduleNotice) ? { nextDate: scheduleDate, nextTime: scheduleTime, notice: scheduleNotice } : null;
+
+          const moviePayload = {
+            movie: {
+              title: title,
+              originalTitle: document.getElementById("movieOriginalTitle").value.trim(),
+              slug: slug,
+              pinned: document.getElementById("moviePinned").checked,
+              description: document.getElementById("movieDescription").value.trim(),
+              posterUrl: document.getElementById("moviePosterUrl").value.trim() || "https://png.pngtree.com/thumb_back/fh260/background/20250415/pngtree-a-glowing-film-reel-standing-vertically-in-front-image_17193146.jpg",
+              bannerUrl: document.getElementById("movieBannerUrl").value.trim() || document.getElementById("moviePosterUrl").value.trim(),
+              releaseYear: yearVal,
+              durationMinutes: timeVal || "120 phút",
+              type: document.getElementById("movieType").value,
+              status: document.getElementById("movieStatus").value,
+              episodeCurrent: epCur || "Full",
+              episodeTotal: epTot || "1",
+              quality: qualityVal,
+              lang: langVal,
+              imdbScore: 8.0,
+              category: categoryVal,
+              genres: selectedGenreNames.length > 0 ? selectedGenreNames : ["Khác"],
+              actors: actorsStr ? actorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
+              directors: directorsStr ? directorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
+              trailerUrl: document.getElementById("movieTrailerUrl").value.trim(),
+              seasons: document.getElementById("movieType").value === "movie" ? "Bản Điện Ảnh" : "Phần 1",
+              broadcastSchedule,
+            },
             episodes: movieData.episodes.map(server => ({
               serverName: server.server_name || "Server VIP",
               serverData: server.server_data.map(ep => ({
@@ -782,55 +699,35 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
             }))
           };
 
-          // Filter out existing and prepend updated
-          list = list.filter(m => (m.movie?.slug || m.slug) !== editSlug);
-          list.unshift(movieDetailObj);
-          localStorage.setItem("txa_crawled_movies", JSON.stringify(list));
-
-          if (window.showGlobalToast) window.showGlobalToast("Cập nhật phim thủ công thành công!", "success");
-          setTimeout(() => window.location.href = "/admin/phim", 1000);
-        } else {
-          // API METADATA OVERRIDE MODE
-          if (movieData.episodes.length === 0) {
-            if (window.showGlobalToast) window.showGlobalToast("Chưa có cấu hình tập phim để lưu!", "error");
-            return;
-          }
-
-          const epConfigMap = {
-            pinned: document.getElementById("moviePinned").checked,
-            quality: document.getElementById("movieQuality").value.trim(),
-            lang: document.getElementById("movieLang").value.trim()
-          };
-          if (broadcastSchedule) epConfigMap.broadcastSchedule = broadcastSchedule;
-
-          movieData.episodes.forEach(server => {
-            server.server_data.forEach(ep => {
-              epConfigMap[ep.slug] = {
-                link_m3u8: ep.link_m3u8 || "",
-                link_embed: ep.link_embed || "",
-                timeIntroStart: ep.time_intro_start || 0,
-                timeIntroEnd: ep.time_intro_end || 0,
-                timeOutroStart: ep.time_outro_start || 0,
-                timeOutroEnd: ep.time_outro_end || 0,
-                subtitles: ep.subtitles || [],
-                airDate: ep.airDate || ep.air_date || "",
-                airTime: ep.airTime || ep.air_time || "",
-              };
-            });
+          const res = await fetch("/api/admin/movie-action", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "save",
+              slug: slug,
+              movieData: moviePayload,
+              isStatic: movieData.isStatic
+            })
           });
 
-          const registryStr = localStorage.getItem("txa_episodes_config") || "{}";
-          let registry = {};
-          try { registry = JSON.parse(registryStr); } catch (e) {}
+          const result = await res.json();
+          if (!res.ok || result.status !== "success") {
+            throw new Error(result.message || "Lỗi khi lưu phim lên database.");
+          }
 
-          registry[editSlug] = epConfigMap;
-          localStorage.setItem("txa_episodes_config", JSON.stringify(registry));
-
-          if (window.showGlobalToast) window.showGlobalToast("Cấu hình tập phim API thành công!", "success");
+          if (window.showGlobalToast) window.showGlobalToast("Cập nhật phim thành công!", "success");
           setTimeout(() => window.location.href = "/admin/phim", 1000);
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast("Lỗi khi lưu thay đổi: " + e.message, "error");
+          saveMovieBtn.disabled = false;
+          saveMovieBtn.innerHTML = '<span class="material-symbols-outlined text-lg">save</span> Lưu thay đổi';
         }
       };
 
+      // Bootstrap Page
+      renderCountriesDatalist();
       checkURLMode();
     })();
   </script>

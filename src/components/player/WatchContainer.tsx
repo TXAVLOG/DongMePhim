@@ -454,14 +454,14 @@ const CollapsibleDescription: React.FC<{ htmlContent: string }> = ({ htmlContent
 };
 
 interface ReplyItem {
-  id: number;
+  id: any;
   author: string;
   content: string;
   createdAt: string;
 }
 
 interface CommentItem {
-  id: number;
+  id: any;
   author: string;
   content: string;
   likes: number;
@@ -474,46 +474,27 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [newComment, setNewComment] = useState<string>('');
   const [authorName, setAuthorName] = useState<string>('');
-  const [replyTarget, setReplyTarget] = useState<number | null>(null);
+  const [replyTarget, setReplyTarget] = useState<any | null>(null);
   const [replyContent, setReplyContent] = useState<string>('');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(`tcomments_${movieSlug}`);
-      if (stored) {
-        setComments(JSON.parse(stored));
-      } else {
-        const seeds: CommentItem[] = [
-          {
-            id: 1,
-            author: "Hoàng Nam",
-            content: "Tập mới cuốn ghê, không uổng công ngóng cả tuần trời. Web dịch siêu chất lượng nha!",
-            likes: 12,
-            dislikes: 1,
-            replies: [
-              {
-                id: 101,
-                author: "Cô 3 Rổ",
-                content: "Cảm ơn bạn đã ủng hộ web nha! Nhớ giới thiệu cho bạn bè cùng xem nha bạn.",
-                createdAt: new Date(Date.now() - 3600000).toISOString()
-              }
-            ],
-            createdAt: new Date(Date.now() - 7200000).toISOString()
-          },
-          {
-            id: 2,
-            author: "Khánh Linh",
-            content: "Phim này càng xem càng cuốn, mong chờ tập sau quá đi thôiiii",
-            likes: 8,
-            dislikes: 0,
-            replies: [],
-            createdAt: new Date(Date.now() - 14400000).toISOString()
+    const fetchComments = async () => {
+      try {
+        const res = await fetch(`/api/comments?slug=${encodeURIComponent(movieSlug)}`);
+        if (res.ok) {
+          const result: any = await res.json();
+          if (result && result.status === 'success' && Array.isArray(result.data)) {
+            setComments(result.data);
           }
-        ];
-        setComments(seeds);
-        localStorage.setItem(`tcomments_${movieSlug}`, JSON.stringify(seeds));
+        }
+      } catch (e) {
+        console.error('Lỗi khi tải bình luận từ Supabase:', e);
       }
-      
+    };
+
+    fetchComments();
+
+    if (typeof window !== 'undefined') {
       const loggedIn = localStorage.getItem('tlogged_in_as');
       if (loggedIn) {
         setAuthorName(loggedIn);
@@ -521,75 +502,134 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
     }
   }, [movieSlug]);
 
-  const saveComments = (updated: CommentItem[]) => {
-    setComments(updated);
-    localStorage.setItem(`tcomments_${movieSlug}`, JSON.stringify(updated));
-  };
-
-  const handlePostComment = (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePostComment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
     const name = authorName.trim() || 'Ẩn danh';
-    const commentRecord: CommentItem = {
-      id: Date.now(),
-      author: name,
-      content: newComment.trim(),
-      likes: 0,
-      dislikes: 0,
-      replies: [],
-      createdAt: new Date().toISOString()
-    };
 
-    const updated = [commentRecord, ...comments];
-    saveComments(updated);
-    setNewComment('');
-    if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
-      (window as any).showGlobalToast('Đăng bình luận thành công!', 'success');
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          slug: movieSlug,
+          author: name,
+          content: newComment.trim()
+        })
+      });
+
+      if (res.ok) {
+        const result: any = await res.json();
+        if (result && result.status === 'success' && result.data) {
+          setComments(prev => [result.data, ...prev]);
+          setNewComment('');
+          if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+            (window as any).showGlobalToast('Đăng bình luận thành công!', 'success');
+          }
+        } else {
+          throw new Error(result.message || 'Lỗi server');
+        }
+      } else {
+        throw new Error('Lỗi kết nối mạng');
+      }
+    } catch (err: any) {
+      if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+        (window as any).showGlobalToast(`Lỗi: ${err.message}`, 'error');
+      }
     }
   };
 
-  const handlePostReply = (commentId: number) => {
+  const handlePostReply = async (commentId: any) => {
     if (!replyContent.trim()) return;
 
     const name = authorName.trim() || 'Ẩn danh';
-    const replyRecord: ReplyItem = {
-      id: Date.now(),
-      author: name,
-      content: replyContent.trim(),
-      createdAt: new Date().toISOString()
-    };
 
-    const updated = comments.map(c => {
-      if (c.id === commentId) {
-        return {
-          ...c,
-          replies: [...c.replies, replyRecord]
-        };
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'reply',
+          commentId: commentId,
+          replyAuthor: name,
+          replyContent: replyContent.trim()
+        })
+      });
+
+      if (res.ok) {
+        const result: any = await res.json();
+        if (result && result.status === 'success' && result.data) {
+          const replyRecord = result.data;
+          setComments(prev => prev.map(c => {
+            if (c.id === commentId) {
+              return {
+                ...c,
+                replies: [...c.replies, replyRecord]
+              };
+            }
+            return c;
+          }));
+          setReplyContent('');
+          setReplyTarget(null);
+          if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+            (window as any).showGlobalToast('Đã trả lời bình luận!', 'success');
+          }
+        } else {
+          throw new Error(result.message || 'Lỗi server');
+        }
+      } else {
+        throw new Error('Lỗi kết nối mạng');
       }
-      return c;
-    });
-
-    saveComments(updated);
-    setReplyContent('');
-    setReplyTarget(null);
-    if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
-      (window as any).showGlobalToast('Đã trả lời bình luận!', 'success');
+    } catch (err: any) {
+      if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+        (window as any).showGlobalToast(`Lỗi: ${err.message}`, 'error');
+      }
     }
   };
 
-  const handleLike = (commentId: number, isDislike: boolean = false) => {
-    const updated = comments.map(c => {
-      if (c.id === commentId) {
-        return {
-          ...c,
-          likes: isDislike ? c.likes : c.likes + 1,
-          dislikes: isDislike ? c.dislikes + 1 : c.dislikes
-        };
+  const handleLike = async (commentId: any, isDislike: boolean = false) => {
+    if (isDislike) {
+      setComments(prev => prev.map(c => {
+        if (c.id === commentId) {
+          return { ...c, dislikes: c.dislikes + 1 };
+        }
+        return c;
+      }));
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'like',
+          commentId: commentId
+        })
+      });
+
+      if (res.ok) {
+        const result: any = await res.json();
+        if (result && result.status === 'success' && result.data) {
+          const newLikes = result.data.likes;
+          setComments(prev => prev.map(c => {
+            if (c.id === commentId) {
+              return { ...c, likes: newLikes };
+            }
+            return c;
+          }));
+        }
       }
-      return c;
-    });
-    saveComments(updated);
+    } catch (err) {
+      console.error('Lỗi khi thích bình luận:', err);
+    }
   };
 
   const formatDate = (isoStr: string) => {

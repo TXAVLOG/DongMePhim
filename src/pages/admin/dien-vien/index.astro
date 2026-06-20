@@ -75,9 +75,7 @@ const staticMovies = await MovieService.getMovies();
         if (!grid) return; // Exit if not on the page
 
         // Load all movies to count roles
-        const crawledMoviesRaw = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
-        const crawledMovies = crawledMoviesRaw.map(item => item.movie || item);
-        allMovies = [...staticMovies, ...crawledMovies];
+        allMovies = staticMovies || [];
 
         // Load actors
         try {

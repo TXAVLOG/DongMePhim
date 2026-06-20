@@ -111,6 +111,63 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
 
     <main class="max-w-container-max mx-auto px-gutter pt-24 md:pt-36 pb-16 relative z-10 space-y-8">
       
+      <!-- Lịch phát sóng phim (nếu có) - Nổi bật ở đầu trang -->
+      {nextAiringEpisode ? (
+        <div class="p-4 bg-gradient-to-r from-primary-container/20 via-primary-container/10 to-transparent border border-primary/20 rounded-2xl text-xs text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg relative overflow-hidden" id="broadcastScheduleBadge">
+          <div class="flex items-center gap-3 relative z-10">
+            <div class="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center border border-primary/20 shrink-0">
+              <span class="material-symbols-outlined text-xl text-primary">notifications</span>
+            </div>
+            <div>
+              <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-name={nextAiringEpisode.name} data-date={nextAiringEpisode.airDate} data-time={nextAiringEpisode.airTime}>
+                {nextAiringEpisode.name} sẽ phát sóng ngày {
+                  (() => {
+                    if (!nextAiringEpisode.airDate) return '';
+                    const parts = nextAiringEpisode.airDate.split('-');
+                    return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : nextAiringEpisode.airDate;
+                  })()
+                }. Hãy đón xem nhé!
+              </span>
+            </div>
+          </div>
+          
+          {nextAiringEpisode.airTime && (
+            <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={nextAiringEpisode.airTime.split(':').length === 2 ? `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}:00Z` : `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}Z`}>
+              <span class="text-[9px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">Đếm ngược phát sóng</span>
+              <span class="font-mono text-[13px] font-black text-primary" id="countdownTimer">--:--:--</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        movie.broadcastSchedule && (movie.broadcastSchedule.notice || movie.broadcastSchedule.nextDate) && (
+          <div class="p-4 bg-gradient-to-r from-primary-container/20 via-primary-container/10 to-transparent border border-primary/20 rounded-2xl text-xs text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg relative overflow-hidden" id="broadcastScheduleBadge">
+            <div class="flex items-center gap-3 relative z-10">
+              <div class="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center border border-primary/20 shrink-0">
+                <span class="material-symbols-outlined text-xl text-primary">notifications</span>
+              </div>
+              <div>
+                <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-notice={movie.broadcastSchedule.notice} data-date={movie.broadcastSchedule.nextDate} data-time={movie.broadcastSchedule.nextTime}>
+                  {movie.broadcastSchedule.notice || `Tập tiếp theo sẽ phát sóng ngày ${
+                    (() => {
+                      if (!movie.broadcastSchedule?.nextDate) return '';
+                      const parts = movie.broadcastSchedule.nextDate.split('-');
+                      return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : movie.broadcastSchedule.nextDate;
+                    })()
+                  }.`}
+                </span>
+              </div>
+            </div>
+            
+            {movie.broadcastSchedule.nextTime && movie.broadcastSchedule.nextDate && (
+              <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={movie.broadcastSchedule.nextTime.split(':').length === 2 ? `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}:00Z` : `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}Z`}>
+                <span class="text-[9px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">Đếm ngược phát sóng</span>
+                <span class="font-mono text-[13px] font-black text-primary" id="countdownTimer">--:--:--</span>
+              </div>
+            )}
+          </div>
+        )
+      )}
+
       <!-- Lưới hai cột hiển thị chi tiết phim -->
       <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         
@@ -135,6 +192,12 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
           <div id="mobile-info-content" class="hidden lg:block space-y-5">
             <!-- Badges -->
             <div id="movie-badges-container" class="flex flex-wrap gap-2 justify-center lg:justify-start">
+              {totalEps === 0 && (
+                <span class="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[10.5px]" style="font-variation-settings: 'FILL' 1;">schedule</span>
+                  Sắp chiếu
+                </span>
+              )}
               <span class="bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded">{movie.quality}</span>
               <span class="bg-white/5 text-on-surface-variant border border-glass-stroke text-[10px] font-bold px-2 py-0.5 rounded">{movie.lang}</span>
               <span class="bg-white/5 text-on-surface-variant border border-glass-stroke text-[10px] font-bold px-2 py-0.5 rounded">{movie.releaseYear}</span>
@@ -187,12 +250,29 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
           <div class="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
             <!-- Nút chính "Xem Ngay" & Nút phụ -->
             <div class="flex flex-wrap items-center gap-3">
-              <a href={`/xem/${movie.slug}?ep=tap-1`} id="btn-watch-now">
-                <Button className="rounded-full bg-gradient-to-br from-primary-container to-secondary-container hover:brightness-110 text-white font-bold px-7 py-3 gap-2 text-sm shadow-[0_4px_20px_rgba(124,58,237,0.25)] flex items-center active:scale-95 transition-all">
-                  <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                  Xem Ngay
-                </Button>
-              </a>
+              {totalEps > 0 ? (
+                <>
+                  <a href={`/xem/${movie.slug}?ep=tap-1`} id="btn-watch-now">
+                    <Button className="rounded-full bg-gradient-to-br from-primary-container to-secondary-container hover:brightness-110 text-white font-bold px-7 py-3 gap-2 text-sm shadow-[0_4px_20px_rgba(124,58,237,0.25)] flex items-center active:scale-95 transition-all">
+                      <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                      Xem Ngay
+                    </Button>
+                  </a>
+                  {movie.trailerUrl && (
+                    <button id="btn-watch-trailer" data-trailer-url={movie.trailerUrl} class="rounded-full glass-card border border-glass-stroke text-white font-bold px-7 py-3 gap-2 text-sm flex items-center active:scale-95 hover:bg-white/10 transition-all cursor-pointer">
+                      <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 0;">movie</span>
+                      Xem Trailer
+                    </button>
+                  )}
+                </>
+              ) : (
+                movie.trailerUrl && (
+                  <button id="btn-watch-trailer" data-trailer-url={movie.trailerUrl} class="rounded-full bg-gradient-to-br from-primary-container to-secondary-container hover:brightness-110 text-white font-bold px-7 py-3 gap-2 text-sm shadow-[0_4px_20px_rgba(124,58,237,0.25)] flex items-center active:scale-95 transition-all cursor-pointer">
+                    <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 0;">movie</span>
+                    Xem Trailer
+                  </button>
+                )
+              )}
 
               <div class="flex items-center gap-1.5">
                 <button class="relative group p-2.5 rounded-full border border-glass-stroke text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors cursor-pointer" id="btn-favorite-action">
@@ -225,63 +305,6 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
               </div>
             </div>
           </div>
-
-          <!-- Lịch phát sóng phim (nếu có) -->
-          {nextAiringEpisode ? (
-            <div class="p-4 bg-gradient-to-r from-primary-container/20 via-primary-container/10 to-transparent border border-primary/20 rounded-2xl text-xs text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg relative overflow-hidden" id="broadcastScheduleBadge">
-              <div class="flex items-center gap-3 relative z-10">
-                <div class="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center border border-primary/20 shrink-0">
-                  <span class="material-symbols-outlined text-xl text-primary">notifications</span>
-                </div>
-                <div>
-                  <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-name={nextAiringEpisode.name} data-date={nextAiringEpisode.airDate} data-time={nextAiringEpisode.airTime}>
-                    {nextAiringEpisode.name} sẽ phát sóng ngày {
-                      (() => {
-                        if (!nextAiringEpisode.airDate) return '';
-                        const parts = nextAiringEpisode.airDate.split('-');
-                        return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : nextAiringEpisode.airDate;
-                      })()
-                    }. Hãy đón xem nhé!
-                  </span>
-                </div>
-              </div>
-              
-              {nextAiringEpisode.airTime && (
-                <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={nextAiringEpisode.airTime.split(':').length === 2 ? `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}:00Z` : `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}Z`}>
-                  <span class="text-[9px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">Đếm ngược phát sóng</span>
-                  <span class="font-mono text-[13px] font-black text-primary" id="countdownTimer">--:--:--</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            movie.broadcastSchedule && (movie.broadcastSchedule.notice || movie.broadcastSchedule.nextDate) && (
-              <div class="p-4 bg-gradient-to-r from-primary-container/20 via-primary-container/10 to-transparent border border-primary/20 rounded-2xl text-xs text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg relative overflow-hidden" id="broadcastScheduleBadge">
-                <div class="flex items-center gap-3 relative z-10">
-                  <div class="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center border border-primary/20 shrink-0">
-                    <span class="material-symbols-outlined text-xl text-primary">notifications</span>
-                  </div>
-                  <div>
-                    <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-notice={movie.broadcastSchedule.notice} data-date={movie.broadcastSchedule.nextDate} data-time={movie.broadcastSchedule.nextTime}>
-                      {movie.broadcastSchedule.notice || `Tập tiếp theo sẽ phát sóng ngày ${
-                        (() => {
-                          if (!movie.broadcastSchedule?.nextDate) return '';
-                          const parts = movie.broadcastSchedule.nextDate.split('-');
-                          return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : movie.broadcastSchedule.nextDate;
-                        })()
-                      }.`}
-                    </span>
-                  </div>
-                </div>
-                
-                {movie.broadcastSchedule.nextTime && movie.broadcastSchedule.nextDate && (
-                  <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={movie.broadcastSchedule.nextTime.split(':').length === 2 ? `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}:00Z` : `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}Z`}>
-                    <span class="text-[9px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">Đếm ngược phát sóng</span>
-                    <span class="font-mono text-[13px] font-black text-primary" id="countdownTimer">--:--:--</span>
-                  </div>
-                )}
-              </div>
-            )
-          )}
 
           <!-- Dropdown Chọn Phần phim khác (Seasons Dropdown) -->
           <div id="movie-seasons-dropdown-wrapper">
@@ -567,6 +590,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
     interface Window {
       showGlobalToast: (message: string, type?: string) => void;
       openLoginModal: () => void;
+      txamodal?: any;
     }
   }
 
@@ -582,136 +606,54 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
     const movieSlug = JSON.parse(movieSlugEl.textContent || '""');
     const movieTitle = JSON.parse(movieTitleEl.textContent || '""');
 
-    // Check if the movie is a crawled movie in local storage
-    let localMovie: any = null;
-    try {
-      const stored = localStorage.getItem('txa_crawled_movies');
-      if (stored) {
-        const list = JSON.parse(stored);
-        if (Array.isArray(list)) {
-          localMovie = list.find((m: any) => {
-            const movieData = m.movie || m;
-            return movieData.slug === movieSlug;
-          });
+    // Helper: Parse YouTube embed URL
+    function getYouTubeEmbedUrl(url: string) {
+      if (!url) return '';
+      if (url.includes('/embed/')) {
+        return url;
+      }
+      let videoId = '';
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) {
+        videoId = match[2];
+      } else {
+        const trimmed = url.trim();
+        if (trimmed.length === 11 && !trimmed.includes('/') && !trimmed.includes('.')) {
+          videoId = trimmed;
         }
       }
-    } catch (e) {
-      console.error('Error reading crawled movies from local storage:', e);
+      return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
     }
 
-    if (localMovie) {
-      const movieData = localMovie.movie || localMovie;
-      // Overwrite servers
-      servers = localMovie.episodes || [];
-      
-      // Update DOM components with details from localMovie
-      const bannerImg = document.getElementById('movie-banner-img');
-      if (bannerImg) {
-        bannerImg.setAttribute('src', movieData.bannerUrl || movieData.posterUrl);
-      }
-      const posterImg = document.getElementById('movie-poster-img');
-      if (posterImg) {
-        posterImg.setAttribute('src', movieData.posterUrl);
-        posterImg.setAttribute('alt', movieData.title);
-      }
-      const titleEl = document.getElementById('movie-title-display');
-      if (titleEl) {
-        titleEl.textContent = movieData.title;
-      }
-      const origTitleEl = document.getElementById('movie-original-title-display');
-      if (origTitleEl) {
-        origTitleEl.textContent = movieData.originalTitle || '';
-      }
-      const descEl = document.getElementById('movie-description-display');
-      if (descEl) {
-        descEl.innerHTML = movieData.description || '';
-      }
-      const durationEl = document.getElementById('movie-duration-display');
-      if (durationEl) {
-        durationEl.textContent = movieData.durationMinutes || '';
-      }
-      const typeEl = document.getElementById('movie-type-display');
-      if (typeEl) {
-        typeEl.textContent = movieData.type === 'movie' ? 'Phim Lẻ' : 'Phim Bộ';
-      }
-      const countryEl = document.getElementById('movie-country-display');
-      if (countryEl) {
-        countryEl.textContent = movieData.category || 'Nước ngoài';
-      }
-      const seasonsEl = document.getElementById('movie-seasons-display');
-      if (seasonsEl) {
-        seasonsEl.textContent = movieData.seasons || (movieData.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1');
-      }
-
-      // Hide seasons selector dropdown since crawled movie won't match relatedParts
-      const seasonsDropdown = document.getElementById('movie-seasons-dropdown-wrapper');
-      if (seasonsDropdown) {
-        seasonsDropdown.style.display = 'none';
-      }
-
-      // Hydrate quality, lang, releaseYear badges
-      const badgesContainer = document.getElementById('movie-badges-container');
-      if (badgesContainer) {
-        let scoreHtml = '';
-        if (movieData.imdbScore) {
-          scoreHtml = `
-            <span class="bg-secondary/10 text-secondary border border-secondary/20 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-              <span class="material-symbols-outlined text-[10px]">star</span> ${movieData.imdbScore}
-            </span>
-          `;
-        }
-        badgesContainer.innerHTML = `
-          <span class="bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded">${movieData.quality || 'FHD'}</span>
-          <span class="bg-white/5 text-on-surface-variant border border-glass-stroke text-[10px] font-bold px-2 py-0.5 rounded">${movieData.lang || 'Vietsub'}</span>
-          <span class="bg-white/5 text-on-surface-variant border border-glass-stroke text-[10px] font-bold px-2 py-0.5 rounded">${movieData.releaseYear || 2024}</span>
-          ${scoreHtml}
-        `;
-      }
-
-      // Hydrate genres
-      const genresContainer = document.getElementById('movie-genres-container');
-      if (genresContainer && Array.isArray(movieData.genres)) {
-        genresContainer.innerHTML = movieData.genres.map((g: string) => `
-          <span class="bg-white/5 border border-glass-stroke text-[10px] text-on-surface-variant px-2.5 py-1 rounded-full font-medium hover:border-primary/40 hover:text-primary transition-colors cursor-pointer">${g}</span>
-        `).join('');
-      }
-
-      // If it is a movie (type === 'movie'), re-render movie servers card list
-      if (movieData.type === 'movie') {
-        const movieServersContainer = document.getElementById('movie-servers-container');
-        if (movieServersContainer) {
-          movieServersContainer.innerHTML = servers.map((srv: any, idx: number) => `
-            <div class="glass-card bg-surface-container-high/40 border border-glass-stroke rounded-2xl overflow-hidden flex transition-all duration-350 hover:border-primary/30 hover:scale-[1.01]">
-              <div class="flex-1 p-4 flex flex-col justify-between min-w-0 bg-gradient-to-r from-black/30 to-transparent">
-                <div class="space-y-1">
-                  <div class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[14px] text-secondary">dns</span>
-                    <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">${srv.serverName}</span>
-                  </div>
-                  <h4 class="text-white font-title-md font-semibold truncate text-sm">${movieData.title}</h4>
-                </div>
-                <a href="/xem/${movieSlug}?sv=${idx}&ts=${encodeURIComponent(srv.serverName)}" class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
-                  Xem bản này
-                </a>
+    // Trailer Modal Button Event Listener
+    const watchTrailerBtn = document.getElementById('btn-watch-trailer');
+    if (watchTrailerBtn) {
+      watchTrailerBtn.addEventListener('click', () => {
+        const trailerUrl = watchTrailerBtn.getAttribute('data-trailer-url');
+        if (trailerUrl) {
+          const embedUrl = getYouTubeEmbedUrl(trailerUrl);
+          if (embedUrl) {
+            const contentHtml = `
+              <div class="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/5">
+                <iframe 
+                  src="${embedUrl}" 
+                  class="absolute top-0 left-0 w-full h-full border-0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowfullscreen
+                ></iframe>
               </div>
-              <div class="w-1/3 aspect-[4/3] relative shrink-0">
-                <img src="${movieData.bannerUrl || movieData.posterUrl}" alt="${srv.serverName}" class="w-full h-full object-cover" />
-                <div class="absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-transparent to-transparent"></div>
-              </div>
-            </div>
-          `).join('');
+            `;
+            if (window.txamodal) {
+              window.txamodal.show({
+                title: 'Trailer - ' + movieTitle,
+                content: contentHtml,
+                confirmText: 'Đóng'
+              });
+            }
+          }
         }
-      } else {
-        // It is a series, re-render the server buttons list
-        const serverSelector = document.getElementById('server-selector-container');
-        if (serverSelector) {
-          serverSelector.innerHTML = servers.map((srv: any, idx: number) => `
-            <button data-server-idx="${idx}" class="server-btn px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${idx === 0 ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary hover:text-primary'}">
-              ${srv.serverName}
-            </button>
-          `).join('');
-        }
-      }
+      });
     }
 
     // 1. Mobile Info Toggler
@@ -1203,7 +1145,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
     }
 
     interface MovieComment {
-      id: number;
+      id: any;
       author: string;
       avatar: string;
       content: string;
@@ -1213,21 +1155,8 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
       replies: CommentReply[];
     }
 
-    // Read comments list from localStorage
-    const getCommentsFromStore = (): MovieComment[] => {
-      const stored = localStorage.getItem(`tcomments_${movieSlug}`);
-      if (stored) {
-        try { return JSON.parse(stored); } catch(e) { return initialComments; }
-      }
-      return initialComments;
-    };
-
-    const saveCommentsToStore = (list: MovieComment[]) => {
-      localStorage.setItem(`tcomments_${movieSlug}`, JSON.stringify(list));
-    };
-
-    let comments: MovieComment[] = getCommentsFromStore();
-    let currentReplyToId: number | null = null;
+    let comments: MovieComment[] = [];
+    let currentReplyToId: any | null = null;
     let selectedRatingStar = 0;
 
     const commentsListContainer = document.getElementById('comments-list');
@@ -1294,6 +1223,22 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
       });
     }
 
+    const formatDate = (isoStr: string) => {
+      if (!isoStr) return "Vừa xong";
+      try {
+        const d = new Date(isoStr);
+        const diffMs = Date.now() - d.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1) return "Vừa xong";
+        if (diffMin < 60) return `${diffMin} phút trước`;
+        const diffHour = Math.floor(diffMin / 60);
+        if (diffHour < 24) return `${diffHour} giờ trước`;
+        return d.toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return "Vừa xong";
+      }
+    };
+
     // Render comments list
     const renderComments = () => {
       if (!commentsListContainer || !commentsCountEl) return;
@@ -1334,11 +1279,11 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
               
               <!-- Like/Dislike actions -->
               <div class="flex items-center gap-2 text-[10px] text-on-surface-variant">
-                <button class="flex items-center gap-0.5 hover:text-primary transition-colors cursor-pointer" onclick="window.likeComment(${c.id})">
+                <button class="flex items-center gap-0.5 hover:text-primary transition-colors cursor-pointer" onclick="window.likeComment('${c.id}')">
                   <span class="material-symbols-outlined text-[13px]">thumb_up</span>
                   <span>(${c.likes})</span>
                 </button>
-                <button class="flex items-center gap-0.5 hover:text-red-400 transition-colors cursor-pointer" onclick="window.dislikeComment(${c.id})">
+                <button class="flex items-center gap-0.5 hover:text-red-400 transition-colors cursor-pointer" onclick="window.dislikeComment('${c.id}')">
                   <span class="material-symbols-outlined text-[13px]">thumb_down</span>
                   <span>(${c.dislikes})</span>
                 </button>
@@ -1350,7 +1295,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
 
             <!-- Actions and replies -->
             <div class="pl-10">
-              <button class="text-[10px] font-bold text-primary hover:underline cursor-pointer" onclick="window.setReplyTo(${c.id})">
+              <button class="text-[10px] font-bold text-primary hover:underline cursor-pointer" onclick="window.setReplyTo('${c.id}')">
                 Trả lời
               </button>
               
@@ -1365,26 +1310,66 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
       commentsListContainer.innerHTML = html || '<p class="text-xs text-on-surface-variant py-4 text-center">Chưa có bình luận nào. Hãy gửi bình luận đầu tiên nhé!</p>';
     };
 
-    // Make utility functions global for inline button calls
-    (window as any).likeComment = (id: number) => {
-      const target = comments.find((c: MovieComment) => c.id === id);
-      if (target) {
-        target.likes++;
-        saveCommentsToStore(comments);
-        renderComments();
+    const loadComments = async () => {
+      try {
+        const res = await fetch(`/api/comments?slug=${encodeURIComponent(movieSlug)}`);
+        if (res.ok) {
+          const result: any = await res.json();
+          if (result && result.status === 'success' && Array.isArray(result.data)) {
+            comments = result.data.map((c: any) => ({
+              id: c.id,
+              author: c.author,
+              avatar: "https://lh3.googleusercontent.com/a/default-user=s40-c",
+              content: c.content,
+              time: formatDate(c.createdAt),
+              likes: c.likes || 0,
+              dislikes: 0,
+              replies: (c.replies || []).map((rep: any) => ({
+                author: rep.author,
+                content: rep.content,
+                time: formatDate(rep.createdAt)
+              }))
+            }));
+            renderComments();
+          }
+        }
+      } catch (e) {
+        console.error("Lỗi khi tải bình luận từ Supabase:", e);
       }
     };
 
-    (window as any).dislikeComment = (id: number) => {
+    // Make utility functions global for inline button calls
+    (window as any).likeComment = async (id: any) => {
+      try {
+        const res = await fetch('/api/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'like', commentId: id })
+        });
+        if (res.ok) {
+          const result: any = await res.json();
+          if (result && result.status === 'success' && result.data) {
+            const target = comments.find((c: MovieComment) => c.id === id);
+            if (target) {
+              target.likes = result.data.likes;
+              renderComments();
+            }
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    (window as any).dislikeComment = (id: any) => {
       const target = comments.find((c: MovieComment) => c.id === id);
       if (target) {
         target.dislikes++;
-        saveCommentsToStore(comments);
         renderComments();
       }
     };
 
-    (window as any).setReplyTo = (id: number) => {
+    (window as any).setReplyTo = (id: any) => {
       currentReplyToId = id;
       if (replyToLbl && commentTextarea) {
         replyToLbl.classList.remove('hidden');
@@ -1404,12 +1389,13 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
       });
     }
 
-    renderComments();
+    // Initial load
+    loadComments();
 
     // Comment submission handler
     if (submitCommentBtn && commentTextarea) {
       submitCommentBtn.addEventListener('click', () => {
-        requireLogin(() => {
+        requireLogin(async () => {
           const text = commentTextarea.value.trim();
           if (!text) {
             if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập nội dung bình luận!', 'error');
@@ -1428,35 +1414,72 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
           const author = isAnon ? "Ẩn danh" : authorName;
           
           if (currentReplyToId !== null) {
-            // Add as a reply
-            const parent = comments.find((c: MovieComment) => c.id === currentReplyToId);
-            if (parent) {
-              if (!parent.replies) parent.replies = [];
-              parent.replies.push({
-                author: author,
-                content: text,
-                time: "Vừa xong"
+            try {
+              const res = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'reply',
+                  commentId: currentReplyToId,
+                  replyAuthor: author,
+                  replyContent: text
+                })
               });
-              if (window.showGlobalToast) window.showGlobalToast('Đã gửi trả lời bình luận thành công!', 'success');
+              if (res.ok) {
+                const result: any = await res.json();
+                if (result && result.status === 'success' && result.data) {
+                  const parent = comments.find((c: MovieComment) => c.id === currentReplyToId);
+                  if (parent) {
+                    if (!parent.replies) parent.replies = [];
+                    parent.replies.push({
+                      author: result.data.author,
+                      content: result.data.content,
+                      time: "Vừa xong"
+                    });
+                    renderComments();
+                    if (window.showGlobalToast) window.showGlobalToast('Đã gửi trả lời bình luận thành công!', 'success');
+                  }
+                }
+              }
+            } catch (e) {
+              console.error(e);
             }
             // Reset reply context
             currentReplyToId = null;
             if (replyToLbl) replyToLbl.classList.add('hidden');
             commentTextarea.placeholder = `Viết bình luận của bạn tại đây...`;
           } else {
-            // Add as new main comment
-            const newComment = {
-              id: Date.now(),
-              author: author,
-              avatar: isAnon ? "https://lh3.googleusercontent.com/a/default-user=s40-c" : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80",
-              content: text,
-              time: "Vừa xong",
-              likes: 0,
-              dislikes: 0,
-              replies: []
-            };
-            comments.unshift(newComment);
-            if (window.showGlobalToast) window.showGlobalToast('Đã đăng bình luận thành công!', 'success');
+            try {
+              const res = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  slug: movieSlug,
+                  author: author,
+                  content: text
+                })
+              });
+              if (res.ok) {
+                const result: any = await res.json();
+                if (result && result.status === 'success' && result.data) {
+                  const newComment = {
+                    id: result.data.id,
+                    author: result.data.author,
+                    avatar: "https://lh3.googleusercontent.com/a/default-user=s40-c",
+                    content: result.data.content,
+                    time: "Vừa xong",
+                    likes: 0,
+                    dislikes: 0,
+                    replies: []
+                  };
+                  comments.unshift(newComment);
+                  renderComments();
+                  if (window.showGlobalToast) window.showGlobalToast('Đã đăng bình luận thành công!', 'success');
+                }
+              }
+            } catch (e) {
+              console.error(e);
+            }
           }
 
           // Reset text and save
@@ -1464,9 +1487,6 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
           if (charCounter) charCounter.textContent = '0 / 1000';
           if (commentAnonCheck) commentAnonCheck.checked = false;
           
-          saveCommentsToStore(comments);
-          renderComments();
-
           // Reset stars if rated
           if (selectedRatingStar > 0) {
             selectedRatingStar = 0;

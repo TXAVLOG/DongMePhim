@@ -491,30 +491,38 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     });
 
     // Load list local crawled movies & dictionaries
-    function loadExistingMoviesDict() {
-      const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
-      let list = [];
-      try { list = JSON.parse(listStr); } catch (e) {}
+    let crawledListCache = [];
 
-      existingMoviesMap = {};
-      list.forEach(m => {
-        const movieData = m.movie || m;
-        let count = 0;
-        const eps = m.episodes || [];
-        eps.forEach(srv => {
-          if (srv && (srv.serverData || srv.server_data)) {
-            count = Math.max(count, (srv.serverData || srv.server_data).length || 0);
-          }
+    // Load list local crawled movies & dictionaries from database
+    async function loadExistingMoviesDict() {
+      try {
+        const res = await fetch('/api/admin/movie-action?action=list');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data.status !== 'success' || !data.data) {
+          throw new Error(data.message || 'Lỗi API');
+        }
+        
+        const list = data.data;
+        crawledListCache = list;
+
+        existingMoviesMap = {};
+        list.forEach(m => {
+          let count = 0;
+          const eps = m.episodes || [];
+          eps.forEach(srv => {
+            const serverData = srv.serverData || srv.server_data || [];
+            count = Math.max(count, serverData.length || 0);
+          });
+          existingMoviesMap[m.slug] = count;
         });
-        existingMoviesMap[movieData.slug] = count;
-      });
+      } catch (e) {
+        console.error('Error fetching dynamic movies:', e);
+      }
     }
 
     function renderCrawledList() {
-      loadExistingMoviesDict();
-      const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
-      let list = [];
-      try { list = JSON.parse(listStr); } catch (e) {}
+      const list = crawledListCache;
 
       document.getElementById('crawledCount').textContent = list.length;
       const crawledMoviesBody = document.getElementById('crawledMoviesBody');
@@ -540,42 +548,24 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       const endIndex = startIndex + crawledLimit;
       const paginatedList = list.slice(startIndex, endIndex);
 
-      // Load config mapping to show if there's custom settings
-      const configStr = localStorage.getItem('txa_episodes_config') || '{}';
-      let configs = {};
-      try { configs = JSON.parse(configStr); } catch(e) {}
-
       // Trigger animation
       crawledMoviesBody.classList.remove('animate-fade-in');
       void crawledMoviesBody.offsetWidth;
       crawledMoviesBody.classList.add('animate-fade-in');
 
-      crawledMoviesBody.innerHTML = paginatedList.map((item) => {
-        const m = item.movie || item;
-        const hasConfig = !!configs[m.slug];
-        
-        // Count subtitles configured
+      crawledMoviesBody.innerHTML = paginatedList.map((m) => {
+        // Count subtitles and skip timings configured directly in the movie episodes
         let subCount = 0;
         let skipConfigured = false;
         
-        if (hasConfig) {
-          const mConf = configs[m.slug];
-          Object.keys(mConf).forEach(epK => {
-            const epC = mConf[epK];
-            if (epC.subtitles && epC.subtitles.length > 0) subCount += epC.subtitles.length;
-            if (epC.timeIntroStart > 0 || epC.timeOutroStart > 0) skipConfigured = true;
+        const eps = m.episodes || [];
+        eps.forEach(srv => {
+          const data = srv.serverData || srv.server_data || [];
+          data.forEach(ep => {
+            if (ep.subtitles && ep.subtitles.length > 0) subCount += ep.subtitles.length;
+            if (ep.timeIntroStart > 0 || ep.timeOutroStart > 0 || ep.time_intro_start > 0 || ep.time_outro_start > 0) skipConfigured = true;
           });
-        } else {
-          // Check if embedded in episodes data directly
-          const eps = item.episodes || [];
-          eps.forEach(srv => {
-            const data = srv.serverData || srv.server_data || [];
-            data.forEach(ep => {
-              if (ep.subtitles && ep.subtitles.length > 0) subCount += ep.subtitles.length;
-              if (ep.timeIntroStart > 0 || ep.timeOutroStart > 0 || ep.time_intro_start > 0 || ep.time_outro_start > 0) skipConfigured = true;
-            });
-          });
-        }
+        });
 
         let configBadge = '';
         if (subCount > 0 || skipConfigured) {
@@ -610,7 +600,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             </td>
             <td class="px-6 py-4 text-right">
               <div class="flex gap-2 justify-end">
-                <a href="/admin/phim/tao-thu-cong?edit=${m.slug}" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center hover:text-primary hover:border-primary/50 transition-colors cursor-pointer" title="Cấu hình / Sửa">
+                <a href="/admin/phim/edit?th=${m.slug}" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center hover:text-primary hover:border-primary/50 transition-colors cursor-pointer" title="Cấu hình / Sửa">
                   <span class="material-symbols-outlined text-sm">settings</span>
                 </a>
                 <button onclick="deleteCrawledMovie('${m.slug}')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center text-red-400 hover:text-red-500 hover:border-red-500/50 transition-colors cursor-pointer" title="Xóa">
@@ -628,51 +618,42 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     }
 
     window.deleteCrawledMovie = function(slug) {
-      const performDelete = () => {
-        const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
-        let list = [];
-        try { list = JSON.parse(listStr); } catch (e) {}
-
-        const newList = list.filter(m => (m.movie?.slug || m.slug) !== slug);
-        localStorage.setItem('txa_crawled_movies', JSON.stringify(newList));
-        
-        renderCrawledList();
-        if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim cào thành công!', 'success');
+      const performDelete = async () => {
+        try {
+          const res = await fetch('/api/admin/movie-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', slug: slug, isStatic: false })
+          });
+          const result = await res.json();
+          if (res.ok) {
+            if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim khỏi database thành công!', 'success');
+            await loadExistingMoviesDict();
+            renderCrawledList();
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi khi xóa phim', 'error');
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+        }
       };
 
       if (window.txamodal) {
         window.txamodal.show({
-          title: 'Xóa phim cào',
-          message: 'Bạn có chắc chắn muốn xóa phim này khỏi danh sách cào cục bộ?',
+          title: 'Xóa phim khỏi database',
+          message: 'Bạn có chắc chắn muốn xóa phim này khỏi database không?',
           type: 'danger',
           confirmText: 'Xóa phim',
           cancelText: 'Hủy bỏ',
           onConfirm: performDelete
         });
-      } else if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách cào cục bộ?')) {
+      } else if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi database không?')) {
         performDelete();
       }
     };
 
     document.getElementById('clearAllCrawledBtn').addEventListener('click', () => {
-      const performClear = () => {
-        localStorage.removeItem('txa_crawled_movies');
-        renderCrawledList();
-        if (window.showGlobalToast) window.showGlobalToast('Đã xóa sạch toàn bộ phim cào cục bộ!', 'success');
-      };
-
-      if (window.txamodal) {
-        window.txamodal.show({
-          title: 'Xóa sạch phim đã cào',
-          message: '<strong class="text-rose-500">CẢNH BÁO:</strong> Hành động này sẽ xóa sạch toàn bộ phim đã cào cục bộ khỏi bộ nhớ trình duyệt. Bạn chắc chắn muốn xóa?',
-          type: 'danger',
-          confirmText: 'Xóa sạch',
-          cancelText: 'Hủy bỏ',
-          onConfirm: performClear
-        });
-      } else if (confirm('CẢNH BÁO: Hành động này sẽ xóa sạch toàn bộ phim đã cào cục bộ. Bạn chắc chắn muốn xóa?')) {
-        performClear();
-      }
+      if (window.showGlobalToast) window.showGlobalToast('Tính năng xóa hàng loạt đã được vô hiệu hóa để bảo vệ cơ sở dữ liệu!', 'warning');
     });
 
     // ONLINE SEARCH TRIGGER
@@ -941,12 +922,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         mainProgressBar.style.width = `${pct}%`;
         progressTimeEstimate.textContent = `Thời gian còn lại: ~${(slugsList.length - i - 1) * 2} giây`;
 
-        // Check if exists
-        const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
-        let list = [];
-        try { list = JSON.parse(listStr); } catch (e) {}
-        
-        const dup = list.find(m => (m.movie?.slug || m.slug) === slug);
+        // Check if exists in database
+        const dup = existingMoviesMap[slug] !== undefined;
         if (dup && !overwrite) {
           skipped++;
           document.getElementById('statSkipped').textContent = skipped;
@@ -965,42 +942,29 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             const movieDetailObj = mapKKPhimToMovieDetail(detailData);
             movieDetailObj.updatedAt = new Date().toISOString();
             
-            // Automatically add new genres to the system list (txa_genres) if they don't exist
-            if (Array.isArray(movieDetailObj.genres)) {
-              try {
-                const storedGenres = localStorage.getItem('txa_genres');
-                let sysGenres = storedGenres ? JSON.parse(storedGenres) : [];
-                let hasChanges = false;
-                movieDetailObj.genres.forEach(gName => {
-                  const normalizedGName = gName.trim();
-                  if (normalizedGName && !sysGenres.some(g => g.name.toLowerCase() === normalizedGName.toLowerCase())) {
-                    const newSlug = normalizedGName.toLowerCase()
-                      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                      .replace(/đ/g, "d").replace(/Đ/g, "d")
-                      .replace(/[^a-z0-9\s-]/g, "")
-                      .replace(/\s+/g, "-")
-                      .replace(/-+/g, "-");
-                    sysGenres.push({ name: normalizedGName, slug: newSlug });
-                    hasChanges = true;
-                  }
-                });
-                if (hasChanges) {
-                  localStorage.setItem('txa_genres', JSON.stringify(sysGenres));
-                }
-              } catch (err) {
-                console.error("Error updating crawled genres:", err);
-              }
+            // Save to database Supabase via API
+            const saveRes = await fetch('/api/admin/movie-action', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'save',
+                slug: slug,
+                movieData: movieDetailObj,
+                isStatic: false
+              })
+            });
+            if (!saveRes.ok) {
+              const errData = await saveRes.json();
+              throw new Error(errData.message || 'Lỗi khi lưu phim vào database');
             }
-            
-            // Overwrite details or push new
-            let freshListStr = localStorage.getItem('txa_crawled_movies') || '[]';
-            let freshList = [];
-            try { freshList = JSON.parse(freshListStr); } catch (e) {}
 
-            freshList = freshList.filter(m => (m.movie?.slug || m.slug) !== slug);
-            freshList.unshift(movieDetailObj);
+            success++;
+            document.getElementById('statSuccess').textContent = success;
+            addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (${movieDetailObj.episodeCurrent})`, 'success');
             
-            localStorage.setItem('txa_crawled_movies', JSON.stringify(freshList));
+            // Live update inventory list
+            await loadExistingMoviesDict();
+            renderCrawledList();
 
             success++;
             document.getElementById('statSuccess').textContent = success;
@@ -1247,10 +1211,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     });
 
     document.getElementById('crawledNextBtn').addEventListener('click', () => {
-      const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
-      let list = [];
-      try { list = JSON.parse(listStr); } catch (e) {}
-      const totalPages = Math.ceil(list.length / crawledLimit) || 1;
+      const totalPages = Math.ceil(crawledListCache.length / crawledLimit) || 1;
       if (crawledCurrentPage < totalPages) {
         crawledCurrentPage++;
         renderCrawledList();
@@ -1258,7 +1219,10 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     });
 
     // Initial runs
-    renderCrawledList();
+    (async () => {
+      await loadExistingMoviesDict();
+      renderCrawledList();
+    })();
   </script>
 
   <style>
