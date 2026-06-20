@@ -55,6 +55,7 @@ const comments = [
   { name: "Khánh Linh", initial: "K", time: "40 phút trước", color: "primary", content: "Cho mình hỏi lịch chiếu One Piece tiếp theo là bao giờ vậy ạ? Đang hóng quá trời hóng luôn." },
   { name: "Tuấn Trần", initial: "T", time: "1 giờ trước", color: "secondary", content: "Mấy bộ phim lẻ Trung Quốc gần đây toàn hàng cực phẩm, kỹ xảo điện ảnh đỉnh cao, xem mà sướng mắt." }
 ];
+const allMoviesForClient = await MovieService.getMovies();
 ---
 
 <MainLayout isHome={true}>
@@ -66,6 +67,14 @@ const comments = [
     <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent"></div>
     <div class="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-[#0A0A0B]/50 to-transparent hidden md:block"></div>
     
+    <!-- Left & Right Arrow controls (Desktop only, hidden md:flex) -->
+    <button id="hero-slide-left" class="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all duration-300 opacity-0 pointer-events-none hidden md:flex cursor-pointer shadow-lg" title="Phim trước">
+      <span class="material-symbols-outlined text-2xl font-bold">chevron_left</span>
+    </button>
+    <button id="hero-slide-right" class="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all duration-300 opacity-0 pointer-events-none hidden md:flex cursor-pointer shadow-lg" title="Phim tiếp theo">
+      <span class="material-symbols-outlined text-2xl font-bold">chevron_right</span>
+    </button>
+
     <div class="relative h-full flex items-center max-w-container-max mx-auto px-gutter pt-20">
       <div id="hero-content" class="max-w-2xl space-y-6 transition-all duration-500 transform translate-y-0 opacity-100">
         <div class="flex items-center gap-3">
@@ -99,6 +108,9 @@ const comments = [
         </div>
       </div>
     </div>
+
+    <!-- Carousel Indicators (Desktop Only) -->
+    <div id="hero-indicators" class="absolute bottom-8 right-8 z-30 flex items-center gap-3 hidden md:flex"></div>
   </section>
 
   <!-- Content Categories (Mini Bento) -> Upgraded to Topics Grid -->
@@ -139,7 +151,7 @@ const comments = [
         </div>
         <a class="text-primary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
+      <div id="korean-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
         {koreanMovies.map((movie) => (
           <Card 
             title={movie.title}
@@ -165,7 +177,7 @@ const comments = [
       </div>
       
       <!-- Horizontal Scroll Container with clipping protection -->
-      <div class="flex gap-6 overflow-x-auto pb-20 pt-20 -my-16 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+      <div id="top-series-scroll" class="flex gap-6 overflow-x-auto pb-20 pt-20 -my-16 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
         {topSeries.map((movie, index) => (
           <div class="flex-shrink-0 w-44 md:w-52 relative pl-10 snap-center group">
             <!-- Large Rank Number -->
@@ -200,7 +212,7 @@ const comments = [
         </div>
         <a class="text-secondary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+      <div id="chinese-grid" class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
         {chineseMovies.map((movie) => (
           <Card 
             title={movie.title}
@@ -553,22 +565,7 @@ const comments = [
       </div>
     </section>
     <!-- Script blocks -->
-    <script is:inline>
-      // Handle comments carousel sliding
-      (function() {
-        const carousel = document.getElementById('comments-carousel');
-        const slideLeft = document.getElementById('slide-left');
-        const slideRight = document.getElementById('slide-right');
-        
-        slideLeft?.addEventListener('click', () => {
-          carousel?.scrollBy({ left: -296, behavior: 'smooth' });
-        });
-        
-        slideRight?.addEventListener('click', () => {
-          carousel?.scrollBy({ left: 296, behavior: 'smooth' });
-        });
-      })();
-
+    <script define:vars={{ allMoviesForClient }}>
       // Helper function to create movie list items with Netflix-style popover cards
       function createMovieListItemHTML(movieData, index, type) {
         const trendColor = index < 3 ? 'emerald' : 'zinc';
@@ -660,14 +657,7 @@ const comments = [
           badgeColor = 'teal-500';
         }
 
-        let genderIndicator = '';
-        if (lowerAuthor.includes('cô 3 rổ') || lowerAuthor.includes('thư') || lowerAuthor.includes('linh') || lowerAuthor.includes('sha')) {
-          genderIndicator = `<span class="text-[10px] text-pink-400 font-bold">♀</span>`;
-        } else {
-          genderIndicator = `<span class="text-[10px] text-blue-400 font-bold">♂</span>`;
-        }
-
-        const views = Math.floor(Math.random() * 150) + 20;
+        const views = comment.views !== undefined ? comment.views : Math.floor(Math.random() * 150) + 10;
 
         return `
           <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
@@ -680,7 +670,6 @@ const comments = [
                   <div class="flex items-center gap-1">
                     ${adminTag}
                     <span class="text-xs font-bold text-white">${comment.author}</span>
-                    ${genderIndicator}
                   </div>
                   <span class="text-[9px] text-zinc-500">${roleBadge}</span>
                 </div>
@@ -733,53 +722,202 @@ const comments = [
         `;
       }
 
-      // Hydrate local crawled movies images, details, rankings and comments on the homepage
-      (function() {
+      // Helper function to create movie cards dynamically
+      function createMovieCardHTML(movie, aspect = "aspect-[2/3]") {
+        const title = movie.title || '';
+        const slug = movie.slug || '';
+        const poster = movie.posterUrl || movie.poster || '';
+        const quality = movie.quality || 'FHD';
+        const lang = movie.lang || 'Vietsub';
+        const originalTitle = movie.originalTitle || movie.origin_name || '';
+        const year = movie.releaseYear || '';
+        const status = movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu';
+        
+        let typeBadgeHTML = '';
+        if (movie.type === 'series' && movie.episodeCurrent) {
+          let cur = (movie.episodeCurrent || '1').trim().replace(/^[tT]ập\s+/, '');
+          if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
+            cur = 'Full';
+          } else if (movie.episodeTotal) {
+            let tot = movie.episodeTotal.trim().replace(/^[tT]ập\s+/, '');
+            cur = `Tập ${cur}/${tot}`;
+          } else {
+            cur = `Tập ${cur}`;
+          }
+          typeBadgeHTML = `
+            <div class="absolute top-2 left-2 z-20">
+              <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm">
+                ${cur}
+              </span>
+            </div>
+          `;
+        }
+
+        const getLangBadge = (lang) => {
+          if (!lang) return 'P.Đề';
+          const lower = lang.toLowerCase();
+          if (lower.includes('thuyết minh') && (lower.includes('vietsub') || lower.includes('phụ đề'))) return 'P.Đề + T.Minh';
+          if (lower.includes('thuyết minh') || lower.includes('t.minh') || lower.includes('tm')) return 'T.Minh';
+          if (lower.includes('lồng tiếng') || lower.includes('lt')) return 'L.Tiếng';
+          return 'P.Đề';
+        };
+
+        const genresHTML = Array.isArray(movie.genres) ? movie.genres.map(g => `<span>${g}</span>`).join('<span class="text-zinc-600">•</span>') : '';
+
+        return `
+          <div class="relative group w-full">
+            <a href="/phim/${slug}" class="relative block w-full ${aspect} rounded-xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer">
+              <img src="${poster}" alt="${title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='/favicon.png'" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity"></div>
+              
+              ${quality === '4K' ? `
+                <div class="absolute top-2 right-2 z-20">
+                  <span class="bg-amber-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm tracking-wider">4K</span>
+                </div>
+              ` : ''}
+
+              ${typeBadgeHTML}
+              
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
+                  <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                </div>
+              </div>
+              
+              <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
+                <span class="bg-[#141416]/80 text-zinc-300 text-[8px] font-bold px-2.5 py-0.5 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap">
+                  ${getLangBadge(lang)}
+                </span>
+              </div>
+            </a>
+
+            <div class="mt-2.5 px-1 space-y-0.5 text-center">
+              <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" title="${title}">
+                ${title}
+              </h3>
+              <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" title="${originalTitle}">
+                ${originalTitle || title}
+              </p>
+            </div>
+
+            <!-- Hover Popover details card (Netflix style, desktop only) -->
+            <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+              <div class="relative w-full aspect-video bg-black/40">
+                <img src="${movie.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+                <div class="absolute top-3 left-3 flex gap-1">
+                  <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
+                  <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">${lang}</span>
+                </div>
+              </div>
+              <div class="p-4 space-y-3.5 text-left whitespace-normal">
+                <div>
+                  <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">${title}</h4>
+                  ${originalTitle ? `<p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">${originalTitle}</p>` : ''}
+                </div>
+                <div class="flex items-center gap-2">
+                  <a href="/xem/${slug}?ep=tap-1" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.2)] cursor-pointer">
+                    <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                    Xem ngay
+                  </a>
+                  <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Thích">
+                    <span class="material-symbols-outlined text-sm">favorite</span>
+                  </button>
+                  <a href="/phim/${slug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Chi tiết">
+                    <span class="material-symbols-outlined text-sm">info</span>
+                  </a>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+                  <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${(movie.imdbScore || 8.0).toFixed(1)}</span>
+                  <span>${year || 2024}</span>
+                  <span>${status}</span>
+                </div>
+                ${genresHTML ? `<div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">${genresHTML}</div>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Bind all initialization to 'astro:page-load' for view transition compatibility
+      document.addEventListener('astro:page-load', () => {
+        // Comments carousel sliding
+        const carousel = document.getElementById('comments-carousel');
+        const slideLeft = document.getElementById('slide-left');
+        const slideRight = document.getElementById('slide-right');
+        
+        slideLeft?.addEventListener('click', () => {
+          carousel?.scrollBy({ left: -296, behavior: 'smooth' });
+        });
+        
+        slideRight?.addEventListener('click', () => {
+          carousel?.scrollBy({ left: 296, behavior: 'smooth' });
+        });
+
+        // Hydration logic
         try {
           const stored = localStorage.getItem('txa_crawled_movies');
           const list = stored ? JSON.parse(stored) : [];
-          const hasMovies = Array.isArray(list) && list.length > 0;
+          
+          // Map local items to standard movie schema
+          const localMovies = list.map(item => {
+            const m = item.movie || item;
+            let type = 'series';
+            if (m.type === 'single' || m.type === 'movie') {
+              type = 'movie';
+            } else if (m.type === 'hoathinh') {
+              type = 'hoathinh';
+            } else if (m.type === 'tvshows') {
+              type = 'tvshows';
+            }
+            return {
+              title: m.title || m.name,
+              slug: m.slug,
+              posterUrl: m.posterUrl || m.poster_url || m.poster,
+              bannerUrl: m.bannerUrl || m.thumb_url || m.posterUrl || m.poster_url || m.poster,
+              releaseYear: m.releaseYear || parseInt(m.year) || 2024,
+              type: type,
+              status: m.status === 'completed' ? 'completed' : 'ongoing',
+              episodeCurrent: m.episodeCurrent || m.episode_current || 'Full',
+              episodeTotal: m.episodeTotal || m.episode_total || '1',
+              quality: m.quality || 'FHD',
+              lang: m.lang || 'Vietsub',
+              imdbScore: m.imdbScore || 8.0,
+              views: m.views || 0,
+              commentCount: m.commentCount || 0,
+              category: m.category || 'Khác',
+              genres: m.genres || []
+            };
+          });
 
-          // 1. Update existing card images/banners (original behavior)
+          // Merge local movies and server seed movies, avoiding duplicates
+          const localSlugs = new Set(localMovies.map(m => m.slug));
+          const combinedMovies = [
+            ...localMovies,
+            ...(allMoviesForClient || []).filter(m => !localSlugs.has(m.slug))
+          ];
+
+          const hasMovies = combinedMovies.length > 0;
+
+          // 1. Update existing card images/banners (fallback sync)
           if (hasMovies) {
-            list.forEach(crawled => {
-              const movieData = crawled.movie || crawled;
+            combinedMovies.forEach(movieData => {
               const slug = movieData.slug;
               if (!slug) return;
 
               const links = document.querySelectorAll(`a[href*="/phim/${slug}"], a[href*="/xem/${slug}"]`);
               links.forEach(link => {
                 const img = link.querySelector('img');
-                if (img) {
-                  img.src = movieData.posterUrl;
-                }
-
+                if (img) img.src = movieData.posterUrl;
+                
                 const parentCard = link.closest('.group.relative.w-full') || link.closest('a');
                 if (parentCard) {
                   const cardImg = parentCard.querySelector('img');
-                  if (cardImg && cardImg !== img) {
-                    cardImg.src = movieData.posterUrl;
-                  }
-
+                  if (cardImg && cardImg !== img) cardImg.src = movieData.posterUrl;
                   const popoverBanner = parentCard.querySelector('.pointer-events-none img');
-                  if (popoverBanner) {
-                    popoverBanner.src = movieData.bannerUrl || movieData.posterUrl;
-                  }
-
+                  if (popoverBanner) popoverBanner.src = movieData.bannerUrl || movieData.posterUrl;
                   const popoverTitle = parentCard.querySelector('.pointer-events-none h4');
-                  if (popoverTitle) {
-                    popoverTitle.textContent = movieData.title;
-                  }
-
-                  const popoverOriginalTitle = parentCard.querySelector('.pointer-events-none p.text-primary');
-                  if (popoverOriginalTitle) {
-                    popoverOriginalTitle.textContent = movieData.originalTitle || '';
-                  }
-                }
-
-                const rankImg = link.querySelector('.w-8.h-10 img');
-                if (rankImg) {
-                  rankImg.src = movieData.posterUrl;
+                  if (popoverTitle) popoverTitle.textContent = movieData.title;
                 }
               });
             });
@@ -788,55 +926,126 @@ const comments = [
           // 2. Render Sôi nổi nhất list
           const soiNoiContainer = document.getElementById('soi-noi-list');
           if (soiNoiContainer) {
-            if (hasMovies) {
-              const sortedByViews = [...list].sort((a, b) => {
-                const viewsA = a.movie?.views || a.views || 0;
-                const viewsB = b.movie?.views || b.views || 0;
-                return viewsB - viewsA;
-              });
-              const top5Views = sortedByViews.slice(0, 5);
-              let html = '';
-              top5Views.forEach((item, index) => {
-                const movieData = item.movie || item;
-                html += createMovieListItemHTML(movieData, index, 'soi-noi');
-              });
-              soiNoiContainer.innerHTML = html;
-            } else {
-              soiNoiContainer.innerHTML = '<p class="text-xs text-zinc-500 py-4 text-center">Chưa có phim nào.</p>';
-            }
+            const sortedByViews = [...combinedMovies].sort((a, b) => (b.views || 0) - (a.views || 0));
+            const top5Views = sortedByViews.slice(0, 5);
+            let html = '';
+            top5Views.forEach((movieData, index) => {
+              html += createMovieListItemHTML(movieData, index, 'soi-noi');
+            });
+            soiNoiContainer.innerHTML = html;
           }
 
           // 3. Render Yêu thích nhất list
           const yeuThichContainer = document.getElementById('yeu-thich-list');
           if (yeuThichContainer) {
-            if (hasMovies) {
-              const sortedByImdb = [...list].sort((a, b) => {
-                const imdbA = a.movie?.imdbScore || a.imdbScore || 0;
-                const imdbB = b.movie?.imdbScore || b.imdbScore || 0;
-                return imdbB - imdbA;
-              });
-              const top5Imdb = sortedByImdb.slice(0, 5);
+            const sortedByImdb = [...combinedMovies].sort((a, b) => (b.imdbScore || 0) - (a.imdbScore || 0));
+            const top5Imdb = sortedByImdb.slice(0, 5);
+            let html = '';
+            top5Imdb.forEach((movieData, index) => {
+              html += createMovieListItemHTML(movieData, index, 'yeu-thich');
+            });
+            yeuThichContainer.innerHTML = html;
+          }
+
+          // 4. Render Phim Hàn Quốc Mới
+          const koreanGrid = document.getElementById('korean-grid');
+          if (koreanGrid) {
+            const koreanList = combinedMovies.filter(m => m.category === 'Hàn Quốc' || (Array.isArray(m.genres) && m.genres.includes('Hàn Quốc')));
+            if (koreanList.length > 0) {
               let html = '';
-              top5Imdb.forEach((item, index) => {
-                const movieData = item.movie || item;
-                html += createMovieListItemHTML(movieData, index, 'yeu-thich');
+              koreanList.slice(0, 4).forEach(m => {
+                html += createMovieCardHTML(m, "aspect-[2/3]");
               });
-              yeuThichContainer.innerHTML = html;
-            } else {
-              yeuThichContainer.innerHTML = '<p class="text-xs text-zinc-500 py-4 text-center">Chưa có phim nào.</p>';
+              koreanGrid.innerHTML = html;
+            }
+          }
+
+          // 5. Render Phim Trung Quốc Mới
+          const chineseGrid = document.getElementById('chinese-grid');
+          if (chineseGrid) {
+            const chineseList = combinedMovies.filter(m => m.category === 'Trung Quốc' || (Array.isArray(m.genres) && m.genres.includes('Trung Quốc')));
+            if (chineseList.length > 0) {
+              let html = '';
+              chineseList.slice(0, 3).forEach(m => {
+                html += createMovieCardHTML(m, "aspect-video");
+              });
+              chineseGrid.innerHTML = html;
+            }
+          }
+
+          // 6. Render Top 10 Phim Bộ Hôm Nay
+          const topSeriesScroll = document.getElementById('top-series-scroll');
+          if (topSeriesScroll) {
+            const seriesList = combinedMovies.filter(m => m.type === 'series');
+            if (seriesList.length > 0) {
+              const sortedSeries = [...seriesList].sort((a, b) => {
+                const scoreA = (a.views || 0) + (a.commentCount || 0);
+                const scoreB = (b.views || 0) + (b.commentCount || 0);
+                return scoreB - scoreA;
+              });
+              let html = '';
+              sortedSeries.slice(0, 10).forEach((movie, index) => {
+                html += `
+                  <div class="flex-shrink-0 w-44 md:w-52 relative pl-10 snap-center group">
+                    <div class="absolute bottom-0 left-0 text-[120px] md:text-[140px] font-black leading-none select-none pointer-events-none text-transparent bg-clip-text bg-gradient-to-tr from-primary/80 via-primary/20 to-transparent z-0 font-display-hero transform translate-y-6">
+                      ${index + 1}
+                    </div>
+                    ${createMovieCardHTML(movie, "aspect-[3/4]")}
+                  </div>
+                `;
+              });
+              topSeriesScroll.innerHTML = html;
+            }
+          }
+
+          // 7. Render Phim Âu Mỹ Mới
+          const westernGrid = document.getElementById('western-grid');
+          if (westernGrid) {
+            const westernList = combinedMovies.filter(m => m.category === 'Âu Mỹ' || (Array.isArray(m.genres) && m.genres.includes('Âu Mỹ')));
+            if (westernList.length > 0) {
+              let html = '';
+              westernList.slice(0, 3).forEach((m, idx) => {
+                const isHiddenLgClass = idx === 2 ? 'hidden lg:block' : '';
+                const isPremium = (m.imdbScore || 0) >= 9.0;
+                
+                html += `
+                  <a href="/phim/${m.slug}" class="group relative aspect-[16/9] rounded-2xl overflow-hidden glass-card border-transparent border-2 movie-card-hover transition-all duration-500 shadow-xl bg-surface-card cursor-pointer ${isHiddenLgClass}">
+                    <img class="w-full h-full object-cover" loading="lazy" src="${m.posterUrl || '/favicon.png'}" alt="${m.title}" onerror="this.src='/favicon.png'" />
+                    ${isPremium ? `<div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>` : ''}
+                    ${isPremium ? `
+                      <div class="absolute top-4 right-4">
+                        <span class="premium-button text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-lg uppercase tracking-wider">PREMIUM</span>
+                      </div>
+                    ` : ''}
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
+                      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/90 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-2xl shadow-primary/30">
+                        <span class="material-symbols-outlined text-3xl ml-1" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                      </div>
+                    </div>
+                    <div class="absolute bottom-0 left-0 p-6 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+                      <h4 class="font-headline-lg text-2xl mb-1 text-white group-hover:text-primary transition-colors">${m.title}</h4>
+                      ${m.description ? `<p class="text-sm text-on-surface-variant line-clamp-1">${m.description}</p>` : `
+                        <div class="flex gap-4 text-sm text-on-surface-variant">
+                          <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">schedule</span> ${m.durationMinutes || '120 phút'}</span>
+                          <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">star</span> ${(m.imdbScore || 8.0).toFixed(1)}</span>
+                          <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">hd</span> ${m.quality || 'FHD'}</span>
+                        </div>
+                      `}
+                    </div>
+                  </a>
+                `;
+              });
+              westernGrid.innerHTML = html;
             }
           }
 
           // Helper to map movie slug to details
           const moviesMap = {};
-          if (hasMovies) {
-            list.forEach(item => {
-              const movieData = item.movie || item;
-              if (movieData.slug) {
-                moviesMap[movieData.slug] = movieData;
-              }
-            });
-          }
+          combinedMovies.forEach(m => {
+            if (m.slug) {
+              moviesMap[m.slug] = m;
+            }
+          });
 
           // Static seed lookup
           const seedMoviesLookup = {
@@ -979,7 +1188,7 @@ const comments = [
           // Initial check
           updateHeroPlaylistBtn();
 
-          if (hasMovies && heroBanner && heroContent && heroTitle && heroDesc && heroPlayLink && bg1 && bg2) {
+          if (combinedMovies.length > 0 && heroBanner && heroContent && heroTitle && heroDesc && heroPlayLink && bg1 && bg2) {
             // Check for pinned movies in list or in API override registry
             let apiRegistry = {};
             try {
@@ -987,19 +1196,23 @@ const comments = [
               if (registryStr) apiRegistry = JSON.parse(registryStr);
             } catch(e) {}
 
-            const pinnedList = list.filter(item => {
-              const m = item.movie || item;
+            const pinnedList = combinedMovies.filter(m => {
               const isPinnedInLocal = m.pinned === true || m.pinned === 'true';
               const isPinnedInApi = apiRegistry[m.slug] && (apiRegistry[m.slug].pinned === true || apiRegistry[m.slug].pinned === 'true');
               return isPinnedInLocal || isPinnedInApi;
             });
 
             const heroMovies = pinnedList.length > 0 
-              ? pinnedList.map(item => item.movie || item)
-              : list.slice(0, 5).map(item => item.movie || item);
+              ? pinnedList
+              : combinedMovies.slice(0, 5);
 
             let currentHeroIndex = 0;
             let activeBg = 1;
+            let heroIntervalId = null;
+
+            const heroSlideLeft = document.getElementById('hero-slide-left');
+            const heroSlideRight = document.getElementById('hero-slide-right');
+            const heroIndicators = document.getElementById('hero-indicators');
 
             const updateHero = (index) => {
               const movie = heroMovies[index];
@@ -1022,6 +1235,47 @@ const comments = [
               // Transition content
               heroContent.style.opacity = '0';
               heroContent.style.transform = 'translateY(10px)';
+
+              // Update left/right arrows visibility/interactivity
+              if (heroSlideLeft) {
+                if (index === 0) {
+                  heroSlideLeft.classList.add('opacity-0', 'pointer-events-none');
+                  heroSlideLeft.classList.remove('opacity-100');
+                } else {
+                  heroSlideLeft.classList.remove('opacity-0', 'pointer-events-none');
+                  heroSlideLeft.classList.add('opacity-100');
+                }
+              }
+
+              if (heroSlideRight) {
+                if (index === heroMovies.length - 1) {
+                  heroSlideRight.classList.add('opacity-0', 'pointer-events-none');
+                  heroSlideRight.classList.remove('opacity-100');
+                } else {
+                  heroSlideRight.classList.remove('opacity-0', 'pointer-events-none');
+                  heroSlideRight.classList.add('opacity-100');
+                }
+              }
+
+              // Update indicator buttons active state
+              const buttons = heroIndicators?.querySelectorAll('.hero-indicator-btn');
+              if (buttons) {
+                buttons.forEach((btn, idx) => {
+                  if (idx === index) {
+                    btn.classList.add('border-primary', 'shadow-[0_0_15px_rgba(124,58,237,0.6)]', 'scale-105', 'brightness-110', 'opacity-100');
+                    btn.classList.remove('border-white/10', 'opacity-60');
+                    const overlay = btn.querySelector('.btn-overlay');
+                    if (overlay) overlay.classList.add('bg-black/0');
+                    if (overlay) overlay.classList.remove('bg-black/40');
+                  } else {
+                    btn.classList.remove('border-primary', 'shadow-[0_0_15px_rgba(124,58,237,0.6)]', 'scale-105', 'brightness-110', 'opacity-100');
+                    btn.classList.add('border-white/10', 'opacity-60');
+                    const overlay = btn.querySelector('.btn-overlay');
+                    if (overlay) overlay.classList.remove('bg-black/0');
+                    if (overlay) overlay.classList.add('bg-black/40');
+                  }
+                });
+              }
 
               setTimeout(() => {
                 // Update badges
@@ -1051,17 +1305,83 @@ const comments = [
               }, 400);
             };
 
+            // Render indicator buttons
+            const renderIndicators = () => {
+              if (!heroIndicators) return;
+              if (heroMovies.length <= 1) {
+                heroIndicators.classList.add('hidden');
+                return;
+              }
+              heroIndicators.innerHTML = heroMovies.map((movie, index) => {
+                const imgUrl = movie.bannerUrl || movie.posterUrl || '';
+                return `
+                  <button data-index="${index}" class="hero-indicator-btn relative w-24 h-14 rounded-xl overflow-hidden border-2 border-white/10 hover:border-white/40 transition-all duration-300 shadow-md hover:shadow-lg shrink-0 cursor-pointer transform hover:-translate-y-0.5" title="${movie.title}">
+                    <img src="${imgUrl}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                    <div class="btn-overlay absolute inset-0 bg-black/40 hover:bg-black/10 transition-colors duration-300"></div>
+                  </button>
+                `;
+              }).join('');
+
+              // Add click events to indicators
+              const buttons = heroIndicators.querySelectorAll('.hero-indicator-btn');
+              buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                  const targetIndex = parseInt(btn.getAttribute('data-index'));
+                  if (!isNaN(targetIndex)) {
+                    currentHeroIndex = targetIndex;
+                    updateHero(currentHeroIndex);
+                    resetHeroInterval();
+                  }
+                });
+              });
+            };
+
+            // Setup navigation arrows
+            if (heroSlideLeft) {
+              heroSlideLeft.addEventListener('click', () => {
+                if (currentHeroIndex > 0) {
+                  currentHeroIndex--;
+                  updateHero(currentHeroIndex);
+                  resetHeroInterval();
+                }
+              });
+            }
+
+            if (heroSlideRight) {
+              heroSlideRight.addEventListener('click', () => {
+                if (currentHeroIndex < heroMovies.length - 1) {
+                  currentHeroIndex++;
+                  updateHero(currentHeroIndex);
+                  resetHeroInterval();
+                }
+              });
+            }
+
+            const startHeroInterval = () => {
+              if (heroMovies.length > 1) {
+                heroIntervalId = setInterval(() => {
+                  currentHeroIndex = (currentHeroIndex + 1) % heroMovies.length;
+                  updateHero(currentHeroIndex);
+                }, 7000);
+              }
+            };
+
+            const resetHeroInterval = () => {
+              if (heroIntervalId) {
+                clearInterval(heroIntervalId);
+              }
+              startHeroInterval();
+            };
+
+            // Render indicators on load
+            renderIndicators();
+
             // Initialize first hero movie
             updateHero(currentHeroIndex);
 
-            // Cycle every 7 seconds
-            if (heroMovies.length > 1) {
-              setInterval(() => {
-                currentHeroIndex = (currentHeroIndex + 1) % heroMovies.length;
-                updateHero(currentHeroIndex);
-              }, 7000);
-            }
-          } else if (!hasMovies && heroTitle && heroDesc && heroPlayLink) {
+            // Start cycle
+            startHeroInterval();
+          } else if (combinedMovies.length === 0 && heroTitle && heroDesc && heroPlayLink) {
             // Empty state fallback
             heroTitle.textContent = 'Chào Mừng Đến Với DongMePhim';
             heroDesc.textContent = 'Trải nghiệm điện ảnh đỉnh cao. Hãy tìm kiếm phim hoặc cào dữ liệu phim từ kho lưu trữ để bắt đầu thưởng thức phim ngay bây giờ!';
@@ -1095,7 +1415,7 @@ const comments = [
         </div>
         <a class="text-primary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
       </div>
-      <div class="grid grid-cols-2 lg:grid-cols-3 gap-gutter">
+      <div id="western-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-gutter">
         {westernMovies.map((movie) => (
           <a href={`/phim/${movie.slug}`} class={`group relative aspect-[16/9] rounded-2xl overflow-hidden glass-card border-transparent border-2 movie-card-hover transition-all duration-500 shadow-xl bg-surface-card cursor-pointer ${movie.isHiddenLg ? 'hidden lg:block' : ''}`}>
             <img class="w-full h-full object-cover" loading="lazy" src={movie.poster} alt={movie.title} />

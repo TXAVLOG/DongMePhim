@@ -625,33 +625,76 @@ const isActive = (path: string) => {
         </div>
 
         <!-- REGISTER TAB CONTENT -->
-        <div id="auth-tab-register" class="space-y-6 hidden">
+        <div id="auth-tab-register" class="space-y-5 hidden">
           <div>
-            <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Đăng ký</h2>
-            <p class="text-xs text-on-surface-variant mt-2 font-semibold">
+            <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Đăng ký tài khoản</h2>
+            <p class="text-xs text-on-surface-variant mt-1 font-semibold">
               Nếu bạn đã có tài khoản, <span onclick="switchAuthTab('login')" class="text-primary hover:underline cursor-pointer font-bold">đăng nhập ngay</span>
             </p>
           </div>
           
-          <form id="register-form" class="space-y-4" novalidate>
-            <div class="space-y-1.5 auth-field">
-              <input type="text" id="reg-username" name="username" placeholder="Tên tài khoản..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-              <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="username"></p>
+          <form id="register-form" class="space-y-3.5" novalidate>
+            <!-- Username Field -->
+            <div class="space-y-1 auth-field relative">
+              <input type="text" id="reg-username" name="username" placeholder="Tên tài khoản..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+              <span class="validation-icon material-symbols-outlined absolute right-3.5 top-[13px] text-[18px] hidden select-none"></span>
+              <p class="reg-error text-[9px] text-rose-400 font-medium ml-1 mt-0.5 opacity-0 transition-opacity" data-field="username"></p>
             </div>
 
-            <div class="space-y-1.5 auth-field">
-              <input type="email" id="reg-email" name="email" placeholder="Địa chỉ Email..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-              <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="email"></p>
+            <!-- Email Field -->
+            <div class="space-y-1 auth-field relative">
+              <input type="email" id="reg-email" name="email" placeholder="Địa chỉ Email (Gmail, Outlook, iCloud)..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+              <span class="validation-icon material-symbols-outlined absolute right-3.5 top-[13px] text-[18px] hidden select-none"></span>
+              <p class="reg-error text-[9px] text-rose-400 font-medium ml-1 mt-0.5 opacity-0 transition-opacity" data-field="email"></p>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-              <div class="space-y-1.5 auth-field">
-                <input type="password" id="reg-password" name="password" placeholder="Mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-                <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="password"></p>
+            <!-- Passwords Fields -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1 auth-field relative">
+                <input type="password" id="reg-password" name="password" placeholder="Mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <span class="validation-icon material-symbols-outlined absolute right-3.5 top-[13px] text-[18px] hidden select-none"></span>
+                <p class="reg-error text-[9px] text-rose-400 font-medium ml-1 mt-0.5 opacity-0 transition-opacity" data-field="password"></p>
               </div>
-              <div class="space-y-1.5 auth-field">
-                <input type="password" id="reg-confirm" name="confirmPassword" placeholder="Xác nhận mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-                <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="confirmPassword"></p>
+              <div class="space-y-1 auth-field relative">
+                <input type="password" id="reg-confirm" name="confirmPassword" placeholder="Xác nhận mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <span class="validation-icon material-symbols-outlined absolute right-3.5 top-[13px] text-[18px] hidden select-none"></span>
+                <p class="reg-error text-[9px] text-rose-400 font-medium ml-1 mt-0.5 opacity-0 transition-opacity" data-field="confirmPassword"></p>
+              </div>
+            </div>
+
+            <!-- Password Strength Bar & Conditions Indicator -->
+            <div id="password-strength-container" class="glass-panel p-3.5 rounded-2xl border border-glass-stroke space-y-2.5 hidden">
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">Độ mạnh mật khẩu</span>
+                <span id="strength-text" class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Trống</span>
+              </div>
+              <div class="flex gap-1.5 h-1.5 w-full rounded-full overflow-hidden bg-zinc-800/80">
+                <div id="strength-bar-1" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                <div id="strength-bar-2" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                <div id="strength-bar-3" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                <div id="strength-bar-4" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+              </div>
+              <div id="password-conditions" class="grid grid-cols-2 gap-x-2 gap-y-1.5 pt-1.5 border-t border-white/5 text-[9px] text-zinc-500 font-semibold">
+                <div class="flex items-center gap-1.5 condition-item" data-cond="length">
+                  <span class="material-symbols-outlined text-[12px]">radio_button_unchecked</span>
+                  <span>Tối thiểu 8 ký tự</span>
+                </div>
+                <div class="flex items-center gap-1.5 condition-item" data-cond="uppercase">
+                  <span class="material-symbols-outlined text-[12px]">radio_button_unchecked</span>
+                  <span>1 chữ viết hoa</span>
+                </div>
+                <div class="flex items-center gap-1.5 condition-item" data-cond="lowercase">
+                  <span class="material-symbols-outlined text-[12px]">radio_button_unchecked</span>
+                  <span>1 chữ viết thường</span>
+                </div>
+                <div class="flex items-center gap-1.5 condition-item" data-cond="number">
+                  <span class="material-symbols-outlined text-[12px]">radio_button_unchecked</span>
+                  <span>1 chữ số</span>
+                </div>
+                <div class="flex items-center gap-1.5 condition-item col-span-2" data-cond="special">
+                  <span class="material-symbols-outlined text-[12px]">radio_button_unchecked</span>
+                  <span>1 ký tự đặc biệt</span>
+                </div>
               </div>
             </div>
 
@@ -671,7 +714,7 @@ const isActive = (path: string) => {
               </span>
             </label>
 
-            <button type="submit" id="reg-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none">
+            <button type="submit" id="reg-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none" disabled>
               <span>Đăng ký tài khoản</span>
             </button>
           </form>
@@ -1048,6 +1091,7 @@ const isActive = (path: string) => {
               theme: 'dark',
               callback: function(token) {
                 window.txaTurnstileTokenLogin = token;
+                if (window.checkLoginFormValidity) window.checkLoginFormValidity();
               }
             });
           }
@@ -1062,6 +1106,7 @@ const isActive = (path: string) => {
               theme: 'dark',
               callback: function(token) {
                 window.txaTurnstileTokenRegister = token;
+                if (window.checkFormValidity) window.checkFormValidity();
               }
             });
           }
@@ -2009,10 +2054,41 @@ const isActive = (path: string) => {
       // Form Submission Actions
       // ══════════════════════════════════════════════════════════════
       (function() {
+        // ══════════════════════════════════════════════════════════════
+        // Tự động sinh tài khoản Admin mặc định (nếu trống)
+        // ══════════════════════════════════════════════════════════════
+        function initDefaultAdmin() {
+          if (typeof localStorage !== 'undefined') {
+            try {
+              const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+              const hasAdmin = users.some(u => u.username === 'admin' || u.email === 'admin@gmail.com' || u.roles === 'admin' || u.role === 'admin');
+              if (!hasAdmin) {
+                users.push({
+                  username: 'admin',
+                  email: 'admin@gmail.com',
+                  password: 'admin123',
+                  createdAt: new Date().toISOString(),
+                  package: 'VIP Lifetime',
+                  status: 'active',
+                  roles: 'admin',
+                  role: 'admin',
+                  emailVerified: true
+                });
+                localStorage.setItem('tregistered_users', JSON.stringify(users));
+                console.log('Tự động khởi tạo tài khoản Admin mặc định thành công.');
+              }
+            } catch(e) {
+              console.error('Lỗi khi tạo admin mặc định:', e);
+            }
+          }
+        }
+        initDefaultAdmin();
+        document.addEventListener('astro:page-load', initDefaultAdmin);
+
         const loginForm = document.getElementById('login-form');
         const regForm = document.getElementById('register-form');
 
-        // Validation states
+        // Login inputs
         const idInput = document.getElementById('login-identity');
         const passInput = document.getElementById('login-password');
         const togglePass = document.getElementById('login-toggle-pass');
@@ -2026,7 +2102,32 @@ const isActive = (path: string) => {
           });
         }
 
-        // Real-time login validation
+        // Login Form Validation Check
+        function checkLoginFormValidity() {
+          const identity = idInput?.value.trim() || '';
+          const password = passInput?.value || '';
+          const submitBtn = document.getElementById('login-submit');
+
+          let isCaptchaValid = true;
+          const isTurnstileEnabled = !!document.getElementById('cf-turnstile-login');
+          if (isTurnstileEnabled) {
+            isCaptchaValid = !!window.txaTurnstileTokenLogin;
+          }
+
+          if (submitBtn) {
+            const canSubmit = identity.length >= 3 && password.length >= 6 && isCaptchaValid;
+            submitBtn.disabled = !canSubmit;
+            if (canSubmit) {
+              submitBtn.classList.remove('opacity-55', 'cursor-not-allowed');
+              submitBtn.classList.add('hover:brightness-110', 'active:scale-95');
+            } else {
+              submitBtn.classList.add('opacity-55', 'cursor-not-allowed');
+              submitBtn.classList.remove('hover:brightness-110', 'active:scale-95');
+            }
+          }
+        }
+        window.checkLoginFormValidity = checkLoginFormValidity;
+
         if (idInput) {
           idInput.addEventListener('input', function() {
             const msgEl = this.closest('.auth-field').querySelector('.login-id-error');
@@ -2037,6 +2138,7 @@ const isActive = (path: string) => {
               this.style.borderColor = 'rgba(239, 68, 68, 0.4)';
               if (msgEl) { msgEl.textContent = 'Tối thiểu 3 ký tự'; msgEl.style.opacity = '1'; }
             }
+            checkLoginFormValidity();
           });
         }
 
@@ -2050,6 +2152,7 @@ const isActive = (path: string) => {
               this.style.borderColor = 'rgba(239, 68, 68, 0.4)';
               if (msgEl) { msgEl.textContent = 'Tối thiểu 6 ký tự'; msgEl.style.opacity = '1'; }
             }
+            checkLoginFormValidity();
           });
         }
 
@@ -2070,109 +2173,338 @@ const isActive = (path: string) => {
               submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span><span>Đang xác thực...</span>';
             }
 
-            try {
-              const token = window.txaTurnstileTokenLogin || '';
-              const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identity, password, turnstileToken: token })
-              });
-              const data = await res.json();
-              if (res.ok) {
-                showGlobalToast('Đăng nhập thành công!', 'success');
-                document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
-                if (typeof localStorage !== 'undefined') {
-                  localStorage.setItem('tlogged_in_as', identity);
+            setTimeout(() => {
+              try {
+                const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+                const matchedUser = users.find(u => 
+                  (u.username.toLowerCase() === identity.toLowerCase() || u.email.toLowerCase() === identity.toLowerCase()) && 
+                  u.password === password
+                );
+
+                if (matchedUser) {
+                  showGlobalToast('Đăng nhập thành công!', 'success');
+                  document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
+                  localStorage.setItem('tlogged_in_as', matchedUser.username);
                   localStorage.removeItem('thistory');
-                  fetch('/api/user/history')
-                    .then(hRes => hRes.ok ? hRes.json() : [])
-                    .then(historyData => {
-                      if (Array.isArray(historyData)) {
-                        localStorage.setItem('thistory', JSON.stringify(historyData));
-                      }
-                    })
-                    .finally(() => {
-                      window.dispatchEvent(new Event('auth-changed'));
-                      closeLoginModal();
-                      setTimeout(() => {
-                        window.location.reload();
-                      }, 1000);
-                    });
-                } else {
+                  
+                  resetTurnstileWidgets();
                   window.dispatchEvent(new Event('auth-changed'));
                   closeLoginModal();
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 1000);
+                  setTimeout(() => { window.location.reload(); }, 800);
+                } else {
+                  showGlobalToast('Tài khoản hoặc mật khẩu không chính xác!', 'error');
+                  resetTurnstileWidgets();
+                  if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span>Đăng nhập</span>';
+                  }
+                  checkLoginFormValidity();
                 }
-              } else {
-                showGlobalToast(data.message || data.error || 'Sai thông tin tài khoản!', 'error');
-                resetTurnstileWidgets();
+              } catch(e) {
+                showGlobalToast('Lỗi hệ thống xác thực!', 'error');
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = '<span>Đăng nhập</span>';
+                }
               }
-            } catch (err) {
-              showGlobalToast('Lỗi kết nối!', 'error');
-            } finally {
-              if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span>Đăng nhập</span>';
+            }, 600);
+          });
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // Register Validation & Submit (Real-time & Premium UI)
+        // ══════════════════════════════════════════════════════════════
+        const validation = { username: false, email: false, password: false, confirmPassword: false };
+
+        function updateFieldUI(inputEl, isValid, errorMsg) {
+          if (!inputEl) return;
+          const parent = inputEl.closest('.auth-field');
+          if (!parent) return;
+          const iconEl = parent.querySelector('.validation-icon');
+          const errorEl = parent.querySelector('.reg-error');
+
+          if (inputEl.value.trim() === '') {
+            inputEl.style.borderColor = '';
+            if (iconEl) iconEl.classList.add('hidden');
+            if (errorEl) { errorEl.style.opacity = '0'; errorEl.textContent = ''; }
+            return;
+          }
+
+          if (isValid) {
+            inputEl.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+            if (iconEl) {
+              iconEl.textContent = 'check_circle';
+              iconEl.className = 'validation-icon material-symbols-outlined absolute right-3.5 top-[13px] text-[18px] text-emerald-400 select-none';
+              iconEl.classList.remove('hidden');
+            }
+            if (errorEl) { errorEl.style.opacity = '0'; errorEl.textContent = ''; }
+          } else {
+            inputEl.style.borderColor = 'rgba(244, 63, 94, 0.6)';
+            if (iconEl) {
+              iconEl.textContent = 'cancel';
+              iconEl.className = 'validation-icon material-symbols-outlined absolute right-3.5 top-[13px] text-[18px] text-rose-400 select-none';
+              iconEl.classList.remove('hidden');
+            }
+            if (errorEl) {
+              errorEl.textContent = errorMsg;
+              errorEl.style.opacity = '1';
+            }
+          }
+        }
+
+        function validateUsername(val) {
+          const input = document.getElementById('reg-username');
+          if (!input) return false;
+          let isValid = false;
+          let msg = '';
+
+          if (val.length === 0) {
+            updateFieldUI(input, false, '');
+            validation.username = false;
+            return false;
+          }
+
+          if (val.length < 4) {
+            msg = 'Tên tài khoản phải tối thiểu 4 ký tự';
+          } else if (!/^[a-zA-Z0-9_]+$/.test(val)) {
+            msg = 'Chỉ dùng chữ cái, số và dấu gạch dưới (_)';
+          } else {
+            try {
+              const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+              const isTaken = users.some(u => u.username.toLowerCase() === val.toLowerCase());
+              if (isTaken) {
+                msg = 'Tên tài khoản đã được sử dụng';
+              } else {
+                isValid = true;
+              }
+            } catch(e) { isValid = true; }
+          }
+
+          updateFieldUI(input, isValid, msg);
+          validation.username = isValid;
+          checkFormValidity();
+          return isValid;
+        }
+
+        function validateEmail(val) {
+          const input = document.getElementById('reg-email');
+          if (!input) return false;
+          let isValid = false;
+          let msg = '';
+
+          if (val.length === 0) {
+            updateFieldUI(input, false, '');
+            validation.email = false;
+            return false;
+          }
+
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(val)) {
+            msg = 'Địa chỉ email không hợp lệ';
+          } else {
+            const domain = val.split('@')[1]?.toLowerCase() || '';
+            const allowedDomains = ['gmail.com', 'outlook.com', 'icloud.com'];
+            const isHotmail = domain.startsWith('hotmail.');
+            const isAllowed = allowedDomains.includes(domain) || isHotmail;
+
+            if (!isAllowed) {
+              msg = 'Chỉ hỗ trợ Gmail, Outlook, Hotmail, iCloud';
+            } else {
+              try {
+                const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+                const isTaken = users.some(u => u.email.toLowerCase() === val.toLowerCase());
+                if (isTaken) {
+                  msg = 'Địa chỉ email đã được đăng ký';
+                } else {
+                  isValid = true;
+                }
+              } catch(e) { isValid = true; }
+            }
+          }
+
+          updateFieldUI(input, isValid, msg);
+          validation.email = isValid;
+          checkFormValidity();
+          return isValid;
+        }
+
+        function validatePassword(val) {
+          const input = document.getElementById('reg-password');
+          const strengthContainer = document.getElementById('password-strength-container');
+          if (!input) return false;
+
+          if (strengthContainer) strengthContainer.classList.remove('hidden');
+
+          const conds = {
+            length: val.length >= 8,
+            uppercase: /[A-Z]/.test(val),
+            lowercase: /[a-z]/.test(val),
+            number: /[0-9]/.test(val),
+            special: /[^A-Za-z0-9]/.test(val)
+          };
+
+          let passedCount = 0;
+          Object.entries(conds).forEach(([key, passed]) => {
+            const item = document.querySelector(`.condition-item[data-cond="${key}"]`);
+            if (item) {
+              const icon = item.querySelector('.material-symbols-outlined');
+              if (val.length === 0) {
+                item.className = 'flex items-center gap-1.5 condition-item text-zinc-500';
+                if (icon) icon.textContent = 'radio_button_unchecked';
+              } else if (passed) {
+                passedCount++;
+                item.className = 'flex items-center gap-1.5 condition-item text-emerald-400';
+                if (icon) icon.textContent = 'check_circle';
+              } else {
+                item.className = 'flex items-center gap-1.5 condition-item text-rose-500';
+                if (icon) icon.textContent = 'cancel';
               }
             }
           });
-        }
 
-        // Register Validation & Submit
-        const fields = ['reg-username', 'reg-email', 'reg-password', 'reg-confirm'];
-        const validation = { username: false, email: false, password: false, confirmPassword: false };
+          const strengthTextEl = document.getElementById('strength-text');
+          const bars = [
+            document.getElementById('strength-bar-1'),
+            document.getElementById('strength-bar-2'),
+            document.getElementById('strength-bar-3'),
+            document.getElementById('strength-bar-4')
+          ];
 
-        function validateRegisterField(id, val) {
-          const input = document.getElementById(id);
-          const parent = input?.closest('.auth-field');
-          const errP = parent?.querySelector('.reg-error');
-          let isValid = false, msg = '';
+          bars.forEach(b => { if (b) b.className = 'h-full w-1/4 rounded-full bg-zinc-800/80 transition-all duration-300'; });
 
-          if (id === 'reg-username') {
-            if (val.length < 4) msg = 'Tối thiểu 4 ký tự';
-            else if (!/^[a-zA-Z0-9_]+$/.test(val)) msg = 'Chỉ dùng chữ cái, số, gạch dưới';
-            else isValid = true;
-            validation.username = isValid;
-          } else if (id === 'reg-email') {
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) msg = 'Định dạng email không hợp lệ';
-            else isValid = true;
-            validation.email = isValid;
-          } else if (id === 'reg-password') {
-            if (val.length < 6) msg = 'Tối thiểu 6 ký tự';
-            else isValid = true;
-            validation.password = isValid;
-          } else if (id === 'reg-confirm') {
-            const pw = document.getElementById('reg-password')?.value || '';
-            if (val !== pw) msg = 'Mật khẩu xác nhận không khớp';
-            else if (val.length >= 6) isValid = true;
-            validation.confirmPassword = isValid;
+          if (val.length === 0) {
+            if (strengthTextEl) {
+              strengthTextEl.textContent = 'Trống';
+              strengthTextEl.className = 'text-[9px] font-black uppercase tracking-widest text-zinc-500';
+            }
+            updateFieldUI(input, false, '');
+            validation.password = false;
+            return false;
           }
 
-          if (input) input.style.borderColor = isValid ? 'rgba(16, 185, 129, 0.4)' : (val.length > 0 ? 'rgba(239, 68, 68, 0.4)' : '');
-          if (errP) { errP.textContent = msg; errP.style.opacity = msg ? '1' : '0'; }
+          let strengthLabel = 'Rất yếu';
+          let strengthColor = 'bg-rose-500';
+          let activeBars = 1;
+
+          if (passedCount <= 2) {
+            strengthLabel = 'Yếu';
+            strengthColor = 'bg-rose-500';
+            activeBars = 1;
+          } else if (passedCount === 3) {
+            strengthLabel = 'Trung bình';
+            strengthColor = 'bg-amber-500';
+            activeBars = 2;
+          } else if (passedCount === 4) {
+            strengthLabel = 'Mạnh';
+            strengthColor = 'bg-yellow-400';
+            activeBars = 3;
+          } else if (passedCount === 5) {
+            strengthLabel = 'Cực kỳ bảo mật';
+            strengthColor = 'bg-emerald-400';
+            activeBars = 4;
+          }
+
+          if (strengthTextEl) {
+            strengthTextEl.textContent = strengthLabel;
+            strengthTextEl.className = `text-[9px] font-black uppercase tracking-widest transition-colors ${passedCount <= 2 ? 'text-rose-400' : passedCount === 3 ? 'text-amber-400' : passedCount === 4 ? 'text-yellow-400' : 'text-emerald-400'}`;
+          }
+
+          for (let i = 0; i < activeBars; i++) {
+            if (bars[i]) bars[i].className = `h-full w-1/4 rounded-full transition-all duration-300 ${strengthColor}`;
+          }
+
+          const isValid = passedCount === 5;
+          const errorMsg = isValid ? '' : 'Mật khẩu chưa đủ mạnh';
+          updateFieldUI(input, isValid, errorMsg);
+          validation.password = isValid;
+
+          const confirmInput = document.getElementById('reg-confirm');
+          if (confirmInput && confirmInput.value !== '') {
+            validateConfirmPassword(confirmInput.value);
+          }
+
+          checkFormValidity();
+          return isValid;
         }
 
-        fields.forEach(id => {
-          const input = document.getElementById(id);
-          input?.addEventListener('input', function() {
-            validateRegisterField(id, this.value);
-          });
-        });
+        function validateConfirmPassword(val) {
+          const input = document.getElementById('reg-confirm');
+          if (!input) return false;
+          let isValid = false;
+          let msg = '';
+
+          if (val.length === 0) {
+            updateFieldUI(input, false, '');
+            validation.confirmPassword = false;
+            return false;
+          }
+
+          const pwdVal = document.getElementById('reg-password')?.value || '';
+          if (val !== pwdVal) {
+            msg = 'Xác nhận mật khẩu không khớp';
+          } else if (val.length < 8) {
+            msg = 'Mật khẩu phải tối thiểu 8 ký tự';
+          } else {
+            isValid = true;
+          }
+
+          updateFieldUI(input, isValid, msg);
+          validation.confirmPassword = isValid;
+          checkFormValidity();
+          return isValid;
+        }
+
+        function checkFormValidity() {
+          const allValid = Object.values(validation).every(v => v === true);
+          const terms = document.getElementById('reg-terms')?.checked;
+          const submitBtn = document.getElementById('reg-submit');
+          
+          let isCaptchaValid = true;
+          const isTurnstileEnabled = !!document.getElementById('cf-turnstile-register');
+          if (isTurnstileEnabled) {
+            isCaptchaValid = !!window.txaTurnstileTokenRegister;
+          }
+
+          if (submitBtn) {
+            const canSubmit = allValid && terms && isCaptchaValid;
+            submitBtn.disabled = !canSubmit;
+            if (canSubmit) {
+              submitBtn.classList.remove('opacity-55', 'cursor-not-allowed');
+              submitBtn.classList.add('hover:brightness-110', 'active:scale-95');
+            } else {
+              submitBtn.classList.add('opacity-55', 'cursor-not-allowed');
+              submitBtn.classList.remove('hover:brightness-110', 'active:scale-95');
+            }
+          }
+        }
+        window.checkFormValidity = checkFormValidity;
+
+        // Register event listeners
+        document.getElementById('reg-username')?.addEventListener('input', function() { validateUsername(this.value); });
+        document.getElementById('reg-email')?.addEventListener('input', function() { validateEmail(this.value); });
+        document.getElementById('reg-password')?.addEventListener('input', function() { validatePassword(this.value); });
+        document.getElementById('reg-confirm')?.addEventListener('input', function() { validateConfirmPassword(this.value); });
+        document.getElementById('reg-terms')?.addEventListener('change', checkFormValidity);
+
+        // Call initial validation to show gray indicators on tab switch
+        const originalSwitchAuthTab = window.switchAuthTab;
+        window.switchAuthTab = function(tab) {
+          if (originalSwitchAuthTab) originalSwitchAuthTab(tab);
+          if (tab === 'register') {
+            setTimeout(() => {
+              validatePassword('');
+            }, 50);
+          }
+        };
 
         if (regForm) {
-          regForm.addEventListener('submit', async function(e) {
+          regForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const allValid = Object.values(validation).every(v => v === true);
             const terms = document.getElementById('reg-terms')?.checked;
 
-            if (!allValid) {
+            if (!allValid || !terms) {
               showGlobalToast('Vui lòng kiểm tra lại thông tin đăng ký!', 'error');
-              return;
-            }
-            if (!terms) {
-              showGlobalToast('Bạn cần đồng ý với điều khoản dịch vụ!', 'error');
               return;
             }
 
@@ -2182,53 +2514,68 @@ const isActive = (path: string) => {
               submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span><span>Đang khởi tạo...</span>';
             }
 
-            try {
-              const token = window.txaTurnstileTokenRegister || '';
-              const body = {
-                username: document.getElementById('reg-username')?.value.trim(),
-                email: document.getElementById('reg-email')?.value.trim(),
-                password: document.getElementById('reg-password')?.value,
-                confirmPassword: document.getElementById('reg-confirm')?.value,
-                turnstileToken: token
-              };
-              const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-              });
-              const data = await res.json();
-              if (res.ok) {
-                showGlobalToast(data.message || 'Đăng ký thành công! Vui lòng đăng nhập.', 'success');
-                try {
-                  const regUsers = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-                  if (!regUsers.some(u => u.username === body.username)) {
-                    regUsers.push({
-                      username: body.username,
-                      email: body.email,
-                      createdAt: new Date().toISOString(),
-                      package: 'Free',
-                      status: 'active',
-                      roles: 'users',
-                      emailVerified: false
-                    });
-                    localStorage.setItem('tregistered_users', JSON.stringify(regUsers));
-                  }
-                } catch (e) {
-                  console.error('Error saving user registration locally:', e);
+            setTimeout(() => {
+              try {
+                const username = document.getElementById('reg-username').value.trim();
+                const email = document.getElementById('reg-email').value.trim();
+                const password = document.getElementById('reg-password').value;
+
+                const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+                
+                if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                  showGlobalToast('Tên tài khoản đã tồn tại!', 'error');
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = '<span>Đăng ký tài khoản</span>';
+                  return;
                 }
+                if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+                  showGlobalToast('Địa chỉ email đã được đăng ký!', 'error');
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = '<span>Đăng ký tài khoản</span>';
+                  return;
+                }
+
+                users.push({
+                  username: username,
+                  email: email,
+                  password: password,
+                  createdAt: new Date().toISOString(),
+                  package: 'Free',
+                  status: 'active',
+                  roles: 'users',
+                  role: 'users',
+                  emailVerified: true
+                });
+                localStorage.setItem('tregistered_users', JSON.stringify(users));
+
+                showGlobalToast('Đăng ký tài khoản thành công! Vui lòng đăng nhập.', 'success');
+                
+                // Clear fields
+                document.getElementById('reg-username').value = '';
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-password').value = '';
+                document.getElementById('reg-confirm').value = '';
+                document.getElementById('reg-terms').checked = false;
+                
+                // Reset validation states
+                Object.keys(validation).forEach(k => validation[k] = false);
+
+                // Reset field UI borders and icons
+                ['reg-username', 'reg-email', 'reg-password', 'reg-confirm'].forEach(id => {
+                  const input = document.getElementById(id);
+                  if (input) updateFieldUI(input, true, '');
+                });
+
                 switchAuthTab('login');
-              } else {
-                showGlobalToast(data.message || data.error || 'Đăng ký thất bại!', 'error');
-                resetTurnstileWidgets();
+              } catch(e) {
+                showGlobalToast('Lỗi hệ thống đăng ký!', 'error');
+              } finally {
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = '<span>Đăng ký tài khoản</span>';
+                }
               }
-            } catch (err) {
-              showGlobalToast('Lỗi hệ thống!', 'error');
-            } finally {
-              if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span>Đăng ký tài khoản</span><span class="material-symbols-outlined text-[14px]">rocket_launch</span>';
-              }
-            }
+            }, 800);
           });
         }
 
@@ -2286,7 +2633,6 @@ const isActive = (path: string) => {
               if (res.ok) {
                 showGlobalToast(data.message || 'Yêu cầu phục hồi mật khẩu thành công!', 'success');
                 
-                // Record email log
                 if (data.emailLog) {
                   try {
                     const logs = JSON.parse(localStorage.getItem('txa_email_logs') || '[]');

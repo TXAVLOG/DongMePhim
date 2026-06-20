@@ -1,18 +1,8 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { MovieService } from '../../../services/MovieService';
 
-const actors = [
-  { name: 'Tom Hardy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvFm3KqGpeiNWq9sKeEohjYu0kdGzCpfhWQ6J_i5PHfZGmAqHG7apHA4u8n8oQ6uAFSBr34oO_C4g-mXKXDLQU_QIoMk2URo_iL1SD-9z02lX5Is5pCCNnglK8Son9F4H3BINnMA16LHlXELPhjAxYvKtGG1W6yvA0peIdzeloexXxWXJ59eRjQEqECoNtN1wfMqBlLH2RUwCqPTsRzzUB7sOiYD_07NaszMh1BODDprxeGsZMja____3yGr3TVqQC9gwUbNOk4sTK', roles: 42 },
-  { name: 'Zendaya', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCgBr1cxTWREpn2t2SQ5DSU5nqybFKUMvYIka53XMLQS_JcE9qF8YOIDOg-riw2vczxj9QbmtoYkSarz97EwSyV-tW3M8KpbV-0RPP22y2YPj0QC0dtzBEZ2HCZBTmRw5lrlE8h1p8S3N2OL-oZB-09Ro61dd2zoYhNNY4xBIkA9ORNR4It5iVVDMfAKegFTTrxjpKPu-FecRQI9c1j27_DFrw78XehBU2ZAAGntGIPctjrIM5xnH8X9YL1DphO591GtBKvmSi9l0dm', roles: 28 },
-  { name: 'Cillian Murphy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAylybFf7FDCscOUGIWcc_uyMNxczxKY2mKDVnFcxBCTbWT_9Q1ZmU5xIT0qgGoFrybtnD0puVY40Ii75ZhIOQJRfWFd4tHDn-pHvdzanasfqPOXfFZs3m7mUzSZ6p35sw-GyG3a9Kxz81tO9lxmzEMCSJ1atg4xYlmu662174KtD6Oj_M2MtME2y8aFLLkVx0Hjt_6kaaYfTyXxHITA2HOayiSBz_8BlMduXKMAD_wc--JVmNWaPWRGqprmM6suLZkumoDDdddbowM', roles: 35 },
-  { name: 'Florence Pugh', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAPW_rHHDOPZUv_TfbV0n8fi4JCRTHpz-055hd2mobrUFKauMvCd43wCQV5KnBbIUbkpevYOLPniD5CxCu713SHoY7x7aR9jqpotlUQe_Tn0Urw7Sj1wRU2XcnWZt9N__lzJZkXWVGqzwCIdFB7VT6ULZPyBgFpqmu1cjaxnMz7JBXopwc3Xo9Hf__6uWgQwXshmrvNZHkYPYDoQGCFKi_I_hiyfUM6y3T_bagH6KagoQPkHYklO8G367TCO4y2kangVhCq--pqE3FH', roles: 19 },
-  { name: 'Timothée Chalamet', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCy_dXunSjsLQFtaQYajW0j_76FQY3o2hH2XmMe91Gjkg8b3l3E1nCMu-d-vj-q9uEqEgYyeNyeo9sE6Q0YaspL5_4WzpS_0dGH8NyugY3HET0jtAihZwR5AVqRRzkBZ8FEt0EKF3LTExXCM_Uedd5nDxVIp02Evn6wzJsZzrMamocXg4ujImfnojCwjkZTT1BeE8nkhR2iRu953_eF9NParNQQ7yFKRHQ2bbPWjTRd0hzaByJgmU832WiIXiD2QfRoAAAdqeRUFRCo', roles: 22 },
-  { name: 'Meryl Streep', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAFEQ6pSSePi7o4is-04Q6jg_ee1YKw5x8jLFth3yalEOvHWd9gD16isfRWQxtid_focuSk1WXtJ_nzV-TPic-uvfQ_mvk8bFf-YoB2-g4pljdAeCuCTRtpfwcESFk9FHtti1yynAIlOpS72VDxWPrE0PzWSox2DIeAD4Q0ZTxurDDNv80Q6HWunQTnaaHSnhDRK9FXX1jnIUJzD36JgJHAc6gbZPO3v8BI8gsebb8WVh-UuLvJXHS2YWosAVKPF5uO8CgE85YtDn-E', roles: 76 },
-  { name: 'Pedro Pascal', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQAXdxBMxqcKiD5ITbY1kLdxruhPs-11EN5oNWk1zmdegefiGiF4aSuzr6flzHj3PAMj1C3GQuCMEuZF1BmwW3eI2QYHQkosiofqxGaL6-jjlkWB9OB9pW2HjTdD6E1NQ3AOtICTueySlO86gunwQnhWdcJrWc_1FhPGKsm3XaEwOPcaG7Q5VE5t_GdvKqZJWSz5WIBAgHB9Bzu66u1FHOWndncrdSJetbcF-wWbM8rATvj34yDOtHRm45dqLAt-Vj17CWpd8bimm9', roles: 31 },
-  { name: 'Anya Taylor-Joy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBt8V-kXAffv-6ZMaUxMzMlW5UP72W9Twm8eBbta-grN6DyYFhnEQ_4EeU7QD7wbmzmyIVfZP6m_PMXHnmAaPS_GGpb4CD-Cb2tgZa9PFOs6fmn_on4FK6F-7JwtJPB6prZwk4HWQR_PBgPplnLso9qX6rFjNzPHcChYB3OqqfleARO_xirRZ2uENQR6oAX7PEhdTR32YldgC5Byb-EWoZehMP-m9SPzSqhYk-ul_TQU5UTTU9Q47eNLOODI9Bb9qZxqnlYFgO4bZRf', roles: 24 },
-  { name: 'John Boyega', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAC_rl0e_KxJH0YORL9Q6XN223-WLjgCvM3ZTdgRn6fleM5uY25TEHnje7e43oDmTvF5g7VjR3x9kKKPyVATDMZxTj3NfDWwX3g2QTeRH6I2jxjF_qCIF5cK7rQV477-_SkegOT7eCWkQFN0LQDM2xOtIKg22Iw9JE9OFJWOeivDYCtUCFmrOImBNKMMxkI2Tw13M7jWj7Tt0g-31tZSj_ecwhk1Z7WRVZPuJT_tW-t2wfFZwYldvA0aVhemw4qdbltX390AA3xzIsR', roles: 18 },
-  { name: 'Willem Dafoe', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA-H5uJwFEvdM3R6obx7wikXPfR5JXdf1OnTBc5o1Vid336S2uvHJMUCDMZZOyx4voEze32H1tfCPa1d4pw5OgfC-2Y1DKer2ewUad-ByGoGD4Bc36R4pYWxwFdLZmyBtA4jTh_JFnL1u3FQk38ZPY1P1iUOmE9se7n7HorlvvdeLQGUkJL6R39sR1H0GZwsljEFnBXS9TgGxoCB-M0O8xgMQqr7Tk7FncbQvrwawiyGnxyQoepTWeu7jxB3ahiz8fWFcyiEkjPR1Yu', roles: 94 },
-];
+const staticMovies = await MovieService.getMovies();
 ---
 
 <AdminLayout title="Quản lý Diễn viên">
@@ -21,11 +11,11 @@ const actors = [
     <div class="flex items-center gap-4 w-full max-w-xl">
       <div class="relative w-full">
         <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-        <input class="w-full bg-surface-container-low border border-glass-stroke rounded-full py-2.5 pl-12 pr-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-on-surface-variant/50 transition-all" placeholder="Tìm kiếm diễn viên..." type="text"/>
+        <input id="actor-search" class="w-full bg-surface-container-low border border-glass-stroke rounded-full py-2.5 pl-12 pr-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-on-surface-variant/50 transition-all text-white" placeholder="Tìm kiếm diễn viên..." type="text"/>
       </div>
     </div>
     <div class="flex items-center gap-4 ml-4">
-      <button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-full font-title-md text-sm font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/20 cursor-pointer whitespace-nowrap">
+      <button id="btn-add-actor" class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-full font-title-md text-sm font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/20 cursor-pointer whitespace-nowrap border-none">
         <span class="material-symbols-outlined text-lg">add</span>
         Thêm diễn viên
       </button>
@@ -35,43 +25,286 @@ const actors = [
   <!-- Content Area -->
   <div class="w-full">
     <div class="mb-8">
-      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Danh sách Diễn viên</h2>
-      <p class="text-on-surface-variant font-body-main mt-1">Tổng cộng 248 diễn viên trong hệ thống</p>
+      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface text-2xl font-bold">Danh sách Diễn viên</h2>
+      <p id="actor-summary-text" class="text-on-surface-variant font-body-main mt-1">Đang tải thông tin diễn viên...</p>
     </div>
 
     <!-- Bento Grid of Actors -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-      {actors.map(actor => (
-        <div class="actor-card group relative overflow-hidden rounded-xl bg-surface-container aspect-[3/4] border border-glass-stroke transition-all duration-300 hover:scale-[1.03] hover:border-primary">
-          <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-transparent to-transparent z-10"></div>
-          <div class="absolute inset-0 bg-cover bg-center" style={`background-image: url('${actor.image}')`}></div>
-          <div class="absolute bottom-0 left-0 right-0 p-4 z-20">
-            <h3 class="font-title-md text-on-surface text-lg truncate">{actor.name}</h3>
-            <p class="text-primary text-[10px] font-label-caps tracking-widest uppercase mt-1">{actor.roles} Phim đã tham gia</p>
-          </div>
-          
-          <!-- Action Hover Overlay -->
-          <div class="action-overlay absolute inset-0 bg-surface-deep/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex flex-col items-center justify-center gap-4">
-            <button class="w-12 h-12 rounded-full bg-primary text-on-primary-fixed flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Chỉnh sửa">
-              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">edit</span>
-            </button>
-            <button class="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Chi tiết">
-              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">visibility</span>
-            </button>
-            <button class="w-12 h-12 rounded-full bg-error-container text-on-error-container flex items-center justify-center hover:scale-110 transition-transform cursor-pointer" title="Xóa">
-              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">delete</span>
-            </button>
-          </div>
-        </div>
-      ))}
+    <div id="actors-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      <!-- Dynamic list via JS client-side -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="actors-empty" class="hidden text-center py-16 glass-panel rounded-2xl border border-glass-stroke">
+      <span class="material-symbols-outlined text-5xl text-zinc-600 mb-2">theater_comedy</span>
+      <p class="text-sm text-zinc-400 italic">Không tìm thấy diễn viên nào phù hợp.</p>
     </div>
 
     <!-- Pagination or Load More -->
-    <div class="mt-12 flex justify-center pb-10">
-      <button class="border border-glass-stroke bg-surface-container hover:bg-surface-container-high px-8 py-3 rounded-full font-body-main text-sm transition-all flex items-center gap-2 cursor-pointer">
+    <div id="load-more-container" class="mt-12 flex justify-center pb-10">
+      <button id="btn-load-more" class="border border-glass-stroke bg-surface-container hover:bg-surface-container-high px-8 py-3 rounded-full font-body-main text-sm transition-all flex items-center gap-2 cursor-pointer text-white">
         Tải thêm diễn viên
         <span class="material-symbols-outlined">expand_more</span>
       </button>
     </div>
   </div>
+
+  <script is:inline define:vars={{ staticMovies }}>
+    (function() {
+      let actorsState = [];
+      let allMovies = [];
+      let currentFiltered = [];
+      let displayedCount = 10;
+      const itemsPerLoad = 10;
+
+      const defaultActors = [
+        { name: 'Tom Hardy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvFm3KqGpeiNWq9sKeEohjYu0kdGzCpfhWQ6J_i5PHfZGmAqHG7apHA4u8n8oQ6uAFSBr34oO_C4g-mXKXDLQU_QIoMk2URo_iL1SD-9z02lX5Is5pCCNnglK8Son9F4H3BINnMA16LHlXELPhjAxYvKtGG1W6yvA0peIdzeloexXxWXJ59eRjQEqECoNtN1wfMqBlLH2RUwCqPTsRzzUB7sOiYD_07NaszMh1BODDprxeGsZMja____3yGr3TVqQC9gwUbNOk4sTK' },
+        { name: 'Zendaya', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCgBr1cxTWREpn2t2SQ5DSU5nqybFKUMvYIka53XMLQS_JcE9qF8YOIDOg-riw2vczxj9QbmtoYkSarz97EwSyV-tW3M8KpbV-0RPP22y2YPj0QC0dtzBEZ2HCZBTmRw5lrlE8h1p8S3N2OL-oZB-09Ro61dd2zoYhNNY4xBIkA9ORNR4It5iVVDMfAKegFTTrxjpKPu-FecRQI9c1j27_DFrw78XehBU2ZAAGntGIPctjrIM5xnH8X9YL1DphO591GtBKvmSi9l0dm' },
+        { name: 'Cillian Murphy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAylybFf7FDCscOUGIWcc_uyMNxczxKY2mKDVnFcxBCTbWT_9Q1ZmU5xIT0qgGoFrybtnD0puVY40Ii75ZhIOQJRfWFd4tHDn-pHvdzanasfqPOXfFZs3m7mUzSZ6p35sw-GyG3a9Kxz81tO9lxmzEMCSJ1atg4xYlmu662174KtD6Oj_M2MtME2y8aFLLkVx0Hjt_6kaaYfTyXxHITA2HOayiSBz_8BlMduXKMAD_wc--JVmNWaPWRGqprmM6suLZkumoDDdddbowM' },
+        { name: 'Florence Pugh', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAPW_rHHDOPZUv_TfbV0n8fi4JCRTHpz-055hd2mobrUFKauMvCd43wCQV5KnBbIUbkpevYOLPniD5CxCu713SHoY7x7aR9jqpotlUQe_Tn0Urw7Sj1wRU2XcnWZt9N__lzJZkXWVGqzwCIdFB7VT6ULZPyBgFpqmu1cjaxnMz7JBXopwc3Xo9Hf__6uWgQwXshmrvNZHkYPYDoQGCFKi_I_hiyfUM6y3T_bagH6KagoQPkHYklO8G367TCO4y2kangVhCq--pqE3FH' },
+        { name: 'Timothée Chalamet', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCy_dXunSjsLQFtaQYajW0j_76FQY3o2hH2XmMe91Gjkg8b3l3E1nCMu-d-vj-q9uEqEgYyeNyeo9sE6Q0YaspL5_4WzpS_0dGH8NyugY3HET0jtAihZwR5AVqRRzkBZ8FEt0EKF3LTExXCM_Uedd5nDxVIp02Evn6wzJsZzrMamocXg4ujImfnojCwjkZTT1BeE8nkhR2iRu953_eF9NParNQQ7yFKRHQ2bbPWjTRd0hzaByJgmU832WiIXiD2QfRoAAAdqeRUFRCo' },
+        { name: 'Meryl Streep', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAFEQ6pSSePi7o4is-04Q6jg_ee1YKw5x8jLFth3yalEOvHWd9gD16isfRWQxtid_focuSk1WXtJ_nzV-TPic-uvfQ_mvk8bFf-YoB2-g4pljdAeCuCTRtpfwcESFk9FHtti1yynAIlOpS72VDxWPrE0PzWSox2DIeAD4Q0ZTxurDDNv80Q6HWunQTnaaHSnhDRK9FXX1jnIUJzD36JgJHAc6gbZPO3v8BI8gsebb8WVh-UuLvJXHS2YWosAVKPF5uO8CgE85YtDn-E' },
+        { name: 'Pedro Pascal', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQAXdxBMxqcKiD5ITbY1kLdxruhPs-11EN5oNWk1zmdegefiGiF4aSuzr6flzHj3PAMj1C3GQuCMEuZF1BmwW3eI2QYHQkosiofqxGaL6-jjlkWB9OB9pW2HjTdD6E1NQ3AOtICTueySlO86gunwQnhWdcJrWc_1FhPGKsm3XaEwOPcaG7Q5VE5t_GdvKqZJWSz5WIBAgHB9Bzu66u1FHOWndncrdSJetbcF-wWbM8rATvj34yDOtHRm45dqLAt-Vj17CWpd8bimm9' },
+        { name: 'Anya Taylor-Joy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBt8V-kXAffv-6ZMaUxMzMlW5UP72W9Twm8eBbta-grN6DyYFhnEQ_4EeU7QD7wbmzmyIVfZP6m_PMXHnmAaPS_GGpb4CD-Cb2tgZa9PFOs6fmn_on4FK6F-7JwtJPB6prZwk4HWQR_PBgPplnLso9qX6rFjNzPHcChYB3OqqfleARO_xirRZ2uENQR6oAX7PEhdTR32YldgC5Byb-EWoZehMP-m9SPzSqhYk-ul_TQU5UTTU9Q47eNLOODI9Bb9qZxqnlYFgO4bZRf' },
+        { name: 'John Boyega', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAC_rl0e_KxJH0YORL9Q6XN223-WLjgCvM3ZTdgRn6fleM5uY25TEHnje7e43oDmTvF5g7VjR3x9kKKPyVATDMZxTj3NfDWwX3g2QTeRH6I2jxjF_qCIF5cK7rQV477-_SkegOT7eCWkQFN0LQDM2xOtIKg22Iw9JE9OFJWOeivDYCtUCFmrOImBNKMMxkI2Tw13M7jWj7Tt0g-31tZSj_ecwhk1Z7WRVZPuJT_tW-t2wfFZwYldvA0aVhemw4qdbltX390AA3xzIsR' },
+        { name: 'Willem Dafoe', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA-H5uJwFEvdM3R6obx7wikXPfR5JXdf1OnTBc5o1Vid336S2uvHJMUCDMZZOyx4voEze32H1tfCPa1d4pw5OgfC-2Y1DKer2ewUad-ByGoGD4Bc36R4pYWxwFdLZmyBtA4jTh_JFnL1u3FQk38ZPY1P1iUOmE9se7n7HorlvvdeLQGUkJL6R39sR1H0GZwsljEFnBXS9TgGxoCB-M0O8xgMQqr7Tk7FncbQvrwawiyGnxyQoepTWeu7jxB3ahiz8fWFcyiEkjPR1Yu' }
+      ];
+
+      function initActors() {
+        const grid = document.getElementById('actors-grid');
+        if (!grid) return; // Exit if not on the page
+
+        // Load all movies to count roles
+        const crawledMovies = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+        allMovies = [...staticMovies, ...crawledMovies];
+
+        // Load actors
+        try {
+          const stored = localStorage.getItem('txa_actors');
+          if (stored) {
+            actorsState = JSON.parse(stored);
+          } else {
+            actorsState = [...defaultActors];
+            localStorage.setItem('txa_actors', JSON.stringify(actorsState));
+          }
+        } catch (e) {
+          actorsState = [...defaultActors];
+        }
+
+        currentFiltered = [...actorsState];
+        displayedCount = 10;
+        filterAndRender();
+
+        // Bind events
+        const searchInput = document.getElementById('actor-search');
+        if (searchInput) {
+          searchInput.oninput = (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(query));
+            displayedCount = 10;
+            filterAndRender();
+          };
+        }
+
+        const btnLoadMore = document.getElementById('btn-load-more');
+        if (btnLoadMore) {
+          btnLoadMore.onclick = () => {
+            displayedCount += itemsPerLoad;
+            filterAndRender();
+          };
+        }
+
+        const btnAddActor = document.getElementById('btn-add-actor');
+        if (btnAddActor) {
+          btnAddActor.onclick = () => {
+            const html = `
+              <div style="display:flex;flex-direction:column;gap:12px;min-width:320px">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tên diễn viên</label>
+                  <input type="text" id="actor-modal-name" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: Tom Cruise" />
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Link ảnh đại diện (URL)</label>
+                  <input type="text" id="actor-modal-image" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Dán link ảnh đại diện..." />
+                </div>
+              </div>
+            `;
+
+            if (window.txamodal) {
+              window.txamodal.show({
+                title: 'Thêm Diễn viên mới',
+                message: html,
+                confirmText: 'Thêm mới',
+                cancelText: 'Hủy bỏ',
+                onConfirm: () => {
+                  const name = document.getElementById('actor-modal-name')?.value.trim();
+                  let image = document.getElementById('actor-modal-image')?.value.trim();
+                  if (!name) {
+                    if (window.showGlobalToast) window.showGlobalToast('Tên diễn viên không được để trống!', 'error');
+                    return;
+                  }
+                  if (actorsState.some(a => a.name.toLowerCase() === name.toLowerCase())) {
+                    if (window.showGlobalToast) window.showGlobalToast('Diễn viên này đã tồn tại!', 'error');
+                    return;
+                  }
+                  if (!image) {
+                    image = 'https://img.dongmephim.online/avatars/user.jpg'; // default avatar
+                  }
+                  
+                  actorsState.unshift({ name, image });
+                  localStorage.setItem('txa_actors', JSON.stringify(actorsState));
+                  
+                  // Reload search and render
+                  const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+                  currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+                  filterAndRender();
+                  if (window.showGlobalToast) window.showGlobalToast(`Đã thêm diễn viên ${name} thành công!`, 'success');
+                }
+              });
+            }
+          };
+        }
+      }
+
+      function countActorMovies(actorName) {
+        const term = actorName.toLowerCase().trim();
+        return allMovies.filter(m => {
+          // Supports both actors (array) and actor (array) schema
+          const list = m.actors || m.actor || [];
+          return list.some(act => String(act).toLowerCase().trim() === term);
+        }).length;
+      }
+
+      function filterAndRender() {
+        const grid = document.getElementById('actors-grid');
+        const emptyState = document.getElementById('actors-empty');
+        const loadMoreBtn = document.getElementById('btn-load-more');
+        const summaryText = document.getElementById('actor-summary-text');
+        if (!grid) return;
+
+        if (summaryText) {
+          summaryText.textContent = `Tổng cộng ${actorsState.length} diễn viên trong hệ thống`;
+        }
+
+        if (currentFiltered.length === 0) {
+          grid.innerHTML = '';
+          emptyState?.classList.remove('hidden');
+          if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+          return;
+        }
+
+        emptyState?.classList.add('hidden');
+        
+        const listToDisplay = currentFiltered.slice(0, displayedCount);
+
+        grid.innerHTML = listToDisplay.map((actor, index) => {
+          const originalIndex = actorsState.findIndex(a => a.name === actor.name);
+          const moviesCount = countActorMovies(actor.name);
+          return `
+            <div class="actor-card group relative overflow-hidden rounded-xl bg-surface-container aspect-[3/4] border border-glass-stroke transition-all duration-300 hover:scale-[1.03] hover:border-primary">
+              <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-transparent to-transparent z-10"></div>
+              <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${actor.image}')"></div>
+              <div class="absolute bottom-0 left-0 right-0 p-4 z-20">
+                <h3 class="font-title-md text-on-surface text-lg truncate font-semibold text-white">${actor.name}</h3>
+                <p class="text-primary text-[10px] font-label-caps tracking-widest uppercase mt-1">${moviesCount} Phim đã tham gia</p>
+              </div>
+              
+              <!-- Action Hover Overlay -->
+              <div class="action-overlay absolute inset-0 bg-surface-deep/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex flex-col items-center justify-center gap-4">
+                <button onclick="editActor(${originalIndex})" class="w-12 h-12 rounded-full bg-primary text-slate-950 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" title="Chỉnh sửa">
+                  <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">edit</span>
+                </button>
+                <button onclick="deleteActor(${originalIndex})" class="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" title="Xóa">
+                  <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">delete</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        if (loadMoreBtn) {
+          if (displayedCount >= currentFiltered.length) {
+            loadMoreBtn.style.display = 'none';
+          } else {
+            loadMoreBtn.style.display = 'flex';
+          }
+        }
+      }
+
+      window.editActor = function(index) {
+        const actor = actorsState[index];
+        if (!actor) return;
+        const html = `
+          <div style="display:flex;flex-direction:column;gap:12px;min-width:320px">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tên diễn viên</label>
+              <input type="text" id="actor-modal-name" value="${actor.name.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Link ảnh đại diện (URL)</label>
+              <input type="text" id="actor-modal-image" value="${actor.image.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" />
+            </div>
+          </div>
+        `;
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Chỉnh sửa thông tin Diễn viên',
+            message: html,
+            confirmText: 'Lưu thay đổi',
+            cancelText: 'Hủy bỏ',
+            onConfirm: () => {
+              const name = document.getElementById('actor-modal-name')?.value.trim();
+              const image = document.getElementById('actor-modal-image')?.value.trim();
+              if (!name) {
+                if (window.showGlobalToast) window.showGlobalToast('Tên diễn viên không được để trống!', 'error');
+                return;
+              }
+              
+              actorsState[index] = { name, image: image || 'https://img.dongmephim.online/avatars/user.jpg' };
+              localStorage.setItem('txa_actors', JSON.stringify(actorsState));
+              
+              // Reload search and render
+              const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+              currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+              filterAndRender();
+              if (window.showGlobalToast) window.showGlobalToast('Cập nhật thông tin diễn viên thành công!', 'success');
+            }
+          });
+        }
+      };
+
+      window.deleteActor = function(index) {
+        const actor = actorsState[index];
+        if (!actor) return;
+        const doDelete = () => {
+          actorsState.splice(index, 1);
+          localStorage.setItem('txa_actors', JSON.stringify(actorsState));
+          
+          // Reload search and render
+          const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+          currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+          filterAndRender();
+          if (window.showGlobalToast) window.showGlobalToast('Đã xóa diễn viên thành công!', 'success');
+        };
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Xóa Diễn viên',
+            message: `Bạn có chắc chắn muốn xóa diễn viên <span class="text-white font-bold">"${actor.name}"</span> khỏi hệ thống? Hành động này không thể hoàn tác.`,
+            type: 'danger',
+            confirmText: 'Xóa diễn viên',
+            cancelText: 'Hủy bỏ',
+            onConfirm: doDelete
+          });
+        } else if (confirm(`Xóa diễn viên ${actor.name}?`)) {
+          doDelete();
+        }
+      };
+
+      // Init
+      initActors();
+      document.addEventListener('astro:page-load', initActors);
+    })();
+  </script>
 </AdminLayout>

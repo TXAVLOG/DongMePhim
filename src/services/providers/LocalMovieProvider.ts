@@ -685,7 +685,13 @@ export class LocalMovieProvider implements IMovieProvider {
   }
 
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string }): Promise<Movie[]> {
-    let result = this.getLocalMovies();
+    const local = this.getLocalMovies();
+    const localSlugs = new Set(local.map(m => m.slug));
+    const combined = [
+      ...local,
+      ...seedMovies.filter(m => !localSlugs.has(m.slug))
+    ];
+    let result = combined;
 
     if (params?.type) {
       result = result.filter(m => m.type === params.type);

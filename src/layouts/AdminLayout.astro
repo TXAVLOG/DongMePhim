@@ -24,7 +24,24 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
     (function() {
       if (typeof localStorage !== 'undefined') {
         const loggedInUser = localStorage.getItem('tlogged_in_as');
-        if (!loggedInUser || !loggedInUser.toLowerCase().includes('admin')) {
+        if (!loggedInUser) {
+          window.location.href = '/tphim';
+          return;
+        }
+
+        // Tương thích ngược: nếu chuỗi identity là 'admin'
+        if (loggedInUser === 'admin') return;
+
+        let hasAdminRole = false;
+        try {
+          const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+          const user = users.find(u => u.username === loggedInUser || u.email === loggedInUser);
+          if (user && (user.roles === 'admin' || user.role === 'admin')) {
+            hasAdminRole = true;
+          }
+        } catch (e) {}
+
+        if (!hasAdminRole) {
           window.location.href = '/tphim';
         }
       }
@@ -67,14 +84,8 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
     <!-- SideNavBar -->
     <aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest/80 backdrop-blur-2xl border-r border-glass-stroke hidden lg:flex flex-col py-8 z-50">
       <div class="px-6 mb-8 flex items-center gap-3">
-        <a href="/tphim" class="flex items-center gap-3" title="Về trang chủ">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center">
-            <span class="material-symbols-outlined text-on-primary-fixed">movie_filter</span>
-          </div>
-          <div>
-            <h1 class="font-display-hero text-title-md text-primary leading-none">{settings.general.site_name}</h1>
-            <p class="text-[10px] text-text-dim font-label-caps tracking-widest mt-1">PREMIUM ADMIN</p>
-          </div>
+        <a href="/tphim" class="flex items-center gap-2" title="Về trang chủ">
+          <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-9 w-auto dyn-logo-img" />
         </a>
       </div>
       
@@ -82,12 +93,12 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
       <div class="px-4 mb-6">
         <div class="glass-panel rounded-2xl p-4 flex items-center gap-3">
           <div class="relative">
-            <img alt="Admin Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqp33LfcA-w_kjd-HzFU-K80l1qq2M_ZRyzgUG8pz6_he7pyx9UttAoNBl1iaJ9bAke_TMHTnvEVB9wE2CFymqNH818Lk9YQmBAtdvSiL-nlwI5EkXkJEj0YG6HTfwQaq-n0BQZmItZsYAx_VK2MPXRuNa93P8ypKP6VwLTyIwfKIIAeZU7Ok55bckAjP3URJ0gBcisLPKJjdMnApqOgebWSoS-RXy5I_7BnTMYLtOfFE3OTpUANQKOWEWXZtDMY2S8tq_U8tleB9V"/>
+            <img id="sidebar-avatar" alt="Admin Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-primary/20" src="https://img.dongmephim.online/avatars/user.jpg"/>
             <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-surface-deep rounded-full"></div>
           </div>
-          <div class="overflow-hidden">
-            <p class="font-title-md text-sm truncate">Admin_{settings.general.site_name}</p>
-            <p class="text-xs text-text-dim font-label-caps">Super Admin</p>
+          <div class="overflow-hidden w-full">
+            <p id="sidebar-username" class="font-title-md text-sm truncate text-white font-semibold">Đang tải...</p>
+            <p id="sidebar-role" class="text-xs text-text-dim font-label-caps">Super Admin</p>
           </div>
         </div>
       </div>
@@ -110,7 +121,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
           <span class="material-symbols-outlined text-xl">cloud_download</span>
           <span class="font-label-caps text-xs">Thu thập phim</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-server" href="/admin/cai-dat/server">
+        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-server" href="/admin/server">
           <span class="material-symbols-outlined text-xl">dns</span>
           <span class="font-label-caps text-xs">Quản lý Server</span>
         </a>
@@ -418,6 +429,34 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
         }
       };
       window.showGlobalToast = window.txatoast.show;
+      // Dynamic Profile updates
+      const loggedIn = localStorage.getItem('tlogged_in_as');
+      if (loggedIn) {
+        let avatar = 'https://img.dongmephim.online/avatars/user.jpg';
+        let nameDisplay = loggedIn;
+        let roleDisplay = 'Quản trị viên';
+        
+        try {
+          const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+          const user = users.find(u => u.username === loggedIn || u.email === loggedIn);
+          if (user) {
+            avatar = user.avatar || avatar;
+            nameDisplay = user.username || loggedIn;
+            roleDisplay = (user.roles === 'admin' || user.role === 'admin') ? 'Super Admin' : 'Quản trị viên';
+          } else if (loggedIn === 'admin') {
+            nameDisplay = 'admin';
+            roleDisplay = 'Super Admin';
+          }
+        } catch(e) {}
+
+        const avatarEl = document.getElementById('sidebar-avatar');
+        const usernameEl = document.getElementById('sidebar-username');
+        const roleEl = document.getElementById('sidebar-role');
+
+        if (avatarEl) avatarEl.src = avatar;
+        if (usernameEl) usernameEl.textContent = nameDisplay;
+        if (roleEl) roleEl.textContent = roleDisplay;
+      }
     }
 
     initAdminLayout();

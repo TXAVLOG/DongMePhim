@@ -242,8 +242,17 @@ const staticMovies = await MovieService.getMovies();
               source = 'Manual Upload';
             }
             
-            const statusText = m.status === 'completed' ? 'Completed' : `Ongoing (Tập ${m.episodeCurrent})`;
-            const statusBg = m.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500';
+            let statusText = '';
+            let statusBg = '';
+            if (m.type === 'movie') {
+              statusText = 'Film Full';
+              statusBg = 'bg-emerald-500';
+            } else {
+              let epNum = m.episodeCurrent || '1';
+              epNum = String(epNum).trim().replace(/^[tT]ập\s+/, '');
+              statusText = m.status === 'completed' ? 'Completed' : `Ongoing (Tập ${epNum})`;
+              statusBg = m.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500';
+            }
 
             const isStatic = !crawledList.some(c => c.id === m.id);
 

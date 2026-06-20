@@ -189,8 +189,28 @@ const staticMovies = await MovieService.getMovies();
               sourceBg = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
             }
 
-            const statusText = m.status === 'completed' ? 'Trọn bộ' : `Tập ${m.episodeCurrent}`;
-            const statusBg = m.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500';
+            // Formatting status logic
+            const format2Digits = (val) => {
+              if (val === undefined || val === null || val === '') return '??';
+              const clean = String(val).replace(/^[tT]ập\s+/, '').trim();
+              if (clean.toLowerCase() === 'full') return 'Full';
+              const parsed = parseInt(clean, 10);
+              return !isNaN(parsed) ? (parsed < 10 ? `0${parsed}` : `${parsed}`) : clean;
+            };
+
+            let statusText = '';
+            let statusBg = 'bg-amber-500';
+            if (m.type === 'movie') {
+              statusText = 'Film Full';
+              statusBg = 'bg-emerald-500';
+            } else {
+              const xx = format2Digits(m.episodeCurrent);
+              const yy = format2Digits(m.episodeTotal);
+              statusText = `Tập ${xx}/${yy}`;
+              if (m.status === 'completed') {
+                statusBg = 'bg-emerald-500';
+              }
+            }
 
             const isStatic = m.source === 'static';
 
@@ -227,7 +247,7 @@ const staticMovies = await MovieService.getMovies();
                     <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Xem trên web">
                       <span class="material-symbols-outlined text-sm">visibility</span>
                     </a>
-                    <a href="/admin/phim/tao-thu-cong?edit=${m.slug}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa phim / Cấu hình tập">
+                    <a href="${m.source === 'crawled' ? `/admin/phim/edit?th=${m.slug}` : `/admin/phim/edit?m=${m.slug}`}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa phim / Cấu hình tập">
                       <span class="material-symbols-outlined text-sm">edit</span>
                     </a>
                     ${isStatic ? `

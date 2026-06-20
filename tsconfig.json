@@ -7,11 +7,11 @@
   ],
   "exclude": [
     "dist"
-],
-"compilerOptions": {
+  ],
+  "compilerOptions": {
     "types": [
-        "./worker-configuration.d.ts",
-        "node"
+      "./worker-configuration.d.ts",
+      "node"
     ]
-}
+  }
 }

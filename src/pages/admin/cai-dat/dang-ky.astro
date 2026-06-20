@@ -159,7 +159,10 @@ let activeTab = 'dang-ky';
                     <input type="checkbox" id="login-google-onetap" checked={settings.login?.login_google_onetap_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
                     <span class="text-xs">Bật One-Tap popup đăng nhập nhanh (login_google_onetap_enable)</span>
                   </div>
-                  <button type="button" class="test-login-btn px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-300 rounded-xl text-[11px] font-bold uppercase hover:bg-white/10 cursor-pointer flex items-center gap-1.5 transition-all" data-provider="Google"><span class="material-symbols-outlined text-sm">open_in_new</span> Test Login Google</button>
+                  <div class="md:col-span-2">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Nút đăng nhập Google kiểm thử</label>
+                    <div id="google-test-btn" class="min-h-[40px] flex items-center justify-start mt-1"></div>
+                  </div>
                 </div>
               </div>
 
@@ -384,6 +387,9 @@ let activeTab = 'dang-ky';
           toggleRegistrationSubForm();
           toggleEmailVerificationFields();
           updateExpiryLabel();
+          if (serverSettings.login?.login_google_enable && serverSettings.login?.login_google_client_id) {
+            setTimeout(() => { window.initGoogleGSIAndButton(); }, 100);
+          }
           return;
         }
 
@@ -424,6 +430,10 @@ let activeTab = 'dang-ky';
         updateExpiryLabel();
         syncToggleVisibility();
         updateCallbackURIs();
+
+        if (s.login?.login_google_enable && s.login?.login_google_client_id) {
+          setTimeout(() => { window.initGoogleGSIAndButton(); }, 100);
+        }
       }
 
       function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
@@ -558,7 +568,11 @@ let activeTab = 'dang-ky';
       let gsiLoaded = false;
       window.initGoogleGSIAndButton = () => {
         const clientId = document.getElementById('login-google-client-id')?.value.trim();
-        if (!clientId) return;
+        if (!clientId) {
+          const container = document.getElementById('google-test-btn');
+          if (container) container.innerHTML = '';
+          return;
+        }
 
         if (gsiLoaded) {
           renderGoogleAdminButton(clientId);
@@ -578,12 +592,27 @@ let activeTab = 'dang-ky';
 
       function renderGoogleAdminButton(clientId) {
         if (typeof google === 'undefined') return;
-        google.accounts.id.initialize({
-          client_id: clientId,
-          callback: (response) => {
-            if (window.showGlobalToast) window.showGlobalToast('Google One-Tap JWT: ' + response.credential.substring(0, 30) + '...', 'success');
+        try {
+          google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (response) => {
+              if (window.showGlobalToast) window.showGlobalToast('Kiểm thử đăng nhập Google thành công!', 'success');
+              console.log('Google credential:', response.credential);
+            }
+          });
+          const container = document.getElementById('google-test-btn');
+          if (container) {
+            container.innerHTML = '';
+            google.accounts.id.renderButton(container, {
+              theme: 'filled_blue',
+              size: 'large',
+              width: 250,
+              text: 'signin_with'
+            });
           }
-        });
+        } catch (err) {
+          console.error('Error rendering Google test button:', err);
+        }
       }
 
       // Save handler
@@ -653,6 +682,27 @@ let activeTab = 'dang-ky';
         }
 
         setTimeout(() => { window.location.reload(); }, 800);
+      });
+
+      // Google GSI auto-reinit listeners
+      document.addEventListener('change', (e) => {
+        if (e.target && (e.target.id === 'login-google-enable' || e.target.id === 'login-google-client-id')) {
+          const cb = document.getElementById('login-google-enable');
+          if (cb && cb.checked) {
+            window.initGoogleGSIAndButton();
+          } else {
+            const container = document.getElementById('google-test-btn');
+            if (container) container.innerHTML = '';
+          }
+        }
+      });
+      document.addEventListener('input', (e) => {
+        if (e.target && e.target.id === 'login-google-client-id') {
+          const cb = document.getElementById('login-google-enable');
+          if (cb && cb.checked) {
+            window.initGoogleGSIAndButton();
+          }
+        }
       });
 
       // Init
