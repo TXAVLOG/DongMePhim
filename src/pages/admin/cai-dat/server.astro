@@ -2,237 +2,212 @@
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 ---
 
-<AdminLayout title="Quản lý Server">
+<AdminLayout title="Quản lý Server Phát">
   <!-- Header Section -->
   <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 z-10 mt-4">
     <div>
-      <h2 class="font-display-hero text-headline-lg text-on-surface">Quản lý Server</h2>
-      <p class="font-body-main text-on-surface-variant mt-1">Quản trị hệ thống lưu trữ và băng thông truyền tải phim.</p>
+      <h2 class="font-display-hero text-headline-lg text-on-surface text-3xl">Quản lý Server Phát</h2>
+      <p class="font-body-main text-zinc-400 mt-1">Cấu hình danh sách các máy chủ phát video (Vietsub, Thuyết Minh, Lồng Tiếng, VIP...).</p>
     </div>
     <div class="flex gap-3">
-      <button class="px-5 py-2.5 rounded-xl border border-glass-stroke bg-surface-container-low hover:bg-surface-container-high transition-all flex items-center gap-2 font-body-main cursor-pointer">
-        <span class="material-symbols-outlined text-[20px]">refresh</span>
-        <span>Làm mới</span>
-      </button>
-      <button class="px-5 py-2.5 rounded-xl bg-primary text-on-primary-fixed font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer">
+      <button id="btn-add-server" class="px-5 py-2.5 rounded-xl bg-primary text-slate-950 font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer border-none text-sm">
         <span class="material-symbols-outlined text-[20px]">add_circle</span>
         <span>Thêm Server</span>
       </button>
     </div>
   </div>
 
-  <!-- Dashboard Quick Stats -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 z-10">
-    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-2">
-      <span class="material-symbols-outlined text-primary text-3xl">storage</span>
-      <p class="text-on-surface-variant font-label-caps uppercase text-[10px] tracking-widest mt-2">Tổng Dung Lượng</p>
-      <h3 class="font-display-hero text-2xl text-on-surface">42.8 TB</h3>
-      <div class="w-full bg-surface-container-highest h-1 rounded-full mt-2 overflow-hidden">
-        <div class="bg-primary h-full w-3/4"></div>
-      </div>
-    </div>
-    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-2">
-      <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl">speed</span>
-      <p class="text-on-surface-variant font-label-caps uppercase text-[10px] tracking-widest mt-2">Băng Thông Hiện Tại</p>
-      <h3 class="font-display-hero text-2xl text-on-surface">1.2 GB/s</h3>
-      <p class="text-[12px] text-secondary-fixed-dim">+12% vs hôm qua</p>
-    </div>
-    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-2">
-      <span class="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
-      <p class="text-on-surface-variant font-label-caps uppercase text-[10px] tracking-widest mt-2">Server Hoạt Động</p>
-      <h3 class="font-display-hero text-2xl text-on-surface">12 / 14</h3>
-      <p class="text-[12px] text-error">2 Nodes cần chú ý</p>
-    </div>
-    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-2">
-      <span class="material-symbols-outlined text-tertiary text-3xl">cloud_queue</span>
-      <p class="text-on-surface-variant font-label-caps uppercase text-[10px] tracking-widest mt-2">Tỉ Lệ GDrive</p>
-      <h3 class="font-display-hero text-2xl text-on-surface">65%</h3>
-      <p class="text-[12px] text-on-surface-variant">Lưu trữ đám mây</p>
-    </div>
-  </div>
-
-  <!-- Server List Table -->
+  <!-- Server List Card -->
   <div class="glass-panel rounded-3xl overflow-hidden z-10 flex-1 flex flex-col mb-10">
     <div class="p-6 border-b border-glass-stroke flex justify-between items-center bg-white/5">
-      <h3 class="font-title-md text-on-surface">Danh sách hệ thống</h3>
+      <h3 class="font-title-md text-on-surface font-bold text-lg">Danh sách máy chủ phát</h3>
       <div class="relative">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
-        <input class="bg-surface-container border border-glass-stroke rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none w-64 transition-all" placeholder="Tìm kiếm server..." type="text"/>
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[20px]">search</span>
+        <input id="server-search" class="bg-surface-container border border-glass-stroke rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none w-64 transition-all text-white" placeholder="Tìm kiếm server..." type="text"/>
       </div>
     </div>
     <div class="overflow-x-auto flex-1">
       <table class="w-full text-left border-collapse">
         <thead>
-          <tr class="bg-surface-container-low/50">
-            <th class="px-6 py-4 font-label-caps text-on-surface-variant text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">Tên Server</th>
-            <th class="px-6 py-4 font-label-caps text-on-surface-variant text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">Trạng thái</th>
-            <th class="px-6 py-4 font-label-caps text-on-surface-variant text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">Dung lượng</th>
-            <th class="px-6 py-4 font-label-caps text-on-surface-variant text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">Băng thông</th>
-            <th class="px-6 py-4 font-label-caps text-on-surface-variant text-[11px] uppercase tracking-widest border-b border-glass-stroke text-right whitespace-nowrap">Hành động</th>
+          <tr class="bg-zinc-950/40">
+            <th class="px-6 py-4 font-label-caps text-zinc-500 text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">STT</th>
+            <th class="px-6 py-4 font-label-caps text-zinc-500 text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">Tên Server</th>
+            <th class="px-6 py-4 font-label-caps text-zinc-500 text-[11px] uppercase tracking-widest border-b border-glass-stroke text-right whitespace-nowrap">Thao tác</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-glass-stroke">
-          <!-- Server 1 -->
-          <tr class="glass-card hover:bg-white/5 transition-colors cursor-pointer group">
-            <td class="px-6 py-5">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                  <span class="material-symbols-outlined">dns</span>
-                </div>
-                <div>
-                  <p class="font-body-main font-semibold text-on-surface whitespace-nowrap">Server 1 - Main SG</p>
-                  <p class="text-[12px] opacity-50">IP: 103.25.110.4</p>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-5">
-              <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-bold border border-emerald-500/20 flex items-center w-fit gap-1.5 whitespace-nowrap">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Hoạt động
-              </span>
-            </td>
-            <td class="px-6 py-5">
-              <div class="flex flex-col gap-1.5 min-w-[150px]">
-                <div class="flex justify-between text-[12px]">
-                  <span class="whitespace-nowrap">7.8 / 10 TB</span>
-                  <span class="opacity-50">78%</span>
-                </div>
-                <div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                  <div class="h-full bg-primary rounded-full" style="width: 78%"></div>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-5">
-              <p class="font-body-main text-on-surface whitespace-nowrap">420 MB/s</p>
-              <p class="text-[11px] opacity-50 whitespace-nowrap">Peak: 850 MB/s</p>
-            </td>
-            <td class="px-6 py-5 text-right">
-              <div class="flex justify-end gap-2">
-                <button class="p-2 rounded-lg hover:bg-primary/20 text-on-surface-variant hover:text-primary transition-all cursor-pointer" title="Chỉnh sửa">
-                  <span class="material-symbols-outlined text-[20px]">edit</span>
-                </button>
-                <button class="p-2 rounded-lg hover:bg-secondary/20 text-on-surface-variant hover:text-secondary-fixed-dim transition-all cursor-pointer" title="Kiểm tra kết nối">
-                  <span class="material-symbols-outlined text-[20px]">p2p</span>
-                </button>
-                <button class="p-2 rounded-lg hover:bg-error/20 text-on-surface-variant hover:text-error transition-all cursor-pointer" title="Xóa">
-                  <span class="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <!-- GDrive Server -->
-          <tr class="glass-card hover:bg-white/5 transition-colors cursor-pointer group">
-            <td class="px-6 py-5">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
-                  <span class="material-symbols-outlined">cloud</span>
-                </div>
-                <div>
-                  <p class="font-body-main font-semibold text-on-surface whitespace-nowrap">Google Drive - API 1</p>
-                  <p class="text-[12px] opacity-50">gd-service-01@project.iam</p>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-5">
-              <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-bold border border-emerald-500/20 flex items-center w-fit gap-1.5 whitespace-nowrap">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Hoạt động
-              </span>
-            </td>
-            <td class="px-6 py-5">
-              <div class="flex flex-col gap-1.5 min-w-[150px]">
-                <div class="flex justify-between text-[12px]">
-                  <span class="whitespace-nowrap">12.4 / 15 TB</span>
-                  <span class="opacity-50">82%</span>
-                </div>
-                <div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                  <div class="h-full bg-blue-400 rounded-full" style="width: 82%"></div>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-5">
-              <p class="font-body-main text-on-surface whitespace-nowrap">150 MB/s</p>
-              <p class="text-[11px] opacity-50 whitespace-nowrap">API Quota: 85% used</p>
-            </td>
-            <td class="px-6 py-5 text-right">
-              <div class="flex justify-end gap-2">
-                <button class="p-2 rounded-lg hover:bg-primary/20 text-on-surface-variant hover:text-primary transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">edit</span>
-                </button>
-                <button class="p-2 rounded-lg hover:bg-secondary/20 text-on-surface-variant hover:text-secondary-fixed-dim transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">p2p</span>
-                </button>
-                <button class="p-2 rounded-lg hover:bg-error/20 text-on-surface-variant hover:text-error transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <!-- Error Server -->
-          <tr class="glass-card hover:bg-white/5 transition-colors cursor-pointer group">
-            <td class="px-6 py-5">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center text-error border border-error/20">
-                  <span class="material-symbols-outlined">dns</span>
-                </div>
-                <div>
-                  <p class="font-body-main font-semibold text-on-surface whitespace-nowrap">Server 2 - Backup JP</p>
-                  <p class="text-[12px] opacity-50">IP: 142.11.23.99</p>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-5">
-              <span class="px-3 py-1 rounded-full bg-error/10 text-error text-[11px] font-bold border border-error/20 flex items-center w-fit gap-1.5 whitespace-nowrap">
-                <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
-                Lỗi kết nối
-              </span>
-            </td>
-            <td class="px-6 py-5">
-              <div class="flex flex-col gap-1.5 min-w-[150px]">
-                <div class="flex justify-between text-[12px]">
-                  <span class="whitespace-nowrap">2.1 / 5 TB</span>
-                  <span class="opacity-50">42%</span>
-                </div>
-                <div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                  <div class="h-full bg-on-surface-variant rounded-full" style="width: 42%"></div>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-5">
-              <p class="font-body-main text-on-surface whitespace-nowrap">0 MB/s</p>
-              <p class="text-[11px] text-error whitespace-nowrap">Timeout error</p>
-            </td>
-            <td class="px-6 py-5 text-right">
-              <div class="flex justify-end gap-2">
-                <button class="p-2 rounded-lg hover:bg-primary/20 text-on-surface-variant hover:text-primary transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">edit</span>
-                </button>
-                <button class="p-2 rounded-lg hover:bg-secondary/20 text-on-surface-variant hover:text-secondary-fixed-dim transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">sync_problem</span>
-                </button>
-                <button class="p-2 rounded-lg hover:bg-error/20 text-on-surface-variant hover:text-error transition-all cursor-pointer">
-                  <span class="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
+        <tbody id="serverTableBody" class="divide-y divide-glass-stroke">
+          <!-- JS render ở client -->
         </tbody>
       </table>
     </div>
-    <!-- Table Pagination -->
+    <!-- Pagination / Count Stats -->
     <div class="p-6 border-t border-glass-stroke flex justify-between items-center bg-white/5">
-      <p class="font-body-main text-sm text-on-surface-variant">Hiển thị 1 - 3 trên tổng số 14 servers</p>
-      <div class="flex gap-2">
-        <button class="w-10 h-10 rounded-lg border border-glass-stroke flex items-center justify-center hover:bg-white/10 transition-all text-on-surface-variant cursor-pointer">
-          <span class="material-symbols-outlined">chevron_left</span>
-        </button>
-        <button class="w-10 h-10 rounded-lg bg-primary text-on-primary-fixed font-bold cursor-pointer">1</button>
-        <button class="w-10 h-10 rounded-lg border border-glass-stroke flex items-center justify-center hover:bg-white/10 transition-all text-on-surface-variant cursor-pointer">2</button>
-        <button class="w-10 h-10 rounded-lg border border-glass-stroke flex items-center justify-center hover:bg-white/10 transition-all text-on-surface-variant cursor-pointer">3</button>
-        <button class="w-10 h-10 rounded-lg border border-glass-stroke flex items-center justify-center hover:bg-white/10 transition-all text-on-surface-variant cursor-pointer">
-          <span class="material-symbols-outlined">chevron_right</span>
-        </button>
-      </div>
+      <p id="server-count" class="font-body-main text-sm text-zinc-400">Đang tải...</p>
     </div>
   </div>
+
+  <script is:inline>
+    (function() {
+      let serversState = [];
+      const defaultServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+
+      function loadServers() {
+        try {
+          const stored = localStorage.getItem('txa_servers');
+          if (stored) {
+            serversState = JSON.parse(stored);
+          } else {
+            serversState = [...defaultServers];
+            localStorage.setItem('txa_servers', JSON.stringify(serversState));
+          }
+        } catch (e) {
+          serversState = [...defaultServers];
+        }
+        renderServers();
+      }
+
+      function renderServers(filterText = '') {
+        const tbody = document.getElementById('serverTableBody');
+        const countEl = document.getElementById('server-count');
+        if (!tbody) return;
+
+        const filtered = serversState.filter(name => 
+          name.toLowerCase().includes(filterText.toLowerCase())
+        );
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-8 text-center text-zinc-500 italic">Không tìm thấy máy chủ nào.</td></tr>`;
+          if (countEl) countEl.textContent = `Tổng cộng: 0 mục`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map((name, index) => {
+          const originalIndex = serversState.indexOf(name);
+          return `
+            <tr class="hover:bg-white/5 transition-colors group">
+              <td class="px-6 py-4 font-semibold text-zinc-500 w-24">${index + 1}</td>
+              <td class="px-6 py-4 font-bold text-white text-[14px]">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                    <span class="material-symbols-outlined text-[18px]">dns</span>
+                  </div>
+                  <span>${name}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                  <button onclick="editServer(${originalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-amber-400 hover:bg-amber-400/10 transition-all cursor-pointer" title="Chỉnh sửa" data-tooltip="Chỉnh sửa server">
+                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
+                  <button onclick="deleteServer(${originalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer" title="Xóa" data-tooltip="Xóa server">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (countEl) countEl.textContent = `Tổng cộng: ${filtered.length} / ${serversState.length} mục`;
+      }
+
+      window.editServer = function(index) {
+        const name = serversState[index];
+        const html = `
+          <div style="display:flex;flex-direction:column;gap:8px;min-width:300px">
+            <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;margin-bottom:4px">Tên máy chủ phát</label>
+            <input type="text" id="server-modal-name" value="${name.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: Thuyết Minh VIP" />
+          </div>
+        `;
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Chỉnh sửa Server',
+            message: html,
+            confirmText: 'Lưu thay đổi',
+            cancelText: 'Hủy bỏ',
+            onConfirm: () => {
+              const newName = document.getElementById('server-modal-name')?.value.trim();
+              if (!newName) {
+                if (window.showGlobalToast) window.showGlobalToast('Tên server không được để trống!', 'error');
+                return;
+              }
+              if (serversState.includes(newName) && serversState.indexOf(newName) !== index) {
+                if (window.showGlobalToast) window.showGlobalToast('Tên server đã tồn tại!', 'error');
+                return;
+              }
+              serversState[index] = newName;
+              localStorage.setItem('txa_servers', JSON.stringify(serversState));
+              renderServers(document.getElementById('server-search')?.value || '');
+              if (window.showGlobalToast) window.showGlobalToast('Cập nhật máy chủ thành công!', 'success');
+            }
+          });
+        }
+      };
+
+      window.deleteServer = function(index) {
+        const name = serversState[index];
+        const doDelete = () => {
+          serversState.splice(index, 1);
+          localStorage.setItem('txa_servers', JSON.stringify(serversState));
+          renderServers(document.getElementById('server-search')?.value || '');
+          if (window.showGlobalToast) window.showGlobalToast('Đã xóa máy chủ phát thành công!', 'success');
+        };
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Xóa Server Phát',
+            message: `Bạn có chắc chắn muốn xóa vĩnh viễn server <span class="text-white font-bold">"${name}"</span>? Thao tác này không thể hoàn tác.`,
+            type: 'danger',
+            confirmText: 'Xóa máy chủ',
+            cancelText: 'Hủy bỏ',
+            onConfirm: doDelete
+          });
+        } else if (confirm(`Xóa máy chủ ${name}?`)) {
+          doDelete();
+        }
+      };
+
+      // Thêm mới server
+      document.getElementById('btn-add-server')?.addEventListener('click', () => {
+        const html = `
+          <div style="display:flex;flex-direction:column;gap:8px;min-width:300px">
+            <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;margin-bottom:4px">Tên máy chủ phát mới</label>
+            <input type="text" id="server-modal-name" value="" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: Google Drive VIP" />
+          </div>
+        `;
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Thêm Server Mới',
+            message: html,
+            confirmText: 'Thêm mới',
+            cancelText: 'Hủy bỏ',
+            onConfirm: () => {
+              const newName = document.getElementById('server-modal-name')?.value.trim();
+              if (!newName) {
+                if (window.showGlobalToast) window.showGlobalToast('Tên server không được để trống!', 'error');
+                return;
+              }
+              if (serversState.includes(newName)) {
+                if (window.showGlobalToast) window.showGlobalToast('Tên server đã tồn tại!', 'error');
+                return;
+              }
+              serversState.push(newName);
+              localStorage.setItem('txa_servers', JSON.stringify(serversState));
+              renderServers(document.getElementById('server-search')?.value || '');
+              if (window.showGlobalToast) window.showGlobalToast('Đã thêm máy chủ phát mới!', 'success');
+            }
+          });
+        }
+      });
+
+      // Lắng nghe tìm kiếm
+      document.getElementById('server-search')?.addEventListener('input', (e) => {
+        renderServers(e.target.value);
+      });
+
+      // Init
+      loadServers();
+      document.addEventListener('astro:page-load', loadServers);
+    })();
+  </script>
 </AdminLayout>
