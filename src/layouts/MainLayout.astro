@@ -2185,114 +2185,125 @@ const isActive = (path: string) => {
       // Real-time Search Autocomplete Logic
       // ══════════════════════════════════════════════════════════════
       (function() {
-        const searchInput = document.getElementById('nav-search-input');
-        const searchPopup = document.getElementById('search-popup');
-        const searchLoader = document.getElementById('search-loader');
-        const resultsList = document.getElementById('search-results-list');
-        let debounceTimer;
+        function initSearchAutocomplete() {
+          const searchInput = document.getElementById('nav-search-input');
+          const searchPopup = document.getElementById('search-popup');
+          const searchLoader = document.getElementById('search-loader');
+          const resultsList = document.getElementById('search-results-list');
+          let debounceTimer;
 
-        if (!searchInput) return;
+          if (!searchInput) return;
 
-        function hideSearchPopup() {
-          searchPopup?.classList.add('opacity-0', 'invisible', 'scale-95');
-        }
-
-        function showSearchPopup() {
-          searchPopup?.classList.remove('opacity-0', 'invisible', 'scale-95');
-        }
-
-        searchInput.addEventListener('input', function() {
-          const val = this.value.trim();
-          clearTimeout(debounceTimer);
-
-          if (val.length < 1) {
-            resultsList.innerHTML = '<div class="text-xs text-on-surface-variant/60 py-4 text-center italic">Nhập từ khóa để tìm kiếm...</div>';
-            hideSearchPopup();
-            return;
+          function hideSearchPopup() {
+            searchPopup?.classList.add('opacity-0', 'invisible', 'scale-95');
           }
 
-          showSearchPopup();
-          searchLoader?.classList.remove('hidden');
+          function showSearchPopup() {
+            searchPopup?.classList.remove('opacity-0', 'invisible', 'scale-95');
+          }
 
-          debounceTimer = setTimeout(async () => {
-            try {
-              const res = await fetch(`/api/movies/search?q=${encodeURIComponent(val)}`);
-              if (!res.ok) throw new Error();
-              const payload = await res.json();
-              const movies = payload.data || [];
-
-              // Merge crawled movies client-side
-              let localCrawled = [];
-              try {
-                const stored = localStorage.getItem('txa_crawled_movies');
-                if (stored) {
-                  const list = JSON.parse(stored);
-                  if (Array.isArray(list)) {
-                    localCrawled = list.map(m => m.movie || m);
-                  }
-                }
-              } catch (e) {}
-
-              // Filter crawled movies matching the query
-              const queryLower = val.toLowerCase();
-              const matchedCrawled = localCrawled.filter(m => 
-                m.title.toLowerCase().includes(queryLower) ||
-                (m.originalTitle && m.originalTitle.toLowerCase().includes(queryLower)) ||
-                (m.description && m.description.toLowerCase().includes(queryLower))
-              );
-
-              // Combine and deduplicate by slug
-              let combined = [...matchedCrawled, ...movies];
-              const seen = new Set();
-              const uniqueMovies = combined.filter(m => {
-                if (!m.slug || m.slug === 'undefined' || m.slug === 'null' || seen.has(m.slug)) return false;
-                seen.add(m.slug);
-                return true;
-              }).slice(0, 6);
-
-              if (uniqueMovies.length === 0) {
-                resultsList.innerHTML = '<div class="text-xs text-on-surface-variant/60 py-4 text-center">Không tìm thấy kết quả phù hợp</div>';
-              } else {
-                resultsList.innerHTML = uniqueMovies.map(m => `
-                  <a href="/phim/${m.slug}" class="flex gap-3 p-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-glass-stroke transition-all duration-300 group/item cursor-pointer">
-                    <img src="${m.posterUrl}" class="w-10 h-14 object-cover rounded-lg border border-glass-stroke shrink-0" />
-                    <div class="flex-grow flex flex-col justify-center min-w-0">
-                      <div class="text-xs font-bold text-white group-hover/item:text-primary transition-colors truncate">${m.title}</div>
-                      ${m.originalTitle ? `<div class="text-[10px] text-on-surface-variant/75 truncate mt-0.5">${m.originalTitle}</div>` : ''}
-                      <div class="flex items-center gap-2 mt-1.5 text-[9px] text-on-surface-variant/50 font-bold">
-                        <span class="px-1.5 py-0.5 bg-white/5 border border-glass-stroke rounded text-primary">${m.quality || 'FHD'}</span>
-                        <span>${m.releaseYear || 2024}</span>
-                        <span>•</span>
-                        <span>${m.episodeCurrent || 'Full'}</span>
-                      </div>
-                    </div>
-                  </a>
-                `).join('');
-              }
-            } catch (err) {
-              resultsList.innerHTML = '<div class="text-xs text-red-400 py-4 text-center">Lỗi tải dữ liệu. Vui lòng thử lại.</div>';
-            } finally {
-              searchLoader?.classList.add('hidden');
-            }
-          }, 350);
-        });
-
-        // Enter key to search
-        searchInput.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
+          searchInput.addEventListener('input', function() {
             const val = this.value.trim();
-            if (val.length >= 1) {
-              window.location.href = `/tim-kiem?q=${encodeURIComponent(val)}`;
-            }
-          }
-        });
+            clearTimeout(debounceTimer);
 
-        // Click outside search
-        document.addEventListener('click', function(e) {
-          if (!document.getElementById('search-container')?.contains(e.target)) {
-            hideSearchPopup();
-          }
-        });
+            if (val.length < 1) {
+              resultsList.innerHTML = '<div class="text-xs text-on-surface-variant/60 py-4 text-center italic">Nhập từ khóa để tìm kiếm...</div>';
+              hideSearchPopup();
+              return;
+            }
+
+            showSearchPopup();
+            searchLoader?.classList.remove('hidden');
+
+            debounceTimer = setTimeout(async () => {
+              try {
+                const res = await fetch(`/api/movies/search?q=${encodeURIComponent(val)}`);
+                if (!res.ok) throw new Error();
+                const payload = await res.json();
+                const movies = payload.data || [];
+
+                // Merge crawled movies client-side
+                let localCrawled = [];
+                try {
+                  const stored = localStorage.getItem('txa_crawled_movies');
+                  if (stored) {
+                    const list = JSON.parse(stored);
+                    if (Array.isArray(list)) {
+                      localCrawled = list.map(m => m.movie || m);
+                    }
+                  }
+                } catch (e) {}
+
+                // Filter crawled movies matching the query
+                const queryLower = val.toLowerCase();
+                const matchedCrawled = localCrawled.filter(m => 
+                  m.title.toLowerCase().includes(queryLower) ||
+                  (m.originalTitle && m.originalTitle.toLowerCase().includes(queryLower)) ||
+                  (m.description && m.description.toLowerCase().includes(queryLower))
+                );
+
+                // Combine and deduplicate by slug
+                let combined = [...matchedCrawled, ...movies];
+                const seen = new Set();
+                const uniqueMovies = combined.filter(m => {
+                  if (!m.slug || m.slug === 'undefined' || m.slug === 'null' || seen.has(m.slug)) return false;
+                  seen.add(m.slug);
+                  return true;
+                }).slice(0, 6);
+
+                if (uniqueMovies.length === 0) {
+                  resultsList.innerHTML = '<div class="text-xs text-on-surface-variant/60 py-4 text-center">Không tìm thấy kết quả phù hợp</div>';
+                } else {
+                  resultsList.innerHTML = uniqueMovies.map(m => `
+                    <a href="/phim/${m.slug}" class="flex gap-3 p-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-glass-stroke transition-all duration-300 group/item cursor-pointer">
+                      <img src="${m.posterUrl}" class="w-10 h-14 object-cover rounded-lg border border-glass-stroke shrink-0" />
+                      <div class="flex-grow flex flex-col justify-center min-w-0">
+                        <div class="text-xs font-bold text-white group-hover/item:text-primary transition-colors truncate">${m.title}</div>
+                        ${m.originalTitle ? `<div class="text-[10px] text-on-surface-variant/75 truncate mt-0.5">${m.originalTitle}</div>` : ''}
+                        <div class="flex items-center gap-2 mt-1.5 text-[9px] text-on-surface-variant/50 font-bold">
+                          <span class="px-1.5 py-0.5 bg-white/5 border border-glass-stroke rounded text-primary">${m.quality || 'FHD'}</span>
+                          <span>${m.releaseYear || 2024}</span>
+                          <span>•</span>
+                          <span>${m.episodeCurrent || 'Full'}</span>
+                        </div>
+                      </div>
+                    </a>
+                  `).join('');
+                }
+              } catch (err) {
+                resultsList.innerHTML = '<div class="text-xs text-red-400 py-4 text-center">Lỗi tải dữ liệu. Vui lòng thử lại.</div>';
+              } finally {
+                searchLoader?.classList.add('hidden');
+              }
+            }, 350);
+          });
+
+          // Enter key to search
+          searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              const val = this.value.trim();
+              if (val.length >= 1) {
+                window.location.href = `/tim-kiem?q=${encodeURIComponent(val)}`;
+              }
+            }
+          });
+
+          // Click outside search
+          const clickOutsideHandler = function(e) {
+            if (!document.getElementById('search-container')?.contains(e.target)) {
+              hideSearchPopup();
+            }
+          };
+          document.addEventListener('click', clickOutsideHandler);
+        }
+
+        // Run on DOMContentLoaded and astro:page-load
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initSearchAutocomplete);
+        } else {
+          initSearchAutocomplete();
+        }
+        document.addEventListener('astro:page-load', initSearchAutocomplete);
       })();
 
       // ══════════════════════════════════════════════════════════════
