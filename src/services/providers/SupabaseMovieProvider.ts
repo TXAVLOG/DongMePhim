@@ -193,16 +193,18 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
   async getRelatedMovies(movieId: string): Promise<Movie[]> {
     try {
-      const { data: dbMovies, error } = await supabase
-        .from('movies')
-        .select('*')
-        .neq('id', movieId)
-        .limit(4);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(movieId);
+      let query = supabase.from('movies').select('*');
+      if (isUuid) {
+        query = query.neq('id', movieId);
+      }
+
+      const { data: dbMovies, error } = await query.limit(5);
 
       if (error) throw error;
 
       if (dbMovies && dbMovies.length > 0) {
-        return dbMovies.map((m: any) => ({
+        let list = dbMovies.map((m: any) => ({
           id: m.id,
           title: m.title,
           originalTitle: m.original_title,
@@ -225,6 +227,11 @@ export class SupabaseMovieProvider implements IMovieProvider {
           genres: Array.isArray(m.genres) ? m.genres : [],
           updatedAt: m.updated_at || new Date().toISOString()
         }));
+
+        if (!isUuid) {
+          list = list.filter(m => m.id !== movieId);
+        }
+        return list.slice(0, 4);
       }
     } catch (e) {
       console.warn('Lỗi khi lấy phim liên quan từ Supabase:', e);
