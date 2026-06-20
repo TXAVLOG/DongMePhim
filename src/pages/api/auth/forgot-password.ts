@@ -12,14 +12,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { email, name, turnstileToken } = body;
     if (!email) {
-      return apiResponse(null, 'error', 'Vui lòng cung cấp địa chỉ email!', 400);
+      return apiResponse(null, 'error', 'Vui lòng cung cấp địa chỉ email!', 400, request);
     }
 
     const settings = await SettingService.getSettings();
     const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
 
     if (!isSmtpConfigured) {
-      return apiResponse(null, 'error', 'Hệ thống chưa được cấu hình SMTP Mail để thực hiện gửi mã phục hồi!', 400);
+      return apiResponse(null, 'error', 'Hệ thống chưa được cấu hình SMTP Mail để thực hiện gửi mã phục hồi!', 400, request);
     }
 
     // Turnstile Captcha verification
@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request }) => {
       const secretKey = settings.login?.turnstile_secret_key;
 
       if (!turnstileToken || !secretKey) {
-        return apiResponse(null, 'error', 'Vui lòng hoàn thành xác thực Captcha!', 400);
+        return apiResponse(null, 'error', 'Vui lòng hoàn thành xác thực Captcha!', 400, request);
       }
 
       const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -40,7 +40,7 @@ export const POST: APIRoute = async ({ request }) => {
 
       const verifyData = await verifyRes.json() as any;
       if (!verifyData.success) {
-        return apiResponse(null, 'error', 'Mã Captcha không hợp lệ hoặc đã hết hạn!', 400);
+        return apiResponse(null, 'error', 'Mã Captcha không hợp lệ hoặc đã hết hạn!', 400, request);
       }
     }
 
@@ -91,8 +91,8 @@ export const POST: APIRoute = async ({ request }) => {
       success: true,
       message: 'Liên kết đặt lại mật khẩu đã được gửi thành công!',
       emailLog: emailLog
-    });
+    }, 'success', '', 200, request);
   } catch (err: any) {
-    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500);
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };

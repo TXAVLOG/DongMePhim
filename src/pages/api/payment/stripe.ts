@@ -1,14 +1,12 @@
 import type { APIRoute } from 'astro';
+import { apiResponse } from '../../../lib/api/response';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { price, cycle, username } = await request.json() as any;
     
     if (!price || !cycle || !username) {
-      return new Response(JSON.stringify({ error: 'Thiếu thông tin thanh toán.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse(null, 'error', 'Thiếu thông tin thanh toán.', 400, request);
     }
 
     // Retrieve settings (secret key)
@@ -41,21 +39,12 @@ export const POST: APIRoute = async ({ request }) => {
     const session = await res.json() as any;
 
     if (!res.ok) {
-      return new Response(JSON.stringify({ error: session.error?.message || 'Không thể tạo Stripe Checkout Session.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse(null, 'error', session.error?.message || 'Không thể tạo Stripe Checkout Session.', 500, request);
     }
 
-    return new Response(JSON.stringify({ id: session.id, url: session.url }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return apiResponse({ id: session.id, url: session.url }, 'success', '', 200, request);
 
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'Lỗi máy chủ.' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+  } catch (e: any) {
+    return apiResponse(null, 'error', e.message || 'Lỗi máy chủ.', 500, request);
   }
 };

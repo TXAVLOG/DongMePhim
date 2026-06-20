@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request }) => {
       const secretKey = settings.login?.turnstile_secret_key;
 
       if (!turnstileToken || !secretKey) {
-        return apiResponse(null, 'error', 'Vui lòng hoàn thành xác thực Captcha!', 400);
+        return apiResponse(null, 'error', 'Vui lòng hoàn thành xác thực Captcha!', 400, request);
       }
 
       // Verify Cloudflare Turnstile token
@@ -29,12 +29,12 @@ export const POST: APIRoute = async ({ request }) => {
 
       const verifyData = await verifyRes.json() as any;
       if (!verifyData.success) {
-        return apiResponse(null, 'error', 'Mã Captcha không hợp lệ hoặc đã hết hạn!', 400);
+        return apiResponse(null, 'error', 'Mã Captcha không hợp lệ hoặc đã hết hạn!', 400, request);
       }
     }
 
-    return apiResponse({ success: true, message: "Đăng ký thành công" });
+    return apiResponse({ success: true, message: "Đăng ký thành công" }, 'success', '', 200, request);
   } catch (err: any) {
-    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500);
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };

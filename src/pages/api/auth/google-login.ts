@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { apiResponse } from '../../../lib/api/response';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -6,19 +7,13 @@ export const POST: APIRoute = async ({ request }) => {
     const credential = body?.credential;
 
     if (!credential) {
-      return new Response(JSON.stringify({ success: false, error: 'Thiếu credential từ Google' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse(null, 'error', 'Thiếu credential từ Google', 400, request);
     }
 
     // Google JWT has 3 parts: Header.Payload.Signature
     const parts = credential.split('.');
     if (parts.length !== 3) {
-      return new Response(JSON.stringify({ success: false, error: 'Định dạng token không đúng' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse(null, 'error', 'Định dạng token không đúng', 400, request);
     }
 
     // Decode base64url payload
@@ -36,10 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         payloadDecoded = atob(payloadBase64);
       } catch (err) {
-        return new Response(JSON.stringify({ success: false, error: 'Không thể giải mã dữ liệu token' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        return apiResponse(null, 'error', 'Không thể giải mã dữ liệu token', 400, request);
       }
     }
     
@@ -47,14 +39,11 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       user = JSON.parse(payloadDecoded);
     } catch (e) {
-      return new Response(JSON.stringify({ success: false, error: 'Không thể giải mã dữ liệu token' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse(null, 'error', 'Không thể giải mã dữ liệu token', 400, request);
     }
 
     // Return the user information
-    return new Response(JSON.stringify({
+    return apiResponse({
       success: true,
       user: {
         sub: user.sub,
@@ -65,15 +54,9 @@ export const POST: APIRoute = async ({ request }) => {
         given_name: user.given_name,
         family_name: user.family_name
       }
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, 'success', '', 200, request);
 
   } catch (err: any) {
-    return new Response(JSON.stringify({ success: false, error: err.message || 'Lỗi hệ thống' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };

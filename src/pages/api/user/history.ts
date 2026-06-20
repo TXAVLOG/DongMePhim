@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { apiResponse } from '../../../lib/api/response';
 
 // Safe JSON Parse helper
 function safeJsonParse(str: string): any[] {
@@ -11,16 +12,11 @@ function safeJsonParse(str: string): any[] {
 }
 
 // GET: Lấy lịch sử xem online từ Cookie
-export const GET: APIRoute = async ({ cookies }) => {
+export const GET: APIRoute = async ({ request, cookies }) => {
   const historyCookie = cookies.get('txa_online_history');
   const history = historyCookie ? safeJsonParse(historyCookie.value) : [];
 
-  return new Response(JSON.stringify(history), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
+  return apiResponse(history, 'success', '', 200, request);
 };
 
 // POST: Lưu hoặc cập nhật lịch sử xem online vào Cookie
@@ -30,10 +26,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const { slug, episodeSlug, episodeName, currentTime, duration, serverIndex, serverName, updatedAt, title, posterUrl } = body;
 
     if (!slug || !episodeSlug) {
-      return new Response(JSON.stringify({ error: 'Missing slug or episodeSlug' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse(null, 'error', 'Missing slug or episodeSlug', 400, request);
     }
 
     // Đọc lịch sử cũ
@@ -72,15 +65,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       sameSite: 'lax'
     });
 
-    return new Response(JSON.stringify({ success: true, history }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return apiResponse({ success: true, history }, 'success', '', 200, request);
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
 
@@ -102,22 +89,13 @@ export const DELETE: APIRoute = async ({ request, url, cookies }) => {
         secure: true,
         sameSite: 'lax'
       });
-      return new Response(JSON.stringify({ success: true, message: `Deleted history for slug ${slug}`, history }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse({ success: true, message: `Deleted history for slug ${slug}`, history }, 'success', '', 200, request);
     } else {
       // Xóa toàn bộ
       cookies.delete('txa_online_history', { path: '/' });
-      return new Response(JSON.stringify({ success: true, message: 'Cleared all online history' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse({ success: true, message: 'Cleared all online history' }, 'success', '', 200, request);
     }
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };

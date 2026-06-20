@@ -2,10 +2,10 @@ import type { APIRoute } from 'astro';
 import { MovieService } from '../../../services/MovieService';
 import { apiResponse } from '../../../lib/api/response';
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   const query = url.searchParams.get('q') || '';
   if (!query) {
-    return apiResponse({ data: [] });
+    return apiResponse({ data: [] }, 'success', '', 200, request);
   }
 
   try {
@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ url }) => {
       episodeCurrent: m.episodeCurrent || 'Full',
       type: m.type || 'movie'
     }));
-    return apiResponse({ data: limited });
+    return apiResponse({ data: limited }, 'success', '', 200, request);
   } catch (error) {
     console.error("API Search Error:", error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), {

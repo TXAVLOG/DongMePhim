@@ -1,11 +1,13 @@
 import { txaEncrypt } from './crypto';
+import { SettingService } from '../../services/SettingService';
 
-// In a real scenario, this comes from Supabase settings.
-const MOCK_API_PASSPHRASE = 'tphimx-mobile-2026-secure';
-// Can be toggled for testing encryption vs plain json.
-const ENABLE_ENCRYPTION = false; 
-
-export async function apiResponse(data: any, status: 'success' | 'error' = 'success', message: string = '', code: number = 200) {
+export async function apiResponse(
+    data: any, 
+    status: 'success' | 'error' = 'success', 
+    message: string = '', 
+    code: number = 200,
+    request?: Request
+) {
     // If data already matches the envelope, don't wrap it again (for direct mocks matching the spec exactly)
     let rawPayload = data;
     
@@ -26,25 +28,49 @@ export async function apiResponse(data: any, status: 'success' | 'error' = 'succ
         };
     }
 
-    if (ENABLE_ENCRYPTION) {
+    let isApp = true; // Mặc định là app (không mã hóa) để đảm bảo an toàn cho app mobile
+    if (request) {
         try {
-            const encryptedText = await txaEncrypt(JSON.stringify(rawPayload), MOCK_API_PASSPHRASE);
-            return new Response(JSON.stringify({
-                d: encryptedText,
-                v: 1
-            }), {
-                status: code,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-TXA-Encrypted': '1'
-                }
-            });
+            const url = new URL(request.url);
+            if (!url.pathname.startsWith('/api/app/')) {
+                isApp = false;
+            }
         } catch (e) {
-            console.error("Encryption failed:", e);
-            return new Response(JSON.stringify({ status: 'error', message: 'Encryption Failed', code: 500 }), { 
-                status: 500, 
-                headers: { 'Content-Type': 'application/json' } 
-            });
+            isApp = false;
+        }
+    }
+
+    if (!isApp) {
+        let enableEncryption = false;
+        let passphrase = 'tphimx-mobile-2026-secure';
+        try {
+            const settings = await SettingService.getSettings();
+            enableEncryption = settings.general?.api_encrypt_enable ?? false;
+            passphrase = settings.general?.api_encrypt_pass || passphrase;
+        } catch (e) {
+            console.error("Failed to load encryption settings:", e);
+        }
+
+        if (enableEncryption) {
+            try {
+                const encryptedText = await txaEncrypt(JSON.stringify(rawPayload), passphrase);
+                return new Response(JSON.stringify({
+                    d: encryptedText,
+                    v: 1
+                }), {
+                    status: code,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-TXA-Encrypted': '1'
+                    }
+                });
+            } catch (e) {
+                console.error("Encryption failed:", e);
+                return new Response(JSON.stringify({ status: 'error', message: 'Encryption Failed', code: 500 }), { 
+                    status: 500, 
+                    headers: { 'Content-Type': 'application/json' } 
+                });
+            }
         }
     }
 

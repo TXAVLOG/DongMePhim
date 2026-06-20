@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { apiResponse } from '../../../lib/api/response';
 
 // Simple HMAC-SHA256 signature generator using Web Crypto API
 async function generateHmacSha256(key: string, data: string): Promise<string> {
@@ -23,10 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { price, cycle, username } = await request.json() as any;
 
     if (!price || !cycle || !username) {
-      return new Response(JSON.stringify({ error: 'Thiếu thông tin thanh toán.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse(null, 'error', 'Thiếu thông tin thanh toán.', 400, request);
     }
 
     // Retrieve PayOS settings from environment or settings
@@ -70,21 +68,12 @@ export const POST: APIRoute = async ({ request }) => {
     const responseData = await res.json() as any;
 
     if (!res.ok || responseData.code !== '00') {
-      return new Response(JSON.stringify({ error: responseData.desc || 'Lỗi khởi tạo link thanh toán PayOS.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiResponse(null, 'error', responseData.desc || 'Lỗi khởi tạo link thanh toán PayOS.', 500, request);
     }
 
-    return new Response(JSON.stringify({ checkoutUrl: responseData.data.checkoutUrl }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return apiResponse({ checkoutUrl: responseData.data.checkoutUrl }, 'success', '', 200, request);
 
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'Lỗi máy chủ.' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+  } catch (e: any) {
+    return apiResponse(null, 'error', e.message || 'Lỗi máy chủ.', 500, request);
   }
 };
