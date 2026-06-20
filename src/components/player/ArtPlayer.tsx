@@ -73,6 +73,25 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   useEffect(() => {
     if (!artRef.current) return;
 
+    // Helper to extract real stream URL from third party wrapped URLs
+    const getRealStreamUrl = (rawUrl: string): string => {
+      if (!rawUrl) return '';
+      if (rawUrl.includes('player.phimapi.com/player/?url=')) {
+        try {
+          const urlObj = new URL(rawUrl);
+          const streamUrl = urlObj.searchParams.get('url');
+          if (streamUrl) {
+            return decodeURIComponent(streamUrl);
+          }
+        } catch (e) {
+          console.error('Error parsing wrapped stream URL:', e);
+        }
+      }
+      return rawUrl;
+    };
+
+    const realUrl = getRealStreamUrl(url);
+
     // Load Hls.js dynamically from CDN if not already loaded
     const initPlayer = (HlsClass: any) => {
       if (!artRef.current) return;
@@ -83,7 +102,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       }
 
       let isAutoSkipEnabled = getAutoSkipSetting();
-      const isM3u8 = url.includes('.m3u8') || url.includes('stream');
+      const isM3u8 = realUrl.includes('.m3u8') || realUrl.includes('stream');
       const defaultSub = subtitles?.find(s => s.default) || subtitles?.[0];
 
       const proxySubtitleUrl = (u: string) => {
@@ -114,7 +133,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
       const art = new Artplayer({
         container: artRef.current,
-        url: url,
+        url: realUrl,
         poster: poster || '',
         volume: 0.7,
         isLive: false,
@@ -138,16 +157,18 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         playsInline: true,
         autoPlayback: false,
         airplay: true,
-        subtitle: validDefaultSub ? {
-          url: proxySubtitleUrl(validDefaultSub.file),
-          type: validDefaultSub.file.endsWith('.srt') ? 'srt' : 'vtt',
-          encoding: 'utf-8',
-          style: {
-            color: '#fff',
-            fontSize: '20px',
-            textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+        ...(validDefaultSub ? {
+          subtitle: {
+            url: proxySubtitleUrl(validDefaultSub.file),
+            type: validDefaultSub.file.endsWith('.srt') ? 'srt' : 'vtt',
+            encoding: 'utf-8',
+            style: {
+              color: '#fff',
+              fontSize: '20px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+            }
           }
-        } : undefined,
+        } : {}),
         highlight: [
           ...(timeIntroStart > 0 ? [{ time: timeIntroStart, text: 'Bắt đầu Intro' }] : []),
           ...(timeIntroEnd > 0 ? [{ time: timeIntroEnd, text: 'Kết thúc Intro' }] : []),
@@ -496,7 +517,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
     // Load hls.js script dynamically
     let checkInterval: any = null;
-    if (url.includes('.m3u8') || url.includes('stream')) {
+    if (realUrl.includes('.m3u8') || realUrl.includes('stream')) {
       if ((window as any).Hls) {
         initPlayer((window as any).Hls);
       } else {

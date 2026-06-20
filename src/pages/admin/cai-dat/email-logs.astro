@@ -1,20 +1,35 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AdminLayout from "../../../layouts/AdminLayout.astro";
 ---
 
 <AdminLayout title="Nhật ký Email gửi đi">
   <div class="w-full mt-4 pb-10">
     <!-- Top Header -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <header
+      class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4"
+    >
       <div>
-        <h1 class="font-headline-lg text-3xl tracking-tight text-white font-bold">Lịch sử Email gửi đi</h1>
-        <p class="text-zinc-400 text-sm mt-1">Giám sát các thông báo tự động và giao dịch SMTP của hệ thống</p>
+        <h1
+          class="font-headline-lg text-3xl tracking-tight text-white font-bold"
+        >
+          Lịch sử Email gửi đi
+        </h1>
+        <p class="text-zinc-400 text-sm mt-1">
+          Giám sát các thông báo tự động và giao dịch SMTP của hệ thống
+        </p>
       </div>
       <div class="flex items-center gap-3">
-        <button id="btn-clear-logs" class="px-4 py-2 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 text-rose-400 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-sm">delete_sweep</span> Xóa nhật ký
+        <button
+          id="btn-clear-logs"
+          class="px-4 py-2 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 text-rose-400 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+        >
+          <span class="material-symbols-outlined text-sm">delete_sweep</span> Xóa
+          nhật ký
         </button>
-        <button id="btn-refresh-logs" class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-primary transition-all cursor-pointer">
+        <button
+          id="btn-refresh-logs"
+          class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-primary transition-all cursor-pointer"
+        >
           <span class="material-symbols-outlined">refresh</span>
         </button>
       </div>
@@ -22,42 +37,76 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
     <!-- Main Container: Grid layout -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-      
       <!-- Left Column: Search & Log List (4 cols) -->
       <div class="lg:col-span-5 flex flex-col gap-4">
         <div class="glass-panel rounded-2xl border border-zinc-800 p-4">
           <!-- Search box -->
           <div class="relative w-full">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</span>
-            <input id="log-search-input" class="w-full bg-zinc-950 h-10 pl-10 pr-4 rounded-xl border border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs text-white placeholder-zinc-500 transition-all" placeholder="Tìm kiếm người nhận, tiêu đề..." type="text"/>
+            <span
+              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg"
+              >search</span
+            >
+            <input
+              id="log-search-input"
+              class="w-full bg-zinc-950 h-10 pl-10 pr-4 rounded-xl border border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs text-white placeholder-zinc-500 transition-all"
+              placeholder="Tìm kiếm người nhận, tiêu đề..."
+              type="text"
+            />
           </div>
         </div>
 
         <!-- Log List container -->
-        <div class="glass-panel rounded-2xl border border-zinc-800 overflow-hidden flex flex-col">
-          <div class="px-5 py-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/30">
+        <div
+          class="glass-panel rounded-2xl border border-zinc-800 overflow-hidden flex flex-col"
+        >
+          <div
+            class="px-5 py-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/30"
+          >
             <h3 class="font-bold text-sm text-zinc-300">Danh sách Thư</h3>
-            <span id="log-count-badge" class="px-2 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-bold">0 gửi đi</span>
+            <span
+              id="log-count-badge"
+              class="px-2 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-bold"
+              >0 gửi đi</span
+            >
           </div>
 
-          <div id="email-log-list" class="overflow-y-auto max-h-[calc(100vh-320px)] divide-y divide-zinc-800/60 min-h-[250px]">
+          <div
+            id="email-log-list"
+            class="overflow-y-auto max-h-[calc(100vh-320px)] divide-y divide-zinc-800/60 min-h-[250px]"
+          >
             <!-- Populated dynamically -->
-            <div class="p-8 text-center text-zinc-500 italic text-xs">Đang tải danh sách email...</div>
+            <div class="p-8 text-center text-zinc-500 italic text-xs">
+              Đang tải danh sách email...
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Right Column: Details & Preview (8 cols) -->
       <div class="lg:col-span-7 space-y-6">
-        <div id="email-detail-container" class="glass-panel rounded-2xl border border-zinc-800 overflow-hidden flex flex-col min-h-[500px] hidden">
+        <div
+          id="email-detail-container"
+          class="glass-panel rounded-2xl border border-zinc-800 overflow-hidden flex flex-col min-h-[500px] hidden"
+        >
           <!-- Metadata Header -->
           <div class="p-6 border-b border-zinc-800 bg-zinc-900/30">
             <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
               <div class="space-y-1">
-                <span id="detail-category" class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary">Category</span>
-                <h2 id="detail-subject" class="text-lg font-bold text-white leading-snug">Email Subject</h2>
+                <span
+                  id="detail-category"
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary"
+                  >Category</span
+                >
+                <h2
+                  id="detail-subject"
+                  class="text-lg font-bold text-white leading-snug"
+                >
+                  Email Subject
+                </h2>
                 <p class="text-xs text-zinc-400">
-                  Đến: <strong id="detail-recipient" class="text-zinc-200">recipient@example.com</strong>
+                  Đến: <strong id="detail-recipient" class="text-zinc-200"
+                    >recipient@example.com</strong
+                  >
                 </p>
               </div>
               <div id="detail-status-badge">
@@ -66,59 +115,109 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             </div>
 
             <!-- SMTP and Server Parameters Details -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-950/60 border border-zinc-800/80 rounded-xl p-4 text-[11px] text-zinc-400 font-mono">
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-950/60 border border-zinc-800/80 rounded-xl p-4 text-[11px] text-zinc-400 font-mono"
+            >
               <div class="space-y-1">
-                <div>Sender: <span id="detail-sender" class="text-zinc-200"></span></div>
-                <div>SMTP Server: <span id="detail-smtp-host" class="text-zinc-200"></span></div>
-                <div>SMTP Port: <span id="detail-smtp-port" class="text-zinc-200"></span></div>
+                <div>
+                  Sender: <span id="detail-sender" class="text-zinc-200"></span>
+                </div>
+                <div>
+                  SMTP Server: <span id="detail-smtp-host" class="text-zinc-200"
+                  ></span>
+                </div>
+                <div>
+                  SMTP Port: <span id="detail-smtp-port" class="text-zinc-200"
+                  ></span>
+                </div>
               </div>
               <div class="space-y-1">
-                <div>Response Code: <span id="detail-response-code" class="text-emerald-400 font-bold"></span></div>
-                <div>Gửi lúc: <span id="detail-time" class="text-zinc-200"></span></div>
-                <div>ID Thư: <span id="detail-id" class="text-zinc-500"></span></div>
+                <div>
+                  Response Code: <span
+                    id="detail-response-code"
+                    class="text-emerald-400 font-bold"></span>
+                </div>
+                <div>
+                  Gửi lúc: <span id="detail-time" class="text-zinc-200"></span>
+                </div>
+                <div>
+                  ID Thư: <span id="detail-id" class="text-zinc-500"></span>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Tabs Controls -->
           <div class="flex border-b border-zinc-800 bg-zinc-900/10 px-4">
-            <button id="tab-btn-preview" class="px-4 py-3 text-xs font-bold border-b-2 border-primary text-primary focus:outline-none cursor-pointer">Preview HTML</button>
-            <button id="tab-btn-code" class="px-4 py-3 text-xs font-bold border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer">Code HTML</button>
+            <button
+              id="tab-btn-preview"
+              class="px-4 py-3 text-xs font-bold border-b-2 border-primary text-primary focus:outline-none cursor-pointer"
+              >Preview HTML</button
+            >
+            <button
+              id="tab-btn-code"
+              class="px-4 py-3 text-xs font-bold border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer"
+              >Code HTML</button
+            >
           </div>
 
           <!-- Tab Content Panel -->
           <div class="flex-grow p-6 bg-zinc-950/40 min-h-[350px] flex flex-col">
             <!-- Preview tab panel -->
-            <div id="tab-panel-preview" class="w-full flex-grow flex flex-col h-[400px]">
-              <iframe id="email-preview-iframe" class="w-full h-full flex-grow border border-zinc-800 rounded-xl bg-white" sandbox="allow-same-origin"></iframe>
+            <div
+              id="tab-panel-preview"
+              class="w-full flex-grow flex flex-col h-[400px]"
+            >
+              <iframe
+                id="email-preview-iframe"
+                class="w-full h-full flex-grow border border-zinc-800 rounded-xl bg-white"
+                sandbox="allow-same-origin"></iframe>
             </div>
 
             <!-- Code tab panel -->
             <div id="tab-panel-code" class="w-full flex-grow hidden">
-              <div class="relative w-full h-[400px] overflow-auto rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
-                <button id="btn-copy-code" class="absolute right-4 top-4 px-3 py-1.5 bg-white/5 border border-zinc-700 text-zinc-300 rounded-lg text-[10px] font-bold uppercase hover:bg-white/10 transition-all cursor-pointer flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">content_copy</span> Copy
+              <div
+                class="relative w-full h-[400px] overflow-auto rounded-xl border border-zinc-800 bg-zinc-900/80 p-4"
+              >
+                <button
+                  id="btn-copy-code"
+                  class="absolute right-4 top-4 px-3 py-1.5 bg-white/5 border border-zinc-700 text-zinc-300 rounded-lg text-[10px] font-bold uppercase hover:bg-white/10 transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-xs"
+                    >content_copy</span
+                  > Copy
                 </button>
-                <pre class="m-0 text-[11px] font-mono text-emerald-400 select-all whitespace-pre-wrap word-break-break-all" id="email-code-block"></pre>
+                <pre
+                  class="m-0 text-[11px] font-mono text-emerald-400 select-all whitespace-pre-wrap word-break-break-all"
+                  id="email-code-block">
+                </pre>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Placeholder when no email selected -->
-        <div id="email-detail-placeholder" class="glass-panel rounded-2xl border border-zinc-800 p-12 text-center text-zinc-500 flex flex-col items-center justify-center min-h-[500px]">
-          <span class="material-symbols-outlined text-5xl text-zinc-600 mb-4 animate-pulse">mail</span>
+        <div
+          id="email-detail-placeholder"
+          class="glass-panel rounded-2xl border border-zinc-800 p-12 text-center text-zinc-500 flex flex-col items-center justify-center min-h-[500px]"
+        >
+          <span
+            class="material-symbols-outlined text-5xl text-zinc-600 mb-4 animate-pulse"
+            >mail</span
+          >
           <h3 class="text-sm font-bold text-zinc-400 mb-1">Chưa chọn email</h3>
-          <p class="text-xs text-zinc-500">Hãy chọn một bức thư trong danh sách bên trái để xem nội dung và thông số SMTP chi tiết.</p>
+          <p class="text-xs text-zinc-500">
+            Hãy chọn một bức thư trong danh sách bên trái để xem nội dung và
+            thông số SMTP chi tiết.
+          </p>
         </div>
       </div>
-
     </div>
   </div>
 </AdminLayout>
 
 <script is:inline>
-  (function() {
+  (function () {
     let emailLogs = [];
     let selectedLogId = null;
 
@@ -129,21 +228,22 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           id: "mail_91823712",
           time: new Date(Date.now() - 5 * 60000).toISOString(), // 5 mins ago
           recipient: "hiep.nguyen@example.com",
-          sender: "WebFilm Admin <admin@dongmephim.online>",
-          subject: "Khôi phục mật khẩu tài khoản WebFilm",
+          sender: "DongMePhim Admin <admin@dongmephim.online>",
+          subject: "Khôi phục mật khẩu tài khoản DongMePhim",
           category: "Auth Reset",
           status: "success",
           responseCode: "250 2.0.0 OK Message accepted",
           parameters: {
             name: "Huy Hiệp",
             email: "hiep.nguyen@example.com",
-            reset_link: "https://webfilm.dongmephim.online/auth/reset-password?token=mock_token_718293712"
+            reset_link:
+              "https://DongMePhim.dongmephim.online/auth/reset-password?token=mock_token_718293712",
           },
           smtpConfig: {
             host: "smtp.gmail.com",
             port: 587,
             secure: "TLS",
-            user: "admin@dongmephim.online"
+            user: "admin@dongmephim.online",
           },
           html: `<!DOCTYPE html>
 <html>
@@ -154,7 +254,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;" cellpadding="0" cellspacing="0">
           <tr>
             <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
-              <h2 style="margin:0;color:#f59e0b;text-transform:uppercase;">WebFilm</h2>
+              <h2 style="margin:0;color:#f59e0b;text-transform:uppercase;">DongMePhim</h2>
             </td>
           </tr>
           <tr>
@@ -164,7 +264,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
                 <tr>
                   <td align="center">
-                    <a href="https://webfilm.dongmephim.online/auth/reset-password?token=mock_token_718293712" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #f59e0b, #d97706);color:#09090b;text-decoration:none;font-weight:800;border-radius:12px;">Đặt lại mật khẩu</a>
+                    <a href="https://DongMePhim.dongmephim.online/auth/reset-password?token=mock_token_718293712" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #f59e0b, #d97706);color:#09090b;text-decoration:none;font-weight:800;border-radius:12px;">Đặt lại mật khẩu</a>
                   </td>
                 </tr>
               </table>
@@ -175,13 +275,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     </tr>
   </table>
 </body>
-</html>`
+</html>`,
         },
         {
           id: "mail_88291029",
           time: new Date(Date.now() - 30 * 60000).toISOString(), // 30 mins ago
           recipient: "admin.test@gmail.com",
-          sender: "WebFilm System <noreply@dongmephim.online>",
+          sender: "DongMePhim System <noreply@dongmephim.online>",
           subject: "Kiểm tra cấu hình SMTP Mail thành công",
           category: "SMTP Test",
           status: "success",
@@ -190,13 +290,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             smtp_host: "smtp.gmail.com",
             smtp_port: "587",
             smtp_secure: "TLS",
-            smtp_user: "noreply@dongmephim.online"
+            smtp_user: "noreply@dongmephim.online",
           },
           smtpConfig: {
             host: "smtp.gmail.com",
             port: 587,
             secure: "TLS",
-            user: "noreply@dongmephim.online"
+            user: "noreply@dongmephim.online",
           },
           html: `<!DOCTYPE html>
 <html>
@@ -207,13 +307,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;" cellpadding="0" cellspacing="0">
           <tr>
             <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
-              <h2 style="margin:0;color:#8b5cf6;text-transform:uppercase;">WebFilm SMTP Test</h2>
+              <h2 style="margin:0;color:#8b5cf6;text-transform:uppercase;">DongMePhim SMTP Test</h2>
             </td>
           </tr>
           <tr>
             <td style="padding:40px 40px 30px;">
               <h3 style="margin:0;color:#ffffff;">Xin chào Admin,</h3>
-              <p style="margin:0 0 20px;color:#a1a1aa;line-height:1.6;">Đây là email kiểm tra kết nối từ hệ thống cấu hình SMTP của WebFilm.</p>
+              <p style="margin:0 0 20px;color:#a1a1aa;line-height:1.6;">Đây là email kiểm tra kết nối từ hệ thống cấu hình SMTP của DongMePhim.</p>
               <div style="background-color:#18181b;border:1px solid #27272a;border-radius:16px;padding:20px;margin:24px 0;">
                 <p style="margin:0 0 12px;font-weight:bold;color:#8b5cf6;">Thông số SMTP:</p>
                 <div style="font-size:13px;color:#a1a1aa;">
@@ -229,26 +329,26 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     </tr>
   </table>
 </body>
-</html>`
+</html>`,
         },
         {
           id: "mail_39182371",
           time: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
           recipient: "vip-member@gmail.com",
-          sender: "WebFilm VIP <billing@dongmephim.online>",
+          sender: "DongMePhim VIP <billing@dongmephim.online>",
           subject: "Kích hoạt gói dịch vụ VIP MEMBER thành công!",
           category: "VIP Welcome",
           status: "success",
           responseCode: "250 2.0.0 OK Message received",
           parameters: {
             name: "Linh Trần",
-            email: "vip-member@gmail.com"
+            email: "vip-member@gmail.com",
           },
           smtpConfig: {
             host: "smtp.gmail.com",
             port: 587,
             secure: "TLS",
-            user: "billing@dongmephim.online"
+            user: "billing@dongmephim.online",
           },
           html: `<!DOCTYPE html>
 <html>
@@ -265,7 +365,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <tr>
             <td style="padding:40px 40px 30px;">
               <h3 style="margin:0;color:#ffffff;">Xin chào Linh Trần,</h3>
-              <p style="margin:0 0 20px;color:#a1a1aa;line-height:1.6;">Chúc mừng bạn đã kích hoạt thành công quyền VIP MEMBER trên hệ thống WebFilm. Tận hưởng kho phim chất lượng cao không quảng cáo ngay lập tức!</p>
+              <p style="margin:0 0 20px;color:#a1a1aa;line-height:1.6;">Chúc mừng bạn đã kích hoạt thành công quyền VIP MEMBER trên hệ thống DongMePhim. Tận hưởng kho phim chất lượng cao không quảng cáo ngay lập tức!</p>
             </td>
           </tr>
         </table>
@@ -273,27 +373,28 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     </tr>
   </table>
 </body>
-</html>`
+</html>`,
         },
         {
           id: "mail_51827382",
           time: new Date(Date.now() - 5 * 3600000).toISOString(), // 5 hours ago
           recipient: "not-exist-email@bad-domain.xyz",
-          sender: "WebFilm Admin <admin@dongmephim.online>",
-          subject: "Khôi phục mật khẩu tài khoản WebFilm",
+          sender: "DongMePhim Admin <admin@dongmephim.online>",
+          subject: "Khôi phục mật khẩu tài khoản DongMePhim",
           category: "Auth Reset",
           status: "failed",
           responseCode: "550 5.1.1 User Unknown / Invalid Recipient Address",
           parameters: {
             name: "Stranger",
             email: "not-exist-email@bad-domain.xyz",
-            reset_link: "https://webfilm.dongmephim.online/auth/reset-password?token=mock_failed"
+            reset_link:
+              "https://DongMePhim.dongmephim.online/auth/reset-password?token=mock_failed",
           },
           smtpConfig: {
             host: "smtp.gmail.com",
             port: 587,
             secure: "TLS",
-            user: "admin@dongmephim.online"
+            user: "admin@dongmephim.online",
           },
           html: `<!DOCTYPE html>
 <html>
@@ -301,21 +402,23 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
   <h2>Khôi phục mật khẩu</h2>
   <p>Thư này gửi thất bại.</p>
 </body>
-</html>`
-        }
+</html>`,
+        },
       ];
     }
 
     // Load and seed logs
     function loadLogs() {
       let logs = [];
-      const stored = localStorage.getItem('txa_email_logs');
+      const stored = localStorage.getItem("txa_email_logs");
       if (stored) {
-        try { logs = JSON.parse(stored); } catch (e) {}
+        try {
+          logs = JSON.parse(stored);
+        } catch (e) {}
       }
       if (!logs || logs.length === 0) {
         logs = getSeedLogs();
-        localStorage.setItem('txa_email_logs', JSON.stringify(logs));
+        localStorage.setItem("txa_email_logs", JSON.stringify(logs));
       }
       emailLogs = logs;
       return logs;
@@ -329,25 +432,25 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       const diffMins = Math.floor(diffMs / 60000);
       const diffHours = Math.floor(diffMs / 3600000);
 
-      if (diffMins < 1) return 'Vừa xong';
+      if (diffMins < 1) return "Vừa xong";
       if (diffMins < 60) return `${diffMins} phút trước`;
       if (diffHours < 24) return `${diffHours} giờ trước`;
-      
-      return date.toLocaleDateString('vi-VN', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+
+      return date.toLocaleDateString("vi-VN", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     }
 
     // Render left list
-    function renderList(filterQuery = '') {
-      const listEl = document.getElementById('email-log-list');
-      const badgeEl = document.getElementById('log-count-badge');
+    function renderList(filterQuery = "") {
+      const listEl = document.getElementById("email-log-list");
+      const badgeEl = document.getElementById("log-count-badge");
       if (!listEl) return;
 
-      const filtered = emailLogs.filter(log => {
+      const filtered = emailLogs.filter((log) => {
         const query = filterQuery.toLowerCase();
         return (
           log.recipient.toLowerCase().includes(query) ||
@@ -367,13 +470,22 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         return;
       }
 
-      listEl.innerHTML = filtered.map(log => {
-        const isActive = log.id === selectedLogId;
-        const activeClass = isActive ? 'bg-primary/10 border-l-4 border-primary' : 'hover:bg-white/5 border-l-4 border-transparent';
-        const statusColor = log.status === 'success' ? 'bg-emerald-400' : 'bg-rose-500';
-        const categoryColor = log.category === 'Auth Reset' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : (log.category.includes('VIP') ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50');
-        
-        return `
+      listEl.innerHTML = filtered
+        .map((log) => {
+          const isActive = log.id === selectedLogId;
+          const activeClass = isActive
+            ? "bg-primary/10 border-l-4 border-primary"
+            : "hover:bg-white/5 border-l-4 border-transparent";
+          const statusColor =
+            log.status === "success" ? "bg-emerald-400" : "bg-rose-500";
+          const categoryColor =
+            log.category === "Auth Reset"
+              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+              : log.category.includes("VIP")
+                ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                : "bg-zinc-800 text-zinc-400 border border-zinc-700/50";
+
+          return `
           <div onclick="selectLog('${log.id}')" class="p-4 transition-all duration-150 cursor-pointer flex flex-col gap-2 ${activeClass}">
             <div class="flex justify-between items-start">
               <span class="text-xs font-bold text-white truncate max-w-[70%]">${log.subject}</span>
@@ -383,153 +495,193 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
               <span class="text-zinc-400 truncate max-w-[60%] font-semibold">${log.recipient}</span>
               <div class="flex items-center gap-2">
                 <span class="px-1.5 py-0.5 rounded text-[8px] font-bold ${categoryColor}">${log.category}</span>
-                <span class="flex items-center gap-1 text-[10px] font-medium ${log.status === 'success' ? 'text-emerald-400' : 'text-rose-500'}">
+                <span class="flex items-center gap-1 text-[10px] font-medium ${log.status === "success" ? "text-emerald-400" : "text-rose-500"}">
                   <span class="w-1.5 h-1.5 rounded-full ${statusColor}"></span>
-                  ${log.status === 'success' ? 'Sent' : 'Failed'}
+                  ${log.status === "success" ? "Sent" : "Failed"}
                 </span>
               </div>
             </div>
           </div>
         `;
-      }).join('');
+        })
+        .join("");
     }
 
     // Select email log details
-    window.selectLog = function(id) {
+    window.selectLog = function (id) {
       selectedLogId = id;
-      renderList(document.getElementById('log-search-input')?.value || '');
+      renderList(document.getElementById("log-search-input")?.value || "");
 
-      const log = emailLogs.find(l => l.id === id);
-      const detailContainer = document.getElementById('email-detail-container');
-      const detailPlaceholder = document.getElementById('email-detail-placeholder');
+      const log = emailLogs.find((l) => l.id === id);
+      const detailContainer = document.getElementById("email-detail-container");
+      const detailPlaceholder = document.getElementById(
+        "email-detail-placeholder",
+      );
 
       if (!log || !detailContainer || !detailPlaceholder) return;
 
-      detailPlaceholder.classList.add('hidden');
-      detailContainer.classList.remove('hidden');
+      detailPlaceholder.classList.add("hidden");
+      detailContainer.classList.remove("hidden");
 
       // Populate details
-      document.getElementById('detail-id').textContent = log.id;
-      document.getElementById('detail-subject').textContent = log.subject;
-      document.getElementById('detail-recipient').textContent = log.recipient;
-      document.getElementById('detail-sender').textContent = log.sender;
-      document.getElementById('detail-time').textContent = new Date(log.time).toLocaleString('vi-VN');
-      
-      const catEl = document.getElementById('detail-category');
+      document.getElementById("detail-id").textContent = log.id;
+      document.getElementById("detail-subject").textContent = log.subject;
+      document.getElementById("detail-recipient").textContent = log.recipient;
+      document.getElementById("detail-sender").textContent = log.sender;
+      document.getElementById("detail-time").textContent = new Date(
+        log.time,
+      ).toLocaleString("vi-VN");
+
+      const catEl = document.getElementById("detail-category");
       if (catEl) {
         catEl.textContent = log.category;
-        catEl.className = log.category === 'Auth Reset' ? 'inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20' : (log.category.includes('VIP') ? 'inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50');
+        catEl.className =
+          log.category === "Auth Reset"
+            ? "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20"
+            : log.category.includes("VIP")
+              ? "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20"
+              : "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50";
       }
 
       // Status Badge
-      const badgeContainer = document.getElementById('detail-status-badge');
+      const badgeContainer = document.getElementById("detail-status-badge");
       if (badgeContainer) {
-        badgeContainer.innerHTML = log.status === 'success' 
-          ? `<span class="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[10px] tracking-wider">SUCCESS</span>`
-          : `<span class="px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[10px] tracking-wider">FAILED</span>`;
+        badgeContainer.innerHTML =
+          log.status === "success"
+            ? `<span class="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[10px] tracking-wider">SUCCESS</span>`
+            : `<span class="px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[10px] tracking-wider">FAILED</span>`;
       }
 
       // SMTP Config
-      document.getElementById('detail-smtp-host').textContent = log.smtpConfig.host;
-      document.getElementById('detail-smtp-port').textContent = log.smtpConfig.port + ` (${log.smtpConfig.secure})`;
-      
-      const codeEl = document.getElementById('detail-response-code');
+      document.getElementById("detail-smtp-host").textContent =
+        log.smtpConfig.host;
+      document.getElementById("detail-smtp-port").textContent =
+        log.smtpConfig.port + ` (${log.smtpConfig.secure})`;
+
+      const codeEl = document.getElementById("detail-response-code");
       if (codeEl) {
         codeEl.textContent = log.responseCode;
-        codeEl.className = log.status === 'success' ? 'text-emerald-400 font-bold' : 'text-rose-500 font-bold';
+        codeEl.className =
+          log.status === "success"
+            ? "text-emerald-400 font-bold"
+            : "text-rose-500 font-bold";
       }
 
       // Rendered HTML Iframe Preview
-      const iframe = document.getElementById('email-preview-iframe');
+      const iframe = document.getElementById("email-preview-iframe");
       if (iframe) {
         iframe.srcdoc = log.html;
       }
 
       // HTML Code Preview
-      const codeBlock = document.getElementById('email-code-block');
+      const codeBlock = document.getElementById("email-code-block");
       if (codeBlock) {
         codeBlock.textContent = log.html;
       }
 
       // Reset Tab views
-      switchTab('preview');
+      switchTab("preview");
     };
 
     // Tab switcher (Preview vs Code)
     function switchTab(tab) {
-      const btnPreview = document.getElementById('tab-btn-preview');
-      const btnCode = document.getElementById('tab-btn-code');
-      const panelPreview = document.getElementById('tab-panel-preview');
-      const panelCode = document.getElementById('tab-panel-code');
+      const btnPreview = document.getElementById("tab-btn-preview");
+      const btnCode = document.getElementById("tab-btn-code");
+      const panelPreview = document.getElementById("tab-panel-preview");
+      const panelCode = document.getElementById("tab-panel-code");
 
       if (!btnPreview || !btnCode || !panelPreview || !panelCode) return;
 
-      if (tab === 'preview') {
-        btnPreview.className = "px-4 py-3 text-xs font-bold border-b-2 border-primary text-primary focus:outline-none cursor-pointer";
-        btnCode.className = "px-4 py-3 text-xs font-bold border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer";
-        panelPreview.classList.remove('hidden');
-        panelCode.classList.add('hidden');
+      if (tab === "preview") {
+        btnPreview.className =
+          "px-4 py-3 text-xs font-bold border-b-2 border-primary text-primary focus:outline-none cursor-pointer";
+        btnCode.className =
+          "px-4 py-3 text-xs font-bold border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer";
+        panelPreview.classList.remove("hidden");
+        panelCode.classList.add("hidden");
       } else {
-        btnPreview.className = "px-4 py-3 text-xs font-bold border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer";
-        btnCode.className = "px-4 py-3 text-xs font-bold border-b-2 border-primary text-primary focus:outline-none cursor-pointer";
-        panelPreview.classList.add('hidden');
-        panelCode.classList.remove('hidden');
+        btnPreview.className =
+          "px-4 py-3 text-xs font-bold border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer";
+        btnCode.className =
+          "px-4 py-3 text-xs font-bold border-b-2 border-primary text-primary focus:outline-none cursor-pointer";
+        panelPreview.classList.add("hidden");
+        panelCode.classList.remove("hidden");
       }
     }
 
-    document.getElementById('tab-btn-preview')?.addEventListener('click', () => switchTab('preview'));
-    document.getElementById('tab-btn-code')?.addEventListener('click', () => switchTab('code'));
+    document
+      .getElementById("tab-btn-preview")
+      ?.addEventListener("click", () => switchTab("preview"));
+    document
+      .getElementById("tab-btn-code")
+      ?.addEventListener("click", () => switchTab("code"));
 
     // Search input handler
-    document.getElementById('log-search-input')?.addEventListener('input', function() {
-      renderList(this.value);
-    });
+    document
+      .getElementById("log-search-input")
+      ?.addEventListener("input", function () {
+        renderList(this.value);
+      });
 
     // Refresh button
-    document.getElementById('btn-refresh-logs')?.addEventListener('click', () => {
-      loadLogs();
-      renderList(document.getElementById('log-search-input')?.value || '');
-      if (selectedLogId) {
-        selectLog(selectedLogId);
-      }
-      if (window.showGlobalToast) window.showGlobalToast('Cập nhật danh sách thư gửi đi!', 'success');
-    });
+    document
+      .getElementById("btn-refresh-logs")
+      ?.addEventListener("click", () => {
+        loadLogs();
+        renderList(document.getElementById("log-search-input")?.value || "");
+        if (selectedLogId) {
+          selectLog(selectedLogId);
+        }
+        if (window.showGlobalToast)
+          window.showGlobalToast("Cập nhật danh sách thư gửi đi!", "success");
+      });
 
     // Clear logs button
-    document.getElementById('btn-clear-logs')?.addEventListener('click', () => {
+    document.getElementById("btn-clear-logs")?.addEventListener("click", () => {
       const doClear = () => {
         emailLogs = [];
-        localStorage.setItem('txa_email_logs', '[]');
+        localStorage.setItem("txa_email_logs", "[]");
         selectedLogId = null;
         renderList();
-        
-        const detailContainer = document.getElementById('email-detail-container');
-        const detailPlaceholder = document.getElementById('email-detail-placeholder');
-        if (detailContainer) detailContainer.classList.add('hidden');
-        if (detailPlaceholder) detailPlaceholder.classList.remove('hidden');
-        
-        if (window.showGlobalToast) window.showGlobalToast('Đã xóa sạch nhật ký email gửi đi!', 'info');
+
+        const detailContainer = document.getElementById(
+          "email-detail-container",
+        );
+        const detailPlaceholder = document.getElementById(
+          "email-detail-placeholder",
+        );
+        if (detailContainer) detailContainer.classList.add("hidden");
+        if (detailPlaceholder) detailPlaceholder.classList.remove("hidden");
+
+        if (window.showGlobalToast)
+          window.showGlobalToast("Đã xóa sạch nhật ký email gửi đi!", "info");
       };
       if (window.txamodal) {
         window.txamodal.show({
-          title: 'Xóa Sạch Nhật Ký Gửi Thư',
-          message: 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử thư gửi đi? Hành động này không thể hoàn tác.',
-          type: 'danger', confirmText: 'Xóa sạch', cancelText: 'Hủy bỏ',
-          onConfirm: doClear
+          title: "Xóa Sạch Nhật Ký Gửi Thư",
+          message:
+            "Bạn có chắc chắn muốn xóa toàn bộ lịch sử thư gửi đi? Hành động này không thể hoàn tác.",
+          type: "danger",
+          confirmText: "Xóa sạch",
+          cancelText: "Hủy bỏ",
+          onConfirm: doClear,
         });
-      } else if (confirm('Xóa toàn bộ lịch sử gửi thư?')) doClear();
+      } else if (confirm("Xóa toàn bộ lịch sử gửi thư?")) doClear();
     });
 
     // Copy HTML Code
-    document.getElementById('btn-copy-code')?.addEventListener('click', () => {
-      const code = document.getElementById('email-code-block')?.textContent;
+    document.getElementById("btn-copy-code")?.addEventListener("click", () => {
+      const code = document.getElementById("email-code-block")?.textContent;
       if (code) {
-        navigator.clipboard.writeText(code)
+        navigator.clipboard
+          .writeText(code)
           .then(() => {
-            if (window.showGlobalToast) window.showGlobalToast('Sao chép mã HTML thành công!', 'success');
+            if (window.showGlobalToast)
+              window.showGlobalToast("Sao chép mã HTML thành công!", "success");
           })
           .catch(() => {
-            if (window.showGlobalToast) window.showGlobalToast('Không thể sao chép!', 'error');
+            if (window.showGlobalToast)
+              window.showGlobalToast("Không thể sao chép!", "error");
           });
       }
     });
@@ -538,7 +690,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     function init() {
       loadLogs();
       renderList();
-      
+
       // Auto-select first item if exists
       if (emailLogs.length > 0) {
         selectLog(emailLogs[0].id);
@@ -546,6 +698,6 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     }
 
     init();
-    document.addEventListener('astro:page-load', init);
+    document.addEventListener("astro:page-load", init);
   })();
 </script>

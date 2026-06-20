@@ -11,7 +11,7 @@ const topSeries = await MovieService.getMovies({ type: 'series', sortBy: 'views_
 
 // Fetch dynamic categories from Local database
 const allKorean = await MovieService.getMovies({ category: 'Hàn Quốc' });
-const koreanMovies = allKorean.slice(0, 4).map(m => ({
+const koreanMovies = allKorean.slice(0, 4).map((m: any) => ({
   title: m.title,
   slug: m.slug,
   poster: m.posterUrl,
@@ -20,7 +20,7 @@ const koreanMovies = allKorean.slice(0, 4).map(m => ({
 }));
 
 const allChinese = await MovieService.getMovies({ category: 'Trung Quốc' });
-const chineseMovies = allChinese.slice(0, 3).map(m => ({
+const chineseMovies = allChinese.slice(0, 3).map((m: any) => ({
   title: m.title,
   slug: m.slug,
   poster: m.posterUrl,
@@ -28,7 +28,7 @@ const chineseMovies = allChinese.slice(0, 3).map(m => ({
 }));
 
 const allWestern = await MovieService.getMovies({ category: 'Âu Mỹ' });
-const westernMovies = allWestern.slice(0, 3).map((m, idx) => ({
+const westernMovies = allWestern.slice(0, 3).map((m: any, idx: number) => ({
   title: m.title,
   slug: m.slug,
   poster: m.posterUrl,
@@ -42,7 +42,7 @@ const westernMovies = allWestern.slice(0, 3).map((m, idx) => ({
 }));
 
 const allRanking = await MovieService.getMovies({ sortBy: 'views_comments', limit: 4 });
-const rankingMovies = allRanking.map((m, idx) => ({
+const rankingMovies = allRanking.map((m: any, idx: number) => ({
   title: m.title,
   description: m.type === 'movie' ? 'Phim Lẻ Cực HOT' : `Cập nhật tập ${m.episodeCurrent}`,
   trend: idx === 0 ? "up" : idx === 2 ? "flat" : "up",
@@ -152,7 +152,7 @@ const allMoviesForClient = await MovieService.getMovies();
         <a class="text-primary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
       </div>
       <div id="korean-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
-        {koreanMovies.map((movie) => (
+        {koreanMovies.map((movie: any) => (
           <Card 
             title={movie.title}
             slug={movie.slug}
@@ -178,7 +178,7 @@ const allMoviesForClient = await MovieService.getMovies();
       
       <!-- Horizontal Scroll Container with clipping protection -->
       <div id="top-series-scroll" class="flex gap-6 overflow-x-auto pb-20 pt-20 -my-16 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
-        {topSeries.map((movie, index) => (
+        {topSeries.map((movie: any, index: number) => (
           <div class="flex-shrink-0 w-44 md:w-52 relative pl-10 snap-center group">
             <!-- Large Rank Number -->
             <div class="absolute bottom-0 left-0 text-[120px] md:text-[140px] font-black leading-none select-none pointer-events-none text-transparent bg-clip-text bg-gradient-to-tr from-primary/80 via-primary/20 to-transparent z-0 font-display-hero transform translate-y-6">
@@ -213,7 +213,7 @@ const allMoviesForClient = await MovieService.getMovies();
         <a class="text-secondary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
       </div>
       <div id="chinese-grid" class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-        {chineseMovies.map((movie) => (
+        {chineseMovies.map((movie: any) => (
           <Card 
             title={movie.title}
             slug={movie.slug}
@@ -1401,7 +1401,7 @@ const allMoviesForClient = await MovieService.getMovies();
         } catch (e) {
           console.error('Error during client-side hydration:', e);
         }
-      })();
+      });
     </script>
     <!-- Phim Âu Mỹ Mới -->
     <section>
@@ -1416,7 +1416,7 @@ const allMoviesForClient = await MovieService.getMovies();
         <a class="text-primary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
       </div>
       <div id="western-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-gutter">
-        {westernMovies.map((movie) => (
+        {westernMovies.map((movie: any) => (
           <a href={`/phim/${movie.slug}`} class={`group relative aspect-[16/9] rounded-2xl overflow-hidden glass-card border-transparent border-2 movie-card-hover transition-all duration-500 shadow-xl bg-surface-card cursor-pointer ${movie.isHiddenLg ? 'hidden lg:block' : ''}`}>
             <img class="w-full h-full object-cover" loading="lazy" src={movie.poster} alt={movie.title} />
             {movie.isPremium && <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>}

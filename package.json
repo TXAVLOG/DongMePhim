@@ -15,8 +15,10 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
+		"@astrojs/check": "^0.9.9",
 		"@astrojs/cloudflare": "^13.1.1",
 		"@astrojs/react": "^5.0.7",
+		"@supabase/supabase-js": "^2.108.2",
 		"@tailwindcss/vite": "^4.3.1",
 		"@types/react": "^19.2.17",
 		"@types/react-dom": "^19.2.3",
@@ -27,7 +29,8 @@
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
 		"tailwind-merge": "^3.6.0",
-		"tailwindcss": "^4.3.1"
+		"tailwindcss": "^4.3.1",
+		"typescript": "^6.0.3"
 	},
 	"devDependencies": {
 		"@types/node": "^26.0.0",

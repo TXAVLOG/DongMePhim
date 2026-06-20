@@ -1,0 +1,1134 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { ZaloService } from "../../services/ZaloService";
+
+// Fetch data server-side if database provider is supabase
+const serverRequests = await ZaloService.getAllZaloAccessRequests();
+const serverBypasses = await ZaloService.getZaloBypasses();
+
+const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+---
+
+<AdminLayout title="Quản trị duyệt cổng Zalo & Whitelist">
+  <div class="w-full mt-4 pb-10">
+    <!-- Top Header -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div>
+        <h1 class="font-headline-lg text-3xl tracking-tight text-white font-bold flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-3xl">verified</span>
+          Quản lý Phê Duyệt Zalo
+        </h1>
+        <p class="text-zinc-400 text-sm mt-1">
+          Duyệt yêu cầu truy cập từ nhóm Zalo và quản lý danh sách Whitelist Bypass
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Nút Đồng bộ dữ liệu lên Cloud -->
+        <button
+          id="btn-sync-cloud"
+          class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-500/20 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black uppercase rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(124,58,237,0.2)]"
+        >
+          <span class="material-symbols-outlined text-sm animate-bounce">cloud_upload</span> 
+          Đồng bộ lên Cloud (Migration)
+        </button>
+
+        <button
+          id="btn-refresh-zalo"
+          class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-primary hover:border-primary/50 transition-all cursor-pointer"
+        >
+          <span class="material-symbols-outlined">refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <div class="flex border-b border-zinc-800 bg-zinc-900/10 px-4 mb-6">
+      <button
+        id="tab-btn-requests"
+        class="px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 border-primary text-primary focus:outline-none cursor-pointer flex items-center gap-2"
+      >
+        <span class="material-symbols-outlined text-sm">assignment_ind</span>
+        Yêu cầu duyệt Zalo
+      </button>
+      <button
+        id="tab-btn-whitelist"
+        class="px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer flex items-center gap-2"
+      >
+        <span class="material-symbols-outlined text-sm">badge</span>
+        Whitelist Bypass
+      </button>
+    </div>
+
+    <!-- Active provider indicator badge -->
+    <div class="mb-6 px-4 py-2.5 bg-zinc-950/80 border border-zinc-800 rounded-xl flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2 text-zinc-400">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+        <span>Chế độ CSDL hiện tại:</span>
+        <strong class="text-white uppercase font-mono">{providerType}</strong>
+      </div>
+      {providerType === 'local' && (
+        <span class="text-amber-400 font-bold flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">warning</span>
+          Khuyên dùng: Bấm nút Đồng bộ lên Cloud để kích hoạt CSDL Supabase
+        </span>
+      )}
+    </div>
+
+    <!-- Main Content Panels -->
+    <div class="w-full">
+      <!-- 1. PANEL: REQUESTS -->
+      <div id="panel-requests" class="space-y-6">
+        <!-- Công cụ giải mã Token (TxaCipher) -->
+        <div class="glass-panel rounded-2xl border border-zinc-800 p-6 bg-zinc-950/20 shadow-2xl relative overflow-hidden">
+          <div class="absolute -right-16 -top-16 w-36 h-36 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="space-y-1 w-full md:max-w-xl text-left">
+              <h3 class="text-xs font-black text-primary uppercase tracking-wider flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">key</span>
+                Công cụ giải mã Token (TxaCipher)
+              </h3>
+              <p class="text-zinc-400 text-[11px] leading-relaxed">
+                Dán mã trình duyệt <code class="bg-zinc-900 px-1.5 py-0.5 rounded text-[10px] font-mono text-purple-400">tk_...</code> để giải mã nhanh thông tin trình duyệt, địa chỉ IP và vị trí của yêu cầu.
+              </p>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              <input
+                id="decrypt-token-input"
+                class="flex-grow md:w-72 bg-zinc-950 h-10 px-4 rounded-xl border border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs text-white placeholder-zinc-500 transition-all"
+                placeholder="Nhập mã token (tk_...)"
+                type="text"
+              />
+              <button
+                id="btn-decrypt-token"
+                class="px-5 h-10 bg-primary text-slate-950 hover:brightness-110 font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer border-none flex items-center gap-1.5 shrink-0"
+              >
+                <span class="material-symbols-outlined text-sm">lock_open</span>
+                Giải mã
+              </button>
+            </div>
+          </div>
+          
+          <!-- Decrypt Result Output -->
+          <div id="decrypt-result-box" class="hidden mt-4 p-4 bg-zinc-950 border border-zinc-800 rounded-xl relative animate-[fadeIn_0.3s]">
+            <button
+              id="btn-close-decrypt-result"
+              type="button"
+              class="absolute top-3 right-3 text-zinc-500 hover:text-white transition-colors cursor-pointer text-sm p-1 bg-transparent border-none"
+            >
+              <span class="material-symbols-outlined text-base">close</span>
+            </button>
+            <h4 class="text-[10px] font-black text-primary uppercase tracking-wider mb-2 flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs">info</span>
+              Kết quả giải mã Token:
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+              <div class="p-3 bg-zinc-900/30 border border-zinc-850 rounded-xl">
+                <span class="text-[9px] text-zinc-500 font-black uppercase tracking-wider block mb-1">Thiết bị / Trình duyệt</span>
+                <p id="decrypt-result-device" class="text-xs text-zinc-200 font-bold break-words">-</p>
+              </div>
+              <div class="p-3 bg-zinc-900/30 border border-zinc-850 rounded-xl">
+                <span class="text-[9px] text-zinc-500 font-black uppercase tracking-wider block mb-1">IP & Vị trí chi tiết</span>
+                <p id="decrypt-result-ip-loc" class="text-xs text-emerald-400 font-bold break-words">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search & Bulk actions bar -->
+        <div class="glass-panel rounded-2xl border border-zinc-800 p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div class="relative w-full md:max-w-xs">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</span>
+            <input
+              id="request-search"
+              class="w-full bg-zinc-950 h-10 pl-10 pr-4 rounded-xl border border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs text-white placeholder-zinc-500 transition-all"
+              placeholder="Tìm kiếm biệt danh Zalo..."
+              type="text"
+            />
+          </div>
+
+          <!-- Bulk actions buttons -->
+          <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+            <span class="text-[10px] text-zinc-500 font-bold uppercase mr-2" id="bulk-select-count">Đã chọn 0</span>
+            <button
+              id="btn-bulk-approve"
+              disabled
+              class="px-3.5 py-2 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-xs">check_circle</span> Duyệt hàng loạt
+            </button>
+            <button
+              id="btn-bulk-reject"
+              disabled
+              class="px-3.5 py-2 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-xs">cancel</span> Từ chối hàng loạt
+            </button>
+            <button
+              id="btn-bulk-delete"
+              disabled
+              class="px-3.5 py-2 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 text-rose-400 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-xs">delete</span> Xóa hàng loạt
+            </button>
+          </div>
+        </div>
+
+        <!-- Request Table -->
+        <div class="glass-panel rounded-2xl border border-zinc-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-zinc-950/60 border-b border-zinc-800 text-[10px] text-zinc-400 font-black uppercase tracking-wider">
+                  <th class="p-4 w-12 text-center">
+                    <input type="checkbox" id="check-all-requests" class="w-4 h-4 accent-primary rounded bg-zinc-900 border-zinc-800" />
+                  </th>
+                  <th class="p-4">Biệt danh Zalo</th>
+                  <th class="p-4">Thông tin IP & Thiết bị</th>
+                  <th class="p-4">Tài khoản liên kết</th>
+                  <th class="p-4 w-32">Trạng thái</th>
+                  <th class="p-4 w-36">Thời gian gửi</th>
+                  <th class="p-4 w-48 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="request-table-body" class="divide-y divide-zinc-800/60 text-xs">
+                <!-- Chèn động ở client-side -->
+                <tr>
+                  <td colspan="7" class="p-12 text-center text-zinc-500 italic">Đang tải danh sách yêu cầu...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. PANEL: WHITELIST -->
+      <div id="panel-whitelist" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Form thêm whitelist bypass (4 cols) -->
+        <div class="lg:col-span-4 glass-panel rounded-2xl border border-zinc-800 p-6 space-y-4">
+          <h3 class="text-sm font-black text-white uppercase tracking-wider border-b border-zinc-800 pb-3">Thêm Whitelist Mới</h3>
+          
+          <form id="form-add-whitelist" class="space-y-4">
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black uppercase tracking-wider text-zinc-500">Loại Whitelist</label>
+              <select
+                id="whitelist-type"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-primary transition-all font-bold"
+              >
+                <option value="nickname">Biệt danh Zalo (Nickname)</option>
+                <option value="token">Token trình duyệt (Browser Token)</option>
+                <option value="ip">Địa chỉ IP (IP Address)</option>
+                <option value="user">Tài khoản (Username/Email)</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black uppercase tracking-wider text-zinc-500">Giá trị bypass</label>
+              <input
+                type="text"
+                id="whitelist-value"
+                placeholder="Nhập giá trị cần bypass..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary transition-all font-bold"
+                required
+              />
+              <p class="text-[9px] text-zinc-500 leading-normal" id="whitelist-help-text">
+                Khớp chính xác nickname Zalo đã khai báo để tự động mở cổng không cần duyệt.
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black uppercase tracking-wider text-zinc-500">Mô tả / Ghi chú</label>
+              <textarea
+                id="whitelist-desc"
+                placeholder="Ghi chú người dùng hoặc lý do bypass..."
+                rows="2"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary transition-all font-bold"
+              ></textarea>
+            </div>
+
+            <button
+              type="submit"
+              class="w-full py-3 bg-primary text-slate-950 hover:brightness-110 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer border-none flex items-center justify-center gap-1.5 shadow-md"
+            >
+              <span class="material-symbols-outlined text-sm">person_add</span>
+              Thêm Whitelist
+            </button>
+          </form>
+        </div>
+
+        <!-- Table whitelist (8 cols) -->
+        <div class="lg:col-span-8 space-y-4">
+          <div class="glass-panel rounded-2xl border border-zinc-800 p-4 flex justify-between items-center">
+            <div class="relative w-full max-w-xs">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</span>
+              <input
+                id="whitelist-search"
+                class="w-full bg-zinc-950 h-10 pl-10 pr-4 rounded-xl border border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs text-white placeholder-zinc-500 transition-all"
+                placeholder="Tìm kiếm whitelist..."
+                type="text"
+              />
+            </div>
+            <span class="text-[10px] text-zinc-400 font-bold uppercase px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg" id="whitelist-count-badge">
+              0 Whitelist
+            </span>
+          </div>
+
+          <div class="glass-panel rounded-2xl border border-zinc-800 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-zinc-950/60 border-b border-zinc-800 text-[10px] text-zinc-400 font-black uppercase tracking-wider">
+                    <th class="p-4 w-32">Loại</th>
+                    <th class="p-4">Giá trị bypass</th>
+                    <th class="p-4">Mô tả / Ghi chú</th>
+                    <th class="p-4 w-36">Ngày tạo</th>
+                    <th class="p-4 w-24 text-right">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="whitelist-table-body" class="divide-y divide-zinc-800/60 text-xs">
+                  <tr>
+                    <td colspan="5" class="p-12 text-center text-zinc-500 italic">Đang tải danh sách whitelist...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CLOUD MIGRATION DETAIL -->
+  <div id="modal-sync" class="fixed inset-0 z-[10000] hidden items-center justify-center p-4 bg-black/95 backdrop-blur-md">
+    <div class="relative max-w-md w-full border border-zinc-800 rounded-[32px] bg-[#0c0d14]/95 p-8 shadow-2xl overflow-hidden text-center">
+      <div class="absolute -right-20 -top-20 w-40 h-40 bg-purple-600/10 rounded-full blur-2xl pointer-events-none"></div>
+
+      <button
+        id="btn-close-sync-modal"
+        class="absolute top-5 right-5 text-gray-500 hover:text-white transition-colors cursor-pointer text-lg p-1 bg-transparent border-none"
+      >
+        <span class="material-symbols-outlined">close</span>
+      </button>
+
+      <div class="h-14 w-14 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-6 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+        <span class="material-symbols-outlined text-3xl animate-bounce">cloud_sync</span>
+      </div>
+
+      <h3 class="text-lg font-black text-white mb-2 uppercase tracking-wide">Đồng bộ LocalStorage lên Cloud</h3>
+      <p class="text-xs text-zinc-400 mb-6 leading-relaxed px-2">
+        Hệ thống sẽ nạp toàn bộ cấu hình settings, danh sách yêu cầu Zalo, danh sách Whitelist bypass và danh sách phim cào hiện tại ở LocalStorage và đồng bộ lên Database đám mây của Supabase.
+      </p>
+
+      <!-- Sync Status Progress Panel -->
+      <div id="sync-progress-box" class="hidden bg-zinc-950/60 border border-zinc-800/80 rounded-2xl p-5 mb-6 text-left space-y-3 font-mono text-xs">
+        <div class="flex items-center justify-between border-b border-zinc-800/50 pb-2 mb-2">
+          <span class="text-zinc-400">Thành phần</span>
+          <span class="text-zinc-400">Kết quả sync</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-300">⚙️ Cấu hình hệ thống (Settings):</span>
+          <span id="sync-settings-status" class="text-zinc-500">Chờ...</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-300">👥 Danh sách duyệt Zalo:</span>
+          <span id="sync-zalo-status" class="text-zinc-500">Chờ...</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-300">🛡️ Whitelist Bypass:</span>
+          <span id="sync-whitelist-status" class="text-zinc-500">Chờ...</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-300">🎬 Phim đã cào (Movies):</span>
+          <span id="sync-movies-status" class="text-zinc-500">Chờ...</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <button
+          id="btn-confirm-sync"
+          class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer border-none flex items-center justify-center gap-2"
+        >
+          <span class="material-symbols-outlined text-sm">cloud_done</span>
+          Bắt đầu đồng bộ
+        </button>
+        <button
+          id="btn-cancel-sync"
+          class="w-full py-3.5 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+        >
+          Hủy bỏ
+        </button>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script is:inline define:vars={{ serverRequests, serverBypasses, providerType }}>
+  (function() {
+    const CRYPTO_KEY = "phimtxadinhvaikk";
+    const TxaCipher = {
+      decrypt(encodedText, key) {
+        try {
+          let str = encodedText.replace(/-/g, '+').replace(/_/g, '/');
+          while (str.length % 4) str += '=';
+          const text = atob(str);
+          let utf8Text = '';
+          for (let i = 0; i < text.length; i++) {
+            const charCode = text.charCodeAt(i);
+            const keyChar = key.charCodeAt(i % key.length);
+            const decryptedChar = charCode ^ keyChar;
+            utf8Text += String.fromCharCode(decryptedChar);
+          }
+          return decodeURIComponent(escape(utf8Text));
+        } catch (e) {
+          return 'Lỗi giải mã';
+        }
+      }
+    };
+
+    let activeTab = 'requests';
+    let requestsData = [];
+    let whitelistData = [];
+
+    // Helper: Giải mã/phân tích UserAgent thô thành tên thiết bị thân thiện
+    function friendlyUserAgent(ua) {
+      if (!ua) return 'Không rõ thiết bị';
+      
+      let os = 'Unknown OS';
+      let browser = 'Unknown Browser';
+      
+      if (ua.includes('Windows')) os = 'Windows';
+      else if (ua.includes('Macintosh') || ua.includes('Mac OS')) os = 'macOS';
+      else if (ua.includes('iPhone')) os = 'iPhone';
+      else if (ua.includes('iPad')) os = 'iPad';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('Linux')) os = 'Linux';
+      
+      if (ua.includes('Chrome') || ua.includes('CriOS')) browser = 'Chrome';
+      else if (ua.includes('Firefox')) browser = 'Firefox';
+      else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+      else if (ua.includes('Edge')) browser = 'Edge';
+      else if (ua.includes('Opera')) browser = 'Opera';
+      else if (ua.includes('Zalo')) browser = 'Zalo App';
+      
+      return `${browser} (${os})`;
+    }
+
+    // Nạp dữ liệu (Supabase vs LocalStorage)
+    function loadData() {
+      if (providerType === 'supabase') {
+        requestsData = serverRequests || [];
+        whitelistData = serverBypasses || [];
+      } else {
+        // LocalStorage fallback
+        requestsData = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
+        whitelistData = JSON.parse(localStorage.getItem('txa_zalo_bypass') || '[]');
+      }
+    }
+
+    // Render danh sách yêu cầu Zalo
+    function renderRequests(searchQuery = '') {
+      const tbody = document.getElementById('request-table-body');
+      if (!tbody) return;
+
+      const filtered = requestsData.filter(item => {
+        const name = (item.nickname || '').toLowerCase();
+        const token = (item.token || '').toLowerCase();
+        const query = searchQuery.toLowerCase();
+        return name.includes(query) || token.includes(query);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="p-12 text-center text-zinc-500 italic">
+              Không có yêu cầu duyệt nào phù hợp.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        const id = item.id || item.token;
+        const nickname = item.nickname || 'Không tên';
+        
+        // Giải mã token thiết bị để lấy IP và location chi tiết
+        let decryptedInfo = '';
+        if (item.token && item.token.startsWith('tk_')) {
+          const rawToken = item.token.substring(3);
+          const dec = TxaCipher.decrypt(rawToken, CRYPTO_KEY);
+          if (!dec.startsWith('Lỗi giải mã')) {
+            decryptedInfo = dec;
+          }
+        }
+
+        let displayDevice = friendlyUserAgent(item.userAgent || item.user_agent);
+        let displayLocation = item.ip || 'Không rõ IP';
+
+        if (decryptedInfo) {
+          const parts = decryptedInfo.split(' - IP: ');
+          if (parts.length >= 2) {
+            displayDevice = friendlyUserAgent(parts[0]);
+            displayLocation = `IP: ${parts[1]}`;
+          } else {
+            displayDevice = friendlyUserAgent(decryptedInfo);
+            displayLocation = decryptedInfo;
+          }
+        }
+        
+        const email = item.email || '<span class="text-zinc-600">Ẩn danh</span>';
+        
+        let statusBadge = '';
+        if (item.status === 'approved') {
+          statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-[10px] font-bold">Đã duyệt</span>`;
+        } else if (item.status === 'rejected') {
+          statusBadge = `<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/25 text-[10px] font-bold">Từ chối</span>`;
+        } else {
+          statusBadge = `<span class="px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/25 text-[10px] font-bold">Chờ duyệt</span>`;
+        }
+
+        const date = item.createdAt || item.created_at ? new Date(item.createdAt || item.created_at).toLocaleString('vi-VN') : 'Không rõ';
+
+        return `
+          <tr class="hover:bg-white/[0.02] transition-colors border-b border-zinc-800/40" data-id="${id}">
+            <td class="p-4 text-center">
+              <input type="checkbox" class="request-row-check w-4 h-4 accent-primary rounded bg-zinc-900 border-zinc-800 cursor-pointer" data-id="${id}" />
+            </td>
+            <td class="p-4">
+              <div class="font-bold text-white flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full ${item.status === 'approved' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : (item.status === 'rejected' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]')}"></span>
+                ${nickname}
+              </div>
+              <div class="text-[10px] text-zinc-500 font-mono mt-0.5 select-all">${item.token}</div>
+            </td>
+            <td class="p-4">
+              <div class="text-zinc-200 font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px] text-primary">devices</span>
+                ${displayDevice}
+              </div>
+              <div class="text-[11px] text-zinc-400 font-medium flex items-center gap-1 mt-1">
+                <span class="material-symbols-outlined text-[14px] text-emerald-400">location_on</span>
+                ${displayLocation}
+              </div>
+            </td>
+            <td class="p-4 font-mono text-zinc-400">${email}</td>
+            <td class="p-4">${statusBadge}</td>
+            <td class="p-4 text-zinc-500 font-mono text-[10px]">${date}</td>
+            <td class="p-4 text-right space-x-1.5">
+              ${item.status !== 'approved' ? `
+                <button onclick="updateStatus('${id}', 'approved')" class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded text-[10px] font-bold transition-all cursor-pointer border border-emerald-500/20">
+                  Phê duyệt
+                </button>
+              ` : ''}
+              ${item.status !== 'rejected' ? `
+                <button onclick="updateStatus('${id}', 'rejected')" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded text-[10px] font-bold transition-all cursor-pointer border border-amber-500/20">
+                  Từ chối
+                </button>
+              ` : ''}
+              <button onclick="deleteRequest('${id}')" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded text-[10px] font-bold transition-all cursor-pointer border border-rose-500/20">
+                Xóa
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Gán sự kiện cho các check row
+      document.querySelectorAll('.request-row-check').forEach(el => {
+        el.addEventListener('change', checkSelection);
+      });
+    }
+
+    // Render Whitelist Bypass
+    function renderWhitelist(searchQuery = '') {
+      const tbody = document.getElementById('whitelist-table-body');
+      const badge = document.getElementById('whitelist-count-badge');
+      if (!tbody) return;
+
+      const filtered = whitelistData.filter(item => {
+        const val = (item.value || '').toLowerCase();
+        const desc = (item.description || '').toLowerCase();
+        const query = searchQuery.toLowerCase();
+        return val.includes(query) || desc.includes(query);
+      });
+
+      if (badge) badge.textContent = `${filtered.length} Whitelist`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-12 text-center text-zinc-500 italic">
+              Không có đối tượng Whitelist nào phù hợp.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        let typeBadge = '';
+        if (item.type === 'token') {
+          typeBadge = `<span class="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold text-[9px] uppercase">Token</span>`;
+        } else if (item.type === 'ip') {
+          typeBadge = `<span class="px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20 font-bold text-[9px] uppercase">IP Address</span>`;
+        } else if (item.type === 'user') {
+          typeBadge = `<span class="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold text-[9px] uppercase">Tài khoản</span>`;
+        } else {
+          typeBadge = `<span class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/50 font-bold text-[9px] uppercase">Nickname</span>`;
+        }
+
+        const date = item.createdAt || item.created_at ? new Date(item.createdAt || item.created_at).toLocaleDateString('vi-VN') : 'Không rõ';
+
+        return `
+          <tr class="hover:bg-white/[0.02] transition-colors border-b border-zinc-800/40">
+            <td class="p-4">${typeBadge}</td>
+            <td class="p-4 font-bold text-white font-mono select-all">${item.value}</td>
+            <td class="p-4 text-zinc-400">${item.description || '<span class="text-zinc-600 italic">Không có</span>'}</td>
+            <td class="p-4 text-zinc-500 font-mono text-[10px]">${date}</td>
+            <td class="p-4 text-right">
+              <button onclick="deleteBypass('${item.id}')" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded text-[10px] font-bold transition-all cursor-pointer border border-rose-500/20">
+                Xóa
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Toggle tabs
+    function switchTab(tab) {
+      activeTab = tab;
+      const btnReq = document.getElementById('tab-btn-requests');
+      const btnWht = document.getElementById('tab-btn-whitelist');
+      const panelReq = document.getElementById('panel-requests');
+      const panelWht = document.getElementById('panel-whitelist');
+
+      if (!btnReq || !btnWht || !panelReq || !panelWht) return;
+
+      if (tab === 'requests') {
+        btnReq.className = 'px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 border-primary text-primary focus:outline-none cursor-pointer flex items-center gap-2';
+        btnWht.className = 'px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer flex items-center gap-2';
+        panelReq.classList.remove('hidden');
+        panelWht.classList.add('hidden');
+      } else {
+        btnReq.className = 'px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 border-transparent text-zinc-400 hover:text-white focus:outline-none cursor-pointer flex items-center gap-2';
+        btnWht.className = 'px-5 py-3 text-xs font-black uppercase tracking-wider border-b-2 border-primary text-primary focus:outline-none cursor-pointer flex items-center gap-2';
+        panelReq.classList.add('hidden');
+        panelWht.classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('tab-btn-requests')?.addEventListener('click', () => switchTab('requests'));
+    document.getElementById('tab-btn-whitelist')?.addEventListener('click', () => switchTab('whitelist'));
+
+    // Check row selection
+    function checkSelection() {
+      const checkedRows = document.querySelectorAll('.request-row-check:checked');
+      const bulkCount = document.getElementById('bulk-select-count');
+      const btnApprove = document.getElementById('btn-bulk-approve');
+      const btnReject = document.getElementById('btn-bulk-reject');
+      const btnDelete = document.getElementById('btn-bulk-delete');
+
+      if (bulkCount) bulkCount.textContent = `Đã chọn ${checkedRows.length}`;
+
+      const hasSelection = checkedRows.length > 0;
+      if (btnApprove) btnApprove.disabled = !hasSelection;
+      if (btnReject) btnReject.disabled = !hasSelection;
+      if (btnDelete) btnDelete.disabled = !hasSelection;
+    }
+
+    // Check all checkboxes
+    document.getElementById('check-all-requests')?.addEventListener('change', function() {
+      const boxes = document.querySelectorAll('.request-row-check');
+      boxes.forEach((box) => {
+        box.checked = this.checked;
+      });
+      checkSelection();
+    });
+
+    // Cập nhật trạng thái duyệt đơn lẻ
+    window.updateStatus = async function(id, status) {
+      if (providerType === 'supabase') {
+        try {
+          const res = await fetch('/api/admin/zalo-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, action: status })
+          });
+          const result = await res.json();
+          if (res.ok) {
+            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Cập nhật thành công', 'success');
+            // Cập nhật client-side state
+            const target = requestsData.find(x => x.id === id);
+            if (target) target.status = status;
+            renderRequests(document.getElementById('request-search')?.value || '');
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+        }
+      } else {
+        // Local mode
+        const list = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
+        const target = list.find(x => x.id === id || x.token === id);
+        if (target) {
+          target.status = status;
+          target.updatedAt = new Date().toISOString();
+          localStorage.setItem('txa_zalo_access', JSON.stringify(list));
+          if (window.showGlobalToast) window.showGlobalToast('Cập nhật trạng thái Local thành công!', 'success');
+          requestsData = list;
+          renderRequests(document.getElementById('request-search')?.value || '');
+        }
+      }
+    };
+
+    // Xóa yêu cầu duyệt đơn lẻ
+    window.deleteRequest = async function(id) {
+      const doDelete = async () => {
+        if (providerType === 'supabase') {
+          try {
+            const res = await fetch('/api/admin/zalo-action', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id, action: 'delete' })
+            });
+            const result = await res.json();
+            if (res.ok) {
+              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Xóa thành công', 'success');
+              requestsData = requestsData.filter(x => x.id !== id);
+              renderRequests(document.getElementById('request-search')?.value || '');
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
+            }
+          } catch (e) {
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+          }
+        } else {
+          // Local mode
+          let list = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
+          list = list.filter(x => x.id !== id && x.token !== id);
+          localStorage.setItem('txa_zalo_access', JSON.stringify(list));
+          if (window.showGlobalToast) window.showGlobalToast('Đã xóa yêu cầu Local!', 'info');
+          requestsData = list;
+          renderRequests(document.getElementById('request-search')?.value || '');
+        }
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Xóa yêu cầu duyệt',
+          message: 'Bạn có chắc chắn muốn xóa vĩnh viễn yêu cầu này?',
+          type: 'danger',
+          confirmText: 'Xóa',
+          cancelText: 'Hủy bỏ',
+          onConfirm: doDelete
+        });
+      } else if (confirm('Xóa yêu cầu duyệt này?')) {
+        doDelete();
+      }
+    };
+
+    // Bulk actions
+    async function handleBulkAction(action) {
+      const checkedBoxes = document.querySelectorAll('.request-row-check:checked');
+      const ids = Array.from(checkedBoxes).map(el => el.getAttribute('data-id'));
+      if (ids.length === 0) return;
+
+      const performAction = async () => {
+        if (providerType === 'supabase') {
+          try {
+            const res = await fetch('/api/admin/zalo-action', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids, action })
+            });
+            const result = await res.json();
+            if (res.ok) {
+              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Cập nhật hàng loạt thành công', 'success');
+              
+              if (action === 'delete_bulk') {
+                requestsData = requestsData.filter(x => !ids.includes(x.id));
+              } else {
+                const targetStatus = action === 'approve_bulk' ? 'approved' : 'rejected';
+                requestsData.forEach(x => {
+                  if (ids.includes(x.id)) x.status = targetStatus;
+                });
+              }
+              renderRequests();
+              // Reset checkbox
+              const mainCheck = document.getElementById('check-all-requests');
+              if (mainCheck) mainCheck.checked = false;
+              checkSelection();
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
+            }
+          } catch (e) {
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+          }
+        } else {
+          // Local mode bulk
+          let list = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
+          if (action === 'delete_bulk') {
+            list = list.filter(x => !ids.includes(x.id || x.token));
+          } else {
+            const targetStatus = action === 'approve_bulk' ? 'approved' : 'rejected';
+            list.forEach(x => {
+              if (ids.includes(x.id || x.token)) {
+                x.status = targetStatus;
+                x.updatedAt = new Date().toISOString();
+              }
+            });
+          }
+          localStorage.setItem('txa_zalo_access', JSON.stringify(list));
+          if (window.showGlobalToast) window.showGlobalToast('Đã cập nhật hàng loạt Local!', 'success');
+          requestsData = list;
+          renderRequests();
+          const mainCheck = document.getElementById('check-all-requests');
+          if (mainCheck) mainCheck.checked = false;
+          checkSelection();
+        }
+      };
+
+      if (action === 'delete_bulk') {
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Xóa loạt yêu cầu',
+            message: `Bạn có chắc chắn muốn xóa ${ids.length} yêu cầu đã chọn?`,
+            type: 'danger',
+            confirmText: 'Xóa hàng loạt',
+            cancelText: 'Hủy bỏ',
+            onConfirm: performAction
+          });
+        } else if (confirm(`Xóa ${ids.length} yêu cầu?`)) {
+          performAction();
+        }
+      } else {
+        performAction();
+      }
+    }
+
+    document.getElementById('btn-bulk-approve')?.addEventListener('click', () => handleBulkAction('approve_bulk'));
+    document.getElementById('btn-bulk-reject')?.addEventListener('click', () => handleBulkAction('reject_bulk'));
+    document.getElementById('btn-bulk-delete')?.addEventListener('click', () => handleBulkAction('delete_bulk'));
+
+    // Thay đổi mô tả hướng dẫn Whitelist tùy theo loại
+    document.getElementById('whitelist-type')?.addEventListener('change', function() {
+      const help = document.getElementById('whitelist-help-text');
+      if (!help) return;
+      
+      switch(this.value) {
+        case 'nickname':
+          help.textContent = 'Khớp chính xác biệt danh Zalo tham gia nhóm (Không phân biệt hoa thường).';
+          break;
+        case 'token':
+          help.textContent = 'Khớp chính xác Token trình duyệt dạng txa_... của thiết bị.';
+          break;
+        case 'ip':
+          help.textContent = 'Khớp chính xác địa chỉ IP của thiết bị (hỗ trợ cả IPv4 và IPv6).';
+          break;
+        case 'user':
+          help.textContent = 'Khớp chính xác tài khoản username hoặc email của thành viên rạp phim.';
+          break;
+      }
+    });
+
+    // Thêm mới Whitelist
+    document.getElementById('form-add-whitelist')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const type = document.getElementById('whitelist-type').value;
+      const value = document.getElementById('whitelist-value').value.trim();
+      const description = document.getElementById('whitelist-desc').value.trim();
+
+      if (!value) return;
+
+      if (providerType === 'supabase') {
+        try {
+          const res = await fetch('/api/admin/zalo-bypass', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'create', type, value, description })
+          });
+          const result = await res.json();
+          if (res.ok && result.data && result.data.bypass) {
+            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Đã thêm Whitelist thành công', 'success');
+            whitelistData.unshift(result.data.bypass);
+            renderWhitelist(document.getElementById('whitelist-search')?.value || '');
+            this.reset();
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi thêm whitelist', 'error');
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+        }
+      } else {
+        // Local mode add whitelist
+        const list = JSON.parse(localStorage.getItem('txa_zalo_bypass') || '[]');
+        const newItem = {
+          id: 'bp_' + Math.floor(Math.random() * 100000000),
+          type: type,
+          value: value,
+          description: description || null,
+          createdAt: new Date().toISOString()
+        };
+        list.push(newItem);
+        localStorage.setItem('txa_zalo_bypass', JSON.stringify(list));
+        if (window.showGlobalToast) window.showGlobalToast('Đã thêm Whitelist Local!', 'success');
+        whitelistData = list;
+        renderWhitelist(document.getElementById('whitelist-search')?.value || '');
+        this.reset();
+      }
+    });
+
+    // Xóa Whitelist
+    window.deleteBypass = async function(id) {
+      const doDelete = async () => {
+        if (providerType === 'supabase') {
+          try {
+            const res = await fetch('/api/admin/zalo-bypass', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id, action: 'delete' })
+            });
+            const result = await res.json();
+            if (res.ok) {
+              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Xóa thành công', 'success');
+              whitelistData = whitelistData.filter(x => x.id !== id);
+              renderWhitelist(document.getElementById('whitelist-search')?.value || '');
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
+            }
+          } catch (e) {
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+          }
+        } else {
+          // Local mode delete whitelist
+          let list = JSON.parse(localStorage.getItem('txa_zalo_bypass') || '[]');
+          list = list.filter(x => x.id !== id);
+          localStorage.setItem('txa_zalo_bypass', JSON.stringify(list));
+          if (window.showGlobalToast) window.showGlobalToast('Đã xóa Whitelist Local!', 'info');
+          whitelistData = list;
+          renderWhitelist(document.getElementById('whitelist-search')?.value || '');
+        }
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Xóa Whitelist',
+          message: 'Bạn có chắc chắn muốn xóa đối tượng bypass này khỏi Whitelist?',
+          type: 'danger',
+          confirmText: 'Xóa bypass',
+          cancelText: 'Hủy bỏ',
+          onConfirm: doDelete
+        });
+      } else if (confirm('Xóa đối tượng Whitelist này?')) {
+        doDelete();
+      }
+    };
+
+    // SEARCH INPUTS
+    document.getElementById('request-search')?.addEventListener('input', function() {
+      renderRequests(this.value);
+    });
+    document.getElementById('whitelist-search')?.addEventListener('input', function() {
+      renderWhitelist(this.value);
+    });
+
+    // REFRESH BUTTON
+    document.getElementById('btn-refresh-zalo')?.addEventListener('click', () => {
+      window.location.reload();
+    });
+
+    // ─── CLOUD MIGRATION (SYNC LOCALSTORAGE TO CLOUD) ───
+    const modalSync = document.getElementById('modal-sync');
+    const btnSyncCloud = document.getElementById('btn-sync-cloud');
+    const btnCloseSyncModal = document.getElementById('btn-close-sync-modal');
+    const btnCancelSync = document.getElementById('btn-cancel-sync');
+    const btnConfirmSync = document.getElementById('btn-confirm-sync');
+    const progressBox = document.getElementById('sync-progress-box');
+
+    function openSyncModal() {
+      if (modalSync) {
+        modalSync.classList.remove('hidden');
+        modalSync.classList.add('flex');
+        
+        // Reset progress status text
+        document.getElementById('sync-settings-status').textContent = 'Chờ...';
+        document.getElementById('sync-settings-status').className = 'text-zinc-500';
+        document.getElementById('sync-zalo-status').textContent = 'Chờ...';
+        document.getElementById('sync-zalo-status').className = 'text-zinc-500';
+        document.getElementById('sync-whitelist-status').textContent = 'Chờ...';
+        document.getElementById('sync-whitelist-status').className = 'text-zinc-500';
+        document.getElementById('sync-movies-status').textContent = 'Chờ...';
+        document.getElementById('sync-movies-status').className = 'text-zinc-500';
+        
+        progressBox.classList.add('hidden');
+        btnConfirmSync.disabled = false;
+        btnConfirmSync.innerHTML = '<span class="material-symbols-outlined text-sm">cloud_done</span> Bắt đầu đồng bộ';
+      }
+    }
+
+    function closeSyncModal() {
+      if (modalSync) {
+        modalSync.classList.add('hidden');
+        modalSync.classList.remove('flex');
+      }
+    }
+
+    btnSyncCloud?.addEventListener('click', openSyncModal);
+    btnCloseSyncModal?.addEventListener('click', closeSyncModal);
+    btnCancelSync?.addEventListener('click', closeSyncModal);
+
+    btnConfirmSync?.addEventListener('click', async function() {
+      this.disabled = true;
+      this.innerHTML = '<i class="fas fa-spinner animate-spin"></i> <span>Đang xử lý đồng bộ...</span>';
+      progressBox.classList.remove('hidden');
+
+      // 1. Thu thập dữ liệu từ LocalStorage
+      const localSettings = JSON.parse(localStorage.getItem('txa_site_settings') || '{}');
+      const localZaloAccess = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
+      const localZaloBypass = JSON.parse(localStorage.getItem('txa_zalo_bypass') || '[]');
+      const localMovies = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+
+      // Set status in progress
+      document.getElementById('sync-settings-status').textContent = 'Đang đồng bộ...';
+      document.getElementById('sync-settings-status').className = 'text-blue-400';
+      document.getElementById('sync-zalo-status').textContent = 'Đang đồng bộ...';
+      document.getElementById('sync-zalo-status').className = 'text-blue-400';
+      document.getElementById('sync-whitelist-status').textContent = 'Đang đồng bộ...';
+      document.getElementById('sync-whitelist-status').className = 'text-blue-400';
+      document.getElementById('sync-movies-status').textContent = 'Đang đồng bộ...';
+      document.getElementById('sync-movies-status').className = 'text-blue-400';
+
+      try {
+        // 2. Gửi request POST lên sync API
+        const res = await fetch('/api/admin/sync-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            settings: localSettings,
+            zalo_access: localZaloAccess,
+            zalo_bypass: localZaloBypass,
+            movies: localMovies
+          })
+        });
+
+        const result = await res.json();
+
+        if (res.ok && result.data && result.data.success) {
+          const count = result.data.syncCount;
+          
+          // Settings status
+          document.getElementById('sync-settings-status').textContent = `Thành công (Đã lưu ${count.settings} mục)`;
+          document.getElementById('sync-settings-status').className = 'text-emerald-400 font-bold';
+          
+          // Zalo access status
+          document.getElementById('sync-zalo-status').textContent = `Thành công (Đã lưu ${count.zalo_access} mục)`;
+          document.getElementById('sync-zalo-status').className = 'text-emerald-400 font-bold';
+          
+          // Whitelist status
+          document.getElementById('sync-whitelist-status').textContent = `Thành công (Đã lưu ${count.zalo_bypass} mục)`;
+          document.getElementById('sync-whitelist-status').className = 'text-emerald-400 font-bold';
+          
+          // Movies status
+          document.getElementById('sync-movies-status').textContent = `Thành công (Đã lưu ${count.movies} mục)`;
+          document.getElementById('sync-movies-status').className = 'text-emerald-400 font-bold';
+
+          this.innerHTML = '<span class="material-symbols-outlined text-sm">done_all</span> Hoàn tất!';
+          
+          if (window.showGlobalToast) window.showGlobalToast('Đã đồng bộ cơ sở dữ liệu lên Supabase thành công!', 'success');
+          
+          // Kích hoạt config provider = supabase (nếu chưa lưu)
+          setTimeout(() => {
+            closeSyncModal();
+            window.location.reload();
+          }, 2500);
+
+        } else {
+          throw new Error(result.message || 'Lỗi API đồng bộ');
+        }
+      } catch (err) {
+        console.error('Migration error:', err);
+        
+        document.getElementById('sync-settings-status').textContent = 'Thất bại';
+        document.getElementById('sync-settings-status').className = 'text-rose-500 font-bold';
+        document.getElementById('sync-zalo-status').textContent = 'Thất bại';
+        document.getElementById('sync-zalo-status').className = 'text-rose-500 font-bold';
+        document.getElementById('sync-whitelist-status').textContent = 'Thất bại';
+        document.getElementById('sync-whitelist-status').className = 'text-rose-500 font-bold';
+        document.getElementById('sync-movies-status').textContent = 'Thất bại';
+        document.getElementById('sync-movies-status').className = 'text-rose-500 font-bold';
+
+        this.innerHTML = '<span class="material-symbols-outlined text-sm">gpp_maybe</span> Thử lại';
+        this.disabled = false;
+        
+        if (window.showGlobalToast) window.showGlobalToast(err.message || 'Lỗi xảy ra trong quá trình đồng bộ!', 'error');
+      }
+    });
+
+    // Setup bộ giải mã token thủ công
+    function initTokenDecryptor() {
+      const decryptInput = document.getElementById('decrypt-token-input');
+      const btnDecrypt = document.getElementById('btn-decrypt-token');
+      const resultBox = document.getElementById('decrypt-result-box');
+      const resultDevice = document.getElementById('decrypt-result-device');
+      const resultIpLoc = document.getElementById('decrypt-result-ip-loc');
+      const btnCloseDecrypt = document.getElementById('btn-close-decrypt-result');
+
+      btnDecrypt?.addEventListener('click', () => {
+        const val = decryptInput?.value.trim() || '';
+        if (!val) {
+          if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập mã token cần giải mã!', 'warning');
+          return;
+        }
+
+        let rawToken = val;
+        if (rawToken.startsWith('tk_')) {
+          rawToken = rawToken.substring(3);
+        }
+
+        const decrypted = TxaCipher.decrypt(rawToken, CRYPTO_KEY);
+        if (decrypted.startsWith('Lỗi giải mã') || decrypted === 'Lỗi giải mã') {
+          if (window.showGlobalToast) window.showGlobalToast('Token không hợp lệ hoặc sai định dạng mã hóa!', 'error');
+          if (resultBox) resultBox.classList.add('hidden');
+          return;
+        }
+
+        if (resultBox && resultDevice && resultIpLoc) {
+          resultBox.classList.remove('hidden');
+          
+          const parts = decrypted.split(' - IP: ');
+          if (parts.length >= 2) {
+            resultDevice.textContent = friendlyUserAgent(parts[0]);
+            resultIpLoc.textContent = `IP: ${parts[1]}`;
+          } else {
+            resultDevice.textContent = friendlyUserAgent(decrypted);
+            resultIpLoc.textContent = 'Không trích xuất được địa chỉ IP và vị trí.';
+          }
+          if (window.showGlobalToast) window.showGlobalToast('Giải mã thông tin Token thành công!', 'success');
+        }
+      });
+
+      btnCloseDecrypt?.addEventListener('click', () => {
+        if (resultBox) resultBox.classList.add('hidden');
+        if (decryptInput) decryptInput.value = '';
+      });
+    }
+
+    // Khởi chạy
+    function init() {
+      loadData();
+      renderRequests();
+      renderWhitelist();
+      initTokenDecryptor();
+      
+      // Auto highlight active nav item
+      const navItem = document.getElementById('nav-zalo');
+      if (navItem) {
+        navItem.className = 'flex items-center gap-3 px-4 py-2.5 bg-primary/10 text-primary rounded-lg transition-all duration-200';
+      }
+    }
+
+    init();
+    document.addEventListener('astro:page-load', init);
+  })();
+</script>

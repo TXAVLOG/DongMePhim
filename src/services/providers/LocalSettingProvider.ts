@@ -1,6 +1,6 @@
 import type { ISettingProvider, SiteSettings } from '../../types/settings';
 
-const seedSettings: SiteSettings = {
+export const seedSettings: SiteSettings = {
   general: {
     site_name: "DongMePhim",
     site_url: "https://localhost:4321",

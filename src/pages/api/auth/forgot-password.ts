@@ -8,7 +8,7 @@ export const POST: APIRoute = async ({ request }) => {
     let body: any = {};
     try {
       body = await request.json();
-    } catch (e) {}
+    } catch (e) { }
 
     const { email, name, turnstileToken } = body;
     if (!email) {
@@ -45,16 +45,18 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const year = new Date().getFullYear().toString();
-    const siteUrl = settings.general.site_url || 'https://webfilm.dongmephim.online';
-    const resetLink = `${siteUrl.replace(/\/$/, '')}/auth/reset-password?token=mock_token_${Math.floor(Math.random()*1000000)}`;
+    const siteUrl = settings.general.site_url || 'https://DongMePhim.dongmephim.online';
+    const siteName = settings.general.site_name || 'DongMePhim';
+    const resetLink = `${siteUrl.replace(/\/$/, '')}/auth/reset-password?token=mock_token_${Math.floor(Math.random() * 1000000)}`;
 
     const htmlTemplate = getEmailTemplate('forgot-password.html');
 
     // Compile template
     const compiledHtml = htmlTemplate
-      .replace(/{name}/g, name || 'Thành viên WebFilm')
+      .replace(/{name}/g, name || `Thành viên ${siteName}`)
       .replace(/{email}/g, email)
       .replace(/{reset_link}/g, resetLink)
+      .replace(/{site_name}/g, siteName)
       .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
       .replace(/{year}/g, year);
 
@@ -69,12 +71,12 @@ export const POST: APIRoute = async ({ request }) => {
       time: new Date().toISOString(),
       recipient: email,
       sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
-      subject: 'Khôi phục mật khẩu tài khoản WebFilm',
+      subject: 'Khôi phục mật khẩu tài khoản DongMePhim',
       category: 'Auth Reset',
       status: 'success',
       responseCode: '250 2.0.0 OK Message accepted',
       parameters: {
-        name: name || 'Thành viên WebFilm',
+        name: name || 'Thành viên DongMePhim',
         email: email,
         reset_link: resetLink
       },

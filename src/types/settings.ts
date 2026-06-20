@@ -10,6 +10,9 @@ export interface GeneralSettings {
   maintenance_end_time?: string;
   api_encrypt_enable: boolean;
   api_encrypt_pass?: string;
+  decoy_enable?: boolean;
+  zalo_lock_enable?: boolean;
+  decoy_passcode?: string;
 }
 
 export interface SMTPSettings {

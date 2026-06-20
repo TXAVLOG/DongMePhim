@@ -1,6 +1,6 @@
 import type { IMovieProvider, Movie, MovieDetail } from '../../types/movie';
 
-const seedMovies: Movie[] = [
+export const seedMovies: Movie[] = [
   {
     id: "m1",
     title: "Bài Học Đáng Đời",
@@ -339,7 +339,7 @@ const seedMovies: Movie[] = [
   }
 ];
 
-function mergeStoredEpisodesConfig(movieSlug: string, episodes: any[]): any[] {
+export function mergeStoredEpisodesConfig(movieSlug: string, episodes: any[]): any[] {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
     return episodes.map((server: any) => {
       const srvData = Array.isArray(server.serverData || server.server_data) ? (server.serverData || server.server_data) : [];
@@ -434,7 +434,7 @@ function mergeStoredEpisodesConfig(movieSlug: string, episodes: any[]): any[] {
   });
 }
 
-function mapKKPhimToMovieDetail(data: any): MovieDetail {
+export function mapKKPhimToMovieDetail(data: any): MovieDetail {
   const m = data.movie;
   const cdnDomain = "https://phimimg.com";
   
@@ -523,7 +523,7 @@ function mapKKPhimToMovieDetail(data: any): MovieDetail {
   };
 }
 
-function mapKKPhimSearchItemToMovie(item: any, cdnDomain: string = "https://phimimg.com"): Movie {
+export function mapKKPhimSearchItemToMovie(item: any, cdnDomain: string = "https://phimimg.com"): Movie {
   let posterUrl = item.poster_url || '';
   if (posterUrl && !posterUrl.startsWith('http')) {
     const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, '');

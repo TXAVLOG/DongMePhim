@@ -101,7 +101,7 @@ let activeTab = 'social';
             </div>
           </div>
 
-          <div class="space-y-4 md:col-span-2 pb-4">
+          <div class="space-y-4 md:col-span-2 pb-4 border-b border-glass-stroke/50">
             <div class="flex items-center gap-3">
               <input type="checkbox" id="social-zalo-group-enable" checked={settings.social?.social_zalo_group_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
               <span class="text-sm font-bold">Hiển thị nhóm liên kết Zalo</span>
@@ -110,6 +110,32 @@ let activeTab = 'social';
               <label class="text-xs font-label-caps text-text-dim">Đường dẫn nhóm Zalo</label>
               <input type="url" id="social-zalo-group-url" value={settings.social?.social_zalo_group_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://zalo.me/g/..." />
             </div>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 pt-4">
+            <h4 class="text-sm font-bold text-primary uppercase tracking-wider">Cấu hình Cổng bảo mật 3 lớp (Decoy & Zalo Gate)</h4>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="general-decoy-enable" class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Bật Cổng ngụy trang (Decoy Gate)</span>
+            </div>
+            <p class="text-xs text-text-dim pl-8">Mặc định được bật. Nếu tắt, rạp phim chính sẽ hiển thị trực tiếp và bỏ qua luôn cổng Zalo.</p>
+          </div>
+
+          <div class="space-y-2 md:col-span-2 border-b border-glass-stroke/50 pb-4">
+            <label class="text-xs font-label-caps text-text-dim">Mật mã vượt cổng ngụy trang (Decoy Passcode)</label>
+            <input type="text" id="general-decoy-passcode" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Mặc định: phimtxadinhvai" />
+            <p class="text-xs text-text-dim">Nhấp 5 lần vào Logo ở cổng ngụy trang để kích hoạt hộp thoại nhập mật mã.</p>
+          </div>
+
+          <div class="space-y-4 md:col-span-2 pb-4">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="general-zalo-lock-enable" class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Bật Cổng duyệt Zalo (Zalo Lock)</span>
+            </div>
+            <p class="text-xs text-text-dim pl-8">Mặc định được bật. Yêu cầu thành viên gia nhập nhóm Zalo và gửi Nickname duyệt trước khi vào rạp phim.</p>
           </div>
         </div>
       </div>
@@ -138,6 +164,9 @@ let activeTab = 'social';
         setVal('social-tiktok-url', s.social?.social_tiktok_url);
         setChecked('social-zalo-group-enable', s.social?.social_zalo_group_enable);
         setVal('social-zalo-group-url', s.social?.social_zalo_group_url);
+        setChecked('general-decoy-enable', s.general?.decoy_enable ?? true);
+        setVal('general-decoy-passcode', s.general?.decoy_passcode || 'phimtxadinhvai');
+        setChecked('general-zalo-lock-enable', s.general?.zalo_lock_enable ?? true);
       }
 
       function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
@@ -153,6 +182,12 @@ let activeTab = 'social';
 
         const updatedSettings = {
           ...current,
+          general: {
+            ...current.general,
+            decoy_enable: document.getElementById('general-decoy-enable')?.checked,
+            decoy_passcode: document.getElementById('general-decoy-passcode')?.value || 'phimtxadinhvai',
+            zalo_lock_enable: document.getElementById('general-zalo-lock-enable')?.checked,
+          },
           social: {
             ...current.social,
             social_fb_enable: document.getElementById('social-fb-enable')?.checked || false,

@@ -3,12 +3,25 @@
 // Standalone Cinematic Splash & Landing Portal Page
 import '../styles/index.css';
 import { ClientRouter } from 'astro:transitions';
+import { SettingService } from '../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const decoyEnable = settings.general?.decoy_enable ?? true;
+const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;
 ---
 
 <!DOCTYPE html>
 <html class="dark" lang="vi">
 <head>
     <ClientRouter />
+    <script define:vars={{ decoyEnable, zaloLockEnable }}>
+      (function() {
+        if (decoyEnable === false) {
+          return;
+        }
+        window.location.href = '/tphim';
+      })();
+    </script>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>DongPhim | Trải nghiệm Điện ảnh Đỉnh cao</title>
