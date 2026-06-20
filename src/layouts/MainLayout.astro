@@ -15,6 +15,7 @@ interface Props {
 }
 
 const settings = await SettingService.getSettings();
+const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
 const popularMovies = await MovieService.getMovies({ limit: 12 });
 
 const { 
@@ -87,6 +88,17 @@ const isActive = (path: string) => {
         try {
           const settings = JSON.parse(stored);
           if (!settings || !settings.general) return;
+
+          // Toggle Forgot Password link based on SMTP configuration in localStorage
+          const forgotLinkContainer = document.getElementById('forgot-password-link-container');
+          if (forgotLinkContainer) {
+            const hasSmtp = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
+            if (hasSmtp) {
+              forgotLinkContainer.classList.remove('hidden');
+            } else {
+              forgotLinkContainer.classList.add('hidden');
+            }
+          }
 
           // 1. Maintenance redirect
           const path = window.location.pathname;
@@ -364,11 +376,16 @@ const isActive = (path: string) => {
                         <div class="w-9 h-9 rounded-full bg-surface border-2 border-primary overflow-hidden flex items-center justify-center">
                           <span class="material-symbols-outlined text-primary text-xl">person</span>
                         </div>
-                        <div class="absolute right-0 top-full mt-2 w-48 bg-surface border border-glass-stroke rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col overflow-hidden">
+                        <div class="absolute right-0 top-full mt-2 w-48 bg-zinc-950 border border-glass-stroke rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col overflow-hidden z-50">
+                          <div class="px-4 py-2 border-b border-glass-stroke flex flex-col gap-0.5">
+                            <span id="dropdown-username" class="text-xs font-bold text-white truncate">-</span>
+                            <span id="dropdown-badge" class="text-[9px] font-bold px-1.5 py-0.5 rounded w-max select-none uppercase font-label-caps">-</span>
+                          </div>
                           <a href="/thong-tin" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">account_circle</span> Tài khoản</a>
+                          <a href="/goi-dich-vu" class="px-4 py-3 text-sm text-primary hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2 font-bold"><span class="material-symbols-outlined text-[18px]">card_membership</span> Gói dịch vụ</a>
                           <a href="/lich-su-xem" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">history</span> Lịch sử xem</a>
                           <a href="/admin" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span> Quản trị</a>
-                          <button onclick="logout()" class="px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 text-left"><span class="material-symbols-outlined text-[18px]">logout</span> Đăng xuất</button>
+                          <button onclick="logout()" class="px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[18px]">logout</span> Đăng xuất</button>
                         </div>
                       </div>
                     </div>
@@ -422,164 +439,172 @@ const isActive = (path: string) => {
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- PREMIUM UNIFIED AUTH MODAL (Redesigned Split Layout)            -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <div id="login-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300" style="display:none;">
-      <div class="relative w-full max-w-[850px] mx-4 overflow-hidden rounded-[28px] border border-glass-stroke shadow-[0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#0f172a]/95 animate-[modalZoomIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)] grid grid-cols-1 md:grid-cols-12 min-h-[500px]">
-        
-        <!-- Left Panel: Movie Collage (Hidden on Mobile) -->
-        <div class="col-span-5 hidden md:block relative overflow-hidden bg-[#090d16] border-r border-glass-stroke select-none pointer-events-none">
-          <!-- Poster Grid -->
-          <div class="absolute inset-0 grid grid-cols-3 gap-2.5 p-4 opacity-[0.15] scale-110 rotate-[-6deg] blur-[0.5px]">
-            {popularMovies.map(movie => (
-              <img src={movie.posterUrl} alt="" class="w-full h-28 object-cover rounded-xl border border-white/5 shadow-lg shadow-black/40" />
-            ))}
+    <div id="login-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300 p-4" style="display:none;">
+      <div class="relative w-[92%] sm:w-full max-w-[460px] overflow-hidden rounded-[28px] border border-glass-stroke shadow-[0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#0f172a]/95 animate-[modalZoomIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)] p-8 sm:p-10 flex flex-col justify-center">
+        <!-- Close button -->
+        <button onclick="closeLoginModal()" class="absolute right-5 top-5 text-on-surface-variant hover:text-white hover:rotate-90 transition-all duration-300 z-50 p-2 cursor-pointer bg-transparent border-none">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+
+        <!-- LOGIN TAB CONTENT -->
+        <div id="auth-tab-login" class="space-y-6">
+          <div>
+            <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Đăng nhập</h2>
+            <p class="text-xs text-on-surface-variant mt-2 font-semibold">
+              Nếu bạn chưa có tài khoản, <span onclick="switchAuthTab('register')" class="text-primary hover:underline cursor-pointer font-bold">đăng ký ngay</span>
+            </p>
           </div>
-          <!-- Dark Overlay Gradient -->
-          <div class="absolute inset-0 bg-gradient-to-tr from-[#0b0f19] via-[#0b0f19]/90 to-transparent"></div>
           
-          <!-- Center Branding Content -->
-          <div class="relative z-10 flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
-            <!-- Icon -->
-            <div class="relative flex items-center justify-center w-24 h-24 mb-2">
-              <img src="/logo-icon.gif" alt="Logo" class="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)] animate-pulse" />
+          <form id="login-form" class="space-y-4" novalidate>
+            <div class="space-y-1.5 auth-field">
+              <input type="text" id="login-identity" placeholder="Email hoặc tên đăng nhập..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+              <p class="login-id-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
             </div>
-            <div class="space-y-1">
-              <h3 class="font-display-hero text-2xl font-black text-white tracking-tight uppercase">{settings.general.site_name}</h3>
-              <p class="text-xs text-on-surface-variant font-semibold tracking-wide">Phim hay cả rổ</p>
+
+            <div class="space-y-1.5 auth-field">
+              <div class="relative">
+                <input type="password" id="login-password" placeholder="Mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-12 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <button type="button" id="login-toggle-pass" class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-white transition-colors cursor-pointer bg-transparent border-none">
+                  <span class="material-symbols-outlined text-lg">visibility_off</span>
+                </button>
+              </div>
+              <p class="login-pass-msg text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
             </div>
-          </div>
+
+            <!-- Cloudflare Turnstile Captcha -->
+            {settings.login?.turnstile_enable && (
+              <div id="cf-turnstile-login" class="my-2 flex justify-center" data-sitekey={settings.login.turnstile_site_key}></div>
+            )}
+
+            <button type="submit" id="login-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none">
+              <span>Đăng nhập</span>
+            </button>
+
+            <div id="forgot-password-link-container" class="text-center pt-2 hidden">
+              <span onclick="switchAuthTab('forgot-password')" class="text-xs font-semibold text-primary hover:underline cursor-pointer">Quên mật khẩu?</span>
+            </div>
+
+            {settings.login?.login_google_enable && (
+              <>
+                <div class="relative flex py-2 items-center">
+                  <div class="flex-grow border-t border-white/5"></div>
+                  <span class="flex-shrink mx-4 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">hoặc</span>
+                  <div class="flex-grow border-t border-white/5"></div>
+                </div>
+
+                <!-- Google Login Button -->
+                <button type="button" id="google-client-login-btn" data-clientid={settings.login.login_google_client_id} data-onetap={settings.login.login_google_onetap_enable ? "true" : "false"} class="w-full bg-white hover:bg-zinc-100 text-zinc-800 font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 active:scale-95 cursor-pointer border-none shadow-md">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                  </svg>
+                  <span class="text-xs">Đăng nhập bằng Google</span>
+                </button>
+              </>
+            )}
+          </form>
         </div>
 
-        <!-- Right Panel: Forms -->
-        <div class="col-span-12 md:col-span-7 p-8 sm:p-10 flex flex-col justify-center relative bg-[#0f172a]/95">
-          <!-- Close button -->
-          <button onclick="closeLoginModal()" class="absolute right-5 top-5 text-on-surface-variant hover:text-white hover:rotate-90 transition-all duration-300 z-50 p-2 cursor-pointer bg-transparent border-none">
-            <span class="material-symbols-outlined text-xl">close</span>
+        <!-- REGISTER TAB CONTENT -->
+        <div id="auth-tab-register" class="space-y-6 hidden">
+          <div>
+            <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Đăng ký</h2>
+            <p class="text-xs text-on-surface-variant mt-2 font-semibold">
+              Nếu bạn đã có tài khoản, <span onclick="switchAuthTab('login')" class="text-primary hover:underline cursor-pointer font-bold">đăng nhập ngay</span>
+            </p>
+          </div>
+          
+          <form id="register-form" class="space-y-4" novalidate>
+            <div class="space-y-1.5 auth-field">
+              <input type="text" id="reg-username" name="username" placeholder="Tên tài khoản..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+              <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="username"></p>
+            </div>
+
+            <div class="space-y-1.5 auth-field">
+              <input type="email" id="reg-email" name="email" placeholder="Địa chỉ Email..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+              <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="email"></p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="space-y-1.5 auth-field">
+                <input type="password" id="reg-password" name="password" placeholder="Mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="password"></p>
+              </div>
+              <div class="space-y-1.5 auth-field">
+                <input type="password" id="reg-confirm" name="confirmPassword" placeholder="Xác nhận mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="confirmPassword"></p>
+              </div>
+            </div>
+
+            <!-- Cloudflare Turnstile Captcha -->
+            {settings.login?.turnstile_enable && (
+              <div id="cf-turnstile-register" class="my-2 flex justify-center" data-sitekey={settings.login.turnstile_site_key}></div>
+            )}
+
+            <label class="flex items-start gap-2.5 cursor-pointer group pt-1">
+              <div class="relative flex items-center justify-center shrink-0 mt-0.5">
+                <input type="checkbox" id="reg-terms" class="peer sr-only" required />
+                <div class="h-4 w-4 rounded-md border border-glass-stroke bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary font-bold"></div>
+                <span class="material-symbols-outlined absolute text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+              </div>
+              <span class="text-[10px] leading-snug font-semibold text-on-surface-variant group-hover:text-white select-none transition-colors">
+                Tôi đồng ý với <a href="/terms" target="_blank" class="text-primary hover:underline font-bold">Điều khoản</a> và <a href="/privacy" target="_blank" class="text-primary hover:underline font-bold">Chính sách bảo mật</a>.
+              </span>
+            </label>
+
+            <button type="submit" id="reg-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none">
+              <span>Đăng ký tài khoản</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- FORGOT PASSWORD TAB CONTENT -->
+        {isSmtpConfigured && (
+          <div id="auth-tab-forgot-password" class="space-y-6 hidden">
+            <div>
+              <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Khôi phục mật khẩu</h2>
+              <p class="text-xs text-on-surface-variant mt-2 font-semibold">
+                Nhập email để nhận liên kết khôi phục, hoặc <span onclick="switchAuthTab('login')" class="text-primary hover:underline cursor-pointer font-bold">quay lại đăng nhập</span>
+              </p>
+            </div>
+
+            <form id="forgot-password-form" class="space-y-4" novalidate>
+              <div class="space-y-1.5 auth-field">
+                <input type="email" id="forgot-email" name="email" placeholder="Nhập địa chỉ Email..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+                <p class="forgot-email-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
+              </div>
+
+              <!-- Cloudflare Turnstile Captcha -->
+              {settings.login?.turnstile_enable && (
+                <div id="cf-turnstile-forgot" class="my-2 flex justify-center" data-sitekey={settings.login.turnstile_site_key}></div>
+              )}
+
+              <button type="submit" id="forgot-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none">
+                <span>Gửi yêu cầu phục hồi</span>
+              </button>
+            </form>
+          </div>
+        )}
+
+      </div>
+    </div>
+
+    <!-- Global Modal Container -->
+    <div id="txa-global-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4 transition-all duration-300 opacity-0">
+      <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 shadow-2xl max-w-md w-full transform scale-95 transition-all duration-300 flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-2 border-b border-white/5">
+          <h3 id="txa-modal-title" class="text-lg font-semibold text-white">Xác nhận</h3>
+          <button id="txa-modal-close" class="text-zinc-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer">
+            <span class="material-symbols-outlined">close</span>
           </button>
-
-          <!-- LOGIN TAB CONTENT -->
-          <div id="auth-tab-login" class="space-y-6">
-            <div>
-              <h2 class="text-2xl font-black text-white tracking-tight">Đăng nhập</h2>
-              <p class="text-xs text-on-surface-variant mt-2 font-semibold">
-                Nếu bạn chưa có tài khoản, <span onclick="switchAuthTab('register')" class="text-primary hover:underline cursor-pointer font-bold">đăng ký ngay</span>
-              </p>
-            </div>
-            
-            <form id="login-form" class="space-y-4" novalidate>
-              <div class="space-y-1.5 auth-field">
-                <input type="text" id="login-identity" placeholder="Email hoặc tên đăng nhập..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-                <p class="login-id-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
-              </div>
-
-              <div class="space-y-1.5 auth-field">
-                <div class="relative">
-                  <input type="password" id="login-password" placeholder="Mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-12 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-                  <button type="button" id="login-toggle-pass" class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-white transition-colors cursor-pointer bg-transparent border-none">
-                    <span class="material-symbols-outlined text-lg">visibility_off</span>
-                  </button>
-                </div>
-                <p class="login-pass-msg text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
-              </div>
-
-              <!-- Turnstile Captcha Decoy Widget -->
-              <div class="turnstile-decoy border border-white/10 bg-[#1e293b]/40 rounded-xl p-3 flex items-center justify-between text-xs select-none mt-2">
-                <div class="flex items-center gap-3">
-                  <div class="turnstile-status-icon flex items-center justify-center w-5 h-5">
-                    <span class="material-symbols-outlined text-emerald-400 text-[18px] hidden turnstile-check">check_circle</span>
-                    <span class="material-symbols-outlined text-primary text-[18px] animate-spin turnstile-spinner">progress_activity</span>
-                  </div>
-                  <span class="turnstile-text text-zinc-300 font-bold">Đang xác minh...</span>
-                </div>
-                <div class="flex flex-col items-end opacity-60">
-                  <div class="flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
-                    </svg>
-                    <span class="text-[9px] font-bold text-white tracking-wider">CLOUDFLARE</span>
-                  </div>
-                  <div class="flex items-center gap-1.5 mt-0.5 text-[8px] text-zinc-400">
-                    <a href="#" class="hover:underline">Quyền riêng tư</a>
-                    <span>•</span>
-                    <a href="#" class="hover:underline">Giúp đỡ</a>
-                  </div>
-                </div>
-              </div>
-
-              <button type="submit" id="login-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none">
-                <span>Đăng nhập</span>
-              </button>
-
-              <div class="text-center pt-2">
-                <span class="text-xs font-semibold text-primary hover:underline cursor-pointer">Quên mật khẩu?</span>
-              </div>
-
-              <div class="relative flex py-2 items-center">
-                <div class="flex-grow border-t border-white/5"></div>
-                <span class="flex-shrink mx-4 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">hoặc</span>
-                <div class="flex-grow border-t border-white/5"></div>
-              </div>
-
-              <!-- Google Login Button -->
-              <button type="button" class="w-full bg-white hover:bg-zinc-100 text-zinc-800 font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 active:scale-95 cursor-pointer border-none shadow-md">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-                <span class="text-xs">Đăng nhập bằng Google</span>
-              </button>
-            </form>
-          </div>
-
-          <!-- REGISTER TAB CONTENT -->
-          <div id="auth-tab-register" class="space-y-6 hidden">
-            <div>
-              <h2 class="text-2xl font-black text-white tracking-tight">Đăng ký</h2>
-              <p class="text-xs text-on-surface-variant mt-2 font-semibold">
-                Nếu bạn đã có tài khoản, <span onclick="switchAuthTab('login')" class="text-primary hover:underline cursor-pointer font-bold">đăng nhập ngay</span>
-              </p>
-            </div>
-            
-            <form id="register-form" class="space-y-4" novalidate>
-              <div class="space-y-1.5 auth-field">
-                <input type="text" id="reg-username" name="username" placeholder="Tên tài khoản..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-                <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="username"></p>
-              </div>
-
-              <div class="space-y-1.5 auth-field">
-                <input type="email" id="reg-email" name="email" placeholder="Địa chỉ Email..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-                <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="email"></p>
-              </div>
-
-              <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1.5 auth-field">
-                  <input type="password" id="reg-password" name="password" placeholder="Mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-                  <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="password"></p>
-                </div>
-                <div class="space-y-1.5 auth-field">
-                  <input type="password" id="reg-confirm" name="confirmPassword" placeholder="Xác nhận mật khẩu..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
-                  <p class="reg-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity" data-field="confirmPassword"></p>
-                </div>
-              </div>
-
-              <label class="flex items-start gap-2.5 cursor-pointer group pt-1">
-                <div class="relative flex items-center justify-center shrink-0 mt-0.5">
-                  <input type="checkbox" id="reg-terms" class="peer sr-only" required />
-                  <div class="h-4 w-4 rounded-md border border-glass-stroke bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary font-bold"></div>
-                  <span class="material-symbols-outlined absolute text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
-                </div>
-                <span class="text-[10px] leading-snug font-semibold text-on-surface-variant group-hover:text-white select-none transition-colors">
-                  Tôi đồng ý với <a href="/terms" target="_blank" class="text-primary hover:underline font-bold">Điều khoản</a> và <a href="/privacy" target="_blank" class="text-primary hover:underline font-bold">Chính sách bảo mật</a>.
-                </span>
-              </label>
-
-              <button type="submit" id="reg-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-4 active:scale-95 cursor-pointer text-xs border-none">
-                <span>Đăng ký tài khoản</span>
-              </button>
-            </form>
-          </div>
-
+        </div>
+        <div id="txa-modal-body" class="text-sm text-zinc-300 font-body-main py-2">
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button id="txa-modal-cancel" class="px-4 py-2 rounded-xl text-xs font-semibold bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 transition-all hidden">Hủy</button>
+          <button id="txa-modal-confirm" class="px-4 py-2 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-white transition-all border-none cursor-pointer">Xác nhận</button>
         </div>
       </div>
     </div>
@@ -691,7 +716,6 @@ const isActive = (path: string) => {
     </style>
 
     <script is:inline>
-
       // ══════════════════════════════════════════════════════════════
       // Auth State Manager
       // ══════════════════════════════════════════════════════════════
@@ -703,16 +727,552 @@ const isActive = (path: string) => {
         if (isLoggedIn) {
           guestViews.forEach(el => el.classList.add('hidden'));
           userViews.forEach(el => el.classList.remove('hidden'));
+
+          // Check VIP expiry
+          if (typeof localStorage !== 'undefined') {
+            const username = localStorage.getItem('tlogged_in_as');
+            if (username) {
+              let isVIP = false;
+              let userInDb = null;
+              
+              // 1. Look up user in tregistered_users
+              const usersStr = localStorage.getItem('tregistered_users');
+              if (usersStr) {
+                try {
+                  const users = JSON.parse(usersStr);
+                  userInDb = users.find(u => u.username === username || u.email === username);
+                } catch(e) {}
+              }
+
+              // 2. Check VIP package in registered database
+              if (userInDb && userInDb.package && userInDb.package.includes('VIP')) {
+                const expiryStr = userInDb.expiryDate;
+                if (expiryStr) {
+                  const expiry = new Date(expiryStr);
+                  const now = new Date();
+                  if (now > expiry) {
+                    // Expired in database
+                    userInDb.package = 'Free';
+                    userInDb.status = 'standard';
+                    localStorage.setItem('tregistered_users', JSON.stringify(JSON.parse(usersStr).map(u => (u.username === username || u.email === username) ? userInDb : u)));
+                    localStorage.removeItem('txa_user_subscription');
+                    if (window.showGlobalToast) {
+                      window.showGlobalToast('Gói đăng ký VIP của bạn đã hết hạn. Tài khoản được chuyển về gói Miễn phí.', 'info', 5000);
+                    }
+                  } else {
+                    isVIP = true;
+                    // Sync with txa_user_subscription
+                    localStorage.setItem('txa_user_subscription', JSON.stringify({
+                      username: username,
+                      tier: userInDb.package,
+                      status: 'active',
+                      expiry: expiry.toISOString()
+                    }));
+                  }
+                } else {
+                  isVIP = true; // No expiry means lifetime VIP
+                }
+              } else {
+                // 3. Fallback check txa_user_subscription key directly
+                const subStr = localStorage.getItem('txa_user_subscription');
+                if (subStr) {
+                  try {
+                    const sub = JSON.parse(subStr);
+                    const expiryStr = sub.expiresAt || sub.expiry;
+                    if (expiryStr) {
+                      const expiry = new Date(expiryStr);
+                      const now = new Date();
+                      if (now > expiry) {
+                        localStorage.removeItem('txa_user_subscription');
+                        if (window.showGlobalToast) {
+                          window.showGlobalToast('Gói đăng ký VIP của bạn đã hết hạn. Tài khoản được chuyển về gói Miễn phí.', 'info', 5000);
+                        }
+                      } else {
+                        isVIP = true;
+                      }
+                    } else if (sub.status === 'active' || (sub.tier && sub.tier.includes('VIP'))) {
+                      isVIP = true;
+                    }
+                  } catch (e) {
+                    console.error('Error parsing user sub:', e);
+                  }
+                }
+              }
+
+              // Update profile dropdown values
+              const userEl = document.getElementById('dropdown-username');
+              const badgeEl = document.getElementById('dropdown-badge');
+              if (userEl) userEl.textContent = username;
+              if (badgeEl) {
+                if (isVIP) {
+                  badgeEl.textContent = 'VIP MEMBER';
+                  badgeEl.className = 'text-[9px] font-black px-1.5 py-0.5 rounded w-max select-none bg-gradient-to-r from-violet-600 to-cyan-500 text-white uppercase font-label-caps';
+                } else {
+                  badgeEl.textContent = 'Cơ Bản';
+                  badgeEl.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded w-max select-none bg-zinc-800 text-zinc-400 uppercase font-label-caps';
+                }
+              }
+            }
+          }
         } else {
           guestViews.forEach(el => el.classList.remove('hidden'));
           userViews.forEach(el => el.classList.add('hidden'));
         }
       }
 
+      // Global Modal Controller
+      window.txamodal = {
+        show: (options) => {
+          const modal = document.getElementById('txa-global-modal');
+          if (!modal) return;
+          const modalBox = modal.querySelector('div');
+          const titleEl = document.getElementById('txa-modal-title');
+          const bodyEl = document.getElementById('txa-modal-body');
+          const confirmBtn = document.getElementById('txa-modal-confirm');
+          const cancelBtn = document.getElementById('txa-modal-cancel');
+          const closeBtn = document.getElementById('txa-modal-close');
+
+          titleEl.innerHTML = options.title || 'Thông báo';
+          
+          if (options.content instanceof HTMLElement) {
+            bodyEl.innerHTML = '';
+            bodyEl.appendChild(options.content);
+          } else {
+            bodyEl.innerHTML = options.message || options.content || '';
+          }
+          
+          confirmBtn.textContent = options.confirmText || 'Xác nhận';
+          if (options.cancelText) {
+            cancelBtn.textContent = options.cancelText;
+            cancelBtn.classList.remove('hidden');
+          } else {
+            cancelBtn.classList.add('hidden');
+          }
+
+          if (options.type === 'danger' || options.type === 'error') {
+            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all border-none cursor-pointer';
+          } else {
+            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all border-none cursor-pointer';
+          }
+
+          const closeModal = () => {
+            modal.classList.add('opacity-0');
+            modalBox.classList.add('scale-95');
+            setTimeout(() => {
+              modal.classList.add('hidden');
+              modal.classList.remove('flex');
+            }, 200);
+            document.body.style.overflow = '';
+          };
+
+          confirmBtn.onclick = () => {
+            closeModal();
+            if (typeof options.onConfirm === 'function') options.onConfirm();
+          };
+
+          cancelBtn.onclick = () => {
+            closeModal();
+            if (typeof options.onCancel === 'function') options.onCancel();
+          };
+
+          closeBtn.onclick = closeModal;
+          modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+          };
+
+          document.body.style.overflow = 'hidden';
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalBox.classList.remove('scale-95');
+          }, 10);
+        }
+      };
+
+      // ─── CLOUDFLARE TURNSTILE INTEGRATION ───
+      let turnstileScriptLoaded = false;
+      let turnstileLoginWidgetId = null;
+      let turnstileRegisterWidgetId = null;
+      let turnstileForgotWidgetId = null;
+
+      function initTurnstile() {
+        const loginEl = document.getElementById('cf-turnstile-login');
+        const registerEl = document.getElementById('cf-turnstile-register');
+        const forgotEl = document.getElementById('cf-turnstile-forgot');
+        if (!loginEl && !registerEl && !forgotEl) return;
+
+        if (turnstileScriptLoaded) {
+          renderTurnstileWidgets();
+          return;
+        }
+
+        window.onloadTurnstileCallback = function() {
+          turnstileScriptLoaded = true;
+          renderTurnstileWidgets();
+        };
+
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback&render=explicit';
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+
+      function renderTurnstileWidgets() {
+        if (typeof turnstile === 'undefined') return;
+        
+        const loginEl = document.getElementById('cf-turnstile-login');
+        if (loginEl && loginEl.innerHTML === '') {
+          const sitekey = loginEl.dataset.sitekey;
+          if (sitekey) {
+            turnstileLoginWidgetId = turnstile.render('#cf-turnstile-login', {
+              sitekey: sitekey,
+              theme: 'dark',
+              callback: function(token) {
+                window.txaTurnstileTokenLogin = token;
+              }
+            });
+          }
+        }
+
+        const registerEl = document.getElementById('cf-turnstile-register');
+        if (registerEl && registerEl.innerHTML === '') {
+          const sitekey = registerEl.dataset.sitekey;
+          if (sitekey) {
+            turnstileRegisterWidgetId = turnstile.render('#cf-turnstile-register', {
+              sitekey: sitekey,
+              theme: 'dark',
+              callback: function(token) {
+                window.txaTurnstileTokenRegister = token;
+              }
+            });
+          }
+        }
+
+        const forgotEl = document.getElementById('cf-turnstile-forgot');
+        if (forgotEl && forgotEl.innerHTML === '') {
+          const sitekey = forgotEl.dataset.sitekey;
+          if (sitekey) {
+            turnstileForgotWidgetId = turnstile.render('#cf-turnstile-forgot', {
+              sitekey: sitekey,
+              theme: 'dark',
+              callback: function(token) {
+                window.txaTurnstileTokenForgot = token;
+              }
+            });
+          }
+        }
+      }
+
+      function resetTurnstileWidgets() {
+        if (typeof turnstile === 'undefined') return;
+        window.txaTurnstileTokenLogin = null;
+        window.txaTurnstileTokenRegister = null;
+        window.txaTurnstileTokenForgot = null;
+        if (turnstileLoginWidgetId !== null) {
+          try { turnstile.reset(turnstileLoginWidgetId); } catch(e) {}
+        }
+        if (turnstileRegisterWidgetId !== null) {
+          try { turnstile.reset(turnstileRegisterWidgetId); } catch(e) {}
+        }
+        if (turnstileForgotWidgetId !== null) {
+          try { turnstile.reset(turnstileForgotWidgetId); } catch(e) {}
+        }
+      }
+
+      // ─── GOOGLE CLIENT LOGIN (TOKEN CLIENT) ───
+      let googleGsiLoaded = false;
+      let tokenClient = null;
+
+      function initGoogleClientLogin() {
+        const btn = document.getElementById('google-client-login-btn');
+        if (!btn) return;
+        const clientId = btn.dataset.clientid;
+        if (!clientId) return;
+
+        if (googleGsiLoaded) return;
+
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          googleGsiLoaded = true;
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+            callback: (tokenResponse) => {
+              if (tokenResponse && tokenResponse.access_token) {
+                fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                })
+                .then(res => res.json())
+                .then(profile => {
+                  handleOAuthSuccess({
+                    id: profile.sub,
+                    name: profile.name,
+                    email: profile.email,
+                    avatar: profile.picture,
+                    provider: 'Google'
+                  });
+                })
+                .catch(err => {
+                  console.error(err);
+                  if (window.showGlobalToast) window.showGlobalToast('Không thể lấy thông tin profile Google', 'error');
+                });
+              }
+            }
+          });
+        };
+        document.head.appendChild(script);
+      }
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#google-client-login-btn');
+        if (btn) {
+          if (tokenClient) {
+            tokenClient.requestAccessToken();
+          } else {
+            initGoogleClientLogin();
+            let checks = 0;
+            const interval = setInterval(() => {
+              checks++;
+              if (tokenClient) {
+                clearInterval(interval);
+                tokenClient.requestAccessToken();
+              } else if (checks > 20) {
+                clearInterval(interval);
+              }
+            }, 100);
+          }
+        }
+      });
+
+      // ─── GOOGLE ONE-TAP FOR CLIENT ───
+      function initGoogleOneTap() {
+        const isLoggedIn = document.cookie.includes('txa_gate_passed');
+        if (isLoggedIn) return;
+
+        const btn = document.getElementById('google-client-login-btn');
+        if (!btn) return;
+        const clientId = btn.dataset.clientid;
+        const isOneTapEnabled = btn.dataset.onetap === 'true';
+        if (!clientId || !isOneTapEnabled) return;
+
+        const loadOneTap = () => {
+          if (typeof google === 'undefined') return;
+          google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (response) => {
+              fetch('/api/auth/google-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential })
+              })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success && data.user) {
+                  handleOAuthSuccess({
+                    id: data.user.sub,
+                    name: data.user.name,
+                    email: data.user.email,
+                    avatar: data.user.picture,
+                    provider: 'Google'
+                  });
+                }
+              });
+            }
+          });
+          google.accounts.id.prompt();
+        };
+
+        if (typeof google !== 'undefined') {
+          loadOneTap();
+        } else {
+          const script = document.createElement('script');
+          script.src = 'https://accounts.google.com/gsi/client';
+          script.async = true;
+          script.defer = true;
+          script.onload = loadOneTap;
+          document.head.appendChild(script);
+        }
+      }
+
+      // ─── OAUTH CALLBACK RESPONSE LISTENER ───
+      window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'txa-oauth-callback-response') {
+          const { success, error, profile } = event.data;
+          if (success && profile) {
+            handleOAuthSuccess(profile);
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(error || 'Đăng nhập OAuth thất bại!', 'error');
+          }
+        }
+      });
+
+      // ─── OAUTH SUCCESS & NEW USER ADDR PICKER ───
+      function handleOAuthSuccess(profile) {
+        const username = profile.email || profile.id;
+        const usersStr = localStorage.getItem('tregistered_users') || '[]';
+        let users = [];
+        try { users = JSON.parse(usersStr); } catch (e) {}
+
+        const userExists = users.some(u => u.username === username || u.email === username);
+        
+        const performLogin = (addressInfo = null) => {
+          if (!userExists) {
+            users.push({
+              username: username,
+              email: profile.email || '',
+              createdAt: new Date().toISOString(),
+              avatar: profile.avatar || '',
+              provider: profile.provider,
+              address: addressInfo,
+              package: 'Free',
+              status: 'active'
+            });
+            localStorage.setItem('tregistered_users', JSON.stringify(users));
+          }
+
+          document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
+          localStorage.setItem('tlogged_in_as', username);
+          localStorage.removeItem('thistory');
+          
+          if (window.showGlobalToast) window.showGlobalToast(`Chào mừng ${profile.name}! Đăng nhập thành công.`, 'success');
+          
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        };
+
+        if (!userExists) {
+          const container = document.createElement('div');
+          container.className = 'space-y-4';
+          container.innerHTML = `
+            <p class="text-xs text-zinc-400">Chào mừng thành viên mới! Vui lòng bổ sung thông tin địa chỉ để hoàn tất:</p>
+            <div class="space-y-3">
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Tỉnh / Thành phố</label>
+                <select id="addr-province" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-primary">
+                  <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                  <option value="Hà Nội">Hà Nội</option>
+                  <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
+                  <option value="Đà Nẵng">Đà Nẵng</option>
+                  <option value="Hải Phòng">Hải Phòng</option>
+                  <option value="Cần Thơ">Cần Thơ</option>
+                </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Quận / Huyện</label>
+                <select id="addr-district" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-primary" disabled>
+                  <option value="">-- Chọn Quận / Huyện --</option>
+                </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Xã / Phường / Thị trấn</label>
+                <select id="addr-ward" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-primary" disabled>
+                  <option value="">-- Chọn Xã / Phường --</option>
+                </select>
+              </div>
+            </div>
+          `;
+
+          const districts = {
+            'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Đống Đa', 'Cầu Giấy', 'Hai Bà Trưng'],
+            'Hồ Chí Minh': ['Quận 1', 'Quận 3', 'Quận 7', 'Bình Thạnh', 'Thủ Đức'],
+            'Đà Nẵng': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn'],
+            'Hải Phòng': ['Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Hải An'],
+            'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng', 'Ô Môn']
+          };
+
+          const wards = {
+            'Ba Đình': ['Trúc Bạch', 'Vĩnh Phúc', 'Cống Vị', 'Liễu Giai'],
+            'Hoàn Kiếm': ['Hàng Bạc', 'Hàng Đào', 'Tràng Tiền', 'Lý Thái Tổ'],
+            'Quận 1': ['Bến Nghé', 'Bến Thành', 'Đa Kao', 'Tân Định'],
+            'Quận 3': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4'],
+            'Hải Châu': ['Hải Châu I', 'Hải Châu II', 'Thạch Thang', 'Thuận Phước']
+          };
+
+          setTimeout(() => {
+            const provSel = document.getElementById('addr-province');
+            const distSel = document.getElementById('addr-district');
+            const wardSel = document.getElementById('addr-ward');
+
+            if (provSel && distSel && wardSel) {
+              provSel.addEventListener('change', () => {
+                const prov = provSel.value;
+                distSel.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+                wardSel.innerHTML = '<option value="">-- Chọn Xã / Phường --</option>';
+                wardSel.disabled = true;
+                
+                if (prov && districts[prov]) {
+                  districts[prov].forEach(d => {
+                    distSel.innerHTML += `<option value="${d}">${d}</option>`;
+                  });
+                  distSel.disabled = false;
+                } else {
+                  distSel.disabled = true;
+                }
+              });
+
+              distSel.addEventListener('change', () => {
+                const dist = distSel.value;
+                wardSel.innerHTML = '<option value="">-- Chọn Xã / Phường --</option>';
+                
+                if (dist && wards[dist]) {
+                  wards[dist].forEach(w => {
+                    wardSel.innerHTML += `<option value="${w}">${w}</option>`;
+                  });
+                  wardSel.disabled = false;
+                } else if (dist) {
+                  ['Phường A', 'Phường B', 'Xã C', 'Xã D'].forEach(w => {
+                    wardSel.innerHTML += `<option value="${w}">${w}</option>`;
+                  });
+                  wardSel.disabled = false;
+                } else {
+                  wardSel.disabled = true;
+                }
+              });
+            }
+          }, 50);
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Bổ sung địa chỉ đăng ký',
+              content: container,
+              confirmText: 'Hoàn tất',
+              cancelText: 'Bỏ qua',
+              onConfirm: () => {
+                const prov = document.getElementById('addr-province')?.value;
+                const dist = document.getElementById('addr-district')?.value;
+                const ward = document.getElementById('addr-ward')?.value;
+                
+                const addressInfo = (prov && dist && ward) ? { province: prov, district: dist, ward: ward } : null;
+                performLogin(addressInfo);
+              },
+              onCancel: () => {
+                performLogin(null);
+              }
+            });
+          } else {
+            performLogin(null);
+          }
+        } else {
+          performLogin(null);
+        }
+      }
+
       updateAuthState();
       window.addEventListener('auth-changed', updateAuthState);
-      document.addEventListener('astro:after-swap', updateAuthState);
-      document.addEventListener('astro:page-load', updateAuthState);
+      document.addEventListener('astro:after-swap', () => {
+        updateAuthState();
+        initGoogleOneTap();
+      });
+      document.addEventListener('astro:page-load', () => {
+        updateAuthState();
+        initGoogleOneTap();
+      });
 
       window.logout = function() {
         document.cookie = "txa_gate_passed=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -1148,13 +1708,18 @@ const isActive = (path: string) => {
       function switchAuthTab(tab) {
         const loginTab = document.getElementById('auth-tab-login');
         const registerTab = document.getElementById('auth-tab-register');
+        const forgotTab = document.getElementById('auth-tab-forgot-password');
+
+        loginTab?.classList.add('hidden');
+        registerTab?.classList.add('hidden');
+        forgotTab?.classList.add('hidden');
 
         if (tab === 'login') {
           loginTab?.classList.remove('hidden');
-          registerTab?.classList.add('hidden');
-        } else {
-          loginTab?.classList.add('hidden');
+        } else if (tab === 'register') {
           registerTab?.classList.remove('hidden');
+        } else if (tab === 'forgot-password') {
+          forgotTab?.classList.remove('hidden');
         }
         
         // Restart simulated Cloudflare Turnstile decoy verification
@@ -1168,6 +1733,8 @@ const isActive = (path: string) => {
           m.classList.remove('hidden');
           document.body.style.overflow = 'hidden';
           switchAuthTab('login');
+          initTurnstile();
+          resetTurnstileWidgets();
         }
       }
 
@@ -1178,6 +1745,8 @@ const isActive = (path: string) => {
           m.classList.remove('hidden');
           document.body.style.overflow = 'hidden';
           switchAuthTab('register');
+          initTurnstile();
+          resetTurnstileWidgets();
         }
       }
 
@@ -1274,10 +1843,11 @@ const isActive = (path: string) => {
             }
 
             try {
+              const token = window.txaTurnstileTokenLogin || '';
               const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identity, password })
+                body: JSON.stringify({ identity, password, turnstileToken: token })
               });
               const data = await res.json();
               if (res.ok) {
@@ -1309,6 +1879,7 @@ const isActive = (path: string) => {
                 }
               } else {
                 showGlobalToast(data.message || data.error || 'Sai thông tin tài khoản!', 'error');
+                resetTurnstileWidgets();
               }
             } catch (err) {
               showGlobalToast('Lỗi kết nối!', 'error');
@@ -1384,11 +1955,13 @@ const isActive = (path: string) => {
             }
 
             try {
+              const token = window.txaTurnstileTokenRegister || '';
               const body = {
                 username: document.getElementById('reg-username')?.value.trim(),
                 email: document.getElementById('reg-email')?.value.trim(),
                 password: document.getElementById('reg-password')?.value,
-                confirmPassword: document.getElementById('reg-confirm')?.value
+                confirmPassword: document.getElementById('reg-confirm')?.value,
+                turnstileToken: token
               };
               const res = await fetch('/api/auth/register', {
                 method: 'POST',
@@ -1414,6 +1987,7 @@ const isActive = (path: string) => {
                 switchAuthTab('login');
               } else {
                 showGlobalToast(data.message || data.error || 'Đăng ký thất bại!', 'error');
+                resetTurnstileWidgets();
               }
             } catch (err) {
               showGlobalToast('Lỗi hệ thống!', 'error');
@@ -1421,6 +1995,85 @@ const isActive = (path: string) => {
               if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<span>Đăng ký tài khoản</span><span class="material-symbols-outlined text-[14px]">rocket_launch</span>';
+              }
+            }
+          });
+        }
+
+        // Forgot Password Submit
+        const forgotForm = document.getElementById('forgot-password-form');
+        const forgotEmail = document.getElementById('forgot-email');
+
+        if (forgotEmail) {
+          forgotEmail.addEventListener('input', function() {
+            const parent = this.closest('.auth-field');
+            const msgEl = parent ? parent.querySelector('.forgot-email-error') : null;
+            const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value.trim());
+            this.style.borderColor = isValid ? 'rgba(16, 185, 129, 0.4)' : (this.value.trim().length > 0 ? 'rgba(239, 68, 68, 0.4)' : '');
+            if (msgEl) {
+              msgEl.textContent = isValid ? '' : 'Định dạng email không hợp lệ';
+              msgEl.style.opacity = isValid ? '0' : '1';
+            }
+          });
+        }
+
+        if (forgotForm) {
+          forgotForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const emailVal = forgotEmail?.value.trim() || '';
+            const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
+
+            if (!isValid) {
+              showGlobalToast('Vui lòng nhập địa chỉ email hợp lệ!', 'error');
+              return;
+            }
+
+            const submitBtn = document.getElementById('forgot-submit');
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span><span>Đang gửi...</span>';
+            }
+
+            try {
+              let userName = 'DongMePhim User';
+              try {
+                const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+                const matchedUser = users.find(u => u.email === emailVal || u.username === emailVal);
+                if (matchedUser) {
+                  userName = matchedUser.username;
+                }
+              } catch (e) {}
+
+              const token = window.txaTurnstileTokenForgot || '';
+              const res = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: emailVal, name: userName, turnstileToken: token })
+              });
+              const data = await res.json();
+              if (res.ok) {
+                showGlobalToast(data.message || 'Yêu cầu phục hồi mật khẩu thành công!', 'success');
+                
+                // Record email log
+                if (data.emailLog) {
+                  try {
+                    const logs = JSON.parse(localStorage.getItem('txa_email_logs') || '[]');
+                    logs.unshift(data.emailLog);
+                    localStorage.setItem('txa_email_logs', JSON.stringify(logs));
+                  } catch (e) {}
+                }
+
+                switchAuthTab('login');
+              } else {
+                showGlobalToast(data.message || data.error || 'Yêu cầu thất bại!', 'error');
+                resetTurnstileWidgets();
+              }
+            } catch (err) {
+              showGlobalToast('Lỗi hệ thống!', 'error');
+            } finally {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Gửi yêu cầu phục hồi</span>';
               }
             }
           });

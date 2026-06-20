@@ -130,6 +130,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Certificate Card 1 -->
         <div class="glass-panel p-6 rounded-2xl relative overflow-hidden border border-glass-stroke hover:border-primary/50 transition-all duration-300">
+          <!-- Overlay: Under Development -->
+          <div class="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center gap-2 cursor-not-allowed group/dev" data-tooltip="Chứng chỉ Apple (.p12) đang được phát triển">
+            <div class="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-500 transition-all duration-300 group-hover/dev:scale-110">
+              <span class="material-symbols-outlined text-2xl font-bold">close</span>
+            </div>
+            <span class="text-[10px] font-bold text-red-400 font-label-caps tracking-wider">ĐANG PHÁT TRIỂN</span>
+          </div>
           <span class="absolute top-4 right-4 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold uppercase">HỢP LỆ</span>
           <div class="flex items-start gap-4">
             <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
@@ -140,6 +147,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
               <p class="text-[10px] text-zinc-500 font-mono mt-0.5">ID: W87A...92KL</p>
             </div>
           </div>
+
           <div class="mt-6 space-y-3">
             <div class="flex justify-between text-xs">
               <span class="text-zinc-500">Ngày hết hạn:</span>
@@ -161,6 +169,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
         <!-- Certificate Card 2 -->
         <div class="glass-panel p-6 rounded-2xl relative overflow-hidden border border-error/20 bg-error/5 hover:border-error/50 transition-all duration-300">
+          <!-- Overlay: Under Development -->
+          <div class="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center gap-2 cursor-not-allowed group/dev" data-tooltip="Chứng chỉ Apple (.p12) đang được phát triển">
+            <div class="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-500 transition-all duration-300 group-hover/dev:scale-110">
+              <span class="material-symbols-outlined text-2xl font-bold">close</span>
+            </div>
+            <span class="text-[10px] font-bold text-red-400 font-label-caps tracking-wider">ĐANG PHÁT TRIỂN</span>
+          </div>
           <span class="absolute top-4 right-4 px-2 py-0.5 rounded bg-error/10 text-error border border-error/20 text-[9px] font-bold uppercase animate-pulse">SẮP HẾT HẠN</span>
           <div class="flex items-start gap-4">
             <div class="w-10 h-10 rounded-xl bg-error/10 border border-error/20 flex items-center justify-center text-error">
@@ -189,7 +204,14 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         </div>
 
         <!-- Add Cert Button Skeleton -->
-        <div class="glass-panel border-dashed border-2 border-glass-stroke p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary group cursor-pointer transition-all">
+        <div class="glass-panel border-dashed border-2 border-glass-stroke p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary group cursor-pointer transition-all relative overflow-hidden">
+          <!-- Overlay: Under Development -->
+          <div class="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center gap-2 cursor-not-allowed group/dev" data-tooltip="Tính năng thêm chứng chỉ mới đang được phát triển">
+            <div class="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-500 transition-all duration-300 group-hover/dev:scale-110">
+              <span class="material-symbols-outlined text-2xl font-bold">close</span>
+            </div>
+            <span class="text-[10px] font-bold text-red-400 font-label-caps tracking-wider">ĐANG PHÁT TRIỂN</span>
+          </div>
           <div class="w-10 h-10 rounded-full bg-zinc-950 border border-glass-stroke flex items-center justify-center text-zinc-500 group-hover:text-primary group-hover:scale-110 transition-all">
             <span class="material-symbols-outlined">add</span>
           </div>
@@ -276,471 +298,481 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
   </div>
 
   <script is:inline>
-    // Mappings
-    const IOS_DEVICE_MAP = {
-      'iPhone10,3': 'iPhone X',
-      'iPhone10,6': 'iPhone X',
-      'iPhone11,2': 'iPhone XS',
-      'iPhone11,4': 'iPhone XS Max',
-      'iPhone11,6': 'iPhone XS Max',
-      'iPhone11,8': 'iPhone XR',
-      'iPhone12,1': 'iPhone 11',
-      'iPhone12,3': 'iPhone 11 Pro',
-      'iPhone12,5': 'iPhone 11 Pro Max',
-      'iPhone12,8': 'iPhone SE (2nd Gen)',
-      'iPhone13,1': 'iPhone 12 mini',
-      'iPhone13,2': 'iPhone 12',
-      'iPhone13,3': 'iPhone 12 Pro',
-      'iPhone13,4': 'iPhone 12 Pro Max',
-      'iPhone14,4': 'iPhone 13 mini',
-      'iPhone14,5': 'iPhone 13',
-      'iPhone14,6': 'iPhone 13 Pro',
-      'iPhone14,7': 'iPhone 13 Pro Max',
-      'iPhone14,8': 'iPhone SE (3rd Gen)',
-      'iPhone15,2': 'iPhone 14 Pro',
-      'iPhone15,3': 'iPhone 14 Pro Max',
-      'iPhone15,4': 'iPhone 13',
-      'iPhone15,5': 'iPhone 14 Plus',
-      'iPhone16,1': 'iPhone 15',
-      'iPhone16,2': 'iPhone 15 Plus',
-      'iPhone16,5': 'iPhone 15 Pro',
-      'iPhone16,6': 'iPhone 15 Pro Max',
-      'iPhone17,1': 'iPhone 16',
-      'iPhone17,2': 'iPhone 16 Plus',
-      'iPhone17,3': 'iPhone 16 Pro',
-      'iPhone17,4': 'iPhone 16 Pro Max',
-      'iPad14,3': 'iPad Pro M2',
-    };
+    (function() {
+      // Mappings
+      const IOS_DEVICE_MAP = {
+        'iPhone10,3': 'iPhone X',
+        'iPhone10,6': 'iPhone X',
+        'iPhone11,2': 'iPhone XS',
+        'iPhone11,4': 'iPhone XS Max',
+        'iPhone11,6': 'iPhone XS Max',
+        'iPhone11,8': 'iPhone XR',
+        'iPhone12,1': 'iPhone 11',
+        'iPhone12,3': 'iPhone 11 Pro',
+        'iPhone12,5': 'iPhone 11 Pro Max',
+        'iPhone12,8': 'iPhone SE (2nd Gen)',
+        'iPhone13,1': 'iPhone 12 mini',
+        'iPhone13,2': 'iPhone 12',
+        'iPhone13,3': 'iPhone 12 Pro',
+        'iPhone13,4': 'iPhone 12 Pro Max',
+        'iPhone14,4': 'iPhone 13 mini',
+        'iPhone14,5': 'iPhone 13',
+        'iPhone14,6': 'iPhone 13 Pro',
+        'iPhone14,7': 'iPhone 13 Pro Max',
+        'iPhone14,8': 'iPhone SE (3rd Gen)',
+        'iPhone15,2': 'iPhone 14 Pro',
+        'iPhone15,3': 'iPhone 14 Pro Max',
+        'iPhone15,4': 'iPhone 13',
+        'iPhone15,5': 'iPhone 14 Plus',
+        'iPhone16,1': 'iPhone 15',
+        'iPhone16,2': 'iPhone 15 Plus',
+        'iPhone16,5': 'iPhone 15 Pro',
+        'iPhone16,6': 'iPhone 15 Pro Max',
+        'iPhone17,1': 'iPhone 16',
+        'iPhone17,2': 'iPhone 16 Plus',
+        'iPhone17,3': 'iPhone 16 Pro',
+        'iPhone17,4': 'iPhone 16 Pro Max',
+        'iPad14,3': 'iPad Pro M2',
+      };
 
-    const IOS_VERSION_MAP = {
-      '20H392': '17.2',
-      '21B74': '17.3',
-      '21D62': '17.4',
-      '21E72': '17.5',
-      '22A5282m': '18.0',
-      '22A5297f': '18.0.1',
-      '22A5307i': '18.1',
-      '22B82': '18.2',
-      '22C150': '18.3',
-    };
+      const IOS_VERSION_MAP = {
+        '20H392': '17.2',
+        '21B74': '17.3',
+        '21D62': '17.4',
+        '21E72': '17.5',
+        '22A5282m': '18.0',
+        '22A5297f': '18.0.1',
+        '22A5307i': '18.1',
+        '22B82': '18.2',
+        '22C150': '18.3',
+      };
 
-    const getDeviceName = (product) => {
-      if (!product) return 'Unknown Device';
-      return IOS_DEVICE_MAP[product] || product;
-    };
+      const getDeviceName = (product) => {
+        if (!product) return 'Unknown Device';
+        return IOS_DEVICE_MAP[product] || product;
+      };
 
-    const getIOSVersion = (version) => {
-      if (!version) return 'Unknown';
-      if (/^\d+\.\d+(\.\d+)?$/.test(version)) {
-        return version;
-      }
-      return IOS_VERSION_MAP[version] || version;
-    };
+      const getIOSVersion = (version) => {
+        if (!version) return 'Unknown';
+        if (/^\d+\.\d+(\.\d+)?$/.test(version)) {
+          return version;
+        }
+        return IOS_VERSION_MAP[version] || version;
+      };
 
-    const showToast = (text, type = 'success') => {
-      const t = window.showGlobalToast || window.txatoast || window.txaToast;
-      if (t) {
-        if (typeof t === 'function') t(text, type);
-        else if (typeof t[type] === 'function') t[type](text);
-      } else {
-        alert(`${type.toUpperCase()}: ${text}`);
-      }
-    };
-
-    // Tabs logic
-    const tabDevicesBtn = document.getElementById('tabDevicesBtn');
-    const tabCertsBtn = document.getElementById('tabCertsBtn');
-    const tabDevicesPanel = document.getElementById('tabDevicesPanel');
-    const tabCertsPanel = document.getElementById('tabCertsPanel');
-
-    tabDevicesBtn.addEventListener('click', () => {
-      tabDevicesBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-2";
-      tabCertsBtn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-2";
-      tabDevicesPanel.classList.remove('hidden');
-      tabCertsPanel.classList.add('hidden');
-    });
-
-    tabCertsBtn.addEventListener('click', () => {
-      tabCertsBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-2";
-      tabDevicesBtn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-2";
-      tabCertsPanel.classList.remove('hidden');
-      tabDevicesPanel.classList.add('hidden');
-    });
-
-    // Seed data
-    const seedIosDevices = [
-      {
-        udid: '00008130-001A25E81A02801F',
-        device_name: "Minh's iPhone 15 Pro Max",
-        product: 'iPhone16,6',
-        version: '22B82',
-        status: 'approved',
-        metadata: {
-          imei: '359281102938475',
-          mac_address: '00:25:96:FF:FE:12:34:56',
-          ip: '192.168.1.5',
-          installed_at: '2026-06-15T08:30:00.000Z'
-        },
-        created_at: '2026-06-15T08:30:00.000Z',
-        updated_at: '2026-06-15T08:30:00.000Z'
-      },
-      {
-        udid: '00008103-000E089C0C30002F',
-        device_name: "Huy's iPad Pro M2",
-        product: 'iPad14,3',
-        version: '21E72',
-        status: 'approved',
-        metadata: {
-          imei: 'Không trích xuất được do chính sách bảo mật mới',
-          mac_address: 'A4:D1:D2:C3:B4:A5',
-          ip: '192.168.1.12',
-          installed_at: '2026-06-16T14:15:00.000Z'
-        },
-        created_at: '2026-06-16T14:15:00.000Z',
-        updated_at: '2026-06-16T14:15:00.000Z'
-      },
-      {
-        udid: '00008120-000E089C0C30002E',
-        device_name: "Linh's iPhone 14 Pro",
-        product: 'iPhone15,2',
-        version: '21D62',
-        status: 'pending',
-        metadata: {
-          imei: '359281102938471',
-          mac_address: 'B1:C2:D3:E4:F5:66',
-          ip: '115.79.4.12',
-          installed_at: '2026-06-20T01:10:00.000Z'
-        },
-        created_at: '2026-06-20T01:10:00.000Z',
-        updated_at: '2026-06-20T01:10:00.000Z'
-      },
-      {
-        udid: '00008020-001614C90C83002E',
-        device_name: 'Unknown iPhone XS',
-        product: 'iPhone11,2',
-        version: '20H392',
-        status: 'blocked',
-        metadata: {
-          imei: '359281102938479',
-          mac_address: 'C1:D2:E3:F4:A5:B6',
-          ip: '171.244.12.80',
-          installed_at: '2026-06-18T10:05:00.000Z'
-        },
-        created_at: '2026-06-18T10:05:00.000Z',
-        updated_at: '2026-06-18T10:05:00.000Z'
-      }
-    ];
-
-    // Local storage helpers
-    function getDevices() {
-      const stored = localStorage.getItem('txa_ios_devices');
-      if (!stored) {
-        localStorage.setItem('txa_ios_devices', JSON.stringify(seedIosDevices));
-        return seedIosDevices;
-      }
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        return seedIosDevices;
-      }
-    }
-
-    function saveDevices(list) {
-      localStorage.setItem('txa_ios_devices', JSON.stringify(list));
-    }
-
-    // Pagination and filter state
-    let currentPage = 1;
-    const itemsPerPage = 10;
-    let filteredList = [];
-
-    // DOM Elements
-    const statTotal = document.getElementById('statTotalDevices');
-    const statApproved = document.getElementById('statApprovedDevices');
-    const statPending = document.getElementById('statPendingDevices');
-    const statBlocked = document.getElementById('statBlockedDevices');
-    const devicesCountText = document.getElementById('devicesCountText');
-    const searchInput = document.getElementById('deviceSearchInput');
-    const statusFilter = document.getElementById('deviceStatusFilter');
-    const tableBody = document.getElementById('devicesTableBody');
-    const emptyDevices = document.getElementById('emptyDevices');
-    const showCountText = document.getElementById('devicesShowCount');
-    const paginationInfo = document.getElementById('devicesPaginationInfo');
-    const prevBtn = document.getElementById('devicesPrevBtn');
-    const nextBtn = document.getElementById('devicesNextBtn');
-
-    // Dialog DOM Elements
-    const detailModal = document.getElementById('deviceDetailModal');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const modalCloseBackdrop = document.getElementById('modalBackdrop');
-    const modalApproveBtn = document.getElementById('modalApproveBtn');
-    const modalCopyUdidBtn = document.getElementById('modalCopyUdidBtn');
-
-    const mName = document.getElementById('modalDeviceName');
-    const mProduct = document.getElementById('modalDeviceProduct');
-    const mVersion = document.getElementById('modalDeviceVersion');
-    const mUdid = document.getElementById('modalDeviceUdid');
-    const mImei = document.getElementById('modalDeviceImei');
-    const mMac = document.getElementById('modalDeviceMac');
-    const mInstalledAt = document.getElementById('modalDeviceInstalledAt');
-    const mIp = document.getElementById('modalDeviceIp');
-
-    let currentSelectedDevice = null;
-
-    // View Details Modal
-    window.viewDeviceDetails = function(udid) {
-      const list = getDevices();
-      const device = list.find(d => d.udid === udid);
-      if (!device) return;
-
-      currentSelectedDevice = device;
-
-      mName.textContent = device.device_name || 'N/A';
-      mProduct.textContent = getDeviceName(device.product);
-      mVersion.textContent = `iOS ${getIOSVersion(device.version)}`;
-      mUdid.textContent = device.udid;
-      
-      mImei.textContent = device.metadata?.imei || 'Không trích xuất được do chính sách bảo mật mới';
-      mMac.textContent = device.metadata?.mac_address || 'Trống';
-      
-      const installDate = device.metadata?.installed_at 
-        ? new Date(device.metadata.installed_at).toLocaleString('vi-VN') 
-        : device.created_at 
-          ? new Date(device.created_at).toLocaleString('vi-VN') 
-          : 'Không rõ';
-      
-      mInstalledAt.textContent = installDate;
-      mIp.textContent = device.metadata?.ip || 'Không lưu';
-
-      if (device.status !== 'approved') {
-        modalApproveBtn.classList.remove('hidden');
-      } else {
-        modalApproveBtn.classList.add('hidden');
-      }
-
-      detailModal.classList.remove('hidden');
-    };
-
-    function closeModal() {
-      detailModal.classList.add('hidden');
-      currentSelectedDevice = null;
-    }
-
-    modalCloseBtn.addEventListener('click', closeModal);
-    closeModalBtn.addEventListener('click', closeModal);
-    modalCloseBackdrop.addEventListener('click', closeModal);
-
-    modalApproveBtn.addEventListener('click', () => {
-      if (currentSelectedDevice) {
-        changeDeviceStatus(currentSelectedDevice.udid, 'approved');
-        closeModal();
-      }
-    });
-
-    modalCopyUdidBtn.addEventListener('click', () => {
-      if (currentSelectedDevice) {
-        copyDeviceUdid(currentSelectedDevice.udid);
-      }
-    });
-
-    // Copy UDID helper
-    window.copyDeviceUdid = function(udid) {
-      navigator.clipboard.writeText(udid).then(() => {
-        showToast('Đã sao chép UDID vào bộ nhớ tạm!', 'success');
-      }).catch(err => {
-        showToast('Không thể sao chép UDID: ' + err.message, 'error');
-      });
-    };
-
-    // Change status
-    window.changeDeviceStatus = function(udid, status) {
-      const list = getDevices();
-      const deviceIndex = list.findIndex(d => d.udid === udid);
-      if (deviceIndex === -1) return;
-
-      const device = list[deviceIndex];
-      device.status = status;
-      device.updated_at = new Date().toISOString();
-      
-      saveDevices(list);
-      showToast(`Đã chuyển trạng thái thiết bị sang: ${status === 'approved' ? 'Phê duyệt' : status === 'blocked' ? 'Chặn' : 'Chờ duyệt'}`, 'success');
-      
-      renderData();
-    };
-
-    // Delete device
-    window.deleteDevice = function(udid) {
-      if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn thiết bị này khỏi hệ thống?')) return;
-
-      const list = getDevices();
-      const filtered = list.filter(d => d.udid !== udid);
-      
-      saveDevices(filtered);
-      showToast('Đã xóa thiết bị thành công!', 'success');
-      
-      renderData();
-    };
-
-    // Render logic
-    function displayPage(page) {
-      if (!tableBody) return;
-
-      const totalItems = filteredList.length;
-      const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-
-      if (page > totalPages) page = totalPages;
-      if (page < 1) page = 1;
-      currentPage = page;
-
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const paginatedList = filteredList.slice(startIndex, endIndex);
-
-      if (paginatedList.length === 0) {
-        tableBody.innerHTML = '';
-        emptyDevices.classList.remove('hidden');
-        showCountText.textContent = 'HIỂN THỊ 0 THIẾT BỊ';
-        paginationInfo.textContent = 'Trang 1 / 1';
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-        return;
-      }
-
-      emptyDevices.classList.add('hidden');
-
-      // Trigger table animation
-      tableBody.classList.remove('animate-fade-in');
-      void tableBody.offsetWidth;
-      tableBody.classList.add('animate-fade-in');
-
-      tableBody.innerHTML = paginatedList.map(item => {
-        const displayUdid = item.udid.length > 20 ? `${item.udid.substring(0, 20)}...` : item.udid;
-        const installDate = item.metadata?.installed_at 
-          ? new Date(item.metadata.installed_at).toLocaleString('vi-VN') 
-          : item.created_at 
-            ? new Date(item.created_at).toLocaleString('vi-VN') 
-            : 'Không rõ';
-
-        let statusChip = '';
-        if (item.status === 'approved') {
-          statusChip = `<span class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">ĐÃ DUYỆT</span>`;
-        } else if (item.status === 'blocked') {
-          statusChip = `<span class="px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold">BỊ CHẶN</span>`;
+      const showToast = (text, type = 'success') => {
+        const t = window.showGlobalToast || window.txatoast || window.txaToast;
+        if (t) {
+          if (typeof t === 'function') t(text, type);
+          else if (typeof t.show === 'function') t.show(text, type);
         } else {
-          statusChip = `<span class="px-2 py-1 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-[10px] font-bold">CHỜ DUYỆT</span>`;
+          alert(`${type.toUpperCase()}: ${text}`);
+        }
+      };
+
+      // Seed data
+      const seedIosDevices = [
+        {
+          udid: '00008130-001A25E81A02801F',
+          device_name: "Minh's iPhone 15 Pro Max",
+          product: 'iPhone16,6',
+          version: '22B82',
+          status: 'approved',
+          metadata: {
+            imei: '359281102938475',
+            mac_address: '00:25:96:FF:FE:12:34:56',
+            ip: '192.168.1.5',
+            installed_at: '2026-06-15T08:30:00.000Z'
+          },
+          created_at: '2026-06-15T08:30:00.000Z',
+          updated_at: '2026-06-15T08:30:00.000Z'
+        },
+        {
+          udid: '00008103-000E089C0C30002F',
+          device_name: "Huy's iPad Pro M2",
+          product: 'iPad14,3',
+          version: '21E72',
+          status: 'approved',
+          metadata: {
+            imei: 'Không trích xuất được do chính sách bảo mật mới',
+            mac_address: 'A4:D1:D2:C3:B4:A5',
+            ip: '192.168.1.12',
+            installed_at: '2026-06-16T14:15:00.000Z'
+          },
+          created_at: '2026-06-16T14:15:00.000Z',
+          updated_at: '2026-06-16T14:15:00.000Z'
+        },
+        {
+          udid: '00008120-000E089C0C30002E',
+          device_name: "Linh's iPhone 14 Pro",
+          product: 'iPhone15,2',
+          version: '21D62',
+          status: 'pending',
+          metadata: {
+            imei: '359281102938471',
+            mac_address: 'B1:C2:D3:E4:F5:66',
+            ip: '115.79.4.12',
+            installed_at: '2026-06-20T01:10:00.000Z'
+          },
+          created_at: '2026-06-20T01:10:00.000Z',
+          updated_at: '2026-06-20T01:10:00.000Z'
+        },
+        {
+          udid: '00008020-001614C90C83002E',
+          device_name: 'Unknown iPhone XS',
+          product: 'iPhone11,2',
+          version: '20H392',
+          status: 'blocked',
+          metadata: {
+            imei: '359281102938479',
+            mac_address: 'C1:D2:E3:F4:A5:B6',
+            ip: '171.244.12.80',
+            installed_at: '2026-06-18T10:05:00.000Z'
+          },
+          created_at: '2026-06-18T10:05:00.000Z',
+          updated_at: '2026-06-18T10:05:00.000Z'
+        }
+      ];
+
+      function getDevices() {
+        const stored = localStorage.getItem('txa_ios_devices');
+        if (!stored) {
+          localStorage.setItem('txa_ios_devices', JSON.stringify(seedIosDevices));
+          return seedIosDevices;
+        }
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          return seedIosDevices;
+        }
+      }
+
+      function saveDevices(list) {
+        localStorage.setItem('txa_ios_devices', JSON.stringify(list));
+      }
+
+      function initIosManagement() {
+        const tabDevicesBtn = document.getElementById('tabDevicesBtn');
+        const tabCertsBtn = document.getElementById('tabCertsBtn');
+        const tabDevicesPanel = document.getElementById('tabDevicesPanel');
+        const tabCertsPanel = document.getElementById('tabCertsPanel');
+        
+        if (!tabDevicesBtn) return; // Exit if not on this page
+
+        // Tab logic
+        tabDevicesBtn.onclick = () => {
+          tabDevicesBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-2";
+          tabCertsBtn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-2";
+          tabDevicesPanel.classList.remove('hidden');
+          tabCertsPanel.classList.add('hidden');
+        };
+
+        tabCertsBtn.onclick = () => {
+          tabCertsBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-2";
+          tabDevicesBtn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-2";
+          tabCertsPanel.classList.remove('hidden');
+          tabDevicesPanel.classList.add('hidden');
+        };
+
+        // DOM elements
+        const statTotal = document.getElementById('statTotalDevices');
+        const statApproved = document.getElementById('statApprovedDevices');
+        const statPending = document.getElementById('statPendingDevices');
+        const statBlocked = document.getElementById('statBlockedDevices');
+        const devicesCountText = document.getElementById('devicesCountText');
+        const searchInput = document.getElementById('deviceSearchInput');
+        const statusFilter = document.getElementById('deviceStatusFilter');
+        const tableBody = document.getElementById('devicesTableBody');
+        const emptyDevices = document.getElementById('emptyDevices');
+        const showCountText = document.getElementById('devicesShowCount');
+        const paginationInfo = document.getElementById('devicesPaginationInfo');
+        const prevBtn = document.getElementById('devicesPrevBtn');
+        const nextBtn = document.getElementById('devicesNextBtn');
+
+        const detailModal = document.getElementById('deviceDetailModal');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const modalCloseBackdrop = document.getElementById('modalBackdrop');
+        const modalApproveBtn = document.getElementById('modalApproveBtn');
+        const modalCopyUdidBtn = document.getElementById('modalCopyUdidBtn');
+
+        const mName = document.getElementById('modalDeviceName');
+        const mProduct = document.getElementById('modalDeviceProduct');
+        const mVersion = document.getElementById('modalDeviceVersion');
+        const mUdid = document.getElementById('modalDeviceUdid');
+        const mImei = document.getElementById('modalDeviceImei');
+        const mMac = document.getElementById('modalDeviceMac');
+        const mInstalledAt = document.getElementById('modalDeviceInstalledAt');
+        const mIp = document.getElementById('modalDeviceIp');
+
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let filteredList = [];
+        let currentSelectedDevice = null;
+
+        window.viewDeviceDetails = function(udid) {
+          const list = getDevices();
+          const device = list.find(d => d.udid === udid);
+          if (!device) return;
+
+          currentSelectedDevice = device;
+
+          mName.textContent = device.device_name || 'N/A';
+          mProduct.textContent = getDeviceName(device.product);
+          mVersion.textContent = `iOS ${getIOSVersion(device.version)}`;
+          mUdid.textContent = device.udid;
+          
+          mImei.textContent = device.metadata?.imei || 'Không trích xuất được do chính sách bảo mật mới';
+          mMac.textContent = device.metadata?.mac_address || 'Trống';
+          
+          const installDate = device.metadata?.installed_at 
+            ? new Date(device.metadata.installed_at).toLocaleString('vi-VN') 
+            : device.created_at 
+              ? new Date(device.created_at).toLocaleString('vi-VN') 
+              : 'Không rõ';
+          
+          mInstalledAt.textContent = installDate;
+          mIp.textContent = device.metadata?.ip || 'Không lưu';
+
+          if (device.status !== 'approved') {
+            modalApproveBtn.classList.remove('hidden');
+          } else {
+            modalApproveBtn.classList.add('hidden');
+          }
+
+          detailModal.classList.remove('hidden');
+        };
+
+        const closeModal = () => {
+          detailModal.classList.add('hidden');
+          currentSelectedDevice = null;
+        };
+
+        modalCloseBtn.onclick = closeModal;
+        closeModalBtn.onclick = closeModal;
+        modalCloseBackdrop.onclick = closeModal;
+
+        modalApproveBtn.onclick = () => {
+          if (currentSelectedDevice) {
+            window.changeDeviceStatus(currentSelectedDevice.udid, 'approved');
+            closeModal();
+          }
+        };
+
+        modalCopyUdidBtn.onclick = () => {
+          if (currentSelectedDevice) {
+            window.copyDeviceUdid(currentSelectedDevice.udid);
+          }
+        };
+
+        window.copyDeviceUdid = function(udid) {
+          navigator.clipboard.writeText(udid).then(() => {
+            showToast('Đã sao chép UDID vào bộ nhớ tạm!', 'success');
+          }).catch(err => {
+            showToast('Không thể sao chép UDID: ' + err.message, 'error');
+          });
+        };
+
+        window.changeDeviceStatus = function(udid, status) {
+          const list = getDevices();
+          const deviceIndex = list.findIndex(d => d.udid === udid);
+          if (deviceIndex === -1) return;
+
+          const device = list[deviceIndex];
+          device.status = status;
+          device.updated_at = new Date().toISOString();
+          
+          saveDevices(list);
+          showToast(`Đã chuyển trạng thái thiết bị sang: ${status === 'approved' ? 'Phê duyệt' : status === 'blocked' ? 'Chặn' : 'Chờ duyệt'}`, 'success');
+          
+          renderData();
+        };
+
+        window.deleteDevice = function(udid) {
+          const list = getDevices();
+          const device = list.find(d => d.udid === udid);
+          const name = device ? (device.device_name || 'thiết bị') : 'thiết bị';
+
+          const performDelete = () => {
+            const filtered = list.filter(d => d.udid !== udid);
+            saveDevices(filtered);
+            showToast('Đã xóa thiết bị thành công!', 'success');
+            renderData();
+          };
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Xóa thiết bị iOS',
+              message: `Bạn có chắc chắn muốn xóa vĩnh viễn thiết bị <strong>${name}</strong> (${udid}) khỏi hệ thống?`,
+              type: 'danger',
+              confirmText: 'Xóa vĩnh viễn',
+              cancelText: 'Hủy bỏ',
+              onConfirm: performDelete
+            });
+          } else if (confirm('Bạn có chắc chắn muốn xóa vĩnh viễn thiết bị này?')) {
+            performDelete();
+          }
+        };
+
+        function displayPage(page) {
+          if (!tableBody) return;
+
+          const totalItems = filteredList.length;
+          const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+          if (page > totalPages) page = totalPages;
+          if (page < 1) page = 1;
+          currentPage = page;
+
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const paginatedList = filteredList.slice(startIndex, endIndex);
+
+          if (paginatedList.length === 0) {
+            tableBody.innerHTML = '';
+            emptyDevices.classList.remove('hidden');
+            showCountText.textContent = 'HIỂN THỊ 0 THIẾT BỊ';
+            paginationInfo.textContent = 'Trang 1 / 1';
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+          }
+
+          emptyDevices.classList.add('hidden');
+
+          tableBody.classList.remove('animate-fade-in');
+          void tableBody.offsetWidth;
+          tableBody.classList.add('animate-fade-in');
+
+          tableBody.innerHTML = paginatedList.map(item => {
+            const displayUdid = item.udid.length > 20 ? `${item.udid.substring(0, 20)}...` : item.udid;
+            const installDate = item.metadata?.installed_at 
+              ? new Date(item.metadata.installed_at).toLocaleString('vi-VN') 
+              : item.created_at 
+                ? new Date(item.created_at).toLocaleString('vi-VN') 
+                : 'Không rõ';
+
+            let statusChip = '';
+            if (item.status === 'approved') {
+              statusChip = `<span class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">ĐÃ DUYỆT</span>`;
+            } else if (item.status === 'blocked') {
+              statusChip = `<span class="px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold">BỊ CHẶN</span>`;
+            } else {
+              statusChip = `<span class="px-2 py-1 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-[10px] font-bold">CHỜ DUYỆT</span>`;
+            }
+
+            return `
+              <tr class="hover:bg-white/5 transition-colors group">
+                <td class="px-6 py-4 font-semibold text-white">
+                  <div class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-zinc-400">smartphone</span>
+                    <span>${item.device_name || 'Unknown Device'}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 font-mono text-zinc-400">
+                  <div class="flex items-center gap-1.5">
+                    <span class="cursor-pointer hover:text-primary transition-colors" onclick="copyDeviceUdid('${item.udid}')" title="Sao chép UDID">${displayUdid}</span>
+                    <button onclick="copyDeviceUdid('${item.udid}')" class="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-white" title="Sao chép">
+                      <span class="material-symbols-outlined text-xs">content_copy</span>
+                    </button>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="font-bold text-white">${getDeviceName(item.product)}</p>
+                  <p class="text-[10px] text-zinc-500 font-medium">iOS ${getIOSVersion(item.version)}</p>
+                </td>
+                <td class="px-6 py-4 text-zinc-400 font-medium">
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs text-primary">calendar_today</span>
+                    <span>${installDate}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  ${statusChip}
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex gap-2 justify-end">
+                    <button onclick="viewDeviceDetails('${item.udid}')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center hover:text-primary hover:border-primary/50 transition-colors cursor-pointer" title="Xem chi tiết">
+                      <span class="material-symbols-outlined text-sm">visibility</span>
+                    </button>
+                    ${item.status !== 'approved' ? `
+                      <button onclick="changeDeviceStatus('${item.udid}', 'approved')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center text-emerald-400 hover:text-emerald-500 hover:border-emerald-500/50 transition-colors cursor-pointer" title="Phê duyệt">
+                        <span class="material-symbols-outlined text-sm">check_circle</span>
+                      </button>
+                    ` : ''}
+                    ${item.status !== 'blocked' ? `
+                      <button onclick="changeDeviceStatus('${item.udid}', 'blocked')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center text-yellow-500 hover:text-yellow-600 hover:border-yellow-500/50 transition-colors cursor-pointer" title="Chặn">
+                        <span class="material-symbols-outlined text-sm">block</span>
+                      </button>
+                    ` : ''}
+                    <button onclick="deleteDevice('${item.udid}')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center text-red-400 hover:text-red-500 hover:border-red-500/50 transition-colors cursor-pointer" title="Xóa">
+                      <span class="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          showCountText.textContent = `HIỂN THỊ ${paginatedList.length} TRÊN TỔNG SỐ ${filteredList.length} THIẾT BỊ`;
+          paginationInfo.textContent = `Trang ${currentPage} / ${totalPages}`;
+          prevBtn.disabled = (currentPage === 1);
+          nextBtn.disabled = (currentPage === totalPages);
         }
 
-        return `
-          <tr class="hover:bg-white/5 transition-colors group">
-            <td class="px-6 py-4 font-semibold text-white">
-              <div class="flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-zinc-400">smartphone</span>
-                <span>${item.device_name || 'Unknown Device'}</span>
-              </div>
-            </td>
-            <td class="px-6 py-4 font-mono text-zinc-400">
-              <div class="flex items-center gap-1.5">
-                <span class="cursor-pointer hover:text-primary transition-colors" onclick="copyDeviceUdid('${item.udid}')" title="Sao chép UDID">${displayUdid}</span>
-                <button onclick="copyDeviceUdid('${item.udid}')" class="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-white" title="Sao chép">
-                  <span class="material-symbols-outlined text-xs">content_copy</span>
-                </button>
-              </div>
-            </td>
-            <td class="px-6 py-4">
-              <p class="font-bold text-white">${getDeviceName(item.product)}</p>
-              <p class="text-[10px] text-zinc-500 font-medium">iOS ${getIOSVersion(item.version)}</p>
-            </td>
-            <td class="px-6 py-4 text-zinc-400 font-medium">
-              <div class="flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-xs text-primary">calendar_today</span>
-                <span>${installDate}</span>
-              </div>
-            </td>
-            <td class="px-6 py-4">
-              ${statusChip}
-            </td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex gap-2 justify-end">
-                <button onclick="viewDeviceDetails('${item.udid}')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center hover:text-primary hover:border-primary/50 transition-colors cursor-pointer" title="Xem chi tiết">
-                  <span class="material-symbols-outlined text-sm">visibility</span>
-                </button>
-                ${item.status !== 'approved' ? `
-                  <button onclick="changeDeviceStatus('${item.udid}', 'approved')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center text-emerald-400 hover:text-emerald-500 hover:border-emerald-500/50 transition-colors cursor-pointer" title="Phê duyệt">
-                    <span class="material-symbols-outlined text-sm">check_circle</span>
-                  </button>
-                ` : ''}
-                ${item.status !== 'blocked' ? `
-                  <button onclick="changeDeviceStatus('${item.udid}', 'blocked')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center text-yellow-500 hover:text-yellow-600 hover:border-yellow-500/50 transition-colors cursor-pointer" title="Chặn">
-                    <span class="material-symbols-outlined text-sm">block</span>
-                  </button>
-                ` : ''}
-                <button onclick="deleteDevice('${item.udid}')" class="w-8 h-8 rounded-lg border border-glass-stroke bg-zinc-950 flex items-center justify-center text-red-400 hover:text-red-500 hover:border-red-500/50 transition-colors cursor-pointer" title="Xóa">
-                  <span class="material-symbols-outlined text-sm">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
+        function renderData() {
+          const list = getDevices();
 
-      showCountText.textContent = `HIỂN THỊ ${paginatedList.length} TRÊN TỔNG SỐ ${filteredList.length} THIẾT BỊ`;
-      paginationInfo.textContent = `Trang ${currentPage} / ${totalPages}`;
-      prevBtn.disabled = (currentPage === 1);
-      nextBtn.disabled = (currentPage === totalPages);
-    }
+          const total = list.length;
+          const approved = list.filter(d => d.status === 'approved').length;
+          const pending = list.filter(d => d.status === 'pending').length;
+          const blocked = list.filter(d => d.status === 'blocked').length;
 
-    function renderData() {
-      const list = getDevices();
+          statTotal.textContent = total;
+          statApproved.textContent = approved;
+          statPending.textContent = pending;
+          statBlocked.textContent = blocked;
+          devicesCountText.textContent = total;
 
-      // Stats counts
-      const total = list.length;
-      const approved = list.filter(d => d.status === 'approved').length;
-      const pending = list.filter(d => d.status === 'pending').length;
-      const blocked = list.filter(d => d.status === 'blocked').length;
+          const search = searchInput.value.trim().toLowerCase();
+          const status = statusFilter.value;
 
-      statTotal.textContent = total;
-      statApproved.textContent = approved;
-      statPending.textContent = pending;
-      statBlocked.textContent = blocked;
-      devicesCountText.textContent = total;
+          filteredList = list.filter(d => {
+            const matchSearch = (d.udid || '').toLowerCase().includes(search) ||
+                                (d.device_name || '').toLowerCase().includes(search) ||
+                                (d.product || '').toLowerCase().includes(search);
+            
+            const matchStatus = status === 'all' || d.status === status;
+            
+            return matchSearch && matchStatus;
+          });
 
-      // Filtering
-      const search = searchInput.value.trim().toLowerCase();
-      const status = statusFilter.value;
+          displayPage(1);
+        }
 
-      filteredList = list.filter(d => {
-        const matchSearch = (d.udid || '').toLowerCase().includes(search) ||
-                            (d.device_name || '').toLowerCase().includes(search) ||
-                            (d.product || '').toLowerCase().includes(search);
-        
-        const matchStatus = status === 'all' || d.status === status;
-        
-        return matchSearch && matchStatus;
-      });
+        searchInput.oninput = renderData;
+        statusFilter.onchange = renderData;
 
-      displayPage(1);
-    }
+        prevBtn.onclick = () => {
+          if (currentPage > 1) {
+            displayPage(currentPage - 1);
+          }
+        };
 
-    // Event listeners
-    searchInput.addEventListener('input', renderData);
-    statusFilter.addEventListener('change', renderData);
+        nextBtn.onclick = () => {
+          const totalPages = Math.ceil(filteredList.length / itemsPerPage) || 1;
+          if (currentPage < totalPages) {
+            displayPage(currentPage + 1);
+          }
+        };
 
-    prevBtn.addEventListener('click', () => {
-      if (currentPage > 1) {
-        displayPage(currentPage - 1);
+        renderData();
       }
-    });
 
-    nextBtn.addEventListener('click', () => {
-      const totalPages = Math.ceil(filteredList.length / itemsPerPage) || 1;
-      if (currentPage < totalPages) {
-        displayPage(currentPage + 1);
-      }
-    });
-
-    // Initial render
-    renderData();
+      // Run on DOM loaded or page-load
+      initIosManagement();
+      document.addEventListener('astro:page-load', initIosManagement);
+    })();
   </script>
 
   <style>

@@ -16,248 +16,559 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       </button>
     </header>
 
-    <!-- Subscription Tiers (Bento Grid Style) -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-      <!-- Free Tier -->
-      <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden bg-surface-container-low border border-glass-stroke">
-        <div class="flex justify-between items-start mb-6">
-          <div class="p-3 bg-surface-container-high rounded-xl">
-            <span class="material-symbols-outlined text-on-surface-variant">person</span>
-          </div>
-          <span class="px-3 py-1 bg-surface-container-highest rounded-full text-label-caps font-label-caps text-on-surface-variant">DEFAULT</span>
-        </div>
-        <h3 class="font-title-md text-title-md text-on-surface mb-2">Free Plan</h3>
-        <div class="flex items-baseline gap-1 mb-6">
-          <span class="text-headline-lg font-headline-lg text-3xl">0đ</span>
-          <span class="text-on-surface-variant text-[14px]">/ Lifetime</span>
-        </div>
-        <ul class="space-y-4 mb-8">
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-error text-[20px]">close</span>
-            <span class="text-on-surface-variant">Contains Ads</span>
-          </li>
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-primary text-[20px]">check</span>
-            <span class="text-on-surface">Standard Definition (SD)</span>
-          </li>
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-primary text-[20px]">check</span>
-            <span class="text-on-surface">Limited Library</span>
-          </li>
-        </ul>
-        <button class="mt-auto w-full py-3 rounded-lg border border-glass-stroke hover:bg-surface-container-high transition-colors text-on-surface font-semibold cursor-pointer">
-          Edit Plan
-        </button>
-      </div>
+    <!-- Payment Gate validation warning -->
+    <div id="payment-gate-warning" class="hidden flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl border border-glass-stroke max-w-2xl mx-auto my-12">
+      <span class="material-symbols-outlined text-yellow-500 text-6xl mb-4 animate-pulse">warning</span>
+      <h3 class="text-xl font-bold text-white mb-2">Chưa cấu hình phương thức thanh toán</h3>
+      <p class="text-xs text-zinc-400 max-w-md mb-6 leading-relaxed">
+        Để quản lý gói đăng ký và bán dịch vụ thành viên, vui lòng cấu hình ít nhất một phương thức thanh toán (chuyển khoản ngân hàng hoặc cổng tự động) trong phần cài đặt hệ thống.
+      </p>
+      <a href="/admin/he-thong" class="px-6 py-3 bg-primary text-slate-950 rounded-xl font-bold text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer">
+        Đi đến Cấu hình hệ thống
+      </a>
+    </div>
 
-      <!-- VIP 1 Month -->
-      <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden border-primary/40 bg-primary-container/5 shadow-[0_0_20px_rgba(124,58,237,0.1)]">
-        <div class="absolute top-0 right-0">
-          <div class="bg-primary px-6 py-1 rotate-45 translate-x-6 translate-y-2 text-on-primary-fixed font-bold text-[10px]">POPULAR</div>
-        </div>
-        <div class="flex justify-between items-start mb-6">
-          <div class="p-3 bg-primary-container/20 rounded-xl">
-            <span class="material-symbols-outlined text-primary">workspace_premium</span>
+    <div id="subscription-plans-content" class="space-y-12">
+      <!-- Subscription Tiers (Bento Grid Style) -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <!-- Free Tier -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden bg-surface-container-low border border-glass-stroke">
+          <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-surface-container-high rounded-xl">
+              <span class="material-symbols-outlined text-on-surface-variant">person</span>
+            </div>
+            <span class="px-3 py-1 bg-surface-container-highest rounded-full text-label-caps font-label-caps text-on-surface-variant">DEFAULT</span>
           </div>
-        </div>
-        <h3 class="font-title-md text-title-md text-primary mb-2">VIP 1 Month</h3>
-        <div class="flex items-baseline gap-1 mb-6">
-          <span class="text-headline-lg font-headline-lg text-3xl text-on-surface">69,000đ</span>
-          <span class="text-on-surface-variant text-[14px]">/ Monthly</span>
-        </div>
-        <ul class="space-y-4 mb-8">
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
-            <span class="text-on-surface">No Advertisements</span>
-          </li>
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
-            <span class="text-on-surface">4K UHD Streaming</span>
-          </li>
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
-            <span class="text-on-surface">Full Library Access</span>
-          </li>
-        </ul>
-        <button class="mt-auto w-full py-3 rounded-lg bg-primary-container text-on-primary-container font-bold hover:brightness-110 transition-all cursor-pointer shadow-lg shadow-primary-container/20">
-          Edit Plan
-        </button>
-      </div>
-
-      <!-- VIP 1 Year -->
-      <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden bg-surface-container-low border border-glass-stroke">
-        <div class="flex justify-between items-start mb-6">
-          <div class="p-3 bg-surface-container-high rounded-xl">
-            <span class="material-symbols-outlined text-secondary">diamond</span>
+          <h3 class="font-title-md text-title-md text-on-surface mb-2">Free Plan</h3>
+          <div class="flex items-baseline gap-1 mb-6">
+            <span class="text-headline-lg font-headline-lg text-3xl">0đ</span>
+            <span class="text-on-surface-variant text-[14px]">/ Lifetime</span>
           </div>
-          <span class="px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-full text-label-caps font-label-caps text-xs">BEST VALUE</span>
-        </div>
-        <h3 class="font-title-md text-title-md text-on-surface mb-2">VIP 1 Year</h3>
-        <div class="flex items-baseline gap-1 mb-6">
-          <span class="text-headline-lg font-headline-lg text-3xl text-on-surface">699,000đ</span>
-          <span class="text-on-surface-variant text-[14px]">/ Annually</span>
-        </div>
-        <ul class="space-y-4 mb-8">
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
-            <span class="text-on-surface">Everything in Monthly VIP</span>
-          </li>
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
-            <span class="text-on-surface">Offline Downloads</span>
-          </li>
-          <li class="flex items-center gap-3 text-[14px]">
-            <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
-            <span class="text-on-surface">Early Access Premières</span>
-          </li>
-        </ul>
-        <button class="mt-auto w-full py-3 rounded-lg border border-glass-stroke hover:bg-surface-container-high transition-colors text-on-surface font-semibold cursor-pointer">
-          Edit Plan
-        </button>
-      </div>
-    </section>
-
-    <!-- User Subscription List Section -->
-    <section class="glass-panel rounded-2xl overflow-hidden">
-      <div class="px-8 py-6 border-b border-glass-stroke flex justify-between items-center bg-surface-container-low/50">
-        <h2 class="font-title-md text-title-md text-on-surface text-xl">Active Subscriptions</h2>
-        <div class="flex items-center gap-4">
-          <div class="relative hidden sm:block">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-            <input class="bg-surface-deep border border-glass-stroke rounded-full pl-10 pr-4 py-2 text-[14px] focus:outline-none focus:border-primary w-64 transition-all text-on-surface" placeholder="Search user email..." type="text"/>
-          </div>
-          <button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-colors cursor-pointer">
-            <span class="material-symbols-outlined">filter_list</span>
+          <ul class="space-y-4 mb-8">
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-error text-[20px]">close</span>
+              <span class="text-on-surface-variant">Contains Ads</span>
+            </li>
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-primary text-[20px]">check</span>
+              <span class="text-on-surface">Standard Definition (SD)</span>
+            </li>
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-primary text-[20px]">check</span>
+              <span class="text-on-surface">Limited Library</span>
+            </li>
+          </ul>
+          <button class="mt-auto w-full py-3 rounded-lg border border-glass-stroke hover:bg-surface-container-high transition-colors text-on-surface font-semibold cursor-pointer">
+            Edit Plan
           </button>
         </div>
-      </div>
-      <div class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-surface-container/30">
-              <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs">User</th>
-              <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs">Current Plan</th>
-              <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs">Join Date</th>
-              <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs">Expiry Date</th>
-              <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs">Status</th>
-              <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-right text-xs">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-glass-stroke">
-            <tr class="hover:bg-surface-container-high/30 transition-colors">
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">AL</div>
-                  <div>
-                    <p class="font-bold text-[14px] text-on-surface">Anh Le</p>
-                    <p class="text-[12px] text-on-surface-variant">anhle@gmail.com</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-8 py-5">
-                <span class="text-[14px] px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 font-medium whitespace-nowrap">VIP 1 Month</span>
-              </td>
-              <td class="px-8 py-5 text-[14px] text-on-surface-variant whitespace-nowrap">Oct 12, 2023</td>
-              <td class="px-8 py-5 text-[14px] text-on-surface-variant whitespace-nowrap">Nov 12, 2024</td>
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-2 text-emerald-400 text-[14px]">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Active
-                </div>
-              </td>
-              <td class="px-8 py-5 text-right">
-                <button class="text-on-surface-variant hover:text-on-surface transition-colors p-1 cursor-pointer"><span class="material-symbols-outlined">more_vert</span></button>
-              </td>
-            </tr>
-            <tr class="hover:bg-surface-container-high/30 transition-colors">
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold">MH</div>
-                  <div>
-                    <p class="font-bold text-[14px] text-on-surface">Minh Hoang</p>
-                    <p class="text-[12px] text-on-surface-variant">hoangm@hotmail.com</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-8 py-5">
-                <span class="text-[14px] px-3 py-1 bg-secondary/10 text-secondary rounded-full border border-secondary/20 font-medium whitespace-nowrap">VIP 1 Year</span>
-              </td>
-              <td class="px-8 py-5 text-[14px] text-on-surface-variant whitespace-nowrap">Jan 05, 2024</td>
-              <td class="px-8 py-5 text-[14px] text-on-surface-variant whitespace-nowrap">Jan 05, 2025</td>
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-2 text-emerald-400 text-[14px]">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Active
-                </div>
-              </td>
-              <td class="px-8 py-5 text-right">
-                <button class="text-on-surface-variant hover:text-on-surface transition-colors p-1 cursor-pointer"><span class="material-symbols-outlined">more_vert</span></button>
-              </td>
-            </tr>
-            <tr class="hover:bg-surface-container-high/30 transition-colors">
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant font-bold">DT</div>
-                  <div>
-                    <p class="font-bold text-[14px] text-on-surface">Duy Tung</p>
-                    <p class="text-[12px] text-on-surface-variant">tungd@outlook.com</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-8 py-5">
-                <span class="text-[14px] px-3 py-1 bg-surface-container-highest text-on-surface-variant rounded-full border border-glass-stroke font-medium whitespace-nowrap">Free</span>
-              </td>
-              <td class="px-8 py-5 text-[14px] text-on-surface-variant whitespace-nowrap">May 20, 2024</td>
-              <td class="px-8 py-5 text-[14px] text-on-surface-variant whitespace-nowrap">—</td>
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-2 text-on-surface-variant text-[14px]">
-                  <span class="w-2 h-2 rounded-full bg-on-surface-variant/30"></span>
-                  Standard
-                </div>
-              </td>
-              <td class="px-8 py-5 text-right">
-                <button class="text-on-surface-variant hover:text-on-surface transition-colors p-1 cursor-pointer"><span class="material-symbols-outlined">more_vert</span></button>
-              </td>
-            </tr>
-            <tr class="hover:bg-surface-container-high/30 transition-colors">
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center text-error font-bold">KP</div>
-                  <div>
-                    <p class="font-bold text-[14px] text-on-surface">Kim Phượng</p>
-                    <p class="text-[12px] text-on-surface-variant">phuongk@gmail.com</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-8 py-5">
-                <span class="text-[14px] px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 font-medium whitespace-nowrap">VIP 1 Month</span>
-              </td>
-              <td class="px-8 py-5 text-[14px] text-on-surface-variant whitespace-nowrap">Sep 10, 2023</td>
-              <td class="px-8 py-5 text-[14px] text-on-surface-variant whitespace-nowrap">Oct 10, 2023</td>
-              <td class="px-8 py-5">
-                <div class="flex items-center gap-2 text-error text-[14px]">
-                  <span class="w-2 h-2 rounded-full bg-error"></span>
-                  Expired
-                </div>
-              </td>
-              <td class="px-8 py-5 text-right">
-                <button class="text-on-surface-variant hover:text-on-surface transition-colors p-1 cursor-pointer"><span class="material-symbols-outlined">more_vert</span></button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!-- Pagination -->
-      <div class="px-8 py-4 border-t border-glass-stroke flex justify-between items-center text-[13px] text-on-surface-variant">
-        <p>Showing 4 of 1,248 users</p>
-        <div class="flex gap-2">
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary-fixed font-bold cursor-pointer">1</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer">2</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer">3</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+
+        <!-- VIP 1 Month -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden border-primary/40 bg-primary-container/5 shadow-[0_0_20px_rgba(124,58,237,0.1)]">
+          <div class="absolute top-0 right-0">
+            <div class="bg-primary px-6 py-1 rotate-45 translate-x-6 translate-y-2 text-on-primary-fixed font-bold text-[10px]">POPULAR</div>
+          </div>
+          <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-primary-container/20 rounded-xl">
+              <span class="material-symbols-outlined text-primary">workspace_premium</span>
+            </div>
+          </div>
+          <h3 class="font-title-md text-title-md text-primary mb-2">VIP 1 Month</h3>
+          <div class="flex items-baseline gap-1 mb-6">
+            <span class="text-headline-lg font-headline-lg text-3xl text-on-surface">69,000đ</span>
+            <span class="text-on-surface-variant text-[14px]">/ Monthly</span>
+          </div>
+          <ul class="space-y-4 mb-8">
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+              <span class="text-on-surface">No Advertisements</span>
+            </li>
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+              <span class="text-on-surface">4K UHD Streaming</span>
+            </li>
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+              <span class="text-on-surface">Full Library Access</span>
+            </li>
+          </ul>
+          <button class="mt-auto w-full py-3 rounded-lg bg-primary-container text-on-primary-container font-bold hover:brightness-110 transition-all cursor-pointer shadow-lg shadow-primary-container/20">
+            Edit Plan
+          </button>
         </div>
-      </div>
-    </section>
+
+        <!-- VIP 1 Year -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden bg-surface-container-low border border-glass-stroke">
+          <div class="flex justify-between items-start mb-6">
+            <div class="p-3 bg-surface-container-high rounded-xl">
+              <span class="material-symbols-outlined text-secondary">diamond</span>
+            </div>
+            <span class="px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-full text-label-caps font-label-caps text-xs">BEST VALUE</span>
+          </div>
+          <h3 class="font-title-md text-title-md text-on-surface mb-2">VIP 1 Year</h3>
+          <div class="flex items-baseline gap-1 mb-6">
+            <span class="text-headline-lg font-headline-lg text-3xl text-on-surface">699,000đ</span>
+            <span class="text-on-surface-variant text-[14px]">/ Annually</span>
+          </div>
+          <ul class="space-y-4 mb-8">
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+              <span class="text-on-surface">Everything in Monthly VIP</span>
+            </li>
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+              <span class="text-on-surface">Offline Downloads</span>
+            </li>
+            <li class="flex items-center gap-3 text-[14px]">
+              <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+              <span class="text-on-surface">Early Access Premières</span>
+            </li>
+          </ul>
+          <button class="mt-auto w-full py-3 rounded-lg border border-glass-stroke hover:bg-surface-container-high transition-colors text-on-surface font-semibold cursor-pointer">
+            Edit Plan
+          </button>
+        </div>
+      </section>
+
+      <!-- Duyệt Chuyển Khoản Thủ Công (Manual Approvals) -->
+      <section id="manual-approvals-section" class="glass-panel rounded-2xl overflow-hidden mb-12 hidden">
+        <div class="px-8 py-6 border-b border-glass-stroke flex justify-between items-center bg-surface-container-low/50">
+          <h2 class="font-title-md text-title-md text-on-surface text-xl">Duyệt chuyển khoản thủ công (VietQR)</h2>
+          <span class="px-3 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded-full text-label-caps font-label-caps text-xs animate-pulse font-bold uppercase">Chờ duyệt</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-surface-container/30">
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">Mã GD</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">User</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">Gói cước</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">Số tiền</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">Minh chứng</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-right text-xs font-bold">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="manualApprovalsBody" class="divide-y divide-glass-stroke/40">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- User Subscription List Section -->
+      <section class="glass-panel rounded-2xl overflow-hidden">
+        <div class="px-8 py-6 border-b border-glass-stroke flex justify-between items-center bg-surface-container-low/50">
+          <h2 class="font-title-md text-title-md text-on-surface text-xl">Active Subscriptions</h2>
+          <div class="flex items-center gap-4">
+            <div class="relative hidden sm:block">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+              <input id="activeSubsSearch" class="bg-surface-deep border border-glass-stroke rounded-full pl-10 pr-4 py-2 text-[14px] focus:outline-none focus:border-primary w-64 transition-all text-on-surface" placeholder="Search user email..." type="text"/>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-container/30">
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">User</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">Current Plan</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">Join Date</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">Expiry Date</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-xs font-bold">Status</th>
+                <th class="px-8 py-4 font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase text-right text-xs font-bold">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="activeSubsBody" class="divide-y divide-glass-stroke">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div class="px-8 py-4 border-t border-glass-stroke flex justify-between items-center text-[13px] text-on-surface-variant">
+          <p>Showing 4 of 1,248 users</p>
+          <div class="flex gap-2">
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary-fixed font-bold cursor-pointer">1</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer">2</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer">3</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
+
+  <script is:inline>
+    (function() {
+      // 1. Check Payment Gateways Enabled
+      function checkPaymentGate() {
+        const settingsStr = localStorage.getItem('txa_site_settings') || '{}';
+        let settings = {};
+        try { settings = JSON.parse(settingsStr); } catch (e) {}
+
+        const payments = settings.payments || {};
+        const anyEnabled = payments.manual_enable || payments.payos_enable || payments.paypal_enable || payments.sepay_enable || payments.vnpay_enable || payments.stripe_enable;
+        
+        const warningGate = document.getElementById('payment-gate-warning');
+        const mainContent = document.getElementById('subscription-plans-content');
+        
+        if (warningGate && mainContent) {
+          if (!anyEnabled) {
+            warningGate.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+          } else {
+            warningGate.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+          }
+        }
+      }
+
+      // 2. Seed Registered Users if Empty
+      function seedUsersIfEmpty() {
+        const usersStr = localStorage.getItem('tregistered_users');
+        if (!usersStr || usersStr === '[]') {
+          const defaultUsers = [
+            { username: "Anh Le", email: "anhle@gmail.com", package: "VIP 1 Month", joinDate: "2023-10-12", expiryDate: "2024-11-12", status: "active" },
+            { username: "Minh Hoang", email: "hoangm@hotmail.com", package: "VIP 1 Year", joinDate: "2024-01-05", expiryDate: "2025-01-05", status: "active" },
+            { username: "Duy Tung", email: "tungd@outlook.com", package: "Free", joinDate: "2024-05-20", expiryDate: "", status: "standard" },
+            { username: "Kim Phượng", email: "phuongk@gmail.com", package: "VIP 1 Month", joinDate: "2023-09-10", expiryDate: "2023-10-10", status: "expired" }
+          ];
+          localStorage.setItem('tregistered_users', JSON.stringify(defaultUsers));
+        }
+      }
+
+      // 3. Render Active Subscriptions list
+      function renderActiveSubscriptions() {
+        seedUsersIfEmpty();
+        
+        const usersStr = localStorage.getItem('tregistered_users') || '[]';
+        let users = [];
+        try { users = JSON.parse(usersStr); } catch (e) {}
+
+        const searchVal = document.getElementById('activeSubsSearch')?.value?.toLowerCase() || '';
+        const tbody = document.getElementById('activeSubsBody');
+        if (!tbody) return;
+
+        // Filter if searched
+        const filteredUsers = users.filter(u => 
+          u.username.toLowerCase().includes(searchVal) || 
+          u.email.toLowerCase().includes(searchVal)
+        );
+
+        if (filteredUsers.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="px-8 py-5 text-center text-zinc-500 italic">Không có người dùng phù hợp.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = filteredUsers.map(u => {
+          const initials = u.username.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'US';
+          
+          let pkgBadge = '';
+          let bgClass = 'bg-surface-container-highest text-on-surface-variant border-glass-stroke';
+          if (u.package && u.package.includes('VIP')) {
+            if (u.package.includes('Year')) {
+              bgClass = 'bg-secondary/10 text-secondary border border-secondary/20';
+            } else {
+              bgClass = 'bg-primary/10 text-primary border border-primary/20';
+            }
+          }
+          pkgBadge = `<span class="text-[13px] px-2.5 py-0.5 rounded-full font-medium whitespace-nowrap ${bgClass}">${u.package || 'Free'}</span>`;
+
+          const jDate = u.joinDate ? new Date(u.joinDate).toLocaleDateString('vi-VN') : '—';
+          const eDate = u.expiryDate ? new Date(u.expiryDate).toLocaleDateString('vi-VN') : '—';
+
+          let statusText = 'Standard';
+          let statusDot = 'bg-on-surface-variant/30';
+          let statusColor = 'text-on-surface-variant';
+          
+          if (u.package && u.package.includes('VIP')) {
+            const exp = u.expiryDate ? new Date(u.expiryDate) : null;
+            if (exp && new Date() > exp) {
+              statusText = 'Expired';
+              statusDot = 'bg-error';
+              statusColor = 'text-error';
+            } else {
+              statusText = 'Active';
+              statusDot = 'bg-emerald-400 animate-pulse';
+              statusColor = 'text-emerald-400';
+            }
+          }
+
+          return `
+            <tr class="hover:bg-surface-container-high/30 transition-colors">
+              <td class="px-8 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">${initials}</div>
+                  <div>
+                    <p class="font-bold text-[14px] text-white">${u.username}</p>
+                    <p class="text-[12px] text-zinc-400">${u.email}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-8 py-4">${pkgBadge}</td>
+              <td class="px-8 py-4 text-[13px] text-zinc-400 whitespace-nowrap">${jDate}</td>
+              <td class="px-8 py-4 text-[13px] text-zinc-400 whitespace-nowrap">${eDate}</td>
+              <td class="px-8 py-4">
+                <div class="flex items-center gap-2 ${statusColor} text-[13px]">
+                  <span class="w-2 h-2 rounded-full ${statusDot}"></span>
+                  ${statusText}
+                </div>
+              </td>
+              <td class="px-8 py-4 text-right">
+                <button onclick="changeUserTier('${u.username}')" class="text-primary hover:text-white transition-colors text-xs font-bold cursor-pointer">Sửa gói</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 4. Render Manual Bank Approvals Table
+      function renderManualApprovals() {
+        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+        let logs = [];
+        try { logs = JSON.parse(logsStr); } catch (e) {}
+
+        const pendingLogs = logs.filter(item => item.method === 'manual' && item.status === 'pending');
+        const section = document.getElementById('manual-approvals-section');
+        const tbody = document.getElementById('manualApprovalsBody');
+
+        if (!tbody || !section) return;
+
+        if (pendingLogs.length === 0) {
+          section.classList.add('hidden');
+          return;
+        }
+
+        section.classList.remove('hidden');
+
+        tbody.innerHTML = pendingLogs.map(item => {
+          const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
+          const imgHtml = `<button onclick="viewReceiptImage('${item.txid}')" class="text-primary hover:underline font-bold text-xs cursor-pointer flex items-center gap-1"><span class="material-symbols-outlined text-sm">image</span>Xem ảnh</button>`;
+
+          return `
+            <tr class="hover:bg-white/5 transition-colors">
+              <td class="px-8 py-4 font-mono text-zinc-400">${item.txid.substring(0, 10)}...</td>
+              <td class="px-8 py-4 font-semibold text-white">${item.username}</td>
+              <td class="px-8 py-4 text-zinc-300">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
+              <td class="px-8 py-4 text-zinc-300 font-bold">${formattedPrice}</td>
+              <td class="px-8 py-4">${imgHtml}</td>
+              <td class="px-8 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                  <button onclick="approveManualTx('${item.txid}')" class="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer text-[11px]">Duyệt</button>
+                  <button onclick="declineManualTx('${item.txid}')" class="px-3 py-1 rounded bg-red-500/10 border border-red-500/20 text-red-400 font-bold hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer text-[11px]">Từ chối</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 5. Expose Manual Actions Globally
+      window.viewReceiptImage = function(txid) {
+        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+        let logs = [];
+        try { logs = JSON.parse(logsStr); } catch (e) {}
+        const tx = logs.find(item => item.txid === txid);
+        if (!tx || !tx.receiptImg) return;
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Xem hóa đơn chuyển khoản',
+            message: `
+              <div class="flex flex-col items-center gap-4">
+                <p class="text-xs text-zinc-400">User: <strong class="text-white">${tx.username}</strong> | Mã GD: <strong class="text-white">${tx.txid}</strong></p>
+                <div class="max-w-xs border border-glass-stroke rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                  <img src="${tx.receiptImg}" class="w-full h-auto object-contain max-h-[350px]" alt="Receipt" />
+                </div>
+              </div>
+            `,
+            type: 'info',
+            confirmText: 'Đóng',
+            cancelText: '',
+            onConfirm: () => {}
+          });
+        }
+      };
+
+      window.approveManualTx = function(txid) {
+        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+        let logs = [];
+        try { logs = JSON.parse(logsStr); } catch (e) {}
+        const idx = logs.findIndex(item => item.txid === txid);
+        if (idx === -1) return;
+
+        const tx = logs[idx];
+        const cycleDays = tx.cycle === 'annual' ? 365 : 30;
+        const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
+
+        const performApprove = () => {
+          tx.status = 'approved';
+          localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
+
+          // 1. Cập nhật VIP cho user đó trong tregistered_users
+          const usersStr = localStorage.getItem('tregistered_users') || '[]';
+          try {
+            let users = JSON.parse(usersStr);
+            const uIdx = users.findIndex(u => u.username === tx.username || u.email === tx.username);
+            if (uIdx !== -1) {
+              users[uIdx].package = tx.packageTitle;
+              users[uIdx].joinDate = new Date().toISOString().split('T')[0];
+              users[uIdx].expiryDate = expiryDate.split('T')[0];
+              users[uIdx].status = 'active';
+              localStorage.setItem('tregistered_users', JSON.stringify(users));
+            }
+          } catch (e) {}
+
+          // 2. Kích hoạt VIP trong txa_user_subscription nếu đây là user đang đăng nhập
+          const currentLoggedIn = localStorage.getItem('tlogged_in_as');
+          if (currentLoggedIn === tx.username) {
+            localStorage.setItem('txa_user_subscription', JSON.stringify({
+              username: tx.username,
+              tier: tx.packageTitle,
+              status: 'active',
+              price: tx.price,
+              cycle: tx.cycle,
+              expiry: expiryDate,
+              updatedAt: new Date().toISOString()
+            }));
+          }
+
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Phê duyệt giao dịch thành công!', 'success');
+          }
+          
+          renderManualApprovals();
+          renderActiveSubscriptions();
+        };
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Phê duyệt giao dịch thủ công',
+            message: `Bạn có chắc chắn muốn phê duyệt giao dịch số tiền ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.price)} của user "${tx.username}"?`,
+            type: 'info',
+            confirmText: 'Duyệt',
+            cancelText: 'Hủy',
+            onConfirm: performApprove
+          });
+        } else if (confirm('Duyệt giao dịch này?')) {
+          performApprove();
+        }
+      };
+
+      window.declineManualTx = function(txid) {
+        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+        let logs = [];
+        try { logs = JSON.parse(logsStr); } catch (e) {}
+        const idx = logs.findIndex(item => item.txid === txid);
+        if (idx === -1) return;
+
+        const tx = logs[idx];
+
+        const performDecline = () => {
+          tx.status = 'declined';
+          localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
+
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Đã từ chối giao dịch này.', 'info');
+          }
+
+          renderManualApprovals();
+        };
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Từ chối giao dịch thủ công',
+            message: `Bạn có chắc muốn từ chối giao dịch của user "${tx.username}"?`,
+            type: 'danger',
+            confirmText: 'Từ chối',
+            cancelText: 'Hủy',
+            onConfirm: performDecline
+          });
+        } else if (confirm('Từ chối giao dịch này?')) {
+          performDecline();
+        }
+      };
+
+      // 6. Change User Tier Directly
+      window.changeUserTier = function(username) {
+        const usersStr = localStorage.getItem('tregistered_users') || '[]';
+        let users = [];
+        try { users = JSON.parse(usersStr); } catch (e) {}
+        const idx = users.findIndex(u => u.username === username);
+        if (idx === -1) return;
+
+        const u = users[idx];
+        const newTier = u.package && u.package.includes('VIP') ? 'Free' : 'VIP 1 Year';
+        const expiryDate = newTier === 'Free' ? '' : new Date(Date.now() + 3600 * 1000 * 24 * 365).toISOString().split('T')[0];
+
+        const changeTier = () => {
+          u.package = newTier;
+          u.expiryDate = expiryDate;
+          if (newTier === 'Free') {
+            u.status = 'standard';
+          } else {
+            u.status = 'active';
+            u.joinDate = new Date().toISOString().split('T')[0];
+          }
+          localStorage.setItem('tregistered_users', JSON.stringify(users));
+
+          // Update current active sub if logged in
+          const currentLoggedIn = localStorage.getItem('tlogged_in_as');
+          if (currentLoggedIn === username) {
+            if (newTier === 'Free') {
+              localStorage.removeItem('txa_user_subscription');
+            } else {
+              localStorage.setItem('txa_user_subscription', JSON.stringify({
+                username: username,
+                tier: newTier,
+                status: 'active',
+                price: 699000,
+                cycle: 'annual',
+                expiry: new Date(Date.now() + 3600 * 1000 * 24 * 365).toISOString(),
+                updatedAt: new Date().toISOString()
+              }));
+            }
+          }
+
+          if (window.showGlobalToast) {
+            window.showGlobalToast(`Đã cập nhật gói thành công cho ${username}!`, 'success');
+          }
+          renderActiveSubscriptions();
+        };
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Thay đổi gói cước thành viên',
+            message: `Bạn có muốn đổi gói của "${username}" từ <strong>${u.package || 'Free'}</strong> sang <strong>${newTier}</strong>?`,
+            type: 'info',
+            confirmText: 'Thay đổi',
+            cancelText: 'Hủy',
+            onConfirm: changeTier
+          });
+        } else if (confirm('Đổi gói của người dùng?')) {
+          changeTier();
+        }
+      };
+
+      function initSubscriptionsPage() {
+        checkPaymentGate();
+        renderActiveSubscriptions();
+        renderManualApprovals();
+
+        // Bind Search Input
+        const searchInput = document.getElementById('activeSubsSearch');
+        searchInput?.addEventListener('input', renderActiveSubscriptions);
+      }
+
+      // Initial running
+      initSubscriptionsPage();
+      document.addEventListener('astro:page-load', initSubscriptionsPage);
+    })();
+  </script>
 </AdminLayout>

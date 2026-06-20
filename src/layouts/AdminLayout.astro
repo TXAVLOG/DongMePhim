@@ -1,6 +1,7 @@
 ---
 import '../styles/index.css';
 import { SettingService } from '../services/SettingService';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -8,6 +9,7 @@ interface Props {
 
 const { title } = Astro.props;
 const settings = await SettingService.getSettings();
+const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
 ---
 
 <!DOCTYPE html>
@@ -17,6 +19,7 @@ const settings = await SettingService.getSettings();
   <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title} | {settings.general.site_name} Admin</title>
+  <ClientRouter />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -125,7 +128,7 @@ const settings = await SettingService.getSettings();
           <span class="material-symbols-outlined text-xl">card_membership</span>
           <span class="font-label-caps text-xs">Gói đăng ký</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-email" href="/admin/he-thong/email-logs">
+          <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-email" href="/admin/he-thong/email-logs">
           <span class="material-symbols-outlined text-xl">mail_lock</span>
           <span class="font-label-caps text-xs">Lịch sử mail gửi đi</span>
         </a>
@@ -183,35 +186,232 @@ const settings = await SettingService.getSettings();
     </nav>
   </div>
 
-  <script>
+  <!-- Global Modal Container -->
+  <div id="txa-global-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4 transition-all duration-300 opacity-0">
+    <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 shadow-2xl max-w-md w-full transform scale-95 transition-all duration-300 flex flex-col gap-4">
+      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+        <h3 id="txa-modal-title" class="text-lg font-semibold text-white">Xác nhận</h3>
+        <button id="txa-modal-close" class="text-zinc-400 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div id="txa-modal-body" class="text-sm text-zinc-300 font-body-main py-2">
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button id="txa-modal-cancel" class="px-4 py-2 rounded-xl text-xs font-semibold bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 transition-all hidden">Hủy</button>
+        <button id="txa-modal-confirm" class="px-4 py-2 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-white transition-all">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
     // Highlight active sidebar item based on current URL path
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('aside nav a');
-    
-    let matchedLink = null;
-    let longestMatch = 0;
-
-    navLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && currentPath.startsWith(href) && href.length > longestMatch) {
-            longestMatch = href.length;
-            matchedLink = link;
+    function initAdminLayout() {
+      // Toggle Email logs link based on SMTP configuration in localStorage
+      const emailLink = document.getElementById('nav-email');
+      if (emailLink) {
+        let isConfigured = false;
+        try {
+          const stored = localStorage.getItem('txa_site_settings');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            isConfigured = !!(parsed.smtp?.smtp_host && parsed.smtp?.smtp_user && parsed.smtp?.smtp_pass);
+          } else {
+            isConfigured = true; // Default fallback to server seeds
+          }
+        } catch (e) {}
+        if (isConfigured) {
+          emailLink.classList.remove('hidden');
+        } else {
+          emailLink.classList.add('hidden');
         }
-    });
+      }
 
-    // Special case for root `/admin` so it doesn't match everything
-    if(currentPath === '/admin' || currentPath === '/admin/') {
-        matchedLink = document.getElementById('nav-dashboard');
+      const currentPath = window.location.pathname;
+      const navLinks = document.querySelectorAll('aside nav a');
+      
+      let matchedLink = null;
+      let longestMatch = 0;
+
+      navLinks.forEach(link => {
+          link.classList.remove('sidebar-active');
+          link.classList.add('text-on-surface-variant');
+          const icon = link.querySelector('.material-symbols-outlined');
+          if (icon instanceof HTMLElement) {
+              icon.style.fontVariationSettings = "'FILL' 0";
+          }
+          const href = link.getAttribute('href');
+          if (href && currentPath.startsWith(href) && href.length > longestMatch) {
+              longestMatch = href.length;
+              matchedLink = link;
+          }
+      });
+
+      // Special case for root `/admin` so it doesn't match everything
+      if(currentPath === '/admin' || currentPath === '/admin/') {
+          matchedLink = document.getElementById('nav-dashboard');
+      }
+
+      if (matchedLink) {
+          matchedLink.classList.remove('text-on-surface-variant');
+          matchedLink.classList.add('sidebar-active');
+          const icon = matchedLink.querySelector('.material-symbols-outlined');
+          if (icon instanceof HTMLElement) {
+              icon.style.fontVariationSettings = "'FILL' 1";
+          }
+      }
+
+      // Initialize global tooltip logic
+      let tooltipEl = document.getElementById('global-tooltip');
+      if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'global-tooltip';
+        tooltipEl.className = 'fixed pointer-events-none z-[9999] opacity-0 scale-95 transition-all duration-150 ease-out text-[11px] font-medium px-3 py-1.5 rounded-lg border border-white/10 bg-black/85 backdrop-blur-md text-white shadow-2xl';
+        document.body.appendChild(tooltipEl);
+      }
+
+      // Listen on document to handle client routing updates dynamically
+      const handleMouseOver = (e) => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) {
+          const text = target.getAttribute('data-tooltip');
+          tooltipEl.textContent = text;
+          tooltipEl.classList.remove('opacity-0', 'scale-95');
+          tooltipEl.classList.add('opacity-100', 'scale-100');
+        }
+      };
+
+      const handleMouseMove = (e) => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target && tooltipEl) {
+          const x = e.clientX + 10;
+          const y = e.clientY + 15;
+          tooltipEl.style.left = `${x}px`;
+          tooltipEl.style.top = `${y}px`;
+        }
+      };
+
+      const handleMouseOut = (e) => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) {
+          tooltipEl.classList.add('opacity-0', 'scale-95');
+          tooltipEl.classList.remove('opacity-100', 'scale-100');
+        }
+      };
+
+      document.removeEventListener('mouseover', handleMouseOver);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseout', handleMouseOut);
+
+      document.addEventListener('mouseover', handleMouseOver);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseout', handleMouseOut);
+      
+      // Global Modal Controller
+      window.txamodal = {
+        show: (options) => {
+          const modal = document.getElementById('txa-global-modal');
+          if (!modal) return;
+          const modalBox = modal.querySelector('div');
+          const titleEl = document.getElementById('txa-modal-title');
+          const bodyEl = document.getElementById('txa-modal-body');
+          const confirmBtn = document.getElementById('txa-modal-confirm');
+          const cancelBtn = document.getElementById('txa-modal-cancel');
+          const closeBtn = document.getElementById('txa-modal-close');
+
+          titleEl.innerHTML = options.title || 'Thông báo';
+          bodyEl.innerHTML = options.message || options.content || '';
+          
+          confirmBtn.textContent = options.confirmText || 'Xác nhận';
+          if (options.cancelText) {
+            cancelBtn.textContent = options.cancelText;
+            cancelBtn.classList.remove('hidden');
+          } else {
+            cancelBtn.classList.add('hidden');
+          }
+
+          if (options.type === 'danger' || options.type === 'error') {
+            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all';
+          } else {
+            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all';
+          }
+
+          const closeModal = () => {
+            modal.classList.add('opacity-0');
+            modalBox.classList.add('scale-95');
+            setTimeout(() => {
+              modal.classList.add('hidden');
+              modal.classList.remove('flex');
+            }, 200);
+            document.body.style.overflow = '';
+          };
+
+          confirmBtn.onclick = () => {
+            closeModal();
+            if (typeof options.onConfirm === 'function') options.onConfirm();
+          };
+
+          cancelBtn.onclick = () => {
+            closeModal();
+            if (typeof options.onCancel === 'function') options.onCancel();
+          };
+
+          closeBtn.onclick = closeModal;
+          modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+          };
+
+          document.body.style.overflow = 'hidden';
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalBox.classList.remove('scale-95');
+          }, 10);
+        }
+      };
+
+      // Global Toast Notification Helper
+      window.txatoast = {
+        show: (message, type = 'success', duration = 3000) => {
+          let container = document.getElementById('txa-toast-container');
+          if (!container) {
+            container = document.createElement('div');
+            container.id = 'txa-toast-container';
+            container.className = 'fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none';
+            document.body.appendChild(container);
+          }
+
+          const toast = document.createElement('div');
+          toast.className = 'txatoast flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border border-white/10 backdrop-blur-md bg-zinc-900/95 text-white pointer-events-auto transform translate-y-4 opacity-0 transition-all duration-300';
+          
+          const icons = { success: 'check_circle', error: 'cancel', info: 'info' };
+          const colors = { success: 'text-emerald-400', error: 'text-rose-500', info: 'text-cyan-400' };
+          
+          toast.innerHTML = `
+            <span class="material-symbols-outlined ${colors[type] || 'text-emerald-400'}">${icons[type] || 'check_circle'}</span>
+            <span class="text-xs font-medium font-body-main">${message}</span>
+          `;
+
+          container.appendChild(toast);
+          
+          setTimeout(() => {
+            toast.classList.remove('translate-y-4', 'opacity-0');
+          }, 10);
+
+          setTimeout(() => {
+            toast.classList.add('translate-y-[-10px]', 'opacity-0');
+            setTimeout(() => {
+              toast.remove();
+            }, 300);
+          }, duration);
+        }
+      };
+      window.showGlobalToast = window.txatoast.show;
     }
 
-    if (matchedLink) {
-        matchedLink.classList.remove('text-on-surface-variant');
-        matchedLink.classList.add('sidebar-active');
-        const icon = matchedLink.querySelector('.material-symbols-outlined');
-        if (icon instanceof HTMLElement) {
-            icon.style.fontVariationSettings = "'FILL' 1";
-        }
-    }
+    initAdminLayout();
+    document.addEventListener('astro:page-load', initAdminLayout);
   </script>
 </body>
 </html>

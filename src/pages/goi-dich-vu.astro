@@ -1,0 +1,270 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Gói dịch vụ của tôi">
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 space-y-8 min-h-[75vh]">
+    
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-glass-stroke pb-6">
+      <div>
+        <h1 class="font-display-hero text-4xl text-white font-bold tracking-tight">Gói dịch vụ của tôi</h1>
+        <p class="text-on-surface-variant mt-2 font-body-main">Quản lý quyền lợi thành viên và hóa đơn thanh toán.</p>
+      </div>
+      <a href="/nang-cap" class="px-6 py-3 rounded-full text-slate-950 font-bold bg-primary hover:brightness-110 active:scale-95 transition-all text-sm shadow-lg shadow-primary/20 flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm font-bold">workspace_premium</span>
+        Nâng cấp VIP ngay
+      </a>
+    </div>
+
+    <!-- Guest view (Requires login) -->
+    <div class="auth-guest flex flex-col items-center justify-center text-center shadow-2xl glass-panel border border-glass-stroke rounded-3xl p-12">
+      <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6 border border-primary/20">
+        <span class="material-symbols-outlined text-primary text-4xl">lock</span>
+      </div>
+      <h2 class="text-2xl text-white font-title-md mb-2">Đăng nhập tài khoản</h2>
+      <p class="text-on-surface-variant max-w-md mx-auto mb-8 font-body-main">Vui lòng đăng nhập để xem thông tin gói dịch vụ hiện tại của bạn và lịch sử thanh toán hóa đơn.</p>
+      <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class="px-8 py-3 rounded-full text-white font-bold bg-gradient-to-br from-primary-container to-secondary-container shadow-lg hover:brightness-110 transition-all">
+        Đăng nhập ngay
+      </button>
+    </div>
+
+    <!-- User View (Logged In) -->
+    <div class="auth-user hidden space-y-8">
+      
+      <!-- Subscription Overview (Bento cards) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Current Tier Bento Card -->
+        <div class="lg:col-span-2 glass-panel border border-glass-stroke rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between min-h-[220px]">
+          <!-- Glow background -->
+          <div class="absolute -top-12 -right-12 w-48 h-48 bg-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
+          
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <span class="text-xs text-zinc-400 font-bold uppercase tracking-wider">GÓI HIỆN TẠI</span>
+                <h3 id="current-plan-title" class="text-3xl font-black text-white mt-1">Free Plan</h3>
+              </div>
+              <span id="current-plan-badge" class="px-3 py-1 bg-zinc-800 text-zinc-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-zinc-700">Miễn phí</span>
+            </div>
+            
+            <p id="current-plan-desc" class="text-sm text-zinc-400 font-body-main mt-2 max-w-lg">Bạn đang sử dụng gói Cơ bản. Để có trải nghiệm xem phim Ultra HD không quảng cáo, hãy nâng cấp tài khoản của bạn.</p>
+          </div>
+          
+          <div id="plan-expiry-container" class="mt-6 pt-6 border-t border-glass-stroke/40 flex flex-wrap justify-between items-center gap-4 text-xs">
+            <div class="flex gap-4">
+              <div>
+                <span class="block text-zinc-500 font-bold text-[10px] uppercase">HẠN DÙNG</span>
+                <span id="plan-expiry-val" class="font-bold text-white mt-0.5 block">—</span>
+              </div>
+              <div id="plan-cycle-div" class="hidden">
+                <span class="block text-zinc-500 font-bold text-[10px] uppercase">CHU KỲ</span>
+                <span id="plan-cycle-val" class="font-bold text-white mt-0.5 block">—</span>
+              </div>
+            </div>
+            <div id="plan-remaining-badge" class="px-2.5 py-1 rounded bg-white/5 border border-white/10 text-white font-bold hidden"></div>
+          </div>
+        </div>
+
+        <!-- Premium Benefits Bento Card -->
+        <div class="glass-panel border border-glass-stroke rounded-3xl p-6 bg-gradient-to-br from-zinc-950 to-zinc-900/60 relative overflow-hidden flex flex-col justify-between">
+          <h4 class="text-xs text-primary font-bold uppercase tracking-widest mb-4">LỢI ÍCH VIP MÀ BẠN CÓ</h4>
+          <ul class="space-y-3.5 flex-1">
+            <li class="flex items-start gap-2.5 text-xs text-zinc-300">
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
+              <span>Không quảng cáo gây phiền nhiễu khi phát phim.</span>
+            </li>
+            <li class="flex items-start gap-2.5 text-xs text-zinc-300">
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
+              <span>Trình chiếu chất lượng 4K UHD cao cấp nhất.</span>
+            </li>
+            <li class="flex items-start gap-2.5 text-xs text-zinc-300">
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
+              <span>Truy cập độc quyền phim bom tấn mới nhất.</span>
+            </li>
+            <li class="flex items-start gap-2.5 text-xs text-zinc-300">
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
+              <span>Tốc độ tải phim siêu tốc, máy chủ CDN VIP.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Invoices Section -->
+      <div class="space-y-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary">receipt_long</span>
+          Lịch sử hóa đơn thanh toán
+        </h3>
+        
+        <div class="overflow-x-auto glass-panel border border-glass-stroke rounded-2xl">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-zinc-950/40 border-b border-glass-stroke">
+              <tr>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Mã Hóa Đơn</th>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Ngày Tạo</th>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Gói cước</th>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Số tiền</th>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Cổng</th>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Trạng thái</th>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider text-right">Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody id="userInvoicesBody" class="divide-y divide-glass-stroke/40">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</MainLayout>
+
+<script is:inline>
+  (function() {
+    function hydrateUserSubscriptionPage() {
+      const isLoggedIn = document.cookie.includes('txa_gate_passed');
+      const guest = document.querySelector('.auth-guest');
+      const user = document.querySelector('.auth-user');
+
+      if (!isLoggedIn) {
+        guest?.classList.remove('hidden');
+        user?.classList.add('hidden');
+        return;
+      }
+
+      guest?.classList.add('hidden');
+      user?.classList.remove('hidden');
+
+      const username = localStorage.getItem('tlogged_in_as') || '';
+      const subStr = localStorage.getItem('txa_user_subscription');
+      
+      const planTitle = document.getElementById('current-plan-title');
+      const planBadge = document.getElementById('current-plan-badge');
+      const planDesc = document.getElementById('current-plan-desc');
+      const planExpiryVal = document.getElementById('plan-expiry-val');
+      const planCycleDiv = document.getElementById('plan-cycle-div');
+      const planCycleVal = document.getElementById('plan-cycle-val');
+      const planRemaining = document.getElementById('plan-remaining-badge');
+
+      let parsedSub = null;
+      if (subStr) {
+        try {
+          parsedSub = JSON.parse(subStr);
+        } catch (e) {}
+      }
+
+      // Check user in database
+      const usersStr = localStorage.getItem('tregistered_users') || '[]';
+      let userInDb = null;
+      try {
+        const users = JSON.parse(usersStr);
+        userInDb = users.find(u => u.username === username || u.email === username);
+      } catch (e) {}
+
+      const planName = (userInDb && userInDb.package && userInDb.package.includes('VIP')) 
+        ? userInDb.package 
+        : (parsedSub && parsedSub.tier ? parsedSub.tier : 'Cơ bản (Free)');
+
+      if (planName.includes('VIP')) {
+        const expStr = (userInDb && userInDb.expiryDate) 
+          ? userInDb.expiryDate 
+          : (parsedSub ? parsedSub.expiry : '');
+          
+        const cycle = parsedSub ? parsedSub.cycle : 'monthly';
+
+        planTitle.textContent = planName;
+        planBadge.textContent = 'MEMBER VIP';
+        planBadge.className = 'px-3 py-1 bg-gradient-to-r from-violet-600 to-cyan-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-violet-500/20';
+        planDesc.textContent = 'Tài khoản của bạn đã được kích hoạt VIP thành công. Bạn có toàn quyền truy cập tất cả tài nguyên phim với băng thông máy chủ cao tốc và chất lượng 4K UHD.';
+
+        if (expStr) {
+          const expDate = new Date(expStr);
+          planExpiryVal.textContent = expDate.toLocaleString('vi-VN');
+          
+          planCycleDiv.classList.remove('hidden');
+          planCycleVal.textContent = cycle === 'annual' ? 'Hàng năm (-15%)' : 'Hàng tháng';
+          
+          const remDays = Math.ceil((expDate.getTime() - Date.now()) / (3600 * 1000 * 24));
+          if (remDays > 0) {
+            planRemaining.classList.remove('hidden');
+            planRemaining.textContent = `Còn lại ${remDays} ngày`;
+          } else {
+            planRemaining.classList.add('hidden');
+          }
+        } else {
+          planExpiryVal.textContent = 'Vô thời hạn (Lifetime)';
+          planCycleDiv.classList.add('hidden');
+          planRemaining.classList.add('hidden');
+        }
+      } else {
+        // Free tier
+        planTitle.textContent = 'Free Plan';
+        planBadge.textContent = 'MIỄN PHÍ';
+        planBadge.className = 'px-3 py-1 bg-zinc-800 text-zinc-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-zinc-700';
+        planDesc.textContent = 'Bạn đang sử dụng gói Cơ bản. Để có trải nghiệm xem phim Ultra HD không quảng cáo, hãy nâng cấp tài khoản của bạn.';
+        planExpiryVal.textContent = 'Vô thời hạn';
+        planCycleDiv.classList.add('hidden');
+        planRemaining.classList.add('hidden');
+      }
+
+      // Render User Invoices
+      const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+      let logs = [];
+      try { logs = JSON.parse(logsStr); } catch (e) {}
+
+      // Filter invoices for this username
+      const userInvoices = logs.filter(item => item.username === username);
+      const invoicesTbody = document.getElementById('userInvoicesBody');
+
+      if (!invoicesTbody) return;
+
+      if (userInvoices.length === 0) {
+        invoicesTbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-6 py-8 text-center text-zinc-500 italic">Bạn chưa thực hiện giao dịch thanh toán nào.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Sort invoices newest first
+      userInvoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      invoicesTbody.innerHTML = userInvoices.map(item => {
+        const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
+        const dateStr = new Date(item.date).toLocaleDateString('vi-VN');
+        
+        let statusBadge = '';
+        if (item.status === 'approved') {
+          statusBadge = '<span class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[9px]">Đã duyệt</span>';
+        } else if (item.status === 'declined') {
+          statusBadge = '<span class="px-2.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[9px]">Bị từ chối</span>';
+        } else {
+          statusBadge = '<span class="px-2.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse">Chờ duyệt</span>';
+        }
+
+        const methodLabel = item.method === 'manual' ? 'VietQR (Thủ công)' : item.method.toUpperCase();
+
+        return `
+          <tr class="hover:bg-white/5 transition-colors">
+            <td class="px-6 py-4 font-mono text-zinc-400">${item.txid.substring(0, 10)}...</td>
+            <td class="px-6 py-4 text-zinc-300">${dateStr}</td>
+            <td class="px-6 py-4 text-zinc-200 font-bold">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
+            <td class="px-6 py-4 text-white font-bold">${formattedPrice}</td>
+            <td class="px-6 py-4 font-bold text-zinc-400">${methodLabel}</td>
+            <td class="px-6 py-4">${statusBadge}</td>
+            <td class="px-6 py-4 text-right">
+              <a href="/invoices/${item.txid}" class="text-primary hover:underline font-bold text-xs">Xem hóa đơn</a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    hydrateUserSubscriptionPage();
+    document.addEventListener('astro:page-load', hydrateUserSubscriptionPage);
+  })();
+</script>

@@ -1,0 +1,603 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { SettingService } from '../services/SettingService';
+
+const settings = await SettingService.getSettings();
+---
+
+<MainLayout title="Nâng cấp tài khoản VIP">
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 space-y-12 min-h-[80vh]">
+    
+    <!-- Header Section -->
+    <div class="text-center space-y-4 max-w-2xl mx-auto">
+      <span class="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest">PREMIUM MEMBERSHIP</span>
+      <h1 class="text-4xl sm:text-5xl font-black text-white tracking-tight">Kích hoạt trải nghiệm điện ảnh VIP</h1>
+      <p class="text-sm text-zinc-400 font-body-main leading-relaxed">Xem phim không giới hạn, hình ảnh Ultra HD 4K sắc nét và không bao giờ bị quảng cáo làm phiền.</p>
+    </div>
+
+    <!-- Guest view (Requires login) -->
+    <div class="auth-guest flex flex-col items-center justify-center text-center shadow-2xl glass-panel border border-glass-stroke rounded-3xl p-12 max-w-xl mx-auto">
+      <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6 border border-primary/20">
+        <span class="material-symbols-outlined text-primary text-4xl">lock</span>
+      </div>
+      <h2 class="text-2xl text-white font-title-md mb-2">Đăng nhập tài khoản</h2>
+      <p class="text-on-surface-variant max-w-md mx-auto mb-8 font-body-main">Vui lòng đăng nhập để nâng cấp hoặc gia hạn gói cước thành viên VIP của bạn.</p>
+      <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class="px-8 py-3 rounded-full text-white font-bold bg-gradient-to-br from-primary-container to-secondary-container shadow-lg hover:brightness-110 transition-all cursor-pointer">
+        Đăng nhập ngay
+      </button>
+    </div>
+
+    <!-- User View (Logged In) -->
+    <div class="auth-user hidden space-y-12">
+      
+      <!-- Billing Cycle Toggle -->
+      <div class="flex items-center justify-center gap-4">
+        <span class="text-xs text-zinc-400 font-bold" id="label-monthly">Thanh toán Hàng tháng</span>
+        <button id="billing-toggle-btn" class="w-14 h-8 bg-zinc-800 rounded-full p-1 relative transition-colors duration-300 focus:outline-none cursor-pointer">
+          <div class="w-6 h-6 bg-primary rounded-full absolute left-1 top-1 transition-transform duration-300 shadow-md shadow-primary/45" id="billing-dot"></div>
+        </button>
+        <span class="text-xs text-zinc-300 font-bold flex items-center gap-1.5" id="label-annual">
+          Thanh toán Hàng năm
+          <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-black text-[9px] uppercase tracking-wider font-label-caps">-15% Tiết kiệm</span>
+        </span>
+      </div>
+
+      <!-- Plan Selection Bento Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        
+        <!-- Free Plan Card -->
+        <div class="glass-panel border border-glass-stroke rounded-3xl p-8 relative flex flex-col justify-between min-h-[360px]" id="plan-card-free">
+          <div>
+            <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">GÓI MIỄN PHÍ</span>
+            <h3 class="text-2xl font-bold text-white mt-1">Cơ bản (Free)</h3>
+            
+            <div class="flex items-baseline gap-1 mt-6">
+              <span class="text-4xl font-black text-white">0đ</span>
+              <span class="text-xs text-zinc-500 font-semibold font-body-main">/ Lifetime</span>
+            </div>
+            
+            <ul class="space-y-4 mt-8">
+              <li class="flex items-start gap-2.5 text-xs text-zinc-400">
+                <span class="material-symbols-outlined text-rose-500 text-sm font-bold">cancel</span>
+                <span>Chứa quảng cáo trong lúc phát video.</span>
+              </li>
+              <li class="flex items-start gap-2.5 text-xs text-zinc-300">
+                <span class="material-symbols-outlined text-emerald-400 text-sm font-bold">check_circle</span>
+                <span>Độ phân giải HD tiêu chuẩn (SD/HD).</span>
+              </li>
+            </ul>
+          </div>
+          
+          <button class="w-full py-3 border border-glass-stroke rounded-xl text-zinc-400 font-bold mt-8 text-xs select-none bg-white/5 cursor-not-allowed" disabled>
+            Gói cước mặc định
+          </button>
+        </div>
+
+        <!-- VIP Member Card (Premium Purple/Cyan Glowing Card) -->
+        <div class="glass-panel border border-violet-500/30 rounded-3xl p-8 relative flex flex-col justify-between min-h-[360px] bg-gradient-to-tr from-violet-950/20 via-zinc-950 to-cyan-950/10 shadow-[0_0_50px_rgba(109,40,217,0.15)] ring-1 ring-violet-500/20" id="plan-card-vip">
+          <div class="absolute top-0 right-0">
+            <div class="bg-primary text-slate-950 px-6 py-1 rotate-45 translate-x-6 translate-y-3 text-[9px] font-black uppercase tracking-wider font-label-caps shadow-md">PHỔ BIẾN</div>
+          </div>
+          
+          <div>
+            <span class="text-[10px] text-primary font-bold uppercase tracking-widest block">GÓI CAO CẤP</span>
+            <h3 class="text-2xl font-black text-white mt-1">Premium VIP</h3>
+            
+            <div class="mt-6 flex flex-col">
+              <div class="flex items-baseline gap-1">
+                <span id="vip-price-val" class="text-4xl font-black text-white">69.000đ</span>
+                <span id="vip-cycle-label" class="text-xs text-zinc-400 font-semibold font-body-main">/ tháng</span>
+              </div>
+              <span id="vip-saving-label" class="text-[10px] text-emerald-400 font-bold mt-1 tracking-wide hidden">Tiết kiệm 129.000đ so với trả tháng</span>
+            </div>
+
+            <ul class="space-y-4 mt-8">
+              <li class="flex items-start gap-2.5 text-xs text-zinc-200">
+                <span class="material-symbols-outlined text-emerald-400 text-sm font-bold">check_circle</span>
+                <span>Hoàn toàn không có quảng cáo.</span>
+              </li>
+              <li class="flex items-start gap-2.5 text-xs text-zinc-200">
+                <span class="material-symbols-outlined text-emerald-400 text-sm font-bold">check_circle</span>
+                <span>Độ phân giải Ultra HD 4K siêu nét.</span>
+              </li>
+              <li class="flex items-start gap-2.5 text-xs text-zinc-200">
+                <span class="material-symbols-outlined text-emerald-400 text-sm font-bold">check_circle</span>
+                <span>Máy chủ truyền tải VIP CDN cực nhanh.</span>
+              </li>
+            </ul>
+          </div>
+          
+          <button id="upgrade-vip-btn" class="w-full py-3.5 bg-gradient-to-r from-primary to-secondary text-slate-950 font-black rounded-xl mt-8 text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-lg shadow-primary/20">
+            Nâng cấp VIP ngay
+          </button>
+        </div>
+      </div>
+
+      <!-- Feature Comparison Table -->
+      <div class="max-w-4xl mx-auto space-y-6 pt-6">
+        <h3 class="text-xl font-bold text-white text-center">Bảng so sánh tính năng</h3>
+        
+        <div class="overflow-hidden border border-glass-stroke rounded-2xl">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-zinc-950/50 border-b border-glass-stroke">
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Tính năng</th>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider text-center">Gói Thường</th>
+                <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider text-center">Gói VIP</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-glass-stroke/40">
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-zinc-300 font-medium">Băng thông streaming</td>
+                <td class="px-6 py-4 text-center text-zinc-500">Giới hạn (SD/HD)</td>
+                <td class="px-6 py-4 text-center text-primary font-bold">Không giới hạn (4K UHD)</td>
+              </tr>
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-zinc-300 font-medium">Quảng cáo</td>
+                <td class="px-6 py-4 text-center text-zinc-500">Bắt buộc xem</td>
+                <td class="px-6 py-4 text-center text-emerald-400 font-bold">Không có quảng cáo</td>
+              </tr>
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-zinc-300 font-medium">Truy cập phim mới ra rạp</td>
+                <td class="px-6 py-4 text-center text-zinc-500">Đợi sau 2 tuần</td>
+                <td class="px-6 py-4 text-center text-emerald-400 font-bold">Xem ngay lập tức</td>
+              </tr>
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-zinc-300 font-medium">Số lượng thiết bị xem cùng lúc</td>
+                <td class="px-6 py-4 text-center text-zinc-500">1 thiết bị</td>
+                <td class="px-6 py-4 text-center text-zinc-200">Lên đến 5 thiết bị</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Manual Transfer Portal Section (Initially Hidden) -->
+    <div id="manual-transfer-portal" class="max-w-2xl mx-auto glass-panel border border-glass-stroke rounded-3xl p-8 space-y-8 hidden">
+      <div class="flex justify-between items-center border-b border-glass-stroke pb-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">qr_code_2</span>
+          Chuyển khoản thủ công VietQR
+        </h3>
+        <button id="cancel-manual-btn" class="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">close</span> Đóng
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+        <!-- QR Code Column -->
+        <div class="md:col-span-5 flex flex-col items-center gap-3">
+          <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[200px] h-[200px]">
+            <img id="vietqr-img" src="" class="w-full h-full object-contain" alt="VietQR Pay" />
+          </div>
+          <span class="text-[10px] text-zinc-400 font-semibold tracking-wider flex items-center gap-1 uppercase">
+            <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
+            Quét mã để trả tiền nhanh
+          </span>
+        </div>
+
+        <!-- Bank Details Column -->
+        <div class="md:col-span-7 space-y-3.5 text-xs">
+          <h4 class="font-bold text-zinc-500 uppercase tracking-wider text-[10px]">THÔNG TIN TÀI KHOẢN</h4>
+          
+          <div class="space-y-2">
+            <!-- Bank name -->
+            <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+              <div>
+                <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Ngân hàng</span>
+                <p id="bank-name-val" class="font-bold text-white mt-0.5">-</p>
+              </div>
+            </div>
+            
+            <!-- Account number -->
+            <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+              <div>
+                <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Số tài khoản</span>
+                <p id="bank-no-val" class="font-mono font-bold text-white text-sm mt-0.5">-</p>
+              </div>
+              <button onclick="copyField('bank-no-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">content_copy</span>
+              </button>
+            </div>
+
+            <!-- Account Name -->
+            <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+              <div>
+                <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Chủ tài khoản</span>
+                <p id="bank-accname-val" class="font-bold text-white uppercase mt-0.5">-</p>
+              </div>
+            </div>
+
+            <!-- Amount -->
+            <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+              <div>
+                <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Số tiền cần chuyển</span>
+                <p id="bank-amount-val" class="font-bold text-primary text-sm mt-0.5">-</p>
+              </div>
+              <button onclick="copyRawField('bank-amount-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">content_copy</span>
+              </button>
+            </div>
+
+            <!-- Memo Message -->
+            <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+              <div>
+                <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Nội dung chuyển khoản (Bắt buộc ghi đúng)</span>
+                <p id="bank-memo-val" class="font-bold text-white tracking-wide mt-0.5 font-mono uppercase text-sm">-</p>
+              </div>
+              <button onclick="copyField('bank-memo-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">content_copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Receipt Upload Form -->
+      <form id="receipt-upload-form" class="space-y-4 pt-6 border-t border-glass-stroke/50">
+        <h4 class="font-bold text-zinc-300 text-xs flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm text-primary">cloud_upload</span>
+          Nộp minh chứng giao dịch chuyển khoản thành công
+        </h4>
+        <p class="text-[11px] text-zinc-500 leading-relaxed font-body-main">Vui lòng chụp ảnh biên lai/hóa đơn chuyển khoản thành công và tải lên dưới đây để ban quản trị đối soát kích hoạt gói VIP của bạn nhanh nhất (1-5 phút).</p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 items-center">
+          <div class="w-full flex-1">
+            <input type="file" id="receipt-file-input" accept="image/*" class="hidden" required />
+            <div onclick="document.getElementById('receipt-file-input').click()" class="w-full h-24 border-2 border-dashed border-glass-stroke hover:border-primary/50 bg-white/5 rounded-2xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all p-3" id="file-dropzone">
+              <span class="material-symbols-outlined text-zinc-500 text-xl" id="dropzone-icon">image</span>
+              <span class="text-[10px] text-zinc-400 font-bold" id="dropzone-text">Chọn ảnh hóa đơn...</span>
+            </div>
+          </div>
+          
+          <button type="submit" class="w-full sm:w-auto px-8 py-4 bg-primary text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer h-24 shadow-lg shadow-primary/20 flex items-center justify-center shrink-0">
+            Gửi yêu cầu duyệt gói
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </main>
+</MainLayout>
+
+<script is:inline>
+  (function() {
+    let billingCycle = 'monthly'; // 'monthly' or 'annual'
+    
+    // Config prices
+    const PRICE_MONTHLY = 69000;
+    const PRICE_ANNUAL = 699000;
+
+    function initUpgradePage() {
+      const isLoggedIn = document.cookie.includes('txa_gate_passed');
+      const guest = document.querySelector('.auth-guest');
+      const user = document.querySelector('.auth-user');
+
+      if (!isLoggedIn) {
+        guest?.classList.remove('hidden');
+        user?.classList.add('hidden');
+        return;
+      }
+
+      guest?.classList.add('hidden');
+      user?.classList.remove('hidden');
+
+      // Bind Billing Cycle Toggle
+      const toggleBtn = document.getElementById('billing-toggle-btn');
+      const dot = document.getElementById('billing-dot');
+      const labelMonthly = document.getElementById('label-monthly');
+      const labelAnnual = document.getElementById('label-annual');
+      const priceVal = document.getElementById('vip-price-val');
+      const cycleLabel = document.getElementById('vip-cycle-label');
+      const savingLabel = document.getElementById('vip-saving-label');
+
+      function updatePrices() {
+        if (billingCycle === 'monthly') {
+          dot?.classList.remove('translate-x-6');
+          dot?.classList.add('translate-x-0');
+          labelMonthly?.classList.add('text-white');
+          labelMonthly?.classList.remove('text-zinc-400');
+          labelAnnual?.classList.add('text-zinc-400');
+          labelAnnual?.classList.remove('text-white');
+          
+          if (priceVal) priceVal.textContent = '69.000đ';
+          if (cycleLabel) cycleLabel.textContent = '/ tháng';
+          if (savingLabel) savingLabel.classList.add('hidden');
+        } else {
+          dot?.classList.remove('translate-x-0');
+          dot?.classList.add('translate-x-6');
+          labelMonthly?.classList.remove('text-white');
+          labelMonthly?.classList.add('text-zinc-400');
+          labelAnnual?.classList.remove('text-zinc-400');
+          labelAnnual?.classList.add('text-white');
+          
+          if (priceVal) priceVal.textContent = '699.000đ';
+          if (cycleLabel) cycleLabel.textContent = '/ năm';
+          if (savingLabel) {
+            savingLabel.classList.remove('hidden');
+            const saveAmount = (PRICE_MONTHLY * 12) - PRICE_ANNUAL;
+            savingLabel.textContent = `Tiết kiệm ${new Intl.NumberFormat('vi-VN').format(saveAmount)}đ so với trả tháng`;
+          }
+        }
+      }
+
+      // Initial cycle styles
+      updatePrices();
+
+      toggleBtn?.onclick = function() {
+        billingCycle = billingCycle === 'monthly' ? 'annual' : 'monthly';
+        updatePrices();
+      };
+
+      // Bind Upgrade Button Action
+      const upgradeBtn = document.getElementById('upgrade-vip-btn');
+      upgradeBtn?.addEventListener('click', async function() {
+        const settingsStr = localStorage.getItem('txa_site_settings') || '{}';
+        let settings = {};
+        try { settings = JSON.parse(settingsStr); } catch (e) {}
+
+        const payments = settings.payments || {};
+        const isSandbox = payments.sandbox_mode ?? true;
+
+        // Collect available payment methods
+        const methods = [];
+        if (payments.manual_enable) methods.push({ id: 'manual', label: 'Chuyển khoản VietQR' });
+        if (payments.payos_enable) methods.push({ id: 'payos', label: 'Cổng PayOS' });
+        if (payments.stripe_enable) methods.push({ id: 'stripe', label: 'Cổng Stripe (Quốc tế)' });
+        if (payments.paypal_enable) methods.push({ id: 'paypal', label: 'Cổng PayPal' });
+        if (payments.sepay_enable) methods.push({ id: 'sepay', label: 'Cổng SePay' });
+        if (payments.vnpay_enable) methods.push({ id: 'vnpay', label: 'Cổng VNPAY' });
+
+        if (methods.length === 0) {
+          if (window.showGlobalToast) window.showGlobalToast('Không có cổng thanh toán nào hoạt động.', 'error');
+          return;
+        }
+
+        const price = billingCycle === 'monthly' ? PRICE_MONTHLY : PRICE_ANNUAL;
+        const cycleLabelStr = billingCycle === 'annual' ? 'Hàng năm' : 'Hàng tháng';
+
+        // Render method selection HTML for txaModal
+        const modalHtml = `
+          <div class="flex flex-col gap-4">
+            <p class="text-xs text-zinc-400">Chọn phương thức thanh toán phù hợp dưới đây:</p>
+            <div class="flex flex-col gap-2.5">
+              ${methods.map(m => `
+                <button onclick="processPaymentSelect('${m.id}', ${price}, '${billingCycle}')" class="w-full p-4 rounded-xl border border-glass-stroke hover:border-primary/50 bg-white/5 hover:bg-white/10 text-left font-bold text-white text-xs flex justify-between items-center transition-all cursor-pointer">
+                  <span class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-base">credit_card</span>
+                    ${m.label}
+                  </span>
+                  <span class="material-symbols-outlined text-zinc-500 text-sm">chevron_right</span>
+                </button>
+              `).join('')}
+            </div>
+            ${isSandbox ? '<div class="text-[10px] text-yellow-500 font-bold bg-yellow-500/10 border border-yellow-500/20 rounded p-2 text-center">Chế độ Sandbox (Giả lập) đang được Admin kích hoạt. Các cổng tự động sẽ đi qua trang mô phỏng.</div>' : ''}
+          </div>
+        `;
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: `Thanh toán Premium VIP (${cycleLabelStr})`,
+            message: modalHtml,
+            type: 'info',
+            confirmText: '', // Hide confirm button, selection acts as action
+            cancelText: 'Đóng',
+            onConfirm: () => {}
+          });
+        }
+      });
+    }
+
+    // Expose select gateway globally
+    window.processPaymentSelect = async function(method, price, cycle) {
+      if (window.txamodal) {
+        // Trigger modal closing
+        const modal = document.getElementById('txa-global-modal');
+        if (modal) {
+          modal.classList.add('opacity-0');
+          setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+          document.body.style.overflow = '';
+        }
+      }
+
+      const settingsStr = localStorage.getItem('txa_site_settings') || '{}';
+      let settings = {};
+      try { settings = JSON.parse(settingsStr); } catch (e) {}
+
+      const payments = settings.payments || {};
+      const isSandbox = payments.sandbox_mode ?? true;
+      const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+      const packageTitle = 'Premium VIP';
+
+      if (isSandbox && method !== 'manual') {
+        // Redirect to simulation gateway
+        window.location.href = `/checkout/gateway?method=${method}&cycle=${cycle}&price=${price}&packageTitle=${encodeURIComponent(packageTitle)}`;
+        return;
+      }
+
+      // REAL MODE or MANUAL BANK
+      if (method === 'manual') {
+        // Load manual transfer VietQR UI
+        const manualPortal = document.getElementById('manual-transfer-portal');
+        const userView = document.querySelector('.auth-user');
+        
+        if (manualPortal) {
+          if (userView) userView.classList.add('hidden');
+          manualPortal.classList.remove('hidden');
+
+          // Populate VietQR values
+          document.getElementById('bank-name-val').textContent = payments.manual_bank_name || 'MB Bank';
+          document.getElementById('bank-no-val').textContent = payments.manual_account_no || '-';
+          document.getElementById('bank-accname-val').textContent = payments.manual_account_name || '-';
+          document.getElementById('bank-amount-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+          
+          const memo = `TXAPAY ${username.replace(/\s+/g, '').toUpperCase()} ${cycle.toUpperCase()}`;
+          document.getElementById('bank-memo-val').textContent = memo;
+
+          // Generate VietQR Compact QR link
+          const qrUrl = `https://img.vietqr.io/image/${payments.manual_bank_name}-${payments.manual_account_no}-compact.png?amount=${price}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(payments.manual_account_name)}`;
+          document.getElementById('vietqr-img').setAttribute('src', qrUrl);
+        }
+      } else if (method === 'stripe') {
+        // Call Stripe real creation endpoint
+        if (window.showGlobalToast) window.showGlobalToast('Đang kết nối tới Stripe...', 'info');
+        try {
+          const res = await fetch('/api/payment/stripe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price, cycle, username })
+          });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            window.location.href = data.url;
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(data.error || 'Lỗi khởi tạo Stripe.', 'error');
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API Stripe.', 'error');
+        }
+      } else if (method === 'payos') {
+        // Call PayOS real creation endpoint
+        if (window.showGlobalToast) window.showGlobalToast('Đang kết nối tới PayOS...', 'info');
+        try {
+          const res = await fetch('/api/payment/payos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price, cycle, username })
+          });
+          const data = await res.json();
+          if (res.ok && data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(data.error || 'Lỗi khởi tạo PayOS.', 'error');
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API PayOS.', 'error');
+        }
+      } else {
+        // Other methods placeholder
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Cổng thanh toán đang bảo trì',
+            message: `Cổng ${method.toUpperCase()} trong chế độ Thật đang được bảo trì tích hợp. Vui lòng chọn <strong>Chuyển khoản VietQR</strong> hoặc thử lại sau!`,
+            type: 'info',
+            confirmText: 'Đóng',
+            cancelText: '',
+            onConfirm: () => {}
+          });
+        }
+      }
+    };
+
+    // Copy to clipboard helpers
+    window.copyField = function(id) {
+      const text = document.getElementById(id)?.textContent;
+      if (text) {
+        navigator.clipboard.writeText(text);
+        if (window.showGlobalToast) window.showGlobalToast('Đã sao chép vào bộ nhớ tạm!', 'success', 1500);
+      }
+    };
+    
+    window.copyRawField = function(id) {
+      const textStr = document.getElementById(id)?.textContent;
+      if (textStr) {
+        const cleanedVal = textStr.replace(/[^0-9]/g, '');
+        navigator.clipboard.writeText(cleanedVal);
+        if (window.showGlobalToast) window.showGlobalToast('Đã sao chép số tiền!', 'success', 1500);
+      }
+    };
+
+    // Setup Receipt Upload Forms & file drops
+    function setupReceiptForms() {
+      const fileInput = document.getElementById('receipt-file-input');
+      const dropzone = document.getElementById('file-dropzone');
+      const dzText = document.getElementById('dropzone-text');
+      const dzIcon = document.getElementById('dropzone-icon');
+
+      if (!fileInput || !dropzone) return;
+
+      fileInput.onchange = function() {
+        if (this.files && this.files[0]) {
+          const file = this.files[0];
+          if (dzText) dzText.textContent = `Hồ sơ đã chọn: ${file.name}`;
+          if (dzIcon) dzIcon.textContent = 'check_circle';
+          if (dropzone) dropzone.style.borderColor = '#10b981';
+        }
+      };
+
+      const form = document.getElementById('receipt-upload-form');
+      form?.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          const receiptImgBase64 = reader.result;
+
+          const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+          const price = billingCycle === 'monthly' ? PRICE_MONTHLY : PRICE_ANNUAL;
+          const packageTitle = 'Premium VIP';
+          const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+          const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+          let logs = [];
+          try { logs = JSON.parse(logsStr); } catch (e) {}
+
+          // Write log as pending
+          logs.push({
+            txid: txid,
+            username: username,
+            packageTitle: packageTitle,
+            price: price,
+            cycle: billingCycle,
+            method: 'manual',
+            receiptImg: receiptImgBase64,
+            status: 'pending',
+            date: new Date().toISOString()
+          });
+
+          localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Gửi biên lai thành công',
+              message: 'Biên lai chuyển khoản của bạn đã được lưu lại thành công và đang được quản trị viên đối soát. Vui lòng đợi trong giây lát.',
+              type: 'info',
+              confirmText: 'Xem hóa đơn',
+              cancelText: '',
+              onConfirm: () => {
+                window.location.href = '/goi-dich-vu';
+              }
+            });
+          } else {
+            alert('Gửi biên lai thành công!');
+            window.location.href = '/goi-dich-vu';
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Close Manual Bank panel
+      const cancelBtn = document.getElementById('cancel-manual-btn');
+      cancelBtn?.addEventListener('click', function() {
+        const manualPortal = document.getElementById('manual-transfer-portal');
+        const userView = document.querySelector('.auth-user');
+        
+        if (manualPortal) manualPortal.classList.add('hidden');
+        if (userView) userView.classList.remove('hidden');
+      });
+    }
+
+    initUpgradePage();
+    setupReceiptForms();
+
+    document.addEventListener('astro:page-load', () => {
+      initUpgradePage();
+      setupReceiptForms();
+    });
+  })();
+</script>

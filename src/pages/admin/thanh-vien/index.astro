@@ -71,7 +71,6 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     (function() {
       // Helper: Initial seed data if tregistered_users is empty
       function getInitialUsers() {
-        const dateNow = new Date();
         const getOffsetDate = (daysAgo) => {
           const d = new Date();
           d.setDate(d.getDate() - daysAgo);
@@ -122,195 +121,210 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         localStorage.setItem('tregistered_users', JSON.stringify(getInitialUsers()));
       }
 
-      let users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+      function initMembersManagement() {
+        const tbody = document.getElementById('member-table-tbody');
+        if (!tbody) return; // Exit if not on this page
 
-      const tbody = document.getElementById('member-table-tbody');
-      const searchInput = document.getElementById('member-search');
-      const filterPackage = document.getElementById('filter-package');
-      const filterStatus = document.getElementById('filter-status');
-      const summaryText = document.getElementById('members-summary');
-      const showCountText = document.getElementById('show-count-text');
-      const addBtn = document.getElementById('add-member-btn');
+        const searchInput = document.getElementById('member-search');
+        const filterPackage = document.getElementById('filter-package');
+        const filterStatus = document.getElementById('filter-status');
+        const summaryText = document.getElementById('members-summary');
+        const showCountText = document.getElementById('show-count-text');
+        const addBtn = document.getElementById('add-member-btn');
 
-      // Global actions
-      window.toggleUserStatus = function(username) {
-        users = users.map(u => {
-          if (u.username === username) {
-            const nextStatus = u.status === 'active' ? 'banned' : 'active';
-            if (window.showGlobalToast) {
-              window.showGlobalToast(`Đã ${nextStatus === 'active' ? 'mở khóa' : 'khóa'} tài khoản ${username}!`, 'success');
+        let users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+
+        window.toggleUserStatus = function(username) {
+          users = users.map(u => {
+            if (u.username === username) {
+              const nextStatus = u.status === 'active' ? 'banned' : 'active';
+              if (window.showGlobalToast) {
+                window.showGlobalToast(`Đã ${nextStatus === 'active' ? 'mở khóa' : 'khóa'} tài khoản ${username}!`, 'success');
+              }
+              return { ...u, status: nextStatus };
             }
-            return { ...u, status: nextStatus };
-          }
-          return u;
-        });
-        localStorage.setItem('tregistered_users', JSON.stringify(users));
-        filterAndSearch();
-      };
-
-      window.deleteUser = function(username) {
-        if (confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản thành viên ${username} không?`)) {
-          users = users.filter(u => u.username !== username);
-          localStorage.setItem('tregistered_users', JSON.stringify(users));
-          if (window.showGlobalToast) {
-            window.showGlobalToast('Đã xóa thành viên thành công!', 'success');
-          }
-          filterAndSearch();
-        }
-      };
-
-      window.changeUserPackage = function(username) {
-        users = users.map(u => {
-          if (u.username === username) {
-            const nextPackage = u.package === 'VIP' ? 'Free' : 'VIP';
-            if (window.showGlobalToast) {
-              window.showGlobalToast(`Đã chuyển ${username} sang gói ${nextPackage}!`, 'success');
-            }
-            return { ...u, package: nextPackage };
-          }
-          return u;
-        });
-        localStorage.setItem('tregistered_users', JSON.stringify(users));
-        filterAndSearch();
-      };
-
-      function renderUsers(list) {
-        if (!tbody) return;
-        
-        if (list.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="5" class="px-8 py-12 text-center text-xs text-text-dim italic">
-                Không tìm thấy thành viên nào khớp với bộ lọc của bạn.
-              </td>
-            </tr>
-          `;
-          if (showCountText) showCountText.textContent = 'HIỂN THỊ 0 THÀNH VIÊN';
-          return;
-        }
-
-        tbody.innerHTML = list.map(u => {
-          const registeredDate = new Date(u.createdAt).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            return u;
           });
-          
-          const isVIP = u.package === 'VIP';
-          const packageBg = isVIP ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
-          const packageText = isVIP ? 'VIP Member' : 'Free Member';
-
-          const isActive = u.status === 'active';
-          const statusBg = isActive ? 'bg-emerald-500' : 'bg-error';
-          const statusText = isActive ? 'Hoạt động' : 'Đã khóa';
-
-          return `
-            <tr class="hover:bg-white/5 transition-colors group">
-              <td class="px-8 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-surface-container border border-glass-stroke flex items-center justify-center text-text-dim font-bold text-sm uppercase">
-                    ${u.username.substring(0, 2)}
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold group-hover:text-primary transition-colors">${u.username}</p>
-                    <p class="text-[10px] text-text-dim mt-0.5">${u.email}</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-8 py-4 text-xs text-text-dim">${registeredDate}</td>
-              <td class="px-8 py-4">
-                <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold border ${packageBg} cursor-pointer hover:brightness-110" title="Click để thay đổi gói">
-                  ${packageText}
-                </button>
-              </td>
-              <td class="px-8 py-4">
-                <div class="flex items-center gap-2">
-                  <div class="w-2 h-2 rounded-full ${statusBg}"></div>
-                  <span class="text-xs font-medium text-on-surface">${statusText}</span>
-                </div>
-              </td>
-              <td class="px-8 py-4 text-right">
-                <div class="flex gap-2 justify-end">
-                  <button onclick="toggleUserStatus('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="${isActive ? 'Khóa tài khoản' : 'Kích hoạt tài khoản'}">
-                    <span class="material-symbols-outlined text-sm">${isActive ? 'block' : 'lock_open'}</span>
-                  </button>
-                  <button onclick="deleteUser('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa tài khoản">
-                    <span class="material-symbols-outlined text-sm">delete</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        if (showCountText) {
-          showCountText.textContent = `HIỂN THỊ ${list.length} TRÊN TỔNG SỐ ${users.length} THÀNH VIÊN`;
-        }
-      }
-
-      function filterAndSearch() {
-        const query = searchInput?.value.trim().toLowerCase() || '';
-        const pack = filterPackage?.value || 'all';
-        const stat = filterStatus?.value || 'all';
-
-        let filtered = users;
-
-        if (query) {
-          filtered = filtered.filter(u => 
-            u.username.toLowerCase().includes(query) || 
-            u.email.toLowerCase().includes(query)
-          );
-        }
-
-        if (pack !== 'all') {
-          filtered = filtered.filter(u => u.package === pack);
-        }
-
-        if (stat !== 'all') {
-          filtered = filtered.filter(u => u.status === stat);
-        }
-
-        renderUsers(filtered);
-        
-        if (summaryText) {
-          const activeCount = users.filter(u => u.status === 'active').length;
-          summaryText.textContent = `${activeCount} Đang hoạt động / ${users.length} Tổng số`;
-        }
-      }
-
-      // Add Test User
-      addBtn?.addEventListener('click', () => {
-        const randId = Math.floor(Math.random() * 900) + 100;
-        const newU = {
-          username: `user_test_${randId}`,
-          email: `test.user.${randId}@dongphim.net`,
-          createdAt: new Date().toISOString(),
-          package: Math.random() > 0.5 ? "VIP" : "Free",
-          status: "active"
+          localStorage.setItem('tregistered_users', JSON.stringify(users));
+          filterAndSearch();
         };
-        users.push(newU);
-        localStorage.setItem('tregistered_users', JSON.stringify(users));
-        if (window.showGlobalToast) {
-          window.showGlobalToast(`Đã thêm thành viên thử nghiệm: ${newU.username}`, 'success');
-        }
-        filterAndSearch();
-      });
 
-      // Initial stats count text
-      if (summaryText) {
-        const activeCount = users.filter(u => u.status === 'active').length;
-        summaryText.textContent = `${activeCount} Đang hoạt động / ${users.length} Tổng số`;
+        window.deleteUser = function(username) {
+          const performDelete = () => {
+            users = users.filter(u => u.username !== username);
+            localStorage.setItem('tregistered_users', JSON.stringify(users));
+            if (window.showGlobalToast) {
+              window.showGlobalToast('Đã xóa thành viên thành công!', 'success');
+            }
+            filterAndSearch();
+          };
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Xóa tài khoản thành viên',
+              message: `Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản thành viên <strong>${username}</strong> không? Hành động này không thể hoàn tác.`,
+              type: 'danger',
+              confirmText: 'Xóa ngay',
+              cancelText: 'Hủy bỏ',
+              onConfirm: performDelete
+            });
+          } else if (confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản thành viên ${username} không?`)) {
+            performDelete();
+          }
+        };
+
+        window.changeUserPackage = function(username) {
+          users = users.map(u => {
+            if (u.username === username) {
+              const nextPackage = u.package === 'VIP' ? 'Free' : 'VIP';
+              if (window.showGlobalToast) {
+                window.showGlobalToast(`Đã chuyển ${username} sang gói ${nextPackage}!`, 'success');
+              }
+              return { ...u, package: nextPackage };
+            }
+            return u;
+          });
+          localStorage.setItem('tregistered_users', JSON.stringify(users));
+          filterAndSearch();
+        };
+
+        function renderUsers(list) {
+          if (!tbody) return;
+          
+          if (list.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="5" class="px-8 py-12 text-center text-xs text-text-dim italic">
+                  Không tìm thấy thành viên nào khớp với bộ lọc của bạn.
+                </td>
+              </tr>
+            `;
+            if (showCountText) showCountText.textContent = 'HIỂN THỊ 0 THÀNH VIÊN';
+            return;
+          }
+
+          tbody.innerHTML = list.map(u => {
+            const registeredDate = new Date(u.createdAt).toLocaleDateString('vi-VN', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            
+            const isVIP = u.package === 'VIP';
+            const packageBg = isVIP ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+            const packageText = isVIP ? 'VIP Member' : 'Free Member';
+
+            const isActive = u.status === 'active';
+            const statusBg = isActive ? 'bg-emerald-500' : 'bg-error';
+            const statusText = isActive ? 'Hoạt động' : 'Đã khóa';
+
+            return `
+              <tr class="hover:bg-white/5 transition-colors group">
+                <td class="px-8 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-surface-container border border-glass-stroke flex items-center justify-center text-text-dim font-bold text-sm uppercase">
+                      ${u.username.substring(0, 2)}
+                    </div>
+                    <div>
+                      <p class="text-sm font-semibold group-hover:text-primary transition-colors">${u.username}</p>
+                      <p class="text-[10px] text-text-dim mt-0.5">${u.email}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-8 py-4 text-xs text-text-dim">${registeredDate}</td>
+                <td class="px-8 py-4">
+                  <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold border ${packageBg} cursor-pointer hover:brightness-110" title="Click để thay đổi gói">
+                    ${packageText}
+                  </button>
+                </td>
+                <td class="px-8 py-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full ${statusBg}"></div>
+                    <span class="text-xs font-medium text-on-surface">${statusText}</span>
+                  </div>
+                </td>
+                <td class="px-8 py-4 text-right">
+                  <div class="flex gap-2 justify-end">
+                    <button onclick="toggleUserStatus('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="${isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}">
+                      <span class="material-symbols-outlined text-sm">${isActive ? 'block' : 'lock_open'}</span>
+                    </button>
+                    <button onclick="deleteUser('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa tài khoản">
+                      <span class="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          if (showCountText) {
+            showCountText.textContent = `HIỂN THỊ ${list.length} TRÊN TỔNG SỐ ${users.length} THÀNH VIÊN`;
+          }
+        }
+
+        function filterAndSearch() {
+          const query = searchInput?.value.trim().toLowerCase() || '';
+          const pack = filterPackage?.value || 'all';
+          const stat = filterStatus?.value || 'all';
+
+          let filtered = users;
+
+          if (query) {
+            filtered = filtered.filter(u => 
+              u.username.toLowerCase().includes(query) || 
+              u.email.toLowerCase().includes(query)
+            );
+          }
+
+          if (pack !== 'all') {
+            filtered = filtered.filter(u => u.package === pack);
+          }
+
+          if (stat !== 'all') {
+            filtered = filtered.filter(u => u.status === stat);
+          }
+
+          renderUsers(filtered);
+          
+          if (summaryText) {
+            const activeCount = users.filter(u => u.status === 'active').length;
+            summaryText.textContent = `${activeCount} Đang hoạt động / ${users.length} Tổng số`;
+          }
+        }
+
+        // Add Test User
+        if (addBtn) {
+          addBtn.onclick = () => {
+            const randId = Math.floor(Math.random() * 900) + 100;
+            const newU = {
+              username: `user_test_${randId}`,
+              email: `test.user.${randId}@dongphim.net`,
+              createdAt: new Date().toISOString(),
+              package: Math.random() > 0.5 ? "VIP" : "Free",
+              status: "active"
+            };
+            users.push(newU);
+            localStorage.setItem('tregistered_users', JSON.stringify(users));
+            if (window.showGlobalToast) {
+              window.showGlobalToast(`Đã thêm thành viên thử nghiệm: ${newU.username}`, 'success');
+            }
+            filterAndSearch();
+          };
+        }
+
+        // Event listeners
+        if (searchInput) searchInput.oninput = filterAndSearch;
+        if (filterPackage) filterPackage.onchange = filterAndSearch;
+        if (filterStatus) filterStatus.onchange = filterAndSearch;
+
+        // Run
+        filterAndSearch();
       }
 
-      // Initial render
-      renderUsers(users);
-
-      // Event listeners
-      searchInput?.addEventListener('input', filterAndSearch);
-      filterPackage?.addEventListener('change', filterAndSearch);
-      filterStatus?.addEventListener('change', filterAndSearch);
+      initMembersManagement();
+      document.addEventListener('astro:page-load', initMembersManagement);
     })();
   </script>
 </AdminLayout>

@@ -105,6 +105,9 @@ const seedSettings: SiteSettings = {
     login_x_enable: false,
     login_x_client_id: "",
     login_x_client_secret: "",
+    turnstile_enable: false,
+    turnstile_site_key: "",
+    turnstile_secret_key: "",
   },
   social: {
     social_fb_enable: true,
@@ -123,6 +126,27 @@ const seedSettings: SiteSettings = {
   },
   luckyDraw: {
     lucky_draw_active_event_id: "summer_event_2024",
+  },
+  payments: {
+    sandbox_mode: true,
+    payos_enable: true,
+    payos_client_id: "mock_payos_id",
+    payos_api_key: "mock_api_key",
+    payos_checksum_key: "mock_checksum_key",
+    paypal_enable: true,
+    paypal_client_id: "mock_paypal_id",
+    sepay_enable: true,
+    sepay_api_key: "mock_sepay_key",
+    vnpay_enable: true,
+    vnpay_tmn_code: "mock_tmn_code",
+    vnpay_hash_secret: "mock_hash_secret",
+    stripe_enable: true,
+    stripe_publishable_key: "mock_stripe_pub_key",
+    stripe_secret_key: "mock_stripe_sec_key",
+    manual_enable: true,
+    manual_bank_name: "Ngân hàng Quân đội MB Bank",
+    manual_account_no: "1903568999999",
+    manual_account_name: "LE HOANG ANH"
   }
 };
 
@@ -134,6 +158,13 @@ export class LocalSettingProvider implements ISettingProvider {
         if (stored) {
           const parsed = JSON.parse(stored);
           let changed = false;
+          if (!parsed.payments) {
+            parsed.payments = { ...seedSettings.payments };
+            changed = true;
+          } else if (parsed.payments.sandbox_mode === undefined) {
+            parsed.payments.sandbox_mode = true;
+            changed = true;
+          }
           if (parsed.social) {
             if (parsed.social.social_fb_url === "https://facebook.com/dongmephim") {
               parsed.social.social_fb_url = seedSettings.social.social_fb_url;

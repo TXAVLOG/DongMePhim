@@ -2,7 +2,8 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"compatibility_date": "2026-06-18",
 	"compatibility_flags": [
-		"global_fetch_strictly_public"
+		"global_fetch_strictly_public",
+		"nodejs_compat"
 	],
 	"name": "webfilm",
 	"main": "@astrojs/cloudflare/entrypoints/server",

@@ -720,14 +720,26 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     });
 
     function deleteServer(serverIdx) {
-      if (
-        !confirm(
-          "Bạn có chắc chắn muốn xóa Server này cùng toàn bộ danh sách tập phim thuộc về nó?",
-        )
-      )
-        return;
-      movieData.episodes.splice(serverIdx, 1);
-      renderServers();
+      const performDelete = () => {
+        movieData.episodes.splice(serverIdx, 1);
+        renderServers();
+        if (window.showGlobalToast) {
+          window.showGlobalToast("Đã xóa Server phát thành công!", "success");
+        }
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: "Xóa Server phát",
+          message: "Bạn có chắc chắn muốn xóa Server này cùng toàn bộ danh sách tập phim thuộc về nó? Hành động này không thể hoàn tác.",
+          type: "danger",
+          confirmText: "Xóa ngay",
+          cancelText: "Hủy bỏ",
+          onConfirm: performDelete
+        });
+      } else if (confirm("Bạn có chắc chắn muốn xóa Server này cùng toàn bộ danh sách tập phim thuộc về nó?")) {
+        performDelete();
+      }
     }
 
     function addEpisode(serverIdx) {

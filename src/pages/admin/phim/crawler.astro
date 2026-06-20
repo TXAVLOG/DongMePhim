@@ -628,23 +628,51 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     }
 
     window.deleteCrawledMovie = function(slug) {
-      if (!confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách cào cục bộ?')) return;
-      const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
-      let list = [];
-      try { list = JSON.parse(listStr); } catch (e) {}
+      const performDelete = () => {
+        const listStr = localStorage.getItem('txa_crawled_movies') || '[]';
+        let list = [];
+        try { list = JSON.parse(listStr); } catch (e) {}
 
-      const newList = list.filter(m => (m.movie?.slug || m.slug) !== slug);
-      localStorage.setItem('txa_crawled_movies', JSON.stringify(newList));
-      
-      renderCrawledList();
-      if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim cào thành công!', 'success');
+        const newList = list.filter(m => (m.movie?.slug || m.slug) !== slug);
+        localStorage.setItem('txa_crawled_movies', JSON.stringify(newList));
+        
+        renderCrawledList();
+        if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim cào thành công!', 'success');
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Xóa phim cào',
+          message: 'Bạn có chắc chắn muốn xóa phim này khỏi danh sách cào cục bộ?',
+          type: 'danger',
+          confirmText: 'Xóa phim',
+          cancelText: 'Hủy bỏ',
+          onConfirm: performDelete
+        });
+      } else if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách cào cục bộ?')) {
+        performDelete();
+      }
     };
 
     document.getElementById('clearAllCrawledBtn').addEventListener('click', () => {
-      if (!confirm('CẢNH BÁO: Hành động này sẽ xóa sạch toàn bộ phim đã cào cục bộ. Bạn chắc chắn muốn xóa?')) return;
-      localStorage.removeItem('txa_crawled_movies');
-      renderCrawledList();
-      if (window.showGlobalToast) window.showGlobalToast('Đã dọn dẹp kho phim cào!', 'success');
+      const performClear = () => {
+        localStorage.removeItem('txa_crawled_movies');
+        renderCrawledList();
+        if (window.showGlobalToast) window.showGlobalToast('Đã xóa sạch toàn bộ phim cào cục bộ!', 'success');
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Xóa sạch phim đã cào',
+          message: '<strong class="text-rose-500">CẢNH BÁO:</strong> Hành động này sẽ xóa sạch toàn bộ phim đã cào cục bộ khỏi bộ nhớ trình duyệt. Bạn chắc chắn muốn xóa?',
+          type: 'danger',
+          confirmText: 'Xóa sạch',
+          cancelText: 'Hủy bỏ',
+          onConfirm: performClear
+        });
+      } else if (confirm('CẢNH BÁO: Hành động này sẽ xóa sạch toàn bộ phim đã cào cục bộ. Bạn chắc chắn muốn xóa?')) {
+        performClear();
+      }
     });
 
     // ONLINE SEARCH TRIGGER
@@ -1099,41 +1127,54 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
     document.getElementById('crawlAllBtn').addEventListener('click', async () => {
       if (isRunning) return;
-      if (!confirm('CẢNH BÁO: Cào toàn bộ sẽ tải tất cả các trang phim trên API (20000+ phim). Tiến trình có thể kéo dài rất lâu. Bạn chắc chắn muốn chạy?')) return;
 
-      addLog('⏳ Đang lấy dữ liệu trang 1 để ước tính toàn bộ kho phim...');
-      
-      try {
-        const res = await fetch('https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        
-        const totalPages = data.pagination?.totalPages || 500;
-        addLog(`✓ Tổng số trang phim cần quét: ${totalPages} trang. Bắt đầu thu thập slugs...`, 'system');
+      const performCrawlAll = async () => {
+        addLog('⏳ Đang lấy dữ liệu trang 1 để ước tính toàn bộ kho phim...');
+        try {
+          const res = await fetch('https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          
+          const totalPages = data.pagination?.totalPages || 500;
+          addLog(`✓ Tổng số trang phim cần quét: ${totalPages} trang. Bắt đầu thu thập slugs...`, 'system');
 
-        const slugs = [];
-        for (let p = 1; p <= totalPages; p++) {
-          if (shouldStop) break;
-          try {
-            const pageRes = await fetch(`https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}`);
-            const pageData = await pageRes.json();
-            if (pageData && Array.isArray(pageData.items)) {
-              pageData.items.forEach(item => {
-                if (item.slug) slugs.push(item.slug);
-              });
-              addLog(`Quét danh sách trang ${p}/${totalPages}: Thêm ${pageData.items.length} slugs.`);
+          const slugs = [];
+          for (let p = 1; p <= totalPages; p++) {
+            if (shouldStop) break;
+            try {
+              const pageRes = await fetch(`https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}`);
+              const pageData = await pageRes.json();
+              if (pageData && Array.isArray(pageData.items)) {
+                pageData.items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`Quét danh sách trang ${p}/${totalPages}: Thêm ${pageData.items.length} slugs.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi quét trang ${p}: ${e.message}`, 'error');
             }
-          } catch (e) {
-            addLog(`✗ Lỗi quét trang ${p}: ${e.message}`, 'error');
+            await new Promise(r => setTimeout(r, 100));
           }
-          await new Promise(r => setTimeout(r, 100));
-        }
 
-        if (slugs.length > 0) {
-          runCrawlProcess(slugs);
+          if (slugs.length > 0) {
+            runCrawlProcess(slugs);
+          }
+        } catch (e) {
+          addLog(`✗ Lỗi ước tính toàn bộ kho phim: ${e.message}`, 'error');
         }
-      } catch (e) {
-        addLog(`✗ Lỗi ước tính toàn bộ kho phim: ${e.message}`, 'error');
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Bắt đầu cào toàn bộ kho phim',
+          message: '<strong class="text-rose-500">CẢNH BÁO:</strong> Cào toàn bộ sẽ tải tất cả các trang phim trên API (20000+ phim). Tiến trình có thể kéo dài rất lâu và tiêu tốn tài nguyên. Bạn chắc chắn muốn chạy?',
+          type: 'danger',
+          confirmText: 'Chạy cào toàn bộ',
+          cancelText: 'Hủy bỏ',
+          onConfirm: performCrawlAll
+        });
+      } else if (confirm('CẢNH BÁO: Cào toàn bộ sẽ tải tất cả các trang phim trên API (20000+ phim). Tiến trình có thể kéo dài rất lâu. Bạn chắc chắn muốn chạy?')) {
+        performCrawlAll();
       }
     });
 

@@ -165,197 +165,210 @@ const staticMovies = await MovieService.getMovies();
 
   <script define:vars={{ staticMovies }}>
     (function() {
-      // 1. Load data from localStorage
-      const crawledList = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
-      const regUsers = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-      
-      // Calculate dynamic stats
-      const totalMovies = staticMovies.length + crawledList.length;
-      
-      const staticViewsSum = staticMovies.reduce((acc, m) => acc + (m.views || 0), 0);
-      const crawledViewsSum = crawledList.reduce((acc, m) => acc + (m.views || 2500), 0);
-      const totalViews = (staticViewsSum + crawledViewsSum) * 12;
-      
-      let formattedViews = totalViews >= 1000000 
-        ? (totalViews / 1000000).toFixed(1) + 'M' 
-        : totalViews >= 1000 
-          ? (totalViews / 1000).toFixed(1) + 'K' 
-          : totalViews;
+      function initDashboard() {
+        const tbody = document.getElementById('recent-movies-tbody');
+        if (!tbody) return; // Exit if not on this page
 
-      // Members count
-      const membersCount = 1240 + regUsers.length;
-      
-      // Broken movies count
-      let brokenMoviesCount = 0;
-      crawledList.forEach(m => {
-        if (!m.posterUrl || m.posterUrl.trim() === '' || m.posterUrl.includes('error')) {
-          brokenMoviesCount++;
-        } else if (!m.episodeTotal || parseInt(m.episodeTotal) === 0) {
-          brokenMoviesCount++;
-        }
-      });
-      staticMovies.forEach(m => {
-        if (!m.posterUrl || m.posterUrl.trim() === '' || m.posterUrl.includes('error')) {
-          brokenMoviesCount++;
-        }
-      });
-      if (brokenMoviesCount === 0) brokenMoviesCount = 2; // base static broken items
-
-      // Update DOM values for statistics cards
-      const viewsH3 = document.getElementById('stat-views');
-      if (viewsH3) viewsH3.textContent = formattedViews;
-      
-      const moviesH3 = document.getElementById('stat-movies');
-      if (moviesH3) moviesH3.textContent = totalMovies.toLocaleString('vi-VN');
-      
-      const membersH3 = document.getElementById('stat-members');
-      if (membersH3) membersH3.textContent = membersCount.toLocaleString('vi-VN');
-      
-      const brokenH3 = document.getElementById('stat-broken');
-      if (brokenH3) brokenH3.textContent = brokenMoviesCount;
-
-      // Update growth tags dynamically
-      const moviesGrowth = document.getElementById('stat-movies-growth');
-      if (moviesGrowth) {
-        moviesGrowth.textContent = `+${crawledList.length} Crawled`;
-      }
-      const membersGrowth = document.getElementById('stat-members-growth');
-      if (membersGrowth) {
-        membersGrowth.textContent = `+${regUsers.length} Mới`;
-      }
-
-      // 2. Populate Recent Movies Table
-      const tbody = document.getElementById('recent-movies-tbody');
-      const showCountText = document.getElementById('show-count-text');
-      
-      // Global delete handler
-      window.deleteCrawledMovie = function(movieId) {
-        if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách đã thu thập không?')) {
-          let list = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
-          list = list.filter(m => m.id !== movieId);
-          localStorage.setItem('txa_crawled_movies', JSON.stringify(list));
-          if (window.showGlobalToast) {
-            window.showGlobalToast('Đã xóa phim thành công!', 'success');
-          }
-          window.location.reload();
-        }
-      };
-
-      if (tbody) {
-        // If crawledList is empty, fallback to recently added static movies
-        const displayList = crawledList.length > 0 ? crawledList : staticMovies.slice(0, 5);
-        
-        // Show recent 5 (reverse array so recently added is at the top)
-        const recent5 = [...displayList].reverse().slice(0, 5);
-        tbody.innerHTML = recent5.map(m => {
-          const genresStr = Array.isArray(m.genres) ? m.genres.join(', ') : (m.genres || 'KỊCH TÍNH');
-          const quality = m.quality || 'FHD';
-          const lang = m.lang || 'Vietsub';
+        function loadDashboardStats() {
+          const crawledList = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+          const regUsers = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
           
-          let source = 'Hệ thống (Static)';
-          if (m.id && m.id.startsWith('kk-')) {
-            source = 'KKPhim API';
-          } else if (m.id && m.id.startsWith('local-')) {
-            source = 'OPhim Crawler';
-          } else if (crawledList.some(c => c.id === m.id)) {
-            source = 'Manual Upload';
-          }
+          const totalMovies = staticMovies.length + crawledList.length;
           
-          const statusText = m.status === 'completed' ? 'Completed' : `Ongoing (Tập ${m.episodeCurrent})`;
-          const statusBg = m.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500';
+          const staticViewsSum = staticMovies.reduce((acc, m) => acc + (m.views || 0), 0);
+          const crawledViewsSum = crawledList.reduce((acc, m) => acc + (m.views || 2500), 0);
+          const totalViews = (staticViewsSum + crawledViewsSum) * 12;
+          
+          let formattedViews = totalViews >= 1000000 
+            ? (totalViews / 1000000).toFixed(1) + 'M' 
+            : totalViews >= 1000 
+              ? (totalViews / 1000).toFixed(1) + 'K' 
+              : totalViews;
 
-          const isStatic = !crawledList.some(c => c.id === m.id);
+          const membersCount = 1240 + regUsers.length;
+          
+          let brokenMoviesCount = 0;
+          crawledList.forEach(m => {
+            if (!m.posterUrl || m.posterUrl.trim() === '' || m.posterUrl.includes('error')) {
+              brokenMoviesCount++;
+            } else if (!m.episodeTotal || parseInt(m.episodeTotal) === 0) {
+              brokenMoviesCount++;
+            }
+          });
+          staticMovies.forEach(m => {
+            if (!m.posterUrl || m.posterUrl.trim() === '' || m.posterUrl.includes('error')) {
+              brokenMoviesCount++;
+            }
+          });
+          if (brokenMoviesCount === 0) brokenMoviesCount = 2; // base static broken items
 
-          return `
-            <tr class="hover:bg-white/5 transition-colors group">
-              <td class="px-8 py-4">
-                <div class="flex items-center gap-4">
-                  <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
-                    <img alt="${m.title} Poster" class="w-full h-full object-cover" src="${m.posterUrl}" onerror="this.src='/logo-icon.png'" />
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold group-hover:text-primary transition-colors">${m.title}</p>
-                    <p class="text-[9px] text-text-dim uppercase tracking-tighter mt-1">${genresStr}</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-8 py-4">
-                <span class="px-2 py-1 rounded bg-secondary/10 text-secondary text-[10px] font-bold border border-secondary/20 whitespace-nowrap">${quality} ${lang.toUpperCase()}</span>
-              </td>
-              <td class="px-8 py-4 text-xs text-text-dim">${source}</td>
-              <td class="px-8 py-4">
-                <div class="flex items-center gap-2">
-                  <div class="w-2 h-2 rounded-full ${statusBg}"></div>
-                  <span class="text-xs font-medium text-on-surface">${statusText}</span>
-                </div>
-              </td>
-              <td class="px-8 py-4 text-right">
-                <div class="flex gap-2 justify-end">
-                  <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Xem trên web">
-                    <span class="material-symbols-outlined text-sm">visibility</span>
-                  </a>
-                  ${isStatic ? `
-                    <button class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-zinc-600 cursor-not-allowed" title="Không thể xóa phim hệ thống" disabled>
-                      <span class="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  ` : `
-                    <button onclick="deleteCrawledMovie('${m.id}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa phim crawled">
-                      <span class="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  `}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
+          // Update DOM values
+          const viewsH3 = document.getElementById('stat-views');
+          if (viewsH3) viewsH3.textContent = formattedViews;
+          
+          const moviesH3 = document.getElementById('stat-movies');
+          if (moviesH3) moviesH3.textContent = totalMovies.toLocaleString('vi-VN');
+          
+          const membersH3 = document.getElementById('stat-members');
+          if (membersH3) membersH3.textContent = membersCount.toLocaleString('vi-VN');
+          
+          const brokenH3 = document.getElementById('stat-broken');
+          if (brokenH3) brokenH3.textContent = brokenMoviesCount;
 
-        if (showCountText) {
-          showCountText.textContent = crawledList.length > 0 
-            ? `HIỂN THỊ ${recent5.length} TRÊN TỔNG SỐ ${crawledList.length} PHIM MỚI CRAWL`
-            : `HIỂN THỊ 5 PHIM HỆ THỐNG MỚI NHẤT (CHƯA CÓ PHIM CRAWL)`;
-        }
-      }
-
-      // 3. Dynamic heights for traffic chart based on watch history
-      const baseTraffic = [40, 65, 55, 85, 75, 95, 80];
-      const historyList = JSON.parse(localStorage.getItem('thistory') || '[]');
-      const dayCounts = [0, 0, 0, 0, 0, 0, 0];
-      const now = new Date();
-      historyList.forEach(h => {
-        try {
-          const itemDate = new Date(h.updatedAt);
-          const diffDays = Math.floor((now.getTime() - itemDate.getTime()) / (1000 * 60 * 60 * 24));
-          if (diffDays >= 0 && diffDays < 7) {
-            dayCounts[6 - diffDays]++;
+          const moviesGrowth = document.getElementById('stat-movies-growth');
+          if (moviesGrowth) {
+            moviesGrowth.textContent = `+${crawledList.length} Crawled`;
           }
-        } catch (e) {}
-      });
+          const membersGrowth = document.getElementById('stat-members-growth');
+          if (membersGrowth) {
+            membersGrowth.textContent = `+${regUsers.length} Mới`;
+          }
 
-      const chartContainer = document.getElementById('traffic-chart');
-      if (chartContainer) {
-        const bars = Array.from(chartContainer.children).filter(el => !el.classList.contains('absolute'));
-        bars.forEach((bar, idx) => {
-          const count = dayCounts[idx] || 0;
-          const percentage = Math.min(100, baseTraffic[idx] + (count * 15));
-          bar.style.height = percentage + '%';
-          bar.title = `Lưu lượng: ${percentage}% (+${count} lượt xem từ bạn)`;
+          // Populate Recent Movies Table
+          const displayList = crawledList.length > 0 ? crawledList : staticMovies.slice(0, 5);
+          const recent5 = [...displayList].reverse().slice(0, 5);
+          
+          tbody.innerHTML = recent5.map(m => {
+            const genresStr = Array.isArray(m.genres) ? m.genres.join(', ') : (m.genres || 'KỊCH TÍNH');
+            const quality = m.quality || 'FHD';
+            const lang = m.lang || 'Vietsub';
+            
+            let source = 'Hệ thống (Static)';
+            if (m.id && m.id.startsWith('kk-')) {
+              source = 'KKPhim API';
+            } else if (m.id && m.id.startsWith('local-')) {
+              source = 'OPhim Crawler';
+            } else if (crawledList.some(c => c.id === m.id)) {
+              source = 'Manual Upload';
+            }
+            
+            const statusText = m.status === 'completed' ? 'Completed' : `Ongoing (Tập ${m.episodeCurrent})`;
+            const statusBg = m.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500';
+
+            const isStatic = !crawledList.some(c => c.id === m.id);
+
+            return `
+              <tr class="hover:bg-white/5 transition-colors group">
+                <td class="px-8 py-4">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
+                      <img alt="${m.title} Poster" class="w-full h-full object-cover" src="${m.posterUrl}" onerror="this.src='/logo-icon.png'" />
+                    </div>
+                    <div>
+                      <p class="text-sm font-semibold group-hover:text-primary transition-colors">${m.title}</p>
+                      <p class="text-[9px] text-text-dim uppercase tracking-tighter mt-1">${genresStr}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-8 py-4">
+                  <span class="px-2 py-1 rounded bg-secondary/10 text-secondary text-[10px] font-bold border border-secondary/20 whitespace-nowrap">${quality} ${lang.toUpperCase()}</span>
+                </td>
+                <td class="px-8 py-4 text-xs text-text-dim">${source}</td>
+                <td class="px-8 py-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full ${statusBg}"></div>
+                    <span class="text-xs font-medium text-on-surface">${statusText}</span>
+                  </div>
+                </td>
+                <td class="px-8 py-4 text-right">
+                  <div class="flex gap-2 justify-end">
+                    <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Xem trên web">
+                      <span class="material-symbols-outlined text-sm">visibility</span>
+                    </a>
+                    ${isStatic ? `
+                      <button class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-zinc-600 cursor-not-allowed" title="Không thể xóa phim hệ thống" disabled>
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    ` : `
+                      <button onclick="deleteCrawledMovie('${m.id}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa phim crawled">
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    `}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          const showCountText = document.getElementById('show-count-text');
+          if (showCountText) {
+            showCountText.textContent = crawledList.length > 0 
+              ? `HIỂN THỊ ${recent5.length} TRÊN TỔNG SỐ ${crawledList.length} PHIM MỚI CRAWL`
+              : `HIỂN THỊ 5 PHIM HỆ THỐNG MỚI NHẤT (CHƯA CÓ PHIM CRAWL)`;
+          }
+        }
+
+        window.deleteCrawledMovie = function(movieId) {
+          const performDelete = () => {
+            let list = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+            list = list.filter(m => m.id !== movieId);
+            localStorage.setItem('txa_crawled_movies', JSON.stringify(list));
+            if (window.showGlobalToast) {
+              window.showGlobalToast('Đã xóa phim thành công!', 'success');
+            }
+            loadDashboardStats();
+          };
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Xóa phim khỏi danh sách',
+              message: 'Bạn có chắc chắn muốn xóa phim này khỏi danh sách đã thu thập không?',
+              type: 'danger',
+              confirmText: 'Xóa phim',
+              cancelText: 'Hủy bỏ',
+              onConfirm: performDelete
+            });
+          } else if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách đã thu thập không?')) {
+            performDelete();
+          }
+        };
+
+        loadDashboardStats();
+
+        // 3. Dynamic heights for traffic chart based on watch history
+        const baseTraffic = [40, 65, 55, 85, 75, 95, 80];
+        const historyList = JSON.parse(localStorage.getItem('thistory') || '[]');
+        const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+        const now = new Date();
+        historyList.forEach(h => {
+          try {
+            const itemDate = new Date(h.updatedAt);
+            const diffDays = Math.floor((now.getTime() - itemDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays < 7) {
+              dayCounts[6 - diffDays]++;
+            }
+          } catch (e) {}
         });
+
+        const chartContainer = document.getElementById('traffic-chart');
+        if (chartContainer) {
+          const bars = Array.from(chartContainer.children).filter(el => !el.classList.contains('absolute'));
+          bars.forEach((bar, idx) => {
+            const count = dayCounts[idx] || 0;
+            const percentage = Math.min(100, baseTraffic[idx] + (count * 15));
+            bar.style.height = percentage + '%';
+            bar.title = `Lưu lượng: ${percentage}% (+${count} lượt xem từ bạn)`;
+          });
+        }
+
+        // Render week labels dynamically in Vietnamese
+        const dayShortNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+        const chartLabels = document.getElementById('chart-labels');
+        if (chartLabels) {
+          let labelHtml = '';
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const name = i === 0 ? 'Hôm nay' : dayShortNames[d.getDay()];
+            const isTodayClass = i === 0 ? 'text-secondary font-bold text-[11px]' : '';
+            labelHtml += `<span class="${isTodayClass}">${name}</span>`;
+          }
+          chartLabels.innerHTML = labelHtml;
+        }
       }
 
-      // Render week labels dynamically in Vietnamese
-      const dayShortNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-      const chartLabels = document.getElementById('chart-labels');
-      if (chartLabels) {
-        let labelHtml = '';
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          const name = i === 0 ? 'Hôm nay' : dayShortNames[d.getDay()];
-          const isTodayClass = i === 0 ? 'text-secondary font-bold text-[11px]' : '';
-          labelHtml += `<span class="${isTodayClass}">${name}</span>`;
-        }
-        chartLabels.innerHTML = labelHtml;
-      }
+      initDashboard();
+      document.addEventListener('astro:page-load', initDashboard);
     })();
   </script>
 </AdminLayout>

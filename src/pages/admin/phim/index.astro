@@ -85,213 +85,234 @@ const staticMovies = await MovieService.getMovies();
   <script define:vars={{ staticMovies }}>
     // We merge static movies from the server and crawled movies from localStorage client-side
     (function() {
-      // Load crawled movies from client storage
-      const crawledMovies = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
-      
-      // Merge list. Crawled movies take precedence or are appended
-      // Add source tag so we can filter/render accordingly
-      const staticList = staticMovies.map(m => ({ ...m, source: 'static' }));
-      const crawledList = crawledMovies.map(m => ({ ...m, source: 'crawled' }));
-      
-      const allMovies = [...crawledList, ...staticList];
-      
-      const tbody = document.getElementById('movie-table-tbody');
-      const searchInput = document.getElementById('movie-search');
-      const filterType = document.getElementById('filter-type');
-      const filterSource = document.getElementById('filter-source');
-      const summaryText = document.getElementById('movies-summary');
-      const showCountText = document.getElementById('show-count-text');
-      const prevBtn = document.getElementById('movie-prev-btn');
-      const nextBtn = document.getElementById('movie-next-btn');
-      const paginationInfo = document.getElementById('movie-pagination-info');
+      function initMoviesIndex() {
+        const tbody = document.getElementById('movie-table-tbody');
+        if (!tbody) return; // Exit if not on this page
 
-      // Pagination state
-      let currentPage = 1;
-      const itemsPerPage = 10;
-      let currentFilteredList = [];
+        const searchInput = document.getElementById('movie-search');
+        const filterType = document.getElementById('filter-type');
+        const filterSource = document.getElementById('filter-source');
+        const summaryText = document.getElementById('movies-summary');
+        const showCountText = document.getElementById('show-count-text');
+        const prevBtn = document.getElementById('movie-prev-btn');
+        const nextBtn = document.getElementById('movie-next-btn');
+        const paginationInfo = document.getElementById('movie-pagination-info');
 
-      // Global delete handler
-      window.deleteMovie = function(movieId) {
-        if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách đã thu thập không?')) {
-          let list = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
-          list = list.filter(m => m.id !== movieId);
-          localStorage.setItem('txa_crawled_movies', JSON.stringify(list));
-          if (window.showGlobalToast) {
-            window.showGlobalToast('Đã xóa phim thành công!', 'success');
-          }
-          window.location.reload();
-        }
-      };
+        let staticList = staticMovies.map(m => ({ ...m, source: 'static' }));
+        let crawledList = [];
+        let allMovies = [];
+        let currentFilteredList = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
 
-      function displayPage(page) {
-        if (!tbody) return;
-
-        const totalItems = currentFilteredList.length;
-        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-
-        if (page > totalPages) page = totalPages;
-        if (page < 1) page = 1;
-        currentPage = page;
-
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const paginatedList = currentFilteredList.slice(startIndex, endIndex);
-
-        if (paginatedList.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" class="px-8 py-12 text-center text-xs text-text-dim italic">
-                Không tìm thấy phim nào khớp với bộ lọc của bạn.
-              </td>
-            </tr>
-          `;
-          if (showCountText) showCountText.textContent = 'HIỂN THỊ 0 PHIM';
-          if (paginationInfo) paginationInfo.textContent = 'Trang 1 / 1';
-          if (prevBtn) prevBtn.disabled = true;
-          if (nextBtn) nextBtn.disabled = true;
-          return;
-        }
-
-        // Apply fade-in animation
-        tbody.classList.remove('animate-fade-in');
-        void tbody.offsetWidth;
-        tbody.classList.add('animate-fade-in');
-
-        tbody.innerHTML = paginatedList.map(m => {
-          const genresStr = Array.isArray(m.genres) ? m.genres.join(', ') : (m.genres || 'KỊCH TÍNH');
-          const quality = m.quality || 'FHD';
-          const lang = m.lang || 'Vietsub';
-          const format = m.type === 'movie' ? 'Phim Lẻ' : 'Phim Bộ';
-          const formatBg = m.type === 'movie' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+        function loadMoviesData() {
+          const crawledMovies = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+          crawledList = crawledMovies.map(m => ({ ...m, source: 'crawled' }));
+          allMovies = [...crawledList, ...staticList];
           
-          let sourceText = 'Hệ thống';
-          let sourceBg = 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
-          if (m.source === 'crawled') {
-            sourceText = 'Crawled';
-            sourceBg = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+          if (summaryText) {
+            summaryText.textContent = `${staticList.length} Hệ thống + ${crawledList.length} Crawled`;
+          }
+        }
+
+        window.deleteMovie = function(movieId) {
+          const performDelete = () => {
+            let list = JSON.parse(localStorage.getItem('txa_crawled_movies') || '[]');
+            list = list.filter(m => m.id !== movieId);
+            localStorage.setItem('txa_crawled_movies', JSON.stringify(list));
+            if (window.showGlobalToast) {
+              window.showGlobalToast('Đã xóa phim thành công!', 'success');
+            }
+            loadMoviesData();
+            filterAndSearch();
+          };
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Xóa phim khỏi hệ thống',
+              message: 'Bạn có chắc chắn muốn xóa phim này khỏi danh sách đã thu thập không? Thao tác này không thể khôi phục.',
+              type: 'danger',
+              confirmText: 'Xóa phim',
+              cancelText: 'Hủy bỏ',
+              onConfirm: performDelete
+            });
+          } else if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi danh sách đã thu thập không?')) {
+            performDelete();
+          }
+        };
+
+        function displayPage(page) {
+          if (!tbody) return;
+
+          const totalItems = currentFilteredList.length;
+          const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+          if (page > totalPages) page = totalPages;
+          if (page < 1) page = 1;
+          currentPage = page;
+
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const paginatedList = currentFilteredList.slice(startIndex, endIndex);
+
+          if (paginatedList.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="6" class="px-8 py-12 text-center text-xs text-text-dim italic">
+                  Không tìm thấy phim nào khớp với bộ lọc của bạn.
+                </td>
+              </tr>
+            `;
+            if (showCountText) showCountText.textContent = 'HIỂN THỊ 0 PHIM';
+            if (paginationInfo) paginationInfo.textContent = 'Trang 1 / 1';
+            if (prevBtn) prevBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
+            return;
           }
 
-          const statusText = m.status === 'completed' ? 'Trọn bộ' : `Tập ${m.episodeCurrent}`;
-          const statusBg = m.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500';
+          // Apply fade-in animation
+          tbody.classList.remove('animate-fade-in');
+          void tbody.offsetWidth;
+          tbody.classList.add('animate-fade-in');
 
-          const isStatic = m.source === 'static';
+          tbody.innerHTML = paginatedList.map(m => {
+            const genresStr = Array.isArray(m.genres) ? m.genres.join(', ') : (m.genres || 'KỊCH TÍNH');
+            const quality = m.quality || 'FHD';
+            const lang = m.lang || 'Vietsub';
+            const format = m.type === 'movie' ? 'Phim Lẻ' : 'Phim Bộ';
+            const formatBg = m.type === 'movie' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+            
+            let sourceText = 'Hệ thống';
+            let sourceBg = 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+            if (m.source === 'crawled') {
+              sourceText = 'Crawled';
+              sourceBg = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+            }
 
-          return `
-            <tr class="hover:bg-white/5 transition-colors group">
-              <td class="px-8 py-4">
-                <div class="flex items-center gap-4">
-                  <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
-                    <img alt="${m.title} Poster" class="w-full h-full object-cover" src="${m.posterUrl}" onerror="this.src='/logo-icon.png'" />
+            const statusText = m.status === 'completed' ? 'Trọn bộ' : `Tập ${m.episodeCurrent}`;
+            const statusBg = m.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500';
+
+            const isStatic = m.source === 'static';
+
+            return `
+              <tr class="hover:bg-white/5 transition-colors group">
+                <td class="px-8 py-4">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
+                      <img alt="${m.title} Poster" class="w-full h-full object-cover" src="${m.posterUrl}" onerror="this.src='/logo-icon.png'" />
+                    </div>
+                    <div>
+                      <p class="text-sm font-semibold group-hover:text-primary transition-colors">${m.title}</p>
+                      <p class="text-[9px] text-text-dim uppercase tracking-tighter mt-1">${genresStr} • ${m.releaseYear}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p class="text-sm font-semibold group-hover:text-primary transition-colors">${m.title}</p>
-                    <p class="text-[9px] text-text-dim uppercase tracking-tighter mt-1">${genresStr} • ${m.releaseYear}</p>
+                </td>
+                <td class="px-8 py-4">
+                  <span class="px-2 py-1 rounded text-[10px] font-bold border ${formatBg}">${format}</span>
+                </td>
+                <td class="px-8 py-4">
+                  <span class="px-2 py-1 rounded bg-secondary/10 text-secondary text-[10px] font-bold border border-secondary/20 whitespace-nowrap">${quality} ${lang.toUpperCase()}</span>
+                </td>
+                <td class="px-8 py-4">
+                  <span class="px-2 py-1 rounded text-[10px] font-bold border ${sourceBg}">${sourceText}</span>
+                </td>
+                <td class="px-8 py-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full ${statusBg}"></div>
+                    <span class="text-xs font-medium text-on-surface">${statusText}</span>
                   </div>
-                </div>
-              </td>
-              <td class="px-8 py-4">
-                <span class="px-2 py-1 rounded text-[10px] font-bold border ${formatBg}">${format}</span>
-              </td>
-              <td class="px-8 py-4">
-                <span class="px-2 py-1 rounded bg-secondary/10 text-secondary text-[10px] font-bold border border-secondary/20 whitespace-nowrap">${quality} ${lang.toUpperCase()}</span>
-              </td>
-              <td class="px-8 py-4">
-                <span class="px-2 py-1 rounded text-[10px] font-bold border ${sourceBg}">${sourceText}</span>
-              </td>
-              <td class="px-8 py-4">
-                <div class="flex items-center gap-2">
-                  <div class="w-2 h-2 rounded-full ${statusBg}"></div>
-                  <span class="text-xs font-medium text-on-surface">${statusText}</span>
-                </div>
-              </td>
-              <td class="px-8 py-4 text-right">
-                <div class="flex gap-2 justify-end">
-                  <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Xem trên web">
-                    <span class="material-symbols-outlined text-sm">visibility</span>
-                  </a>
-                  <a href="/admin/phim/tao-thu-cong?edit=${m.slug}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa phim / Cấu hình tập">
-                    <span class="material-symbols-outlined text-sm">edit</span>
-                  </a>
-                  ${isStatic ? `
-                    <button class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-zinc-600 cursor-not-allowed" title="Không thể xóa phim hệ thống" disabled>
-                      <span class="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  ` : `
-                    <button onclick="deleteMovie('${m.id}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa phim crawled">
-                      <span class="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  `}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
+                </td>
+                <td class="px-8 py-4 text-right">
+                  <div class="flex gap-2 justify-end">
+                    <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Xem trên web">
+                      <span class="material-symbols-outlined text-sm">visibility</span>
+                    </a>
+                    <a href="/admin/phim/tao-thu-cong?edit=${m.slug}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa phim / Cấu hình tập">
+                      <span class="material-symbols-outlined text-sm">edit</span>
+                    </a>
+                    ${isStatic ? `
+                      <button class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-zinc-600 cursor-not-allowed" title="Không thể xóa phim hệ thống" disabled>
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    ` : `
+                      <button onclick="deleteMovie('${m.id}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa phim crawled">
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    `}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
 
-        if (showCountText) {
-          showCountText.textContent = `HIỂN THỊ ${paginatedList.length} TRÊN TỔNG SỐ ${allMovies.length} PHIM`;
+          if (showCountText) {
+            showCountText.textContent = `HIỂN THỊ ${paginatedList.length} TRÊN TỔNG SỐ ${allMovies.length} PHIM`;
+          }
+
+          if (paginationInfo) {
+            paginationInfo.textContent = `Trang ${currentPage} / ${totalPages}`;
+          }
+
+          if (prevBtn) prevBtn.disabled = (currentPage === 1);
+          if (nextBtn) nextBtn.disabled = (currentPage === totalPages);
         }
 
-        if (paginationInfo) {
-          paginationInfo.textContent = `Trang ${currentPage} / ${totalPages}`;
+        function filterAndSearch() {
+          const query = searchInput?.value.trim().toLowerCase() || '';
+          const type = filterType?.value || 'all';
+          const source = filterSource?.value || 'all';
+
+          let filtered = allMovies;
+
+          if (query) {
+            filtered = filtered.filter(m => 
+              m.title.toLowerCase().includes(query) || 
+              (m.originalTitle && m.originalTitle.toLowerCase().includes(query)) ||
+              (Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase().includes(query)))
+            );
+          }
+
+          if (type !== 'all') {
+            filtered = filtered.filter(m => m.type === type);
+          }
+
+          if (source !== 'all') {
+            filtered = filtered.filter(m => m.source === source);
+          }
+
+          currentFilteredList = filtered;
+          displayPage(1);
         }
 
-        if (prevBtn) prevBtn.disabled = (currentPage === 1);
-        if (nextBtn) nextBtn.disabled = (currentPage === totalPages);
-      }
-
-      function filterAndSearch() {
-        const query = searchInput?.value.trim().toLowerCase() || '';
-        const type = filterType?.value || 'all';
-        const source = filterSource?.value || 'all';
-
-        let filtered = allMovies;
-
-        if (query) {
-          filtered = filtered.filter(m => 
-            m.title.toLowerCase().includes(query) || 
-            (m.originalTitle && m.originalTitle.toLowerCase().includes(query)) ||
-            (Array.isArray(m.genres) && m.genres.some(g => g.toLowerCase().includes(query)))
-          );
-        }
-
-        if (type !== 'all') {
-          filtered = filtered.filter(m => m.type === type);
-        }
-
-        if (source !== 'all') {
-          filtered = filtered.filter(m => m.source === source);
-        }
-
-        currentFilteredList = filtered;
+        loadMoviesData();
+        currentFilteredList = allMovies;
         displayPage(1);
+
+        // Bind event listeners
+        if (searchInput) searchInput.oninput = filterAndSearch;
+        if (filterType) filterType.onchange = filterAndSearch;
+        if (filterSource) filterSource.onchange = filterAndSearch;
+
+        if (prevBtn) {
+          prevBtn.onclick = () => {
+            if (currentPage > 1) {
+              displayPage(currentPage - 1);
+            }
+          };
+        }
+
+        if (nextBtn) {
+          nextBtn.onclick = () => {
+            const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage) || 1;
+            if (currentPage < totalPages) {
+              displayPage(currentPage + 1);
+            }
+          };
+        }
       }
 
-      // Initial stats count text
-      if (summaryText) {
-        summaryText.textContent = `${staticList.length} Hệ thống + ${crawledList.length} Crawled`;
-      }
-
-      // Set initial list & display
-      currentFilteredList = allMovies;
-      displayPage(1);
-
-      // Event listeners
-      searchInput?.addEventListener('input', filterAndSearch);
-      filterType?.addEventListener('change', filterAndSearch);
-      filterSource?.addEventListener('change', filterAndSearch);
-
-      prevBtn?.addEventListener('click', () => {
-        if (currentPage > 1) {
-          displayPage(currentPage - 1);
-        }
-      });
-
-      nextBtn?.addEventListener('click', () => {
-        const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage) || 1;
-        if (currentPage < totalPages) {
-          displayPage(currentPage + 1);
-        }
-      });
+      initMoviesIndex();
+      document.addEventListener('astro:page-load', initMoviesIndex);
     })();
   </script>
 

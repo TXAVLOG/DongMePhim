@@ -84,6 +84,9 @@ export interface LoginSettings {
   login_x_enable: boolean;
   login_x_client_id: string;
   login_x_client_secret: string;
+  turnstile_enable?: boolean;
+  turnstile_site_key?: string;
+  turnstile_secret_key?: string;
 }
 
 export interface SocialSettings {
@@ -106,6 +109,28 @@ export interface LuckyDrawSettings {
   lucky_draw_active_event_id: string;
 }
 
+export interface PaymentSettings {
+  sandbox_mode: boolean;
+  payos_enable: boolean;
+  payos_client_id: string;
+  payos_api_key: string;
+  payos_checksum_key: string;
+  paypal_enable: boolean;
+  paypal_client_id: string;
+  sepay_enable: boolean;
+  sepay_api_key: string;
+  vnpay_enable: boolean;
+  vnpay_tmn_code: string;
+  vnpay_hash_secret: string;
+  stripe_enable: boolean;
+  stripe_publishable_key: string;
+  stripe_secret_key: string;
+  manual_enable: boolean;
+  manual_bank_name: string;
+  manual_account_no: string;
+  manual_account_name: string;
+}
+
 export interface SiteSettings {
   // Categorized settings from DATABASE.md
   general: GeneralSettings;
@@ -116,6 +141,7 @@ export interface SiteSettings {
   login: LoginSettings;
   social: SocialSettings;
   luckyDraw: LuckyDrawSettings;
+  payments: PaymentSettings;
 }
 
 export interface ISettingProvider {

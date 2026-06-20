@@ -1,0 +1,258 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { SettingService } from '../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+---
+
+<MainLayout title="Hóa đơn thanh toán">
+  <main class="max-w-3xl mx-auto px-4 py-8 pt-24 min-h-[80vh] flex flex-col items-center justify-center print:pt-0 print:pb-0 print:my-0">
+    
+    <!-- Action buttons (Hidden on Print) -->
+    <div class="w-full flex justify-between items-center mb-6 print:hidden">
+      <a href="/goi-dich-vu" class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors">
+        <span class="material-symbols-outlined text-sm">arrow_back</span>
+        Quay lại gói dịch vụ
+      </a>
+      <button onclick="window.print()" class="px-5 py-2.5 rounded-full text-slate-950 font-bold bg-primary hover:brightness-110 active:scale-95 transition-all text-xs flex items-center gap-1.5 shadow-lg shadow-primary/20 cursor-pointer border-none">
+        <span class="material-symbols-outlined text-sm font-bold">print</span>
+        In hóa đơn (PDF)
+      </button>
+    </div>
+
+    <!-- Main Invoice Card -->
+    <div id="invoice-card-container" class="w-full bg-zinc-950/60 border border-glass-stroke rounded-3xl p-8 sm:p-12 relative overflow-hidden print:border-none print:bg-white print:text-black print:p-0 print:rounded-none shadow-2xl">
+      
+      <!-- Watermark Container -->
+      <div class="watermark-container absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden z-0">
+        <span class="watermark-text text-white/5 dark:text-white/5 print:text-black/[0.04] text-5xl sm:text-7xl font-black uppercase tracking-widest transform -rotate-30 select-none dyn-site-name">{settings.general.site_name}</span>
+      </div>
+
+      <!-- Loaded Content -->
+      <div id="invoice-content" class="relative z-10 space-y-8 hidden">
+        
+        <!-- Invoice Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-glass-stroke/60 print:border-zinc-200 pb-8">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="material-symbols-outlined text-primary text-3xl font-bold print:text-violet-600">movie_filter</span>
+              <h2 class="text-xl font-black text-white print:text-black dyn-site-name">{settings.general.site_name}</h2>
+            </div>
+            <p class="text-xs text-zinc-400 print:text-zinc-500 font-body-main">Hóa đơn thanh toán nâng cấp tài khoản</p>
+          </div>
+          
+          <div class="text-left sm:text-right">
+            <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">MÃ HÓA ĐƠN</span>
+            <span id="invoice-id-val" class="font-mono text-xs font-bold text-white print:text-black mt-0.5 block">-</span>
+          </div>
+        </div>
+
+        <!-- Meta Details Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs border-b border-glass-stroke/40 print:border-zinc-200 pb-8">
+          <div class="space-y-3">
+            <h4 class="font-bold text-zinc-500 uppercase tracking-wider text-[10px]">THÔNG TIN KHÁCH HÀNG</h4>
+            <div class="space-y-1">
+              <p class="text-zinc-400 print:text-zinc-600">Tài khoản: <strong id="invoice-user-val" class="text-white print:text-black font-semibold">-</strong></p>
+              <p class="text-zinc-400 print:text-zinc-600">Email: <span id="invoice-email-val" class="text-zinc-300 print:text-zinc-800">-</span></p>
+            </div>
+          </div>
+          
+          <div class="space-y-3 md:text-right">
+            <h4 class="font-bold text-zinc-500 uppercase tracking-wider text-[10px] md:text-right">CHI TIẾT THANH TOÁN</h4>
+            <div class="space-y-1">
+              <p class="text-zinc-400 print:text-zinc-600">Ngày giao dịch: <span id="invoice-date-val" class="text-zinc-300 print:text-zinc-800 font-semibold">-</span></p>
+              <p class="text-zinc-400 print:text-zinc-600">Phương thức: <span id="invoice-method-val" class="text-zinc-300 print:text-zinc-800">-</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoice Table (Products list) -->
+        <div class="space-y-4">
+          <h4 class="font-bold text-zinc-500 uppercase tracking-wider text-[10px]">NỘI DUNG THANH TOÁN</h4>
+          
+          <div class="overflow-hidden border border-glass-stroke/40 print:border-zinc-200 rounded-xl">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-zinc-950/40 print:bg-zinc-100/50 border-b border-glass-stroke/40 print:border-zinc-200">
+                  <th class="px-5 py-3 text-zinc-500 font-bold uppercase tracking-wider">Mô tả gói cước</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold uppercase tracking-wider">Chu kỳ</th>
+                  <th class="px-5 py-3 text-zinc-500 font-bold uppercase tracking-wider text-right">Đơn giá</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-glass-stroke/40 print:divide-zinc-200">
+                <tr>
+                  <td class="px-5 py-4">
+                    <p id="invoice-tier-title" class="font-bold text-white print:text-black">-</p>
+                    <p class="text-[10px] text-zinc-400 print:text-zinc-500 font-body-main mt-0.5">Không quảng cáo, phát trực tuyến 4K UHD, máy chủ CDN VIP tốc độ cao.</p>
+                  </td>
+                  <td id="invoice-cycle-val" class="px-5 py-4 text-zinc-300 print:text-zinc-800 font-medium">-</td>
+                  <td id="invoice-price-val" class="px-5 py-4 text-white print:text-black font-bold text-right">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Total Price Summary -->
+        <div class="flex justify-between items-center bg-white/5 print:bg-zinc-50 border border-glass-stroke/40 print:border-zinc-200 rounded-2xl p-5 mt-4">
+          <div>
+            <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">TRẠNG THÁI</span>
+            <div id="invoice-status-badge" class="mt-1"></div>
+          </div>
+          
+          <div class="text-right">
+            <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">TỔNG CỘNG</span>
+            <span id="invoice-total-val" class="text-2xl font-black text-primary print:text-violet-600 mt-0.5 block">-</span>
+          </div>
+        </div>
+
+        <!-- Footer terms -->
+        <div class="text-center text-[10px] text-zinc-500 print:text-zinc-400 font-body-main pt-6 border-t border-glass-stroke/30 print:border-zinc-200">
+          <p>Cảm ơn bạn đã đồng hành cùng <span class="dyn-site-name">{settings.general.site_name}</span>. Gói dịch vụ đã được kích hoạt tự động.</p>
+          <p class="mt-1">Mọi thắc mắc xin liên hệ trợ giúp qua Telegram {settings.social?.social_telegram_url || "@dongmephim"}.</p>
+        </div>
+
+      </div>
+
+      <!-- Loading State -->
+      <div id="invoice-loading" class="flex flex-col items-center justify-center py-20 gap-3">
+        <span class="material-symbols-outlined text-3xl text-primary animate-spin">progress_activity</span>
+        <p class="text-xs text-zinc-400">Đang tải hóa đơn...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="invoice-error" class="flex flex-col items-center justify-center py-20 text-center gap-4 hidden">
+        <span class="material-symbols-outlined text-5xl text-rose-500 animate-pulse">error</span>
+        <h3 class="text-lg font-bold text-white">Không tìm thấy hóa đơn</h3>
+        <p class="text-xs text-zinc-400 max-w-sm">Mã hóa đơn không tồn tại hoặc bạn không có quyền xem hóa đơn này.</p>
+        <a href="/goi-dich-vu" class="px-6 py-2.5 rounded-full text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all mt-2">
+          Quay lại danh sách
+        </a>
+      </div>
+
+    </div>
+
+  </main>
+</MainLayout>
+
+<!-- Print styling -->
+<style is:global>
+  @media print {
+    /* Hide layout headers/footers/navigation */
+    header, footer, nav, aside, #txa-toast-container, button, .print\:hidden {
+      display: none !important;
+    }
+    
+    /* Reset margins and backgrounds */
+    body {
+      background: white !important;
+      color: black !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    main {
+      padding: 0 !important;
+      margin: 0 !important;
+      max-width: 100% !important;
+      min-height: auto !important;
+      display: block !important;
+    }
+
+    #invoice-card-container {
+      border: none !important;
+      background: white !important;
+      color: black !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+    }
+
+    .watermark-container {
+      opacity: 0.05 !important;
+    }
+  }
+
+  /* Watermark text rotation */
+  .watermark-text {
+    transform: rotate(-30deg);
+  }
+</style>
+
+<script is:inline>
+  (function() {
+    function hydrateInvoice() {
+      const loader = document.getElementById('invoice-loading');
+      const content = document.getElementById('invoice-content');
+      const err = document.getElementById('invoice-error');
+
+      if (!loader || !content || !err) return;
+
+      const path = window.location.pathname;
+      const txid = path.split('/').pop();
+
+      if (!txid || txid === '[id]') {
+        loader.classList.add('hidden');
+        err.classList.remove('hidden');
+        return;
+      }
+
+      // Read from local storage
+      const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
+      let logs = [];
+      try { logs = JSON.parse(logsStr); } catch (e) {}
+
+      const tx = logs.find(item => item.txid === txid);
+      
+      // Also check if current logged in user owns it
+      const currentLoggedIn = localStorage.getItem('tlogged_in_as') || '';
+      
+      if (!tx) {
+        loader.classList.add('hidden');
+        err.classList.remove('hidden');
+        return;
+      }
+
+      // Populate elements
+      document.getElementById('invoice-id-val').textContent = tx.txid;
+      document.getElementById('invoice-user-val').textContent = tx.username;
+      
+      // Search email from tregistered_users
+      let email = '-';
+      try {
+        const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+        const u = users.find(user => user.username === tx.username || user.email === tx.username);
+        if (u) email = u.email;
+      } catch (e) {}
+      document.getElementById('invoice-email-val').textContent = email;
+
+      document.getElementById('invoice-date-val').textContent = new Date(tx.date).toLocaleString('vi-VN');
+      
+      const methodLabel = tx.method === 'manual' ? 'VietQR (Chuyển khoản thủ công)' : tx.method.toUpperCase();
+      document.getElementById('invoice-method-val').textContent = methodLabel;
+      
+      document.getElementById('invoice-tier-title').textContent = tx.packageTitle;
+      document.getElementById('invoice-cycle-val').textContent = tx.cycle === 'annual' ? 'Hàng năm (-15%)' : 'Hàng tháng';
+      
+      const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.price);
+      document.getElementById('invoice-price-val').textContent = formattedPrice;
+      document.getElementById('invoice-total-val').textContent = formattedPrice;
+
+      // Status Badge
+      const statusBadge = document.getElementById('invoice-status-badge');
+      if (tx.status === 'approved') {
+        statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[9px] print:bg-emerald-50 print:text-emerald-700 print:border-emerald-200">ĐÃ THANH TOÁN</span>';
+      } else if (tx.status === 'declined') {
+        statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[9px] print:bg-rose-50 print:text-rose-700 print:border-rose-200">BỊ TỪ CHỐI</span>';
+      } else {
+        statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse print:bg-yellow-50 print:text-yellow-700 print:border-yellow-200">ĐANG CHỜ DUYỆT</span>';
+      }
+
+      loader.classList.add('hidden');
+      content.classList.remove('hidden');
+    }
+
+    hydrateInvoice();
+    document.addEventListener('astro:page-load', hydrateInvoice);
+  })();
+</script>
