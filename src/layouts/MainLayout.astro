@@ -53,9 +53,7 @@ if (settings.social?.social_zalo_group_enable && settings.social?.social_zalo_gr
   socialLinks.push({ platform: "Zalo Group", url: settings.social.social_zalo_group_url, icon: "zalo" });
 }
 
-const allMoviesForNav = await MovieService.getMovies();
-const uniqueCountries = [...new Set(allMoviesForNav.map((m: any) => m.category).filter(Boolean))] as string[];
-const uniqueGenres = [...new Set(allMoviesForNav.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
+const { countries: uniqueCountries, genres: uniqueGenres } = await MovieService.getGenresAndCountries();
 
 const slugify = (text: string) => {
   return text
@@ -2275,7 +2273,7 @@ const isActive = (path: string) => {
               } finally {
                 searchLoader?.classList.add('hidden');
               }
-            }, 350);
+            }, 200);
           });
 
           // Enter key to search
@@ -3286,8 +3284,8 @@ const isActive = (path: string) => {
           };
 
           try {
-            const res = await fetch('https://ipinfo.io/json');
-            if (!res.ok) throw new Error('Ipinfo failed');
+            const res = await fetch('/api/auth/ip');
+            if (!res.ok) throw new Error('Local IP fetch failed');
             const data = await res.json();
 
             const rawInfo = `${userAgent} - IP: ${data.ip} - ${data.city || ''} - ${data.region || ''} - ${data.country || ''}`;
@@ -3298,31 +3296,15 @@ const isActive = (path: string) => {
             const hash = md5(rawInfo);
             return `tk_${hash}`;
           } catch (err) {
-            console.warn('ipinfo.io failed, attempting fallback to api64.ipify.org...', err);
-            try {
-              const res = await fetch('https://api64.ipify.org?format=json');
-              if (!res.ok) throw new Error('Ipify failed');
-              const data = await res.json();
-              const ip = data.ip;
-
-              const rawInfo = `${userAgent} - IP: ${ip}`;
-              const encryptedToken = TxaCipher.encrypt(rawInfo, CRYPTO_KEY);
-              if (encryptedToken) {
-                return `tk_${encryptedToken}`;
-              }
-              const uaHash = md5(userAgent);
-              return `txanot-${ip}-${uaHash}`;
-            } catch (err2) {
-              console.error('All IP fetches failed, local fallback...', err2);
-              const rawInfo = `${userAgent} - Local Fallback`;
-              const encryptedToken = TxaCipher.encrypt(rawInfo, CRYPTO_KEY);
-              if (encryptedToken) {
-                return `tk_${encryptedToken}`;
-              }
-              const uaHash = md5(userAgent);
-              const rand = Math.random().toString(36).substring(2, 10);
-              return `txanot-noip-${uaHash}-${rand}`;
+            console.error('IP fetch failed, local fallback...', err);
+            const rawInfo = `${userAgent} - Local Fallback`;
+            const encryptedToken = TxaCipher.encrypt(rawInfo, CRYPTO_KEY);
+            if (encryptedToken) {
+              return `tk_${encryptedToken}`;
             }
+            const uaHash = md5(userAgent);
+            const rand = Math.random().toString(36).substring(2, 10);
+            return `txanot-noip-${uaHash}-${rand}`;
           }
         }
 

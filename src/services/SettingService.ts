@@ -13,7 +13,28 @@ if (providerType === 'supabase') {
   settingProvider = new LocalSettingProvider();
 }
 
+let cachedSettings: SiteSettings | null = null;
+let cacheExpires = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export const SettingService = {
-  getSettings: () => settingProvider.getSettings(),
-  updateSettings: (settings: SiteSettings) => settingProvider.updateSettings(settings)
+  getSettings: async (): Promise<SiteSettings> => {
+    if (cachedSettings && Date.now() < cacheExpires) {
+      return cachedSettings;
+    }
+    const settings = await settingProvider.getSettings();
+    cachedSettings = settings;
+    cacheExpires = Date.now() + CACHE_TTL;
+    return settings;
+  },
+  updateSettings: async (settings: SiteSettings): Promise<void> => {
+    await settingProvider.updateSettings(settings);
+    // Invalidate cache immediately
+    cachedSettings = null;
+    cacheExpires = 0;
+  },
+  clearCache: () => {
+    cachedSettings = null;
+    cacheExpires = 0;
+  }
 };

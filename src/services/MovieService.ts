@@ -93,6 +93,38 @@ export const MovieService = {
     return data;
   },
 
+  getGenresAndCountries: async () => {
+    const cacheKey = 'genres_countries';
+    const cached = movieCache.get(cacheKey);
+    if (cached) return cached;
+
+    let countries: string[] = ["Trung Quốc", "Hàn Quốc", "Nhật Bản", "Mỹ", "Hồng Kông", "Đài Loan", "Thái Lan", "Âu Mỹ", "Việt Nam"];
+    let genres: string[] = ["Hành Động", "Viễn Tưởng", "Kinh Dị", "Tình Cảm", "Hài Hước", "Cổ Trang", "Võ Thuật", "Hình Sự", "Phiêu Lưu", "Tâm Lý", "Học Đường", "Chính Kịch", "Gia Đình", "Chiến Tranh", "Hoạt Hình"];
+
+    try {
+      if (providerType === 'supabase') {
+        const { supabase } = await import('../lib/supabase');
+        const { data, error } = await supabase
+          .from('movies')
+          .select('category, genres');
+        
+        if (!error && data) {
+          const dbCountries = [...new Set(data.map((m: any) => m.category).filter(Boolean))] as string[];
+          const dbGenres = [...new Set(data.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
+          if (dbCountries.length > 0) countries = dbCountries;
+          if (dbGenres.length > 0) genres = dbGenres;
+        }
+      }
+    } catch (e) {
+      console.warn("Lỗi khi lấy genres/countries từ database, dùng static fallback:", e);
+    }
+
+    const result = { countries, genres };
+    // Cache trong 2 giờ
+    movieCache.set(cacheKey, result, 2 * 60 * 60 * 1000);
+    return result;
+  },
+
   // Helper để xóa cache khi admin cào phim mới hoặc đồng bộ
   clearCache: () => {
     movieCache.clear();
