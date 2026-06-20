@@ -20,6 +20,16 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title} | {settings.general.site_name} Admin</title>
   <ClientRouter />
+  <script is:inline>
+    (function() {
+      if (typeof localStorage !== 'undefined') {
+        const loggedInUser = localStorage.getItem('tlogged_in_as');
+        if (!loggedInUser || !loggedInUser.toLowerCase().includes('admin')) {
+          window.location.href = '/tphim';
+        }
+      }
+    })();
+  </script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
