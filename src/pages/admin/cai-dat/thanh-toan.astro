@@ -3,7 +3,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { SettingService } from '../../../services/SettingService';
 
 const settings = await SettingService.getSettings();
-const activeTab = 'payment';
+let activeTab = 'payment';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - Cấu hình Thanh toán">
