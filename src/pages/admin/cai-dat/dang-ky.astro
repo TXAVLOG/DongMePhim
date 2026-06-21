@@ -443,7 +443,10 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           const stored = localStorage.getItem('txa_site_settings');
           current = stored ? JSON.parse(stored) : serverSettings;
         } catch (e) { current = serverSettings; }
-        const siteUrl = current.general?.site_url || window.location.origin;
+        let siteUrl = current.general?.site_url || window.location.origin;
+        if (siteUrl.includes('localhost') && !window.location.hostname.includes('localhost')) {
+          siteUrl = window.location.origin;
+        }
         const callbackUri = siteUrl.replace(/\/$/, '') + '/api/auth/txa-callback';
         document.querySelectorAll('.callback-uri-input').forEach(input => {
           input.value = callbackUri;
@@ -510,7 +513,10 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
             const raw = localStorage.getItem('txa_site_settings');
             if (raw) current = JSON.parse(raw);
           } catch (e) {}
-          const siteUrl = current.general?.site_url || window.location.origin;
+          let siteUrl = current.general?.site_url || window.location.origin;
+          if (siteUrl.includes('localhost') && !window.location.hostname.includes('localhost')) {
+            siteUrl = window.location.origin;
+          }
           const redirectUri = encodeURIComponent(siteUrl.replace(/\/$/, '') + '/api/auth/txa-callback');
           let authUrl = '';
 

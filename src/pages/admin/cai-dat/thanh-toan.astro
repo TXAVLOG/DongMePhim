@@ -300,7 +300,10 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           if (raw) stored = JSON.parse(raw);
         } catch (e) {}
 
-        const siteUrl = stored?.general?.site_url || serverSettings.general?.site_url || window.location.origin;
+        let siteUrl = stored?.general?.site_url || serverSettings.general?.site_url || window.location.origin;
+        if (siteUrl.includes('localhost') && !window.location.hostname.includes('localhost')) {
+          siteUrl = window.location.origin;
+        }
         const webhookInput = document.getElementById('sepay-webhook-url-input');
         if (webhookInput) {
           webhookInput.value = siteUrl.replace(/\/$/, '') + '/api/payment/sepay';
