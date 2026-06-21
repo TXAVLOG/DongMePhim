@@ -761,6 +761,34 @@ const getDynamicFeaturesObj = (pkg: any) => {
             sandboxBtnContainer.innerHTML = '';
           }
 
+          // Create pending payment log in the database
+          (async () => {
+            try {
+              const resMe = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
+              let userEmail = '';
+              if (resMe.ok) {
+                const resMeData = await resMe.json();
+                userEmail = resMeData.data?.email || '';
+              }
+              await fetch('/api/user/payments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  txid,
+                  username,
+                  email: userEmail,
+                  packageTitle,
+                  price,
+                  cycle,
+                  method: 'sepay',
+                  status: 'pending'
+                })
+              });
+            } catch (err) {
+              console.error('Lỗi khởi tạo giao dịch SePay:', err);
+            }
+          })();
+
           // Start active polling (works for both sandbox + live — polls /api/payment/sepay-verify)
           startSePayPolling(txid, 'upgrade', price, packageTitle, cycle);
         }
