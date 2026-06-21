@@ -570,20 +570,25 @@ const packages = settings.packages || [];
         }
       }
 
-      window.openEditPlanModal = function(packageId) {
+      window.openEditPlanModal = async function(packageId) {
         const pkg = loadedSettings.packages?.find(p => p.id === packageId);
         if (!pkg) return;
 
         // Get system servers list
         let systemServers = [];
         try {
-          const stored = localStorage.getItem('txa_servers');
-          if (stored) {
-            systemServers = JSON.parse(stored);
-          } else {
-            systemServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+          const res = await fetch('/api/admin/servers');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.status === 'success') {
+              systemServers = data.data;
+            }
           }
         } catch (e) {
+          console.error('Error loading servers from database:', e);
+        }
+
+        if (!systemServers || systemServers.length === 0) {
           systemServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
         }
 
