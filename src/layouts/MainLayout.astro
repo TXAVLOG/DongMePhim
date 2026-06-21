@@ -1554,7 +1554,7 @@ const isActive = (path: string) => {
         if (!btn) return;
         const clientId = btn.dataset.clientid;
         const isOneTapEnabled = btn.dataset.onetap === 'true';
-        if (!clientId || !isOneTapEnabled) return;
+        if (!clientId || clientId === 'mock_google_id' || !isOneTapEnabled) return;
 
         const loadOneTap = () => {
           if (typeof google === 'undefined') return;
@@ -3473,8 +3473,8 @@ const isActive = (path: string) => {
                 body: JSON.stringify({ token: browserToken })
               });
               const data = await res.json();
-              if (res.ok && data.data) {
-                const status = data.data.status;
+              if (res.ok) {
+                const status = data.data ? data.data.status : data.status;
                 if (status === 'approved') {
                   clearInterval(pollingInterval);
                   localStorage.setItem('zalo_access_status', 'approved');
@@ -3573,28 +3573,30 @@ const isActive = (path: string) => {
               })
             });
             const data = await res.json();
-            if (res.ok && data.data) {
-              const currentStatus = data.data.status;
-              localStorage.setItem('zalo_access_status', currentStatus);
-              updateZaloUI(currentStatus);
+            if (res.ok) {
+              const currentStatus = data.data ? data.data.status : data.status;
+              if (currentStatus) {
+                localStorage.setItem('zalo_access_status', currentStatus);
+                updateZaloUI(currentStatus);
 
-              if (currentStatus === 'approved') {
-                if (pollingInterval) clearInterval(pollingInterval);
-                document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
-                if (window.showToast) {
-                  window.showToast('Yêu cầu truy cập Zalo của bạn đã được phê duyệt thành công!', 'success');
-                }
-                setTimeout(() => {
-                  document.documentElement.classList.remove('gate-zalo');
-                  document.documentElement.classList.add('gate-passed');
-                  if (window.location.pathname !== '/tphim') {
-                    window.location.href = '/tphim';
+                if (currentStatus === 'approved') {
+                  if (pollingInterval) clearInterval(pollingInterval);
+                  document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
+                  if (window.showToast) {
+                    window.showToast('Yêu cầu truy cập Zalo của bạn đã được phê duyệt thành công!', 'success');
                   }
-                }, 1500);
-              } else if (currentStatus === 'pending') {
-                startZaloPolling();
-              } else {
-                if (pollingInterval) clearInterval(pollingInterval);
+                  setTimeout(() => {
+                    document.documentElement.classList.remove('gate-zalo');
+                    document.documentElement.classList.add('gate-passed');
+                    if (window.location.pathname !== '/tphim') {
+                      window.location.href = '/tphim';
+                    }
+                  }, 1500);
+                } else if (currentStatus === 'pending') {
+                  startZaloPolling();
+                } else {
+                  if (pollingInterval) clearInterval(pollingInterval);
+                }
               }
             }
           } catch(e) {}

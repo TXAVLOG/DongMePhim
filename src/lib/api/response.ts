@@ -12,7 +12,7 @@ export async function apiResponse(
     let rawPayload = data;
     
     // Auto wrap if it's not already wrapped with "data" property and we didn't explicitly pass a raw envelope
-    if (data && typeof data === 'object' && !('data' in data) && !('status' in data)) {
+    if (data && typeof data === 'object' && !('data' in data && 'status' in data)) {
         rawPayload = {
             status,
             data,
