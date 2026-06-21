@@ -1525,21 +1525,20 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   allow="autoplay"
                 />
               )}
-              
               <div className="absolute bottom-6 right-6 flex items-center gap-3">
                 {canSkipAd ? (
                   <button 
                     onClick={handleSkipAd}
-                    className="px-5 py-2.5 bg-[#d2bbff] text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all shadow-lg flex items-center gap-1.5 border-none cursor-pointer"
+                    className="px-5 py-2.5 bg-[#d2bbff] text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(210,187,255,0.4)] flex items-center gap-1.5 border-none cursor-pointer"
                   >
                     <span>Bỏ qua quảng cáo</span>
                     <span className="material-symbols-outlined text-sm font-bold">skip_next</span>
                   </button>
-                ) : (
+                ) : adCountdown <= 5 ? (
                   <div className="px-5 py-2.5 bg-black/85 backdrop-blur-md border border-white/10 rounded-xl text-[10px] text-white font-bold tracking-wider uppercase">
-                    Quảng cáo có thể bỏ qua sau {adCountdown}s
+                    Bỏ qua ({adCountdown})
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           ) : userPermissions && currentServer && !userPermissions.allowed_servers?.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) ? (
