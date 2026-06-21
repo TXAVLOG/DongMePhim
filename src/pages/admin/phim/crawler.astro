@@ -66,6 +66,17 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập URL phim hoặc Slugs (Mỗi dòng 1 phim)</label>
             <textarea id="crawlUrlsInput" rows="5" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs font-mono placeholder:text-zinc-700" placeholder="https://kkphim1.com/phim/digimon-beatbreak&#10;tro-choi-con-muc"></textarea>
           </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Hoặc Tải lên file TXT chứa link/slugs</label>
+            <div class="relative flex items-center justify-center border-2 border-dashed border-glass-stroke rounded-xl p-4 hover:border-primary/50 transition-all bg-zinc-950/40">
+              <input type="file" id="crawlTxtUpload" accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <div class="text-center space-y-1">
+                <span class="material-symbols-outlined text-2xl text-zinc-500" id="uploadIcon">upload_file</span>
+                <p class="text-xs text-zinc-400 font-bold" id="uploadText">Nhấp để chọn hoặc kéo thả file .txt</p>
+                <p class="text-[10px] text-zinc-500">Mỗi URL/slug trên 1 dòng</p>
+              </div>
+            </div>
+          </div>
           <div class="text-[11px] text-zinc-500 italic flex items-center gap-1" id="detectCountText">
             <span class="material-symbols-outlined text-sm">check_circle</span> Phát hiện 0 phim hợp lệ.
           </div>
@@ -466,6 +477,67 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       detectCountText.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span> Phát hiện ${valid} phim hợp lệ từ dòng nhập.`;
     }
     crawlUrlsInput.addEventListener('input', updateDetectCount);
+
+    // File upload handler for TXT files
+    const crawlTxtUpload = document.getElementById('crawlTxtUpload');
+    const uploadText = document.getElementById('uploadText');
+    const uploadIcon = document.getElementById('uploadIcon');
+
+    crawlTxtUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      uploadText.textContent = `Đang đọc file: ${file.name}...`;
+      uploadIcon.className = 'material-symbols-outlined text-2xl text-primary animate-spin';
+      uploadIcon.textContent = 'sync';
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target.result;
+        const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        
+        const validLines = [];
+        let invalidCount = 0;
+        
+        lines.forEach(line => {
+          const slug = extractSlug(line);
+          if (slug) {
+            validLines.push(line);
+          } else {
+            invalidCount++;
+          }
+        });
+
+        // Populate textarea and update count
+        crawlUrlsInput.value = validLines.join('\n');
+        updateDetectCount();
+
+        uploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
+        uploadIcon.className = 'material-symbols-outlined text-2xl text-emerald-400';
+        uploadIcon.textContent = 'check_circle';
+
+        if (invalidCount > 0) {
+          if (window.showGlobalToast) {
+            window.showGlobalToast(`Đã bỏ qua ${invalidCount} dòng không hợp lệ!`, 'warning');
+          }
+          addLog(`⚠️ Đã tải file .txt nhưng phát hiện ${invalidCount} dòng không hợp lệ và bị bỏ qua.`, 'warning');
+        } else {
+          if (window.showGlobalToast) {
+            window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+          }
+          addLog(`✓ Đã tải thành công ${validLines.length} phim từ file .txt.`, 'success');
+        }
+      };
+
+      reader.onerror = () => {
+        uploadText.textContent = 'Lỗi khi đọc file!';
+        uploadIcon.className = 'material-symbols-outlined text-2xl text-red-400';
+        uploadIcon.textContent = 'error';
+        if (window.showGlobalToast) window.showGlobalToast('Lỗi khi đọc file TXT!', 'error');
+      };
+
+      reader.readAsText(file);
+    });
 
     // Logs helper
     const logTerminalBody = document.getElementById('logTerminalBody');

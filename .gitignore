@@ -54,3 +54,6 @@ scratch/
 # codegraph outputs
 codegraph.json
 .codegraph/
+
+# Ignore txt exports
+missing_source_urls.txt
