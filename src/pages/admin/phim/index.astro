@@ -37,6 +37,11 @@ const staticMovies = await MovieService.getMovies();
         <span id="bulk-delete-text">Xóa đã chọn (0)</span>
       </button>
 
+      <button id="bulk-scan-btn" class="hidden px-4 py-2.5 bg-emerald-600/10 border border-emerald-500/20 hover:bg-emerald-600/20 text-emerald-400 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer" data-txatooltip="Quét tập mới dựa theo nguồn API (phimapi.com)">
+        <span class="material-symbols-outlined text-sm">sync</span>
+        <span id="bulk-scan-text">Quét tập mới (0)</span>
+      </button>
+
       <select id="filter-type" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
         <option value="all">Tất cả định dạng</option>
         <option value="movie">Phim Lẻ</option>
@@ -134,13 +139,24 @@ const staticMovies = await MovieService.getMovies();
         function updateBulkActionButton() {
           const bulkBtn = document.getElementById('bulk-delete-btn');
           const bulkText = document.getElementById('bulk-delete-text');
+          const scanBtn = document.getElementById('bulk-scan-btn');
+          const scanText = document.getElementById('bulk-scan-text');
+          const count = selectedMovies.length;
+          
           if (bulkBtn && bulkText) {
-            const count = selectedMovies.length;
             if (count > 0) {
               bulkText.textContent = `Xóa đã chọn (${count})`;
               bulkBtn.classList.remove('hidden');
             } else {
               bulkBtn.classList.add('hidden');
+            }
+          }
+          if (scanBtn && scanText) {
+            if (count > 0) {
+              scanText.textContent = `Quét tập mới (${count})`;
+              scanBtn.classList.remove('hidden');
+            } else {
+              scanBtn.classList.add('hidden');
             }
           }
         }
@@ -407,6 +423,163 @@ const staticMovies = await MovieService.getMovies();
               const isStatic = cb.getAttribute('data-is-static') === 'true';
               window.toggleSelectMovie(slug, isStatic, checked);
             });
+          });
+        }
+
+        function mapKKPhimToMovieDetail(data) {
+          const m = data.movie;
+          const cdnDomain = "https://phimimg.com";
+          
+          let posterUrl = m.poster_url || '';
+          if (posterUrl && !posterUrl.startsWith('http')) {
+            const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, '');
+            posterUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+          }
+          let bannerUrl = m.thumb_url || m.poster_url || '';
+          if (bannerUrl && !bannerUrl.startsWith('http')) {
+            const cleanPath = bannerUrl.replace(/^\/?uploads\/movies\//, '');
+            bannerUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+          }
+
+          const genres = Array.isArray(m.category) ? m.category.map(c => c.name) : [];
+          
+          let category = "Khác";
+          if (Array.isArray(m.country) && m.country.length > 0) {
+            category = m.country[0].name;
+          }
+
+          let type = 'series';
+          if (m.type === 'single') {
+            type = 'movie';
+          } else if (m.type === 'hoathinh') {
+            type = 'hoathinh';
+          } else if (m.type === 'tvshows') {
+            type = 'tvshows';
+          }
+
+          const episodes = Array.isArray(data.episodes) ? data.episodes.map(server => {
+            return {
+              serverName: server.server_name || "Server VIP",
+              serverData: Array.isArray(server.server_data) ? server.server_data.map(ep => {
+                let epName = ep.name || '';
+                if (epName.trim().match(/^\d+$/)) {
+                  epName = `Tập ${epName.padStart(2, '0')}`;
+                }
+                return {
+                  name: epName,
+                  slug: ep.slug || `tap-${ep.name}`,
+                  filename: ep.filename || `${m.name} - Tap ${ep.name}`,
+                  linkEmbed: ep.link_embed || '',
+                  linkM3u8: ep.link_m3u8 || '',
+                  subtitles: ep.subtitles || ep.subtitles_data || [],
+                  timeIntroStart: ep.timeIntroStart || ep.time_intro_start || 0,
+                  timeIntroEnd: ep.timeIntroEnd || ep.time_intro_end || 0,
+                  timeOutroStart: ep.timeOutroStart || ep.time_outro_start || 0,
+                  timeOutroEnd: ep.timeOutroEnd || ep.time_outro_end || 0
+                };
+              }) : []
+            };
+          }) : [];
+
+          return {
+            id: m._id || m.id || `kk-${m.slug}`,
+            title: m.name,
+            originalTitle: m.origin_name,
+            slug: m.slug,
+            description: m.content ? m.content.replace(/<[^>]*>/g, '') : '',
+            posterUrl: posterUrl,
+            bannerUrl: bannerUrl,
+            releaseYear: parseInt(m.year) || 2025,
+            durationMinutes: m.time || (type === 'movie' ? '120 phút' : '45 phút/tập'),
+            type: type,
+            status: m.status === 'completed' ? 'completed' : 'ongoing',
+            episodeCurrent: m.episode_current || (type === 'movie' ? 'Full' : '1'),
+            episodeTotal: m.episode_total || '1',
+            quality: m.quality || 'FHD',
+            lang: m.lang || 'Vietsub',
+            imdbScore: 8.0,
+            category: category,
+            ageRating: type === 'movie' ? 'T16' : 'T13',
+            genres: genres,
+            seasons: type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1',
+            actors: Array.isArray(m.actor) ? m.actor.filter(Boolean) : [],
+            directors: Array.isArray(m.director) ? m.director.filter(Boolean) : [],
+            trailerUrl: m.trailer_url || '',
+            episodes: episodes
+          };
+        }
+
+        // Bind Bulk Scan Button
+        const bulkScanBtn = document.getElementById('bulk-scan-btn');
+        if (bulkScanBtn) {
+          bulkScanBtn.addEventListener('click', async () => {
+            if (selectedMovies.length === 0) return;
+
+            let oldHtml = bulkScanBtn.innerHTML;
+            bulkScanBtn.disabled = true;
+            bulkScanBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">autorenew</span> Đang quét...';
+            
+            let success = 0;
+            let failed = 0;
+            
+            if (window.showGlobalToast) window.showGlobalToast(`Đang quét tập mới cho ${selectedMovies.length} phim...`, 'info');
+
+            for (const item of selectedMovies) {
+              try {
+                // Determine sourceUrl. If it's stored in allMovies, fetch it. Else fallback to phimapi.com
+                const mObj = allMovies.find(x => x.slug === item.slug);
+                // Currently we fallback to phimapi.com because it's the standard source.
+                // Could expand later if more sources are tracked.
+                const sourceUrl = `https://phimapi.com/phim/${item.slug}`;
+
+                const res = await fetch(sourceUrl);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const detailData = await res.json();
+
+                if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
+                  const movieDetailObj = mapKKPhimToMovieDetail(detailData);
+                  movieDetailObj.updatedAt = new Date().toISOString();
+                  
+                  const saveRes = await fetch('/api/admin/movie-action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      action: 'save',
+                      slug: item.slug,
+                      movieData: movieDetailObj,
+                      isStatic: false
+                    })
+                  });
+
+                  if (saveRes.ok) {
+                    success++;
+                  } else {
+                    failed++;
+                  }
+                } else {
+                  failed++;
+                }
+              } catch (err) {
+                console.error(`Lỗi khi quét slug ${item.slug}:`, err);
+                failed++;
+              }
+              // delay to prevent rate limit
+              await new Promise(r => setTimeout(r, 600));
+            }
+
+            bulkScanBtn.disabled = false;
+            bulkScanBtn.innerHTML = oldHtml;
+            
+            if (window.showGlobalToast) {
+               if (failed > 0) {
+                 window.showGlobalToast(`Quét xong! Thành công: ${success}, Thất bại: ${failed}`, 'warning');
+               } else {
+                 window.showGlobalToast(`Quét tập mới thành công cho ${success} phim!`, 'success');
+               }
+            }
+            if (success > 0) {
+              setTimeout(() => window.location.reload(), 1500);
+            }
           });
         }
 
