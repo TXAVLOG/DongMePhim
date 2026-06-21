@@ -34,9 +34,9 @@ export async function txaEncrypt(plaintext: string, passphrase: string): Promise
   result.set(new Uint8Array(cipherBuffer), SALT_LEN + IV_LEN);
 
   let binary = '';
-  const len = result.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(result[i]);
+  const chunk_size = 0x8000; // 32KB chunks
+  for (let i = 0; i < result.length; i += chunk_size) {
+    binary += String.fromCharCode.apply(null, result.subarray(i, i + chunk_size) as any);
   }
 
   return btoa(binary)
