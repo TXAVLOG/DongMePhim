@@ -1614,6 +1614,12 @@ const isActive = (path: string) => {
           titleEl.innerHTML = options.title || 'Thông báo';
           
           if (options.content instanceof HTMLElement) {
+            if (options.content.parentElement && !options.content.dataset.originalParentId) {
+              if (!options.content.parentElement.id) {
+                options.content.parentElement.id = 'txa-modal-temp-parent-' + Math.random().toString(36).substring(2, 9);
+              }
+              options.content.dataset.originalParentId = options.content.parentElement.id;
+            }
             bodyEl.innerHTML = '';
             bodyEl.appendChild(options.content);
           } else {
@@ -1640,9 +1646,22 @@ const isActive = (path: string) => {
           }
 
           const closeModal = () => {
+            if (typeof options.onClose === 'function') {
+              try { options.onClose(); } catch(e) { console.error(e); }
+            }
             modal.classList.add('opacity-0');
             modalBox.classList.add('scale-95');
             setTimeout(() => {
+              // Hoàn trả các HTMLElement về cha ban đầu trước khi clear innerHTML
+              const children = Array.from(bodyEl.children);
+              children.forEach(child => {
+                if (child instanceof HTMLElement && child.dataset.originalParentId) {
+                  const parent = document.getElementById(child.dataset.originalParentId);
+                  if (parent) {
+                    parent.appendChild(child);
+                  }
+                }
+              });
               modal.classList.add('hidden');
               modal.classList.remove('flex');
               bodyEl.innerHTML = '';

@@ -70,21 +70,11 @@ import MainLayout from '../layouts/MainLayout.astro';
       </div>
 
       <!-- SePay Quick Renew Card (initially hidden, revealed when btn-reveal-renew is clicked and sepay is chosen) -->
-      <div id="sepay-renew-section" class="hidden glass-panel border border-glass-stroke rounded-3xl p-8 space-y-6">
-        <div class="flex justify-between items-center border-b border-glass-stroke pb-4">
-          <h3 class="text-xl font-bold text-white flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary">qr_code_2</span>
-            Gia hạn gói cước tự động SePay (VietQR)
-          </h3>
-          <button id="btn-close-sepay-renew" class="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none flex items-center gap-1">
-            <span class="material-symbols-outlined text-sm">close</span> Đóng
-          </button>
-        </div>
-
+      <div id="sepay-renew-section" class="hidden space-y-6 w-full max-w-2xl mx-auto py-2 text-left bg-transparent">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
           <!-- QR Code Column -->
           <div class="md:col-span-5 flex flex-col items-center gap-3">
-            <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[200px] h-[200px]">
+            <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[260px] h-[260px] md:w-[220px] md:h-[220px] cursor-zoom-in transition-transform hover:scale-[1.02] mx-auto">
               <img id="sepay-renew-vietqr-img" src="" class="w-full h-full object-contain" alt="VietQR Pay" />
             </div>
             <span class="text-[10px] text-zinc-400 font-semibold tracking-wider flex items-center gap-1 uppercase">
@@ -92,7 +82,7 @@ import MainLayout from '../layouts/MainLayout.astro';
               Quét mã để trả tiền nhanh
             </span>
           </div>
-
+ 
           <!-- Bank Details Column -->
           <div class="md:col-span-7 space-y-3.5 text-xs">
             <h4 class="font-bold text-zinc-500 uppercase tracking-wider text-[10px]">THÔNG TIN TÀI KHOẢN</h4>
@@ -114,14 +104,14 @@ import MainLayout from '../layouts/MainLayout.astro';
                   <span class="material-symbols-outlined text-sm">content_copy</span>
                 </button>
               </div>
-
+ 
               <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
                 <div>
                   <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Chủ tài khoản</span>
                   <p id="sepay-renew-bank-accname-val" class="font-bold text-white uppercase mt-0.5">-</p>
                 </div>
               </div>
-
+ 
               <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
                 <div>
                   <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Số tiền gia hạn (Dựa trên gói cước hiện tại)</span>
@@ -131,7 +121,7 @@ import MainLayout from '../layouts/MainLayout.astro';
                   <span class="material-symbols-outlined text-sm">content_copy</span>
                 </button>
               </div>
-
+ 
               <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
                 <div>
                   <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Nội dung chuyển khoản (Bắt buộc ghi đúng)</span>
@@ -144,7 +134,7 @@ import MainLayout from '../layouts/MainLayout.astro';
             </div>
           </div>
         </div>
-
+ 
         <!-- Status Indicator -->
         <div class="bg-primary/5 border border-primary/20 rounded-2xl p-5 flex items-center justify-between gap-4">
           <div class="flex items-center gap-3">
@@ -160,23 +150,13 @@ import MainLayout from '../layouts/MainLayout.astro';
           </button>
         </div>
       </div>
-
+ 
       <!-- Quick Renew Card (VietQR + Receipt Upload, initially hidden, revealed when btn-reveal-renew is clicked) -->
-      <div id="quick-renew-section" class="hidden glass-panel border border-glass-stroke rounded-3xl p-8 space-y-6">
-        <div class="flex justify-between items-center border-b border-glass-stroke pb-4">
-          <h3 class="text-xl font-bold text-white flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary">qr_code_2</span>
-            Gia hạn gói cước thủ công VietQR
-          </h3>
-          <button id="btn-close-renew" class="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none flex items-center gap-1">
-            <span class="material-symbols-outlined text-sm">close</span> Đóng
-          </button>
-        </div>
-
+      <div id="quick-renew-section" class="hidden space-y-6 w-full max-w-2xl mx-auto py-2 text-left bg-transparent">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
           <!-- QR Code Column -->
           <div class="md:col-span-5 flex flex-col items-center gap-3">
-            <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[200px] h-[200px]">
+            <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[260px] h-[260px] md:w-[220px] md:h-[220px] cursor-zoom-in transition-transform hover:scale-[1.02] mx-auto">
               <img id="renew-vietqr-img" src="" class="w-full h-full object-contain" alt="VietQR Pay" />
             </div>
             <span class="text-[10px] text-zinc-400 font-semibold tracking-wider flex items-center gap-1 uppercase">
@@ -184,7 +164,7 @@ import MainLayout from '../layouts/MainLayout.astro';
               Quét mã để trả tiền nhanh
             </span>
           </div>
-
+ 
           <!-- Bank Details Column -->
           <div class="md:col-span-7 space-y-3.5 text-xs">
             <h4 class="font-bold text-zinc-500 uppercase tracking-wider text-[10px]">THÔNG TIN TÀI KHOẢN</h4>
@@ -206,14 +186,14 @@ import MainLayout from '../layouts/MainLayout.astro';
                   <span class="material-symbols-outlined text-sm">content_copy</span>
                 </button>
               </div>
-
+ 
               <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
                 <div>
                   <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Chủ tài khoản</span>
                   <p id="renew-bank-accname-val" class="font-bold text-white uppercase mt-0.5">-</p>
                 </div>
               </div>
-
+ 
               <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
                 <div>
                   <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Số tiền gia hạn (Dựa trên gói cước hiện tại)</span>
@@ -223,7 +203,7 @@ import MainLayout from '../layouts/MainLayout.astro';
                   <span class="material-symbols-outlined text-sm">content_copy</span>
                 </button>
               </div>
-
+ 
               <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
                 <div>
                   <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Nội dung chuyển khoản (Bắt buộc ghi đúng)</span>
@@ -236,7 +216,7 @@ import MainLayout from '../layouts/MainLayout.astro';
             </div>
           </div>
         </div>
-
+ 
         <!-- Receipt Upload Form -->
         <form id="renew-receipt-form" class="space-y-4 pt-6 border-t border-glass-stroke/50">
           <h4 class="font-bold text-zinc-300 text-xs flex items-center gap-2">
@@ -347,6 +327,28 @@ import MainLayout from '../layouts/MainLayout.astro';
         </div>
       </div>
 
+      <!-- QR Code Lightbox -->
+      <div id="qr-lightbox" class="fixed inset-0 z-[100000] hidden bg-black/85 backdrop-blur-sm items-center justify-center opacity-0 transition-opacity duration-300 ease-out cursor-zoom-out">
+        <div class="relative max-w-[90vw] max-h-[90vh] scale-90 transition-transform duration-300 ease-out" id="qr-lightbox-content">
+          <img id="qr-lightbox-img" src="" class="max-w-[450px] max-h-[450px] w-full h-full object-contain rounded-3xl p-6 bg-white border border-zinc-800 shadow-2xl" />
+          <button class="absolute top-4 right-4 text-zinc-500 hover:text-zinc-800 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 shadow-md border border-zinc-200 cursor-pointer" id="qr-lightbox-close">
+            <span class="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+      </div>
+
+      <style>
+        .fly-animation {
+          pointer-events: none;
+          transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .dropzone-active {
+          border-color: #10b981 !important;
+          background-color: rgba(16, 185, 129, 0.08) !important;
+          transform: scale(1.02);
+          box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        }
+      </style>
     </div>
   </main>
 </MainLayout>
@@ -755,7 +757,6 @@ import MainLayout from '../layouts/MainLayout.astro';
         const sepayRenewSection = document.getElementById('sepay-renew-section');
         if (sepayRenewSection) {
           sepayRenewSection.classList.remove('hidden');
-          setTimeout(() => sepayRenewSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 
           document.getElementById('sepay-renew-bank-name-val').textContent = payments.sepay_bank_name || 'MB Bank';
           document.getElementById('sepay-renew-bank-no-val').textContent = payments.sepay_account_no || '-';
@@ -818,12 +819,27 @@ import MainLayout from '../layouts/MainLayout.astro';
 
           // Start active polling (works for both sandbox + live)
           startSePayRenewPolling(txid, 'renew', price, packageTitle, cycle);
+
+          // Show in txamodal
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Gia hạn gói cước tự động SePay (VietQR)',
+              content: sepayRenewSection,
+              confirmText: '',
+              cancelText: 'Đóng',
+              onClose: () => {
+                if (sepayRenewPollInterval) {
+                  clearInterval(sepayRenewPollInterval);
+                  sepayRenewPollInterval = null;
+                }
+              }
+            });
+          }
         }
       } else if (method === 'manual') {
         const quickRenewSection = document.getElementById('quick-renew-section');
         if (quickRenewSection) {
           quickRenewSection.classList.remove('hidden');
-          quickRenewSection.scrollIntoView({ behavior: 'smooth' });
 
           const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
           const memo = `TXA_GH_${txid}`;
@@ -843,6 +859,16 @@ import MainLayout from '../layouts/MainLayout.astro';
 
           const qrUrl = `https://img.vietqr.io/image/${payments.manual_bank_name}-${payments.manual_account_no}-compact.png?amount=${price}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(payments.manual_account_name)}`;
           document.getElementById('renew-vietqr-img').setAttribute('src', qrUrl);
+
+          // Show in txamodal
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Gia hạn gói cước thủ công VietQR',
+              content: quickRenewSection,
+              confirmText: '',
+              cancelText: 'Đóng'
+            });
+          }
         }
       } else if (method === 'stripe') {
         if (window.showGlobalToast) window.showGlobalToast('Đang kết nối tới Stripe...', 'info');
@@ -892,22 +918,191 @@ import MainLayout from '../layouts/MainLayout.astro';
       }
     };
 
+    function setupQRLightbox() {
+      const lightbox = document.getElementById('qr-lightbox');
+      const lightboxImg = document.getElementById('qr-lightbox-img');
+      const lightboxContent = document.getElementById('qr-lightbox-content');
+      const lightboxClose = document.getElementById('qr-lightbox-close');
+      
+      if (!lightbox || !lightboxImg || !lightboxContent) return;
+      
+      const openLightbox = (src) => {
+        lightboxImg.src = src;
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+        setTimeout(() => {
+          lightbox.classList.add('opacity-100');
+          lightbox.classList.remove('opacity-0');
+          lightboxContent.classList.add('scale-100');
+          lightboxContent.classList.remove('scale-90');
+        }, 10);
+      };
+      
+      const closeLightbox = () => {
+        lightbox.classList.add('opacity-0');
+        lightbox.classList.remove('opacity-100');
+        lightboxContent.classList.add('scale-90');
+        lightboxContent.classList.remove('scale-100');
+        setTimeout(() => {
+          lightbox.classList.add('hidden');
+          lightbox.classList.remove('flex');
+        }, 300);
+      };
+      
+      document.querySelectorAll('#sepay-renew-vietqr-img, #renew-vietqr-img').forEach(img => {
+        img.addEventListener('click', (e) => {
+          if (img.getAttribute('src')) {
+            openLightbox(img.getAttribute('src'));
+          }
+        });
+      });
+      
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox();
+      });
+      
+      if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+      
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) {
+          closeLightbox();
+        }
+      });
+    }
+
     function setupRenewReceiptForms() {
       const fileInput = document.getElementById('renew-receipt-file-input');
       const dropzone = document.getElementById('renew-file-dropzone');
-      const dzText = document.getElementById('renew-dropzone-text');
-      const dzIcon = document.getElementById('renew-dropzone-icon');
 
       if (!fileInput || !dropzone) return;
 
+      // Khôi phục giao diện dropzone ban đầu
+      const resetDropzoneUI = () => {
+        dropzone.classList.remove('dropzone-active');
+        dropzone.innerHTML = `
+          <span class="material-symbols-outlined text-zinc-500 text-xl" id="renew-dropzone-icon">image</span>
+          <span class="text-[10px] text-zinc-400 font-bold" id="renew-dropzone-text">Chọn ảnh hóa đơn...</span>
+        `;
+        dropzone.style.borderColor = '';
+      };
+
+      // Xử lý khi có file ảnh được chọn (click hoặc kéo thả)
+      const handleFileSelect = (file) => {
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        const validExts = ['png', 'jpg', 'jpeg'];
+        
+        if (!validTypes.includes(file.type) && !validExts.includes(fileExt)) {
+          if (window.showGlobalToast) window.showGlobalToast('Chỉ hỗ trợ định dạng ảnh .png, .jpg, .jpeg!', 'error');
+          resetDropzoneUI();
+          fileInput.value = '';
+          return;
+        }
+
+        if (file.size > 15 * 1024 * 1024) {
+          if (window.showGlobalToast) window.showGlobalToast('Dung lượng ảnh tối đa là 15MB!', 'error');
+          resetDropzoneUI();
+          fileInput.value = '';
+          return;
+        }
+
+        // Đọc ảnh và hiển thị preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          dropzone.innerHTML = `
+            <div class="flex flex-col items-center justify-center gap-2 w-full h-full py-2 pointer-events-none">
+              <span class="text-[10px] text-zinc-300 font-bold truncate max-w-[90%]">${file.name}</span>
+              <img src="${e.target.result}" class="h-16 max-w-[80%] object-contain rounded-lg border border-white/10 shadow-md" />
+            </div>
+          `;
+          dropzone.style.borderColor = '#10b981';
+        };
+        reader.readAsDataURL(file);
+      };
+
       fileInput.onchange = function() {
         if (this.files && this.files[0]) {
-          const file = this.files[0];
-          if (dzText) dzText.textContent = `Hồ sơ đã chọn: ${file.name}`;
-          if (dzIcon) dzIcon.textContent = 'check_circle';
-          if (dropzone) dropzone.style.borderColor = '#10b981';
+          handleFileSelect(this.files[0]);
         }
       };
+
+      // Chỉ lắng nghe kéo thả trên Desktop
+      if (window.innerWidth > 768) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dropzone-active');
+            
+            const txt = dropzone.querySelector('#renew-dropzone-text');
+            const icon = dropzone.querySelector('#renew-dropzone-icon');
+            if (txt) txt.textContent = 'Thả ảnh hóa đơn tại đây...';
+            if (icon) icon.textContent = 'upload_file';
+          }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dropzone-active');
+            if (eventName === 'dragleave' && !fileInput.files[0]) {
+              resetDropzoneUI();
+            }
+          }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          
+          if (!files || files.length === 0) return;
+          
+          if (files.length > 1) {
+            if (window.showGlobalToast) window.showGlobalToast('Chỉ được chọn tối đa 1 ảnh minh chứng.', 'error');
+            resetDropzoneUI();
+            return;
+          }
+          
+          const file = files[0];
+          
+          // Fly Animation (Ảnh bay về tâm dropzone)
+          const rect = dropzone.getBoundingClientRect();
+          const targetX = rect.left + rect.width / 2;
+          const targetY = rect.top + rect.height / 2;
+          
+          const flyImg = document.createElement('img');
+          flyImg.src = URL.createObjectURL(file);
+          flyImg.className = 'fixed object-cover rounded-lg shadow-2xl border border-white/20 z-[100000] fly-animation';
+          flyImg.style.width = '70px';
+          flyImg.style.height = '70px';
+          flyImg.style.left = `${e.clientX - 35}px`;
+          flyImg.style.top = `${e.clientY - 35}px`;
+          flyImg.style.transform = 'scale(1)';
+          flyImg.style.opacity = '1';
+          document.body.appendChild(flyImg);
+          
+          // Trigger reflow
+          flyImg.offsetHeight;
+          
+          // Animate
+          flyImg.style.left = `${targetX - 35}px`;
+          flyImg.style.top = `${targetY - 35}px`;
+          flyImg.style.transform = 'scale(0.1) rotate(15deg)';
+          flyImg.style.opacity = '0';
+          
+          setTimeout(() => {
+            flyImg.remove();
+            
+            const fileTransfer = new DataTransfer();
+            fileTransfer.items.add(file);
+            fileInput.files = fileTransfer.files;
+            
+            // Kích hoạt event change
+            fileInput.dispatchEvent(new Event('change'));
+          }, 600);
+        });
+      }
 
       const form = document.getElementById('renew-receipt-form');
       form?.addEventListener('submit', function(e) {
@@ -956,7 +1151,14 @@ import MainLayout from '../layouts/MainLayout.astro';
 
             if (res.ok) {
               if (window.showGlobalToast) window.showGlobalToast('Đã gửi yêu cầu gia hạn thành công!', 'success');
-              if (quickRenewSection) quickRenewSection.classList.add('hidden');
+              
+              // Đóng modal
+              document.getElementById('txa-modal-close')?.click();
+              
+              // Reset dropzone
+              resetDropzoneUI();
+              fileInput.value = '';
+
               hydrateUserSubscriptionPage();
             } else {
               throw new Error('Lỗi gửi biên lai thanh toán.');
@@ -968,6 +1170,9 @@ import MainLayout from '../layouts/MainLayout.astro';
         };
         reader.readAsDataURL(file);
       });
+
+      // Setup Lightbox
+      setupQRLightbox();
     }
 
     let sepayRenewPollInterval = null;
@@ -988,7 +1193,10 @@ import MainLayout from '../layouts/MainLayout.astro';
             sepayRenewPollInterval = null;
             
             if (window.showGlobalToast) window.showGlobalToast('Gia hạn gói cước thành công!', 'success');
-            document.getElementById('sepay-renew-section')?.classList.add('hidden');
+            
+            // Đóng modal
+            document.getElementById('txa-modal-close')?.click();
+
             hydrateUserSubscriptionPage();
           } else if (!silent) {
             if (window.showGlobalToast) window.showGlobalToast(data.message || 'Hệ thống chưa nhận được giao dịch. Quý khách vui lòng đợi trong giây lát.', 'info');
@@ -1000,16 +1208,6 @@ import MainLayout from '../layouts/MainLayout.astro';
 
       // Poll every 5 seconds
       sepayRenewPollInterval = setInterval(() => checkPayment(true), 5000);
-
-      // Handle Cancel/Close button
-      const cancelRenewBtn = document.getElementById('btn-close-sepay-renew');
-      if (cancelRenewBtn) {
-        cancelRenewBtn.onclick = function() {
-          clearInterval(sepayRenewPollInterval);
-          sepayRenewPollInterval = null;
-          document.getElementById('sepay-renew-section')?.classList.add('hidden');
-        };
-      }
 
       // Handle Manual check button
       const checkBtn = document.getElementById('check-sepay-renew-now-btn');

@@ -253,21 +253,11 @@ const getDynamicFeaturesObj = (pkg: any) => {
     </div>
 
     <!-- SePay Automated Transfer Portal Section (Initially Hidden) -->
-    <div id="sepay-transfer-portal" class="max-w-2xl mx-auto glass-panel border border-glass-stroke rounded-3xl p-8 space-y-8 hidden">
-      <div class="flex justify-between items-center border-b border-glass-stroke pb-4">
-        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary">qr_code_2</span>
-          Thanh toán tự động qua SePay (VietQR)
-        </h3>
-        <button id="cancel-sepay-btn" class="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none flex items-center gap-1">
-          <span class="material-symbols-outlined text-sm">close</span> Đóng
-        </button>
-      </div>
-
+    <div id="sepay-transfer-portal" class="hidden space-y-6 w-full max-w-2xl mx-auto py-2 text-left bg-transparent">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
         <!-- QR Code Column -->
         <div class="md:col-span-5 flex flex-col items-center gap-3">
-          <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[200px] h-[200px]">
+          <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[260px] h-[260px] md:w-[220px] md:h-[220px] cursor-zoom-in transition-transform hover:scale-[1.02] mx-auto">
             <img id="sepay-vietqr-img" src="" class="w-full h-full object-contain" alt="VietQR Pay" />
           </div>
           <span class="text-[10px] text-zinc-400 font-semibold tracking-wider flex items-center gap-1 uppercase">
@@ -352,21 +342,11 @@ const getDynamicFeaturesObj = (pkg: any) => {
     </div>
 
     <!-- Manual Transfer Portal Section (Initially Hidden) -->
-    <div id="manual-transfer-portal" class="max-w-2xl mx-auto glass-panel border border-glass-stroke rounded-3xl p-8 space-y-8 hidden">
-      <div class="flex justify-between items-center border-b border-glass-stroke pb-4">
-        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary">qr_code_2</span>
-          Chuyển khoản thủ công VietQR
-        </h3>
-        <button id="cancel-manual-btn" class="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none flex items-center gap-1">
-          <span class="material-symbols-outlined text-sm">close</span> Đóng
-        </button>
-      </div>
-
+    <div id="manual-transfer-portal" class="hidden space-y-6 w-full max-w-2xl mx-auto py-2 text-left bg-transparent">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
         <!-- QR Code Column -->
         <div class="md:col-span-5 flex flex-col items-center gap-3">
-          <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[200px] h-[200px]">
+          <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[260px] h-[260px] md:w-[220px] md:h-[220px] cursor-zoom-in transition-transform hover:scale-[1.02] mx-auto">
             <img id="vietqr-img" src="" class="w-full h-full object-contain" alt="VietQR Pay" />
           </div>
           <span class="text-[10px] text-zinc-400 font-semibold tracking-wider flex items-center gap-1 uppercase">
@@ -449,13 +429,35 @@ const getDynamicFeaturesObj = (pkg: any) => {
             </div>
           </div>
           
-          <button type="submit" class="w-full sm:w-auto px-8 py-4 bg-primary text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer h-24 shadow-lg shadow-primary/20 flex items-center justify-center shrink-0">
+          <button type="submit" class="w-full sm:w-auto px-8 py-4 bg-primary text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer h-24 shadow-lg shadow-primary/20 flex items-center justify-center shrink-0 border-none">
             Gửi yêu cầu duyệt gói
           </button>
         </div>
       </form>
     </div>
 
+    <!-- QR Code Lightbox -->
+    <div id="qr-lightbox" class="fixed inset-0 z-[100000] hidden bg-black/85 backdrop-blur-sm items-center justify-center opacity-0 transition-opacity duration-300 ease-out cursor-zoom-out">
+      <div class="relative max-w-[90vw] max-h-[90vh] scale-90 transition-transform duration-300 ease-out" id="qr-lightbox-content">
+        <img id="qr-lightbox-img" src="" class="max-w-[450px] max-h-[450px] w-full h-full object-contain rounded-3xl p-6 bg-white border border-zinc-800 shadow-2xl" />
+        <button class="absolute top-4 right-4 text-zinc-500 hover:text-zinc-800 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 shadow-md border border-zinc-200 cursor-pointer" id="qr-lightbox-close">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+    </div>
+
+    <style>
+      .fly-animation {
+        pointer-events: none;
+        transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+      .dropzone-active {
+        border-color: #10b981 !important;
+        background-color: rgba(16, 185, 129, 0.08) !important;
+        transform: scale(1.02);
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+      }
+    </style>
   </main>
 </MainLayout>
 
@@ -774,13 +776,8 @@ const getDynamicFeaturesObj = (pkg: any) => {
 
         // Fallback to 'vietqr' (Direct on-site display)
         const sepayPortal = document.getElementById('sepay-transfer-portal');
-        const userView = document.querySelector('.auth-user');
-        
         if (sepayPortal) {
-          if (userView) userView.classList.add('hidden');
           sepayPortal.classList.remove('hidden');
-          // Scroll to the SePay portal
-          setTimeout(() => sepayPortal.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 
           document.getElementById('sepay-bank-name-val').textContent = payments.sepay_bank_name || 'MB Bank';
           document.getElementById('sepay-bank-no-val').textContent = payments.sepay_account_no || '-';
@@ -842,16 +839,27 @@ const getDynamicFeaturesObj = (pkg: any) => {
 
           // Start active polling (works for both sandbox + live — polls /api/payment/sepay-verify)
           startSePayPolling(txid, 'upgrade', price, packageTitle, cycle);
+
+          // Show in txamodal
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Thanh toán tự động qua SePay (VietQR)',
+              content: sepayPortal,
+              confirmText: '',
+              cancelText: 'Đóng',
+              onClose: () => {
+                if (sepayPollInterval) {
+                  clearInterval(sepayPollInterval);
+                  sepayPollInterval = null;
+                }
+              }
+            });
+          }
         }
       } else if (method === 'manual') {
         const manualPortal = document.getElementById('manual-transfer-portal');
-        const userView = document.querySelector('.auth-user');
-        
         if (manualPortal) {
-          if (userView) userView.classList.add('hidden');
           manualPortal.classList.remove('hidden');
-          // Scroll to the manual transfer portal
-          setTimeout(() => manualPortal.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
           const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
           const memo = `TXA_UP_${txid}`;
 
@@ -869,6 +877,16 @@ const getDynamicFeaturesObj = (pkg: any) => {
 
           const qrUrl = `https://img.vietqr.io/image/${payments.manual_bank_name}-${payments.manual_account_no}-compact.png?amount=${price}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(payments.manual_account_name)}`;
           document.getElementById('vietqr-img').setAttribute('src', qrUrl);
+
+          // Show in txamodal
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Chuyển khoản thủ công VietQR',
+              content: manualPortal,
+              confirmText: '',
+              cancelText: 'Đóng'
+            });
+          }
         }
       } else if (method === 'stripe') {
         if (window.showGlobalToast) window.showGlobalToast('Đang kết nối tới Stripe...', 'info');
@@ -935,22 +953,183 @@ const getDynamicFeaturesObj = (pkg: any) => {
       }
     };
 
+    function setupQRLightbox() {
+      const lightbox = document.getElementById('qr-lightbox');
+      const lightboxImg = document.getElementById('qr-lightbox-img');
+      const lightboxContent = document.getElementById('qr-lightbox-content');
+      const lightboxClose = document.getElementById('qr-lightbox-close');
+      
+      if (!lightbox || !lightboxImg || !lightboxContent) return;
+      
+      const openLightbox = (src) => {
+        lightboxImg.src = src;
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+        setTimeout(() => {
+          lightbox.classList.add('opacity-100');
+          lightbox.classList.remove('opacity-0');
+          lightboxContent.classList.add('scale-100');
+          lightboxContent.classList.remove('scale-90');
+        }, 10);
+      };
+      
+      const closeLightbox = () => {
+        lightbox.classList.add('opacity-0');
+        lightbox.classList.remove('opacity-100');
+        lightboxContent.classList.add('scale-90');
+        lightboxContent.classList.remove('scale-100');
+        setTimeout(() => {
+          lightbox.classList.add('hidden');
+          lightbox.classList.remove('flex');
+        }, 300);
+      };
+      
+      document.querySelectorAll('#sepay-vietqr-img, #vietqr-img').forEach(img => {
+        img.addEventListener('click', (e) => {
+          if (img.getAttribute('src')) {
+            openLightbox(img.getAttribute('src'));
+          }
+        });
+      });
+      
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox();
+      });
+      
+      if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+      
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) {
+          closeLightbox();
+        }
+      });
+    }
+
     function setupReceiptForms() {
       const fileInput = document.getElementById('receipt-file-input');
       const dropzone = document.getElementById('file-dropzone');
-      const dzText = document.getElementById('dropzone-text');
-      const dzIcon = document.getElementById('dropzone-icon');
 
       if (!fileInput || !dropzone) return;
 
+      const resetDropzoneUI = () => {
+        dropzone.classList.remove('dropzone-active');
+        dropzone.innerHTML = `
+          <span class="material-symbols-outlined text-zinc-500 text-xl" id="dropzone-icon">image</span>
+          <span class="text-[10px] text-zinc-400 font-bold" id="dropzone-text">Chọn ảnh hóa đơn...</span>
+        `;
+        dropzone.style.borderColor = '';
+      };
+
+      const handleFileSelect = (file) => {
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        const validExts = ['png', 'jpg', 'jpeg'];
+        
+        if (!validTypes.includes(file.type) && !validExts.includes(fileExt)) {
+          if (window.showGlobalToast) window.showGlobalToast('Chỉ hỗ trợ định dạng ảnh .png, .jpg, .jpeg!', 'error');
+          resetDropzoneUI();
+          fileInput.value = '';
+          return;
+        }
+
+        if (file.size > 15 * 1024 * 1024) {
+          if (window.showGlobalToast) window.showGlobalToast('Dung lượng ảnh tối đa là 15MB!', 'error');
+          resetDropzoneUI();
+          fileInput.value = '';
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          dropzone.innerHTML = `
+            <div class="flex flex-col items-center justify-center gap-2 w-full h-full py-2 pointer-events-none">
+              <span class="text-[10px] text-zinc-300 font-bold truncate max-w-[90%]">${file.name}</span>
+              <img src="${e.target.result}" class="h-16 max-w-[80%] object-contain rounded-lg border border-white/10 shadow-md" />
+            </div>
+          `;
+          dropzone.style.borderColor = '#10b981';
+        };
+        reader.readAsDataURL(file);
+      };
+
       fileInput.onchange = function() {
         if (this.files && this.files[0]) {
-          const file = this.files[0];
-          if (dzText) dzText.textContent = `Hồ sơ đã chọn: ${file.name}`;
-          if (dzIcon) dzIcon.textContent = 'check_circle';
-          if (dropzone) dropzone.style.borderColor = '#10b981';
+          handleFileSelect(this.files[0]);
         }
       };
+
+      if (window.innerWidth > 768) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dropzone-active');
+            
+            const txt = dropzone.querySelector('#dropzone-text');
+            const icon = dropzone.querySelector('#dropzone-icon');
+            if (txt) txt.textContent = 'Thả ảnh hóa đơn tại đây...';
+            if (icon) icon.textContent = 'upload_file';
+          }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dropzone-active');
+            if (eventName === 'dragleave' && !fileInput.files[0]) {
+              resetDropzoneUI();
+            }
+          }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          
+          if (!files || files.length === 0) return;
+          
+          if (files.length > 1) {
+            if (window.showGlobalToast) window.showGlobalToast('Chỉ được chọn tối đa 1 ảnh minh chứng.', 'error');
+            resetDropzoneUI();
+            return;
+          }
+          
+          const file = files[0];
+          
+          const rect = dropzone.getBoundingClientRect();
+          const targetX = rect.left + rect.width / 2;
+          const targetY = rect.top + rect.height / 2;
+          
+          const flyImg = document.createElement('img');
+          flyImg.src = URL.createObjectURL(file);
+          flyImg.className = 'fixed object-cover rounded-lg shadow-2xl border border-white/20 z-[100000] fly-animation';
+          flyImg.style.width = '70px';
+          flyImg.style.height = '70px';
+          flyImg.style.left = `${e.clientX - 35}px`;
+          flyImg.style.top = `${e.clientY - 35}px`;
+          flyImg.style.transform = 'scale(1)';
+          flyImg.style.opacity = '1';
+          document.body.appendChild(flyImg);
+          
+          flyImg.offsetHeight;
+          
+          flyImg.style.left = `${targetX - 35}px`;
+          flyImg.style.top = `${targetY - 35}px`;
+          flyImg.style.transform = 'scale(0.1) rotate(15deg)';
+          flyImg.style.opacity = '0';
+          
+          setTimeout(() => {
+            flyImg.remove();
+            
+            const fileTransfer = new DataTransfer();
+            fileTransfer.items.add(file);
+            fileInput.files = fileTransfer.files;
+            
+            fileInput.dispatchEvent(new Event('change'));
+          }, 600);
+        });
+      }
 
       const form = document.getElementById('receipt-upload-form');
       form?.addEventListener('submit', function(e) {
@@ -962,16 +1141,16 @@ const getDynamicFeaturesObj = (pkg: any) => {
         const reader = new FileReader();
         reader.onloadend = async function() {
           const receiptImgBase64 = reader.result;
-
           const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
           const manualPortal = document.getElementById('manual-transfer-portal');
+          
           const selectedPkgId = manualPortal?.dataset.selectedPackageId || 'vip_1m';
           const selectedPkgTitle = manualPortal?.dataset.selectedPackageTitle || 'Premium VIP';
           const selectedPrice = parseInt(manualPortal?.dataset.selectedPrice || '0');
           const txid = manualPortal?.dataset.txid || ('TXA' + Math.random().toString(36).substring(2, 10).toUpperCase());
 
           try {
-            if (window.showGlobalToast) window.showGlobalToast('Đang tải ảnh biên lai lên máy chủ...', 'info');
+            if (window.showGlobalToast) window.showGlobalToast('Đang gửi biên lai thanh toán...', 'info');
             
             const resMe = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
             let userEmail = '';
@@ -997,39 +1176,27 @@ const getDynamicFeaturesObj = (pkg: any) => {
             });
 
             if (res.ok) {
-              if (window.txamodal) {
-                window.txamodal.show({
-                  title: 'Gửi biên lai thành công',
-                  message: 'Biên lai chuyển khoản của bạn đã được lưu lại thành công và đang được quản trị viên đối soát. Vui lòng đợi trong giây lát.',
-                  type: 'info',
-                  confirmText: 'Xem hóa đơn',
-                  cancelText: '',
-                  onConfirm: () => {
-                    window.location.href = '/goi-dich-vu';
-                  }
-                });
-              } else {
-                alert('Gửi biên lai thành công!');
+              if (window.showGlobalToast) window.showGlobalToast('Đã gửi yêu cầu thanh toán thành công!', 'success');
+              
+              // Đóng modal
+              document.getElementById('txa-modal-close')?.click();
+              
+              // Reset dropzone
+              resetDropzoneUI();
+              fileInput.value = '';
+
+              setTimeout(() => {
                 window.location.href = '/goi-dich-vu';
-              }
+              }, 1500);
             } else {
-              throw new Error('Lỗi gửi dữ liệu thanh toán đến máy chủ.');
+              throw new Error('Lỗi gửi biên lai thanh toán.');
             }
           } catch (err) {
             console.error(err);
-            if (window.showGlobalToast) window.showGlobalToast('Không thể gửi thông tin thanh toán. Vui lòng thử lại!', 'error');
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi khi gửi biên lai. Vui lòng thử lại!', 'error');
           }
         };
         reader.readAsDataURL(file);
-      });
-
-      const cancelBtn = document.getElementById('cancel-manual-btn');
-      cancelBtn?.addEventListener('click', function() {
-        const manualPortal = document.getElementById('manual-transfer-portal');
-        const userView = document.querySelector('.auth-user');
-        
-        if (manualPortal) manualPortal.classList.add('hidden');
-        if (userView) userView.classList.remove('hidden');
       });
     }
 
@@ -1050,21 +1217,14 @@ const getDynamicFeaturesObj = (pkg: any) => {
             clearInterval(sepayPollInterval);
             sepayPollInterval = null;
             
-            if (window.txamodal) {
-              window.txamodal.show({
-                title: 'Thanh toán thành công!',
-                message: `Hệ thống đã nhận được số tiền ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)} thanh toán qua SePay. Quyền lợi VIP đã được kích hoạt thành công!`,
-                type: 'success',
-                confirmText: 'Xem gói dịch vụ',
-                cancelText: '',
-                onConfirm: () => {
-                  window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}`;
-                }
-              });
-            } else {
-              alert('Thanh toán thành công!');
+            if (window.showGlobalToast) window.showGlobalToast('Thanh toán thành công qua SePay!', 'success');
+            
+            // Đóng modal
+            document.getElementById('txa-modal-close')?.click();
+
+            setTimeout(() => {
               window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}`;
-            }
+            }, 1500);
           } else if (!silent) {
             if (window.showGlobalToast) window.showGlobalToast(data.message || 'Hệ thống chưa nhận được giao dịch. Quý khách vui lòng đợi trong giây lát.', 'info');
           }
@@ -1076,18 +1236,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
       // Poll every 5 seconds
       sepayPollInterval = setInterval(() => checkPayment(true), 5000);
 
-      // Handle Cancel/Close button
-      const cancelSepayBtn = document.getElementById('cancel-sepay-btn');
-      if (cancelSepayBtn) {
-        cancelSepayBtn.onclick = function() {
-          clearInterval(sepayPollInterval);
-          sepayPollInterval = null;
-          document.getElementById('sepay-transfer-portal')?.classList.add('hidden');
-          document.querySelector('.auth-user')?.classList.remove('hidden');
-        };
-      }
-
-      // Handle Manual "Kiểm tra ngay" button
+      // Handle Manual check button
       const checkBtn = document.getElementById('check-sepay-now-btn');
       if (checkBtn) {
         checkBtn.onclick = function() {
@@ -1105,10 +1254,12 @@ const getDynamicFeaturesObj = (pkg: any) => {
 
     initUpgradePage();
     setupReceiptForms();
+    setupQRLightbox();
 
     document.addEventListener('astro:page-load', () => {
       initUpgradePage();
       setupReceiptForms();
+      setupQRLightbox();
     });
   })();
 </script>

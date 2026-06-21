@@ -76,6 +76,61 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Missing txid, username or packageTitle', 400, request);
     }
 
+    let finalReceiptImg = receiptImg;
+
+    if (receiptImg && receiptImg.startsWith('data:image/')) {
+      try {
+        // Tự động kiểm tra / tạo bucket 'receipts' nếu chưa có
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const hasReceiptsBucket = buckets?.some(b => b.name === 'receipts');
+        if (!hasReceiptsBucket) {
+          await supabase.storage.createBucket('receipts', {
+            public: true,
+            fileSizeLimit: 15 * 1024 * 1024 // 15MB
+          });
+        }
+      } catch (e) {
+        console.warn('Could not check or create bucket receipts:', e);
+      }
+
+      const matches = receiptImg.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (matches) {
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        let extension = 'png';
+        if (mimeType.includes('jpeg') || mimeType.includes('jpg')) {
+          extension = 'jpg';
+        } else if (mimeType.includes('png')) {
+          extension = 'png';
+        } else if (mimeType.includes('gif')) {
+          extension = 'gif';
+        } else if (mimeType.includes('webp')) {
+          extension = 'webp';
+        }
+
+        // Đặt tên file: txa_(username)_(nội dung ck/txid).{ext}
+        const fileName = `txa_${username}_${txid}.${extension}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('receipts')
+          .upload(fileName, buffer, {
+            contentType: mimeType,
+            upsert: true
+          });
+
+        if (uploadError) {
+          console.error('Error uploading receipt to storage:', uploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('receipts')
+            .getPublicUrl(fileName);
+          finalReceiptImg = publicUrl;
+        }
+      }
+    }
+
     const { error } = await supabase
       .from('txa_payment_logs')
       .upsert({
@@ -87,7 +142,7 @@ export const POST: APIRoute = async ({ request }) => {
         cycle: cycle || 'monthly',
         method: method || 'manual',
         status: status || 'pending',
-        receipt_img: receiptImg || null,
+        receipt_img: finalReceiptImg || null,
         updated_at: new Date().toISOString()
       }, { onConflict: 'txid' });
 
