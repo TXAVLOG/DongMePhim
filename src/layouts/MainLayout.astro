@@ -2486,49 +2486,117 @@ const isActive = (path: string) => {
               submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span><span>Đang xác thực...</span>';
             }
 
-            setTimeout(() => {
-              try {
-                const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-                const matchedUser = users.find(u => 
-                  (u.username.toLowerCase() === identity.toLowerCase() || u.email.toLowerCase() === identity.toLowerCase()) && 
-                  u.password === password
-                );
+            const turnstileToken = window.txaTurnstileTokenLogin || '';
+            
+            fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ identity, password, turnstileToken })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 'success' && data.data && data.data.user) {
+                const user = data.data.user;
 
-                if (matchedUser) {
-                  document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
-                  localStorage.setItem('tlogged_in_as', matchedUser.username);
-                  if (matchedUser.role === 'admin' || matchedUser.roles === 'admin') {
-                    localStorage.setItem('txa_referred_token', 'true');
-                  }
-                  localStorage.removeItem('thistory');
-                  
-                  resetTurnstileWidgets();
-                  window.dispatchEvent(new Event('auth-changed'));
-                  
-                  if (typeof window.checkTxaGate === 'function') {
-                    window.checkTxaGate();
-                  }
-
-                  showGlobalToast('Đăng nhập thành công!', 'success');
-                  closeLoginModal();
-                  setTimeout(() => { window.location.reload(); }, 800);
-                } else {
-                  showGlobalToast('Tài khoản hoặc mật khẩu không chính xác!', 'error');
-                  resetTurnstileWidgets();
-                  if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<span>Đăng nhập</span>';
-                  }
-                  checkLoginFormValidity();
+                // Clear any error styles
+                if (idInput) {
+                  idInput.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                  const idMsgEl = idInput.closest('.auth-field').querySelector('.login-id-error');
+                  if (idMsgEl) idMsgEl.style.opacity = '0';
                 }
-              } catch(e) {
-                showGlobalToast('Lỗi hệ thống xác thực!', 'error');
+                if (passInput) {
+                  passInput.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                  const passMsgEl = passInput.closest('.auth-field').querySelector('.login-pass-msg');
+                  if (passMsgEl) passMsgEl.style.opacity = '0';
+                }
+
+                document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
+                localStorage.setItem('tlogged_in_as', user.username);
+                
+                // Keep local tregistered_users synced
+                try {
+                  let registered = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+                  const idx = registered.findIndex(u => u.username.toLowerCase() === user.username.toLowerCase());
+                  const syncUser = {
+                    username: user.username,
+                    email: user.email,
+                    name: user.name,
+                    role: user.role,
+                    roles: user.role,
+                    avatar: user.avatar_url,
+                    gender: user.gender,
+                    province: user.province,
+                    ward: user.ward,
+                    package: user.role === 'admin' ? 'VIP' : 'Free',
+                    status: 'active',
+                    emailVerified: true
+                  };
+                  if (idx === -1) {
+                    registered.push(syncUser);
+                  } else {
+                    registered[idx] = { ...registered[idx], ...syncUser };
+                  }
+                  localStorage.setItem('tregistered_users', JSON.stringify(registered));
+                } catch(e) {}
+
+                if (user.role === 'admin') {
+                  localStorage.setItem('txa_referred_token', 'true');
+                }
+                localStorage.removeItem('thistory');
+                
+                resetTurnstileWidgets();
+                window.dispatchEvent(new Event('auth-changed'));
+                
+                if (typeof window.checkTxaGate === 'function') {
+                  window.checkTxaGate();
+                }
+
+                showGlobalToast('Đăng nhập thành công!', 'success');
+                closeLoginModal();
+                setTimeout(() => { window.location.reload(); }, 800);
+              } else {
+                resetTurnstileWidgets();
                 if (submitBtn) {
                   submitBtn.disabled = false;
                   submitBtn.innerHTML = '<span>Đăng nhập</span>';
                 }
+
+                const errorType = data.data?.errorType;
+                const errorMsg = data.message || 'Đăng nhập thất bại!';
+
+                if (errorType === 'identity') {
+                  if (idInput) {
+                    idInput.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+                    const idMsgEl = idInput.closest('.auth-field').querySelector('.login-id-error');
+                    if (idMsgEl) {
+                      idMsgEl.textContent = errorMsg;
+                      idMsgEl.style.opacity = '1';
+                    }
+                  }
+                  showGlobalToast(errorMsg, 'error');
+                } else if (errorType === 'password') {
+                  if (passInput) {
+                    passInput.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+                    const passMsgEl = passInput.closest('.auth-field').querySelector('.login-pass-msg');
+                    if (passMsgEl) {
+                      passMsgEl.textContent = errorMsg;
+                      passMsgEl.style.opacity = '1';
+                    }
+                  }
+                  showGlobalToast(errorMsg, 'error');
+                } else {
+                  showGlobalToast(errorMsg, 'error');
+                }
+                checkLoginFormValidity();
               }
-            }, 600);
+            })
+            .catch(err => {
+              showGlobalToast('Lỗi hệ thống xác thực!', 'error');
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Đăng nhập</span>';
+              }
+            });
           });
         }
 

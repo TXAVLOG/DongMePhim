@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '../../../lib/api/response';
 import { SettingService } from '../../../services/SettingService';
+import { supabase } from '../../../lib/supabase';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -8,6 +9,11 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       body = await request.json();
     } catch (e) {}
+
+    const { identity, password } = body;
+    if (!identity || !password) {
+      return apiResponse(null, 'error', 'Thiếu thông tin đăng nhập!', 400, request);
+    }
 
     const settings = await SettingService.getSettings();
     if (settings.login?.turnstile_enable) {
@@ -33,7 +39,37 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    // Query Supabase to find user by username or email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .or(`username.eq.${identity},email.eq.${identity}`)
+      .maybeSingle();
+
+    if (error) {
+      return apiResponse(null, 'error', 'Lỗi truy vấn cơ sở dữ liệu!', 500, request);
+    }
+
+    if (!user) {
+      return apiResponse({ errorType: 'identity' }, 'error', 'Tài khoản không tồn tại!', 400, request);
+    }
+
+    if (user.password !== password) {
+      return apiResponse({ errorType: 'password' }, 'error', 'Mật khẩu không chính xác!', 400, request);
+    }
+
     return apiResponse({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatar_url: user.avatar_url,
+        gender: user.gender,
+        province: user.province,
+        ward: user.ward
+      },
       access_token: "eyJhbGciOiJIUzI1NiIsIn...",
       token_type: "Bearer",
       expires_in: 31536000
