@@ -279,11 +279,7 @@ const isActive = (path: string) => {
             localStorage.setItem('txa_referred_token', 'true');
             isDecoyPassed = true;
           }
-          const referer = document.referrer || '';
-          if (referer.includes('dongmephim.online') || referer.includes(window.location.hostname)) {
-            localStorage.setItem('txa_referred_token', 'true');
-            isDecoyPassed = true;
-          }
+          // Removed automatic referrer bypass to ensure users must manually enter passcode to bypass decoy
         }
         
         if (!isDecoyPassed) {
