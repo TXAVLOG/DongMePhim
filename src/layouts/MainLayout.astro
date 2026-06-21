@@ -987,7 +987,7 @@ const isActive = (path: string) => {
                         <span class="material-symbols-outlined">bookmark</span>
                       </a>
                       <div class="relative group cursor-pointer">
-                        <div class="w-9 h-9 rounded-full bg-surface border-2 border-primary overflow-hidden flex items-center justify-center">
+                        <div id="header-avatar-container" class="w-9 h-9 rounded-full bg-surface border-2 border-primary overflow-hidden flex items-center justify-center">
                           <span class="material-symbols-outlined text-primary text-xl">person</span>
                         </div>
                         <div class="absolute right-0 top-full mt-2 w-48 bg-zinc-950 border border-glass-stroke rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col overflow-hidden z-50">
@@ -1392,6 +1392,17 @@ const isActive = (path: string) => {
           guestViews.forEach(el => el.classList.add('hidden'));
           userViews.forEach(el => el.classList.remove('hidden'));
 
+          const updateHeaderAvatar = (url) => {
+            const container = document.getElementById('header-avatar-container');
+            if (container) {
+              if (url) {
+                container.innerHTML = `<img src="${url}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/logo-decoy.png';" />`;
+              } else {
+                container.innerHTML = `<span class="material-symbols-outlined text-primary text-xl">person</span>`;
+              }
+            }
+          };
+
           // Check VIP expiry
           if (typeof localStorage !== 'undefined') {
             const username = localStorage.getItem('tlogged_in_as');
@@ -1406,6 +1417,10 @@ const isActive = (path: string) => {
                   const users = JSON.parse(usersStr);
                   userInDb = users.find(u => u.username === username || u.email === username);
                 } catch(e) {}
+              }
+
+              if (userInDb) {
+                updateHeaderAvatar(userInDb.avatar || userInDb.avatar_url);
               }
 
               // 2. Check VIP package in registered database
@@ -1480,6 +1495,7 @@ const isActive = (path: string) => {
                 .then(userData => {
                   const userDb = userData?.data;
                   if (userDb) {
+                    updateHeaderAvatar(userDb.avatar || userDb.avatar_url);
                     const userPackage = userDb.package || 'Free';
                     const userPkgId = getPkgId(userPackage);
 
@@ -1575,6 +1591,11 @@ const isActive = (path: string) => {
           guestViews.forEach(el => el.classList.remove('hidden'));
           userViews.forEach(el => el.classList.add('hidden'));
           document.querySelectorAll('.nav-watch-together').forEach(el => el.classList.add('hidden'));
+          
+          const avatarContainer = document.getElementById('header-avatar-container');
+          if (avatarContainer) {
+            avatarContainer.innerHTML = `<span class="material-symbols-outlined text-primary text-xl">person</span>`;
+          }
         }
       }
 
