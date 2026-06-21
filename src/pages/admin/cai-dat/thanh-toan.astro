@@ -78,13 +78,13 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
               </span>
             </div>
             <div class="flex items-center gap-3">
-              <input type="checkbox" id="payment-payos-enable" checked={settings.payments?.payos_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
-              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng PayOS</span>
+              <input type="checkbox" id="payment-payos-enable" disabled checked={settings.payments?.payos_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke cursor-not-allowed opacity-50" />
+              <span class="text-sm font-bold text-zinc-500 uppercase text-[10px]">Cổng PayOS</span>
             </div>
             <div class="space-y-3 pl-8">
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="payment-payos-client" value={settings.payments?.payos_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">API Key</label><input type="password" id="payment-payos-key" value={settings.payments?.payos_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Checksum Key</label><input type="password" id="payment-payos-checksum" value={settings.payments?.payos_checksum_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="payment-payos-client" disabled value={settings.payments?.payos_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-zinc-400 cursor-not-allowed opacity-50" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">API Key</label><input type="password" id="payment-payos-key" disabled value={settings.payments?.payos_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-zinc-400 cursor-not-allowed opacity-50" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Checksum Key</label><input type="password" id="payment-payos-checksum" disabled value={settings.payments?.payos_checksum_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-zinc-400 cursor-not-allowed opacity-50" /></div>
             </div>
           </div>
 
@@ -97,11 +97,11 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
               </span>
             </div>
             <div class="flex items-center gap-3">
-              <input type="checkbox" id="payment-paypal-enable" checked={settings.payments?.paypal_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
-              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng PayPal</span>
+              <input type="checkbox" id="payment-paypal-enable" disabled checked={settings.payments?.paypal_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke cursor-not-allowed opacity-50" />
+              <span class="text-sm font-bold text-zinc-500 uppercase text-[10px]">Cổng PayPal</span>
             </div>
             <div class="space-y-3 pl-8">
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="payment-paypal-client" value={settings.payments?.paypal_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Client ID</label><input type="text" id="payment-paypal-client" disabled value={settings.payments?.paypal_client_id} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-zinc-400 cursor-not-allowed opacity-50" /></div>
             </div>
           </div>
 
@@ -221,12 +221,12 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
               </span>
             </div>
             <div class="flex items-center gap-3">
-              <input type="checkbox" id="payment-vnpay-enable" checked={settings.payments?.vnpay_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
-              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng VNPAY</span>
+              <input type="checkbox" id="payment-vnpay-enable" disabled checked={settings.payments?.vnpay_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke cursor-not-allowed opacity-50" />
+              <span class="text-sm font-bold text-zinc-500 uppercase text-[10px]">Cổng VNPAY</span>
             </div>
             <div class="space-y-3 pl-8">
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">TMN Code</label><input type="text" id="payment-vnpay-code" value={settings.payments?.vnpay_tmn_code} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key</label><input type="password" id="payment-vnpay-secret" value={settings.payments?.vnpay_hash_secret} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">TMN Code</label><input type="text" id="payment-vnpay-code" disabled value={settings.payments?.vnpay_tmn_code} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-zinc-400 cursor-not-allowed opacity-50" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key</label><input type="password" id="payment-vnpay-secret" disabled value={settings.payments?.vnpay_hash_secret} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-zinc-400 cursor-not-allowed opacity-50" /></div>
             </div>
           </div>
 
@@ -239,12 +239,12 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
               </span>
             </div>
             <div class="flex items-center gap-3">
-              <input type="checkbox" id="payment-stripe-enable" checked={settings.payments?.stripe_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
-              <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng Stripe</span>
+              <input type="checkbox" id="payment-stripe-enable" disabled checked={settings.payments?.stripe_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke cursor-not-allowed opacity-50" />
+              <span class="text-sm font-bold text-zinc-500 uppercase text-[10px]">Cổng Stripe</span>
             </div>
             <div class="space-y-3 pl-8">
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Publishable Key</label><input type="text" id="payment-stripe-pub" value={settings.payments?.stripe_publishable_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key</label><input type="password" id="payment-stripe-sec" value={settings.payments?.stripe_secret_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Publishable Key</label><input type="text" id="payment-stripe-pub" disabled value={settings.payments?.stripe_publishable_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-zinc-400 cursor-not-allowed opacity-50" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key</label><input type="password" id="payment-stripe-sec" disabled value={settings.payments?.stripe_secret_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-zinc-400 cursor-not-allowed opacity-50" /></div>
             </div>
           </div>
         </div>
