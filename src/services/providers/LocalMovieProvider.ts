@@ -436,17 +436,15 @@ export function mergeStoredEpisodesConfig(movieSlug: string, episodes: any[]): a
 
 export function mapKKPhimToMovieDetail(data: any): MovieDetail {
   const m = data.movie;
-  const cdnDomain = "https://phimimg.com";
+  const cdnDomain = data.pathImage || data.APP_DOMAIN_CDN_IMAGE || "https://phimimg.com";
   
   let posterUrl = m.poster_url || '';
   if (posterUrl && !posterUrl.startsWith('http')) {
-    const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, '');
-    posterUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+    posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
   }
   let bannerUrl = m.thumb_url || m.poster_url || '';
   if (bannerUrl && !bannerUrl.startsWith('http')) {
-    const cleanPath = bannerUrl.replace(/^\/?uploads\/movies\//, '');
-    bannerUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+    bannerUrl = `${cdnDomain}/${bannerUrl.replace(/^\//, '')}`;
   }
 
   const genres = Array.isArray(m.category) ? m.category.map((c: any) => c.name) : [];
@@ -526,13 +524,11 @@ export function mapKKPhimToMovieDetail(data: any): MovieDetail {
 export function mapKKPhimSearchItemToMovie(item: any, cdnDomain: string = "https://phimimg.com"): Movie {
   let posterUrl = item.poster_url || '';
   if (posterUrl && !posterUrl.startsWith('http')) {
-    const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, '');
-    posterUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+    posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
   }
   let bannerUrl = item.thumb_url || item.poster_url || '';
   if (bannerUrl && !bannerUrl.startsWith('http')) {
-    const cleanPath = bannerUrl.replace(/^\/?uploads\/movies\//, '');
-    bannerUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+    bannerUrl = `${cdnDomain}/${bannerUrl.replace(/^\//, '')}`;
   }
 
   let type: 'movie' | 'series' | 'hoathinh' | 'tvshows' = 'series';

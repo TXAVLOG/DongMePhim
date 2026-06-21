@@ -33,7 +33,13 @@ export async function txaEncrypt(plaintext: string, passphrase: string): Promise
   result.set(iv, SALT_LEN);
   result.set(new Uint8Array(cipherBuffer), SALT_LEN + IV_LEN);
 
-  return btoa(String.fromCharCode(...result))
+  let binary = '';
+  const len = result.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(result[i]);
+  }
+
+  return btoa(binary)
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 

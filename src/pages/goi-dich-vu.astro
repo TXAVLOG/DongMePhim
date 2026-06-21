@@ -692,7 +692,10 @@ import MainLayout from '../layouts/MainLayout.astro';
     };
 
     window.processRenewPaymentSelect = async function(method, price, cycle, packageId, packageTitleEncoded) {
-      if (window.txamodal) {
+      const payments = loadedSettings.payments || {};
+      const isRedirect = method !== 'manual' && (method !== 'sepay' || payments.sepay_integration_type === 'gateway');
+
+      if (isRedirect && window.txamodal) {
         // Trigger modal closing
         const modal = document.getElementById('txa-global-modal');
         if (modal) {
@@ -702,7 +705,6 @@ import MainLayout from '../layouts/MainLayout.astro';
         }
       }
 
-      const payments = loadedSettings.payments || {};
       const isSandbox = payments.sandbox_mode ?? true;
       const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
       const packageTitle = decodeURIComponent(packageTitleEncoded);

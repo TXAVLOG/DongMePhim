@@ -566,7 +566,13 @@ const groupedPackages = packages.map((pkg: any) => {
         const u = loadedUsers.find(user => user.username === username);
         if (!u) return;
 
-        const plans = [{ id: 'free', title: 'Free' }, ...(loadedSettings.packages || [])];
+        const plans = [];
+        const hasFreeInSettings = (loadedSettings.packages || []).some(p => p.id === 'free' || p.title?.toLowerCase() === 'free' || p.title?.toLowerCase() === 'gói free');
+        if (!hasFreeInSettings) {
+          plans.push({ id: 'free', title: 'Free' });
+        }
+        plans.push(...(loadedSettings.packages || []));
+
         let optionsHtml = '';
         plans.forEach(p => {
           const isSelected = (u.package === p.title || u.package === p.id || (p.id === 'free' && (!u.package || u.package.toLowerCase() === 'free'))) ? 'selected' : '';

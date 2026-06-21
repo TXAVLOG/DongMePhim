@@ -583,7 +583,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
             <td class="px-6 py-4">
               <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
-                <img src="${m.posterUrl || '/logo-icon.png'}" class="w-full h-full object-cover" onerror="this.src='/logo-icon.png'" alt="Poster" />
+                <img src="${m.posterUrl || '/logo.png'}" class="w-full h-full object-cover" onerror="this.src='/logo.png'" alt="Poster" />
               </div>
             </td>
             <td class="px-6 py-4 font-semibold text-white">
@@ -700,17 +700,18 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           const isSelected = cartSlugs.has(item.slug);
           const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
 
-          let posterUrl = item.poster_url || '';
+          const cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://phimimg.com';
+          let posterUrl = item.poster_url || item.thumb_url || '';
           if (posterUrl) {
             if (!posterUrl.startsWith('http')) {
               if (posterUrl.startsWith('uploads/')) {
-                posterUrl = `https://phimimg.com/${posterUrl}`;
+                posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
               } else {
-                posterUrl = `https://phimimg.com/uploads/movies/${posterUrl}`;
+                posterUrl = `${cdnDomain}/uploads/movies/${posterUrl.replace(/^\//, '')}`;
               }
             }
           } else {
-            posterUrl = '/logo-icon.png';
+            posterUrl = '/logo.png';
           }
 
           return `
@@ -721,7 +722,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
               </td>
               <td class="px-5 py-3">
                 <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
-                  <img src="${posterUrl}" class="w-full h-full object-cover" onerror="this.src='/logo-icon.png'" alt="Poster" />
+                  <img src="${posterUrl}" class="w-full h-full object-cover" onerror="this.src='/logo.png'" alt="Poster" />
                 </div>
               </td>
               <td class="px-5 py-3 font-semibold text-white">
