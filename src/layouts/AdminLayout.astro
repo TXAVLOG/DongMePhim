@@ -78,7 +78,7 @@ packages.forEach((pkg: any) => {
 ---
 
 <!DOCTYPE html>
-<html lang="vi" class="dark">
+<html lang="vi" class="dark admin-root">
 <head>
   <meta charset="utf-8" />
   <meta name="referrer" content="no-referrer" />
@@ -269,6 +269,17 @@ packages.forEach((pkg: any) => {
       0% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.25), 0 0 45px rgba(0, 0, 255, 0.15); }
       50% { box-shadow: 0 0 25px rgba(0, 255, 0, 0.25), 0 0 45px rgba(255, 255, 0, 0.15); }
       100% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.25), 0 0 45px rgba(0, 0, 255, 0.15); }
+    }
+
+    /* Tự động giãn đều kích thước, khoảng cách và font chữ cho Desktop */
+    @media (min-width: 1280px) { /* xl */
+      html.admin-root { font-size: 17px; }
+    }
+    @media (min-width: 1536px) { /* 2xl */
+      html.admin-root { font-size: 19px; }
+    }
+    @media (min-width: 1920px) { /* 3xl+ */
+      html.admin-root { font-size: 21px; }
     }
   </style>
 </head>
