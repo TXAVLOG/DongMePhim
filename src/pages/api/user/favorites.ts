@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ request }) => {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { userId, movieId, action } = body; // action: 'add' | 'remove'
 
     if (!userId || !movieId || !action) {

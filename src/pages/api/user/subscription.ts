@@ -4,7 +4,7 @@ import { apiResponse } from '../../../lib/api/response';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const { username, email } = body;
 
     if (!username && !email) {
