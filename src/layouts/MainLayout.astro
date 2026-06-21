@@ -267,6 +267,25 @@ const isActive = (path: string) => {
         // Clear old classes before applying new one to avoid conflicts
         document.documentElement.classList.remove('gate-passed', 'gate-decoy', 'gate-zalo');
 
+        // Check if logged in as Admin first (always bypass decoy and zalo)
+        const username = localStorage.getItem('tlogged_in_as');
+        let isAdmin = false;
+        if (username) {
+          try {
+            const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+            const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === username.toLowerCase());
+            if (user && (user.role === 'admin' || user.is_admin === true || user.is_admin === 'true')) {
+              isAdmin = true;
+            }
+          } catch(e) {}
+        }
+
+        if (isAdmin) {
+          document.documentElement.classList.add('gate-passed');
+          localStorage.setItem('txa_referred_token', 'true'); // Automatically pass decoy for admin
+          return;
+        }
+
         if (decoyEnable === false) {
           document.documentElement.classList.add('gate-passed');
           return;
@@ -279,7 +298,6 @@ const isActive = (path: string) => {
             localStorage.setItem('txa_referred_token', 'true');
             isDecoyPassed = true;
           }
-          // Removed automatic referrer bypass to ensure users must manually enter passcode to bypass decoy
         }
         
         if (!isDecoyPassed) {
@@ -290,18 +308,6 @@ const isActive = (path: string) => {
         if (zaloLockEnable === false) {
           document.documentElement.classList.add('gate-passed');
           return;
-        }
-        
-        const username = localStorage.getItem('tlogged_in_as');
-        if (username) {
-          try {
-            const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-            const user = users.find(u => u.username === username || u.email === username);
-            if (user && (user.role === 'admin' || user.is_admin === true || user.is_admin === 'true')) {
-              document.documentElement.classList.add('gate-passed');
-              return;
-            }
-          } catch(e) {}
         }
         
         const isZaloApproved = localStorage.getItem('zalo_access_status') === 'approved' || document.cookie.includes('txa_gate_passed=true');
@@ -1103,7 +1109,7 @@ const isActive = (path: string) => {
     </div>
 
     <!-- Toast Container (global) -->
-    <div id="txa-toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-2"></div>
+    <div id="txa-toast-container" class="fixed bottom-6 right-6 z-[100000] flex flex-col gap-2"></div>
 
     <div class="min-h-screen">
       <slot />
@@ -1635,8 +1641,23 @@ const isActive = (path: string) => {
 
           document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
           localStorage.setItem('tlogged_in_as', username);
+
+          // Auto pass decoy if admin
+          try {
+            const usersList = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+            const user = usersList.find(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === username.toLowerCase());
+            if (user && (user.role === 'admin' || user.is_admin === true || user.is_admin === 'true')) {
+              localStorage.setItem('txa_referred_token', 'true');
+            }
+          } catch(e) {}
+
           localStorage.removeItem('thistory');
           
+          window.dispatchEvent(new Event('auth-changed'));
+          if (typeof window.checkTxaGate === 'function') {
+            window.checkTxaGate();
+          }
+
           if (window.showGlobalToast) window.showGlobalToast(`Chào mừng ${profile.name}! Đăng nhập thành công.`, 'success');
           
           setTimeout(() => {
@@ -1797,7 +1818,7 @@ const isActive = (path: string) => {
           if (!container) {
             container = document.createElement('div');
             container.id = 'txa-toast-container';
-            container.className = 'fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none';
+            container.className = 'fixed bottom-6 right-6 z-[100000] flex flex-col gap-2 pointer-events-none';
             document.body.appendChild(container);
           }
           
@@ -2474,13 +2495,21 @@ const isActive = (path: string) => {
                 );
 
                 if (matchedUser) {
-                  showGlobalToast('Đăng nhập thành công!', 'success');
                   document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
                   localStorage.setItem('tlogged_in_as', matchedUser.username);
+                  if (matchedUser.role === 'admin' || matchedUser.roles === 'admin') {
+                    localStorage.setItem('txa_referred_token', 'true');
+                  }
                   localStorage.removeItem('thistory');
                   
                   resetTurnstileWidgets();
                   window.dispatchEvent(new Event('auth-changed'));
+                  
+                  if (typeof window.checkTxaGate === 'function') {
+                    window.checkTxaGate();
+                  }
+
+                  showGlobalToast('Đăng nhập thành công!', 'success');
                   closeLoginModal();
                   setTimeout(() => { window.location.reload(); }, 800);
                 } else {
