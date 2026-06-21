@@ -41,14 +41,28 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // 3. Trích xuất mã giao dịch (txid) từ nội dung chuyển khoản
-    // Chấp nhận cả TXA_UP_ và TXA_GH_
-    const match = content.match(/TXA_(UP|GH)_([A-Z0-9]+)/i);
-    if (!match) {
-      return apiResponse(null, 'error', 'Invalid transfer code format', 400, request);
+    // Chuẩn hóa nội dung (viết hoa, xóa khoảng trắng, gạch dưới, gạch ngang) để chống việc ngân hàng tự động xóa ký tự đặc biệt
+    const normalizedContent = content.toUpperCase().replace(/[\s_-]+/g, '');
+    
+    let mode = '';
+    let txid = '';
+
+    // Thử khớp theo định dạng đầy đủ: TXAUPTXAF5JN8LDI hoặc TXA_UP_TXAF5JN8LDI
+    const matchFull = normalizedContent.match(/TXA(UP|GH)([A-Z0-9]{11})/);
+    if (matchFull) {
+      mode = matchFull[1];
+      txid = matchFull[2];
+    } else {
+      // Thử khớp theo định dạng chỉ có TXID (ví dụ: TXAF5JN8LDI)
+      const matchTxid = normalizedContent.match(/(TXA[A-Z0-9]{8})/);
+      if (matchTxid) {
+        txid = matchTxid[1];
+      }
     }
 
-    const mode = match[1].toUpperCase(); // UP hoặc GH
-    const txid = match[2].toUpperCase(); // ví dụ: TXA1A2B3C
+    if (!txid) {
+      return apiResponse(null, 'error', 'Invalid transfer code format', 400, request);
+    }
 
     // 4. Tìm log giao dịch tương ứng trong DB
     const { data: log, error: logError } = await supabase

@@ -75,9 +75,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Tìm giao dịch khớp: nội dung CK có chứa mã txid và số tiền >= giá
     const matchedTx = transactions.find((t: any) => {
-      const content = (t.transaction_content || '').toUpperCase();
+      // Chuẩn hóa nội dung chuyển khoản từ SePay (loại bỏ khoảng trắng, dấu gạch dưới, gạch ngang)
+      const content = (t.transaction_content || '').toUpperCase().replace(/[\s_-]+/g, '');
+      const cleanTxid = txid.toUpperCase();
       const amountIn = Number(t.amount_in || 0);
-      const hasCode = content.includes(expectedMemo.toUpperCase()) || content.includes(txid.toUpperCase());
+      
+      const hasCode = content.includes(cleanTxid);
       const hasAmount = amountIn >= log.price;
       return hasCode && hasAmount;
     });
