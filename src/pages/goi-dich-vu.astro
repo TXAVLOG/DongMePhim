@@ -445,12 +445,11 @@ import MainLayout from '../layouts/MainLayout.astro';
             const expDate = new Date(expStr);
             planExpiryVal.textContent = expDate.toLocaleString('vi-VN');
             
-            if (userPkg && userPkg.cycle) {
-              planCycleVal.textContent = userPkg.cycle === 'annual' ? 'Hàng năm' : userPkg.cycle === 'monthly' ? 'Hàng tháng' : 'Vô thời hạn';
-              planCycleDiv.classList.remove('hidden');
-            } else {
-              planCycleDiv.classList.add('hidden');
-            }
+            const approvedInvoices = userInvoices.filter(inv => inv.status === 'approved');
+            const lastApproved = approvedInvoices.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime())[0];
+            const userCycle = lastApproved?.cycle || 'monthly';
+            planCycleVal.textContent = userCycle === 'annual' ? 'Hàng năm' : 'Hàng tháng';
+            planCycleDiv.classList.remove('hidden');
             
             remDays = Math.ceil((expDate.getTime() - Date.now()) / (3600 * 1000 * 24));
 
@@ -551,9 +550,13 @@ import MainLayout from '../layouts/MainLayout.astro';
             // Open payment method selector modal
             const payments = loadedSettings.payments || {};
             const userPkg = (loadedSettings.packages || []).find(p => p.title === userDb.package) || {};
-            const price = userPkg.price || 69000;
-            const cycle = userPkg.cycle || 'monthly';
-            const packageId = userPkg.id || 'vip_1m';
+            const approvedInvoices = userInvoices.filter(inv => inv.status === 'approved');
+            const lastApproved = approvedInvoices.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime())[0];
+            const userCycle = lastApproved?.cycle || 'monthly';
+
+            const price = userCycle === 'annual' ? (userPkg.annual_price || 699000) : (userPkg.price || 69000);
+            const cycle = userCycle;
+            const packageId = userPkg.id || 'vip';
             const packageTitle = userDb.package;
             const cycleLabelStr = cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng';
 
@@ -1116,8 +1119,8 @@ import MainLayout from '../layouts/MainLayout.astro';
           const receiptImgBase64 = reader.result;
           const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
           const quickRenewSection = document.getElementById('quick-renew-section');
-          
-          const selectedPkgId = quickRenewSection?.dataset.selectedPackageId || 'vip_1m';
+           
+          const selectedPkgId = quickRenewSection?.dataset.selectedPackageId || 'vip';
           const selectedPkgTitle = quickRenewSection?.dataset.selectedPackageTitle || 'Premium VIP';
           const selectedPrice = parseInt(quickRenewSection?.dataset.selectedPrice || '0');
           const cycle = quickRenewSection?.dataset.cycle || 'monthly';

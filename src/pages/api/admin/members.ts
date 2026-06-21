@@ -160,8 +160,7 @@ export const POST: APIRoute = async ({ request }) => {
           updates.package = nextPkg;
           if (nextPkg.includes('VIP')) {
             updates.join_date = new Date().toISOString();
-            // 30 days for VIP 1 Month, 365 for VIP 1 Year
-            const days = nextPkg.includes('Year') ? 365 : 30;
+            const days = nextPkg.includes('Year') || nextPkg.includes('Năm') || nextPkg.includes('12') ? 365 : 30;
             updates.expiry_date = new Date(Date.now() + 3600 * 1000 * 24 * days).toISOString();
           } else {
             updates.expiry_date = null;

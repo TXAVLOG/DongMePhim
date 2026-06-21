@@ -19,52 +19,23 @@ const getDynamicFeaturesObj = (pkg: any) => {
   ];
 };
 
-const getNormalizedTitle = (title: string) => {
-  return title.replace(/\b(1|12)?\s*(Tháng|Năm|Month|Year|Hàng Tháng|Hàng Năm|Hàng Tuần|Tuần|Hàng Ngày|Ngày|Hàng Quý|Quý|Monthly|Annual|Weekly|Daily|Quarterly|Lifetime)\b/gi, '').trim();
-};
-
-const groupedPackages: any[] = [];
-
-// Trước tiên, đưa các gói có cycle "lifetime" hoặc "free" vào groupedPackages
-packages.forEach((pkg: any) => {
-  if (pkg.cycle === 'lifetime' || pkg.cycle === 'free' || pkg.id === 'free') {
-    groupedPackages.push({
-      ...pkg,
-      normalizedTitle: pkg.title,
-      monthlyPrice: pkg.price,
-      monthlyId: pkg.id
-    });
+const groupedPackages = packages.map((pkg: any) => {
+  const isFree = pkg.id === 'free';
+  let savingPercent = 0;
+  let originalAnnualPrice = pkg.price * 12;
+  if (!isFree && pkg.annual_price && pkg.annual_price < originalAnnualPrice) {
+    savingPercent = Math.round((1 - pkg.annual_price / originalAnnualPrice) * 100);
   }
-});
-
-// Duyệt qua các gói có cycle "monthly"
-packages.forEach((monthlyPkg: any) => {
-  if (monthlyPkg.cycle === 'monthly') {
-    const normTitle = getNormalizedTitle(monthlyPkg.title);
-    
-    // Tìm gói annual tương ứng
-    const annualPkg = packages.find((p: any) => 
-      p.cycle === 'annual' && getNormalizedTitle(p.title) === normTitle
-    );
-    
-    let savingPercent = 0;
-    let originalAnnualPrice = monthlyPkg.price * 12;
-    if (annualPkg && annualPkg.price < originalAnnualPrice) {
-      savingPercent = Math.round((1 - annualPkg.price / originalAnnualPrice) * 100);
-    }
-    
-    groupedPackages.push({
-      ...monthlyPkg,
-      title: normTitle,
-      normalizedTitle: normTitle,
-      monthlyPrice: monthlyPkg.price,
-      monthlyId: monthlyPkg.id,
-      annualPrice: annualPkg ? annualPkg.price : undefined,
-      annualId: annualPkg ? annualPkg.id : undefined,
-      savingPercent: savingPercent > 0 ? savingPercent : undefined,
-      originalAnnualPrice: originalAnnualPrice
-    });
-  }
+  return {
+    ...pkg,
+    normalizedTitle: pkg.title,
+    monthlyPrice: pkg.price,
+    monthlyId: pkg.id,
+    annualPrice: pkg.annual_price,
+    annualId: pkg.id,
+    savingPercent: savingPercent > 0 ? savingPercent : undefined,
+    originalAnnualPrice: originalAnnualPrice
+  };
 });
 ---
 
@@ -139,10 +110,10 @@ packages.forEach((monthlyPkg: any) => {
               data-id={pkg.id}
               data-monthly-id={pkg.monthlyId}
               data-monthly-price={pkg.monthlyPrice}
-              data-monthly-title={`${pkg.title} 1 Tháng`}
+              data-monthly-title={pkg.title}
               data-annual-id={pkg.annualId || ''}
               data-annual-price={pkg.annualPrice || ''}
-              data-annual-title={`${pkg.title} 1 Năm`}
+              data-annual-title={pkg.title}
               data-cycle={pkg.cycle}
               data-has-annual={pkg.annualPrice ? 'true' : 'false'}
               data-saving-percent={pkg.savingPercent || '0'}
@@ -177,7 +148,7 @@ packages.forEach((monthlyPkg: any) => {
                       {pkg.price.toLocaleString('vi-VN')}đ
                     </span>
                     <span class="price-unit text-xs text-zinc-400 font-semibold font-body-main">
-                      {isFree ? '/ Lifetime' : '/ tháng'}
+                      / tháng
                     </span>
                   </div>
                   {!isFree && pkg.annualPrice && (

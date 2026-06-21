@@ -4,6 +4,17 @@ import { SettingService } from '../../../services/SettingService';
 
 const settings = await SettingService.getSettings();
 const packages = settings.packages || [];
+
+const groupedPackages = packages.map((pkg: any) => {
+  const isFree = pkg.id === 'free';
+  return {
+    ...pkg,
+    monthlyPrice: pkg.price,
+    monthlyId: pkg.id,
+    annualPrice: pkg.annual_price,
+    annualId: pkg.id
+  };
+});
 ---
 
 <AdminLayout title="Quản lý Gói đăng ký">
@@ -35,7 +46,7 @@ const packages = settings.packages || [];
     <div id="subscription-plans-content" class="space-y-12">
       <!-- Subscription Tiers (Bento Grid Style) -->
       <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {packages.map((pkg) => {
+        {groupedPackages.map((pkg) => {
           const isFree = pkg.id === 'free';
           const cardBorderClass = `package-border-${pkg.id}`;
           const cardGlowClass = `package-glow-${pkg.id}`;
@@ -53,12 +64,19 @@ const packages = settings.packages || [];
                 <div class="p-3 bg-surface-container-high rounded-xl">
                   <span class="material-symbols-outlined text-on-surface-variant">{isFree ? 'person' : 'workspace_premium'}</span>
                 </div>
-                <span class="px-3 py-1 bg-surface-container-highest rounded-full text-label-caps font-label-caps text-on-surface-variant">{isFree ? 'DEFAULT' : pkg.cycle.toUpperCase()}</span>
+                <span class="px-3 py-1 bg-surface-container-highest rounded-full text-label-caps font-label-caps text-on-surface-variant">{isFree ? 'FREE' : 'VIP'}</span>
               </div>
               <h3 class={`font-title-md text-title-md mb-2 ${textClass}`}>{pkg.title}</h3>
-              <div class="flex items-baseline gap-1 mb-6">
-                <span class="text-headline-lg font-headline-lg text-3xl">{pkg.price.toLocaleString('vi-VN')}đ</span>
-                <span class="text-on-surface-variant text-[14px]">/ {pkg.cycle === 'lifetime' ? 'Lifetime' : pkg.cycle === 'annual' ? 'Annually' : 'Monthly'}</span>
+              <div class="flex flex-col mb-6">
+                <div class="flex items-baseline gap-1">
+                  <span class="text-headline-lg font-headline-lg text-3xl">{pkg.monthlyPrice.toLocaleString('vi-VN')}đ</span>
+                  <span class="text-on-surface-variant text-[14px]">/ tháng</span>
+                </div>
+                {!isFree && pkg.annualPrice && (
+                  <span class="text-[12px] text-zinc-400 mt-1">
+                    Giá năm: <strong class="text-emerald-400 font-bold">{pkg.annualPrice.toLocaleString('vi-VN')}đ</strong> / năm
+                  </span>
+                )}
               </div>
               <ul class="space-y-4 mb-8">
                 {pkg.features.map(f => (
@@ -68,7 +86,7 @@ const packages = settings.packages || [];
                   </li>
                 ))}
               </ul>
-              <button onclick={`openEditPlanModal('${pkg.id}')`} class={`mt-auto w-full py-3 rounded-lg font-semibold cursor-pointer ${btnClass}`}>
+              <button onclick={`openEditPlanModal('${pkg.monthlyId}')`} class={`mt-auto w-full py-3 rounded-lg font-semibold cursor-pointer ${btnClass}`}>
                 Edit Plan
               </button>
             </div>
@@ -617,10 +635,19 @@ const packages = settings.packages || [];
                 <label class="text-[10px] text-zinc-400 font-bold uppercase">Tên gói cước</label>
                 <input type="text" name="title" value="${pkg.title}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
               </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase">Giá hàng tháng (VND)</label>
+                <input type="number" id="edit-plan-price" name="price" value="${pkg.price}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} required />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
               <div class="space-y-1 relative group/lock">
-                <label class="text-[10px] text-zinc-400 font-bold uppercase">Giá tiền (VND)</label>
-                <input type="number" name="price" value="${pkg.price}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} required />
-                ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
+                <label class="text-[10px] text-zinc-400 font-bold uppercase flex justify-between items-center">
+                  <span>Giá hàng năm (VND)</span>
+                  <span id="modal-saving-badge" class="hidden px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-black text-[9px] uppercase tracking-wider font-label-caps">Tự tính</span>
+                </label>
+                <input type="number" id="edit-plan-annual-price" name="annual_price" value="${pkg.annual_price || ''}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} ${!isFree ? 'required' : ''} />
               </div>
             </div>
 
@@ -727,6 +754,33 @@ const packages = settings.packages || [];
             onConfirm: () => {}
           });
 
+          // Bind form price inputs to calculate saving discount dynamically
+          const priceInput = document.getElementById('edit-plan-price');
+          const annualPriceInput = document.getElementById('edit-plan-annual-price');
+          const savingBadge = document.getElementById('modal-saving-badge');
+
+          function updateModalSaving() {
+            if (!priceInput || !annualPriceInput || !savingBadge) return;
+            const monthly = parseFloat(priceInput.value) || 0;
+            const annual = parseFloat(annualPriceInput.value) || 0;
+            if (monthly > 0 && annual > 0) {
+              const originalAnnual = monthly * 12;
+              if (annual < originalAnnual) {
+                const percent = Math.round((1 - annual / originalAnnual) * 100);
+                savingBadge.textContent = `Tiết kiệm ${percent}%`;
+                savingBadge.classList.remove('hidden');
+                return;
+              }
+            }
+            savingBadge.classList.add('hidden');
+          }
+
+          if (priceInput && annualPriceInput) {
+            priceInput.addEventListener('input', updateModalSaving);
+            annualPriceInput.addEventListener('input', updateModalSaving);
+            updateModalSaving(); // initial run
+          }
+
           // Bind form submit
           const form = document.getElementById('edit-plan-form');
           if (form) {
@@ -740,6 +794,7 @@ const packages = settings.packages || [];
                 targetPkg.title = formData.get('title');
                 if (!isFree) {
                   targetPkg.price = parseInt(formData.get('price') || '0');
+                  targetPkg.annual_price = parseInt(formData.get('annual_price') || '0');
                   targetPkg.style_type = formData.get('style_type');
                   if (targetPkg.style_type === 'custom_color') {
                     targetPkg.custom_color = formData.get('custom_color');

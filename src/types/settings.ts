@@ -154,7 +154,8 @@ export interface SubscriptionPlan {
   id: string;
   title: string;
   price: number;
-  cycle: 'lifetime' | 'monthly' | 'annual';
+  annual_price?: number;
+  cycle?: 'lifetime' | 'monthly' | 'annual' | 'free';
   style_type: 'default' | 'custom_color' | 'rainbow_effect';
   custom_color?: string;
   features: string[];

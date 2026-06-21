@@ -160,7 +160,7 @@ export const seedSettings: SiteSettings = {
       id: "free",
       title: "Gói Free",
       price: 0,
-      cycle: "lifetime",
+      cycle: "free",
       style_type: "default",
       features: ["Có chứa quảng cáo ngẫu nhiên", "Xem chất lượng SD tiêu chuẩn", "Chỉ xem các server thường"],
       permissions: {
@@ -174,29 +174,12 @@ export const seedSettings: SiteSettings = {
       }
     },
     {
-      id: "vip_1m",
-      title: "VIP 1 Tháng",
+      id: "vip",
+      title: "Gói VIP",
       price: 69000,
-      cycle: "monthly",
+      annual_price: 699000,
       style_type: "default",
       features: ["Hoàn toàn không có quảng cáo", "Xem chất lượng cực nét 4K UHD", "Mở khóa toàn bộ các server VIP tốc độ cao", "Hỗ trợ tính năng Xem Chung"],
-      permissions: {
-        max_resolution: "4K",
-        allowed_servers: ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"],
-        max_playlists: 100,
-        watch_together: true,
-        hide_watermark: true,
-        vip_badge: true,
-        bypass_ads: true
-      }
-    },
-    {
-      id: "vip_1y",
-      title: "VIP 1 Năm",
-      price: 699000,
-      cycle: "annual",
-      style_type: "default",
-      features: ["Đầy đủ đặc quyền của VIP Tháng", "Tiết kiệm chi phí so với mua lẻ", "Hỗ trợ xem offline và phát hành sớm"],
       permissions: {
         max_resolution: "4K",
         allowed_servers: ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"],
