@@ -4,7 +4,7 @@ import { SettingService } from '../services/SettingService';
 import { ClientRouter } from 'astro:transitions';
 import { verifySession } from '../lib/auth';
 
-const currentUser = await verifySession(Astro.request, Astro.cookies);
+const currentUser = await verifySession(Astro.request, Astro.cookies) as any;
 if (!currentUser || (currentUser.role !== 'admin' && currentUser.roles !== 'admin')) {
   return Astro.redirect('/tphim');
 }
