@@ -1441,47 +1441,10 @@ const isActive = (path: string) => {
                     userInDb.package = 'Free';
                     userInDb.status = 'standard';
                     localStorage.setItem('tregistered_users', JSON.stringify(JSON.parse(usersStr).map(u => (u.username === username || u.email === username) ? userInDb : u)));
-                    localStorage.removeItem('txa_user_subscription');
-                    if (window.showGlobalToast) {
-                      window.showGlobalToast('Gói đăng ký VIP của bạn đã hết hạn. Tài khoản được chuyển về gói Miễn phí.', 'info', 5000);
-                    }
-                  } else {
-                    isVIP = true;
-                    // Sync with txa_user_subscription
-                    localStorage.setItem('txa_user_subscription', JSON.stringify({
-                      username: username,
-                      tier: userInDb.package,
-                      status: 'active',
-                      expiry: expiry.toISOString()
-                    }));
+                    // userInDb already has the correct package info, no need to sync to localStorage
                   }
                 } else {
                   isVIP = true; // No expiry means lifetime VIP
-                }
-              } else {
-                // 3. Fallback check txa_user_subscription key directly
-                const subStr = localStorage.getItem('txa_user_subscription');
-                if (subStr) {
-                  try {
-                    const sub = JSON.parse(subStr);
-                    const expiryStr = sub.expiresAt || sub.expiry;
-                    if (expiryStr) {
-                      const expiry = new Date(expiryStr);
-                      const now = new Date();
-                      if (now > expiry) {
-                        localStorage.removeItem('txa_user_subscription');
-                        if (window.showGlobalToast) {
-                          window.showGlobalToast('Gói đăng ký VIP của bạn đã hết hạn. Tài khoản được chuyển về gói Miễn phí.', 'info', 5000);
-                        }
-                      } else {
-                        isVIP = true;
-                      }
-                    } else if (sub.status === 'active' || (sub.tier && sub.tier.includes('VIP'))) {
-                      isVIP = true;
-                    }
-                  } catch (e) {
-                    console.error('Error parsing user sub:', e);
-                  }
                 }
               }
 
@@ -3429,26 +3392,10 @@ const isActive = (path: string) => {
               const data = await res.json();
               if (res.ok) {
                 showGlobalToast(data.message || 'Yêu cầu phục hồi mật khẩu thành công!', 'success');
-                
-                if (data.emailLog) {
-                  try {
-                    const logs = JSON.parse(localStorage.getItem('txa_email_logs') || '[]');
-                    logs.unshift(data.emailLog);
-                    localStorage.setItem('txa_email_logs', JSON.stringify(logs));
-                  } catch (e) {}
-                }
 
                 switchAuthTab('login');
               } else {
                 showGlobalToast(data.message || data.error || 'Yêu cầu thất bại!', 'error');
-                
-                if (data.emailLog) {
-                  try {
-                    const logs = JSON.parse(localStorage.getItem('txa_email_logs') || '[]');
-                    logs.unshift(data.emailLog);
-                    localStorage.setItem('txa_email_logs', JSON.stringify(logs));
-                  } catch (e) {}
-                }
                 
                 resetTurnstileWidgets();
               }
@@ -3872,14 +3819,6 @@ const isActive = (path: string) => {
             if (res.ok) {
               if (window.showGlobalToast) window.showGlobalToast('Gửi yêu cầu thành công! Vui lòng chờ phê duyệt.', 'success');
               
-              if (data.emailLog) {
-                try {
-                  const logs = JSON.parse(localStorage.getItem('txa_email_logs') || '[]');
-                  logs.unshift(data.emailLog);
-                  localStorage.setItem('txa_email_logs', JSON.stringify(logs));
-                } catch (e) {}
-              }
-
               localStorage.setItem('zalo_access_status', 'pending');
               closeZaloModal();
               updateZaloUI('pending');

@@ -134,17 +134,12 @@ import '../styles/index.css';
 
     <script is:inline define:vars={{ maintenanceEndTime }}>
         // Client-side override check: redirect if maintenance disabled in database
-        if (typeof localStorage !== 'undefined') {
-            const stored = localStorage.getItem('txa_site_settings');
-            if (stored) {
-                try {
-                    const settings = JSON.parse(stored);
-                    if (settings && settings.general && !settings.general.maintenance_enable) {
-                        window.location.href = '/';
-                    }
-                } catch(e) {}
+        setInterval(() => {
+            const settings = window.TXA_SITE_SETTINGS || {};
+            if (settings && settings.general && !settings.general.maintenance_enable) {
+                window.location.href = '/';
             }
-        }
+        }, 5000);
 
         // Micro-interaction: Countdown Timer Logic
         function startCountdown() {

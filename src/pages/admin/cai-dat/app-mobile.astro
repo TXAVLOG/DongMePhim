@@ -312,7 +312,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
       });
 
       // Save handler
-      document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+      document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
         let current = {};
         try {
           const stored = localStorage.getItem('txa_site_settings');
@@ -348,7 +348,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           }
         };
 
-        localStorage.setItem('txa_site_settings', JSON.stringify(updatedSettings));
+        await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
 
         if (window.showGlobalToast) {
           window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
@@ -365,3 +365,5 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
     })();
   </script>
 </AdminLayout>
+
+

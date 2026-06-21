@@ -3,6 +3,7 @@ import { apiResponse } from '../../../lib/api/response';
 import { ZaloService } from '../../../services/ZaloService';
 import { SettingService } from '../../../services/SettingService';
 import { getEmailTemplate } from '../../../templates/emails/emailReader';
+import { supabase } from '../../../lib/supabase';
 
 // Sử dụng SMTP để gửi thông báo cho Admin nếu SMTP được cấu hình
 async function notifyAdminNewRequest(nickname: string, token: string, userEmail: string | null) {
@@ -74,11 +75,32 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
       html: compiledHtml
     };
 
+    // Lưu thẳng vào Database (Supabase)
+    const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+    if (providerType === 'supabase') {
+      try {
+        await supabase.from('txa_email_logs').insert({
+          recipient: emailLog.recipient,
+          sender: emailLog.sender,
+          subject: emailLog.subject,
+          category: emailLog.category,
+          status: emailLog.status,
+          response_code: emailLog.responseCode,
+          parameters: emailLog.parameters,
+          smtp_config: emailLog.smtpConfig,
+          html: emailLog.html
+        });
+      } catch (err) {
+        console.error('Lỗi khi lưu log email vào DB:', err);
+      }
+    }
+
     if (typeof globalThis !== 'undefined') {
       // Mock log storage on server console / local logs if needed
     }
     
-    return emailLog;
+    // Trả về null để Frontend không lưu vào localStorage nữa
+    return null;
   } catch (e) {
     console.error('Lỗi khi gửi email thông báo duyệt Zalo cho Admin:', e);
     return null;

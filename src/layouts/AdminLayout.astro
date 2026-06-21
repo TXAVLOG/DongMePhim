@@ -210,22 +210,6 @@ packages.forEach((pkg: any) => {
           return;
         }
 
-        // Synchronize database settings to localStorage on page load
-        localStorage.setItem('txa_site_settings', JSON.stringify(settings));
-
-        // Intercept setItem to sync client-side updates back to Supabase
-        const originalSetItem = localStorage.setItem;
-        localStorage.setItem = function(key, value) {
-          originalSetItem.apply(this, arguments);
-          if (key === 'txa_site_settings') {
-            fetch('/api/admin/settings', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: value,
-              keepalive: true
-            }).catch(err => console.error('Lỗi khi lưu cấu hình lên database:', err));
-          }
-        };
       }
     })();
   </script>
@@ -448,19 +432,12 @@ packages.forEach((pkg: any) => {
   <script is:inline define:vars={{ providerType }}>
     // Highlight active sidebar item based on current URL path
     function initAdminLayout() {
-      // Toggle Email logs link based on SMTP configuration in localStorage
+      // Toggle Email logs link based on SMTP configuration
       const emailLink = document.getElementById('nav-email');
       if (emailLink) {
-        let isConfigured = false;
-        try {
-          const stored = localStorage.getItem('txa_site_settings');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            isConfigured = !!(parsed.smtp?.smtp_host && parsed.smtp?.smtp_user && parsed.smtp?.smtp_pass);
-          } else {
-            isConfigured = true; // Default fallback to server seeds
-          }
-        } catch (e) {}
+        const settings = window.TXA_SITE_SETTINGS || {};
+        const isConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
+        
         if (isConfigured) {
           emailLink.classList.remove('hidden');
         } else {

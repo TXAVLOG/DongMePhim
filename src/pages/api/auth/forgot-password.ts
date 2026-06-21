@@ -3,6 +3,7 @@ import { apiResponse } from '../../../lib/api/response';
 import { SettingService } from '../../../services/SettingService';
 import { getEmailTemplate } from '../../../templates/emails/emailReader';
 import { SmtpClient } from '../../../lib/api/smtpClient';
+import { supabase } from '../../../lib/supabase';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -100,10 +101,28 @@ export const POST: APIRoute = async ({ request }) => {
         html: compiledHtml
       };
 
+      const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+      if (providerType === 'supabase') {
+        try {
+          await supabase.from('txa_email_logs').insert({
+            recipient: emailLog.recipient,
+            sender: emailLog.sender,
+            subject: emailLog.subject,
+            category: emailLog.category,
+            status: emailLog.status,
+            response_code: emailLog.responseCode,
+            parameters: emailLog.parameters,
+            smtp_config: emailLog.smtpConfig,
+            html: emailLog.html
+          });
+        } catch (err) {
+          console.error('Lỗi khi lưu log email vào DB:', err);
+        }
+      }
+
       return apiResponse({
         success: true,
-        message: 'Liên kết đặt lại mật khẩu đã được gửi thành công!',
-        emailLog: emailLog
+        message: 'Liên kết đặt lại mật khẩu đã được gửi thành công!'
       }, 'success', '', 200, request);
 
     } catch (sendErr: any) {
@@ -132,10 +151,28 @@ export const POST: APIRoute = async ({ request }) => {
         html: compiledHtml
       };
 
+      const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+      if (providerType === 'supabase') {
+        try {
+          await supabase.from('txa_email_logs').insert({
+            recipient: emailLog.recipient,
+            sender: emailLog.sender,
+            subject: emailLog.subject,
+            category: emailLog.category,
+            status: emailLog.status,
+            response_code: emailLog.responseCode,
+            parameters: emailLog.parameters,
+            smtp_config: emailLog.smtpConfig,
+            html: emailLog.html
+          });
+        } catch (err) {
+          console.error('Lỗi khi lưu log email vào DB:', err);
+        }
+      }
+
       return apiResponse({
         success: false,
-        message: `Gửi mail khôi phục thất bại: ${sendErr.message}`,
-        emailLog: emailLog
+        message: `Gửi mail khôi phục thất bại: ${sendErr.message}`
       }, 'error', `Gửi mail khôi phục thất bại: ${sendErr.message}`, 400, request);
     }
   } catch (err: any) {
