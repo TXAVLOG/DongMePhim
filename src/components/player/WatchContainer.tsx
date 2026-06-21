@@ -998,10 +998,23 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           // Split by newline. If there's a comma, it might break iframe codes so we prefer newline split for pre-roll
           const urls = rawUrls.split(/\n+/).map((u: string) => u.trim()).filter(Boolean);
           if (urls.length > 0) {
-            const randomUrl = urls[Math.floor(Math.random() * urls.length)];
+            let randomUrl = urls[Math.floor(Math.random() * urls.length)];
+            const adType = ads.pre_roll_type || 'video';
+            
+            // Tự động convert link youtube thường sang link embed nếu đang chọn mã nhúng
+            if (adType === 'embed') {
+              if (randomUrl.includes('youtube.com/watch?v=')) {
+                const videoId = new URL(randomUrl).searchParams.get('v');
+                if (videoId) randomUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+              } else if (randomUrl.includes('youtu.be/')) {
+                const videoId = randomUrl.split('youtu.be/')[1]?.split('?')[0];
+                if (videoId) randomUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+              }
+            }
+
             setShowAd(true);
             setAdUrl(randomUrl);
-            setAdType(ads.pre_roll_type || 'video');
+            setAdType(adType);
             const skipSec = parseInt(ads.pre_roll_skip_seconds) || 5;
             setAdSkipSeconds(skipSec);
             setAdCountdown(skipSec);
