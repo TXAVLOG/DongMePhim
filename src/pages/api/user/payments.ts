@@ -131,6 +131,18 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    if ((status || 'pending') === 'pending') {
+      try {
+        await supabase
+          .from('txa_payment_logs')
+          .delete()
+          .eq('username', username)
+          .eq('status', 'pending');
+      } catch (cleanupErr) {
+        console.warn('Error cleaning up previous pending payments:', cleanupErr);
+      }
+    }
+
     const { error } = await supabase
       .from('txa_payment_logs')
       .upsert({

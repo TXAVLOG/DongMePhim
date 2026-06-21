@@ -1605,6 +1605,15 @@ const isActive = (path: string) => {
           const modal = document.getElementById('txa-global-modal');
           if (!modal) return;
           const modalBox = modal.querySelector('div');
+          
+          // Dynamic sizing
+          modalBox.classList.remove('max-w-md', 'max-w-2xl');
+          if (options.size === 'lg') {
+            modalBox.classList.add('max-w-2xl');
+          } else {
+            modalBox.classList.add('max-w-md');
+          }
+
           const titleEl = document.getElementById('txa-modal-title');
           const bodyEl = document.getElementById('txa-modal-body');
           const confirmBtn = document.getElementById('txa-modal-confirm');

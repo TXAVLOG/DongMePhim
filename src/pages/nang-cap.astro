@@ -958,6 +958,7 @@ const groupedPackages = packages.map((pkg: any) => {
             window.txamodal.show({
               title: 'Thanh toán tự động qua SePay (VietQR)',
               content: sepayPortal,
+              size: 'lg',
               confirmText: '',
               cancelText: 'Đóng',
               onClose: () => {
@@ -996,6 +997,7 @@ const groupedPackages = packages.map((pkg: any) => {
             window.txamodal.show({
               title: 'Chuyển khoản thủ công VietQR',
               content: manualPortal,
+              size: 'lg',
               confirmText: '',
               cancelText: 'Đóng'
             });
