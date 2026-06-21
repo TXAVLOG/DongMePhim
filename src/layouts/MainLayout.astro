@@ -224,6 +224,8 @@ const isActive = (path: string) => {
 
       // Monkey patch fetch
       (function() {
+        if (window.__txa_fetch_patched) return;
+        window.__txa_fetch_patched = true;
         const originalFetch = window.fetch;
         window.fetch = async function(...args) {
           const res = await originalFetch(...args);
