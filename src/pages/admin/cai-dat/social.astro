@@ -4,6 +4,7 @@ import { SettingService } from '../../../services/SettingService';
 
 const settings = await SettingService.getSettings();
 let activeTab = 'social';
+import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - Mạng xã hội">
@@ -22,35 +23,7 @@ let activeTab = 'social';
 
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
     <!-- Cài đặt Navigation Sidebar -->
-    <div class="lg:col-span-1 flex flex-col gap-2">
-      <a href="/admin/cai-dat" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'general' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">settings</span> Chung
-      </a>
-      <a href="/admin/cai-dat/api-ser" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'api-ser' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">security</span> API Security
-      </a>
-      <a href="/admin/cai-dat/app-mobile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'app-mobile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">smartphone</span> App Mobile
-      </a>
-      <a href="/admin/cai-dat/smtp" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'smtp' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">mail</span> SMTP Mail
-      </a>
-      <a href="/admin/cai-dat/telegram" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'telegram' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">send</span> Telegram
-      </a>
-      <a href="/admin/cai-dat/dang-ky" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'dang-ky' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">login</span> Đăng nhập & Đăng ký
-      </a>
-      <a href="/admin/cai-dat/social" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'social' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">share</span> Mạng xã hội
-      </a>
-      <a href="/admin/cai-dat/thanh-toan" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'payment' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">payments</span> Cấu hình Thanh toán
-      </a>
-      <a href="/admin/cai-dat/turnstile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'turnstile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">verified_user</span> Turnstile Captcha
-      </a>
-    </div>
+    <SettingsSidebar activeTab="social" />
 
     <!-- Cài đặt Panel Content -->
     <div class="lg:col-span-3 glass-panel rounded-3xl p-8">

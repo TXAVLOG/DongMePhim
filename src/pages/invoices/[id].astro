@@ -181,7 +181,7 @@ const settings = await SettingService.getSettings();
 
 <script is:inline>
   (function() {
-    function hydrateInvoice() {
+    async function hydrateInvoice() {
       const loader = document.getElementById('invoice-loading');
       const content = document.getElementById('invoice-content');
       const err = document.getElementById('invoice-error');
@@ -197,59 +197,62 @@ const settings = await SettingService.getSettings();
         return;
       }
 
-      // Read from local storage
-      const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
-      let logs = [];
-      try { logs = JSON.parse(logsStr); } catch (e) {}
+      try {
+        const res = await fetch(`/api/user/payments?txid=${encodeURIComponent(txid)}`);
+        if (!res.ok) throw new Error('Failed to fetch transaction details');
+        
+        const result = await res.json();
+        const tx = result.data;
+        
+        if (!tx) {
+          loader.classList.add('hidden');
+          err.classList.remove('hidden');
+          return;
+        }
 
-      const tx = logs.find(item => item.txid === txid);
-      
-      // Also check if current logged in user owns it
-      const currentLoggedIn = localStorage.getItem('tlogged_in_as') || '';
-      
-      if (!tx) {
+        // Check ownership or admin role
+        const currentLoggedIn = localStorage.getItem('tlogged_in_as') || '';
+        if (tx.username !== 'anonymous' && tx.username !== 'guest' && tx.username !== currentLoggedIn && currentLoggedIn !== 'admin') {
+          loader.classList.add('hidden');
+          err.classList.remove('hidden');
+          return;
+        }
+
+        // Populate elements
+        document.getElementById('invoice-id-val').textContent = tx.txid;
+        document.getElementById('invoice-user-val').textContent = tx.username;
+        document.getElementById('invoice-email-val').textContent = tx.email || '-';
+
+        const txDate = tx.date ? new Date(tx.date) : new Date();
+        document.getElementById('invoice-date-val').textContent = txDate.toLocaleString('vi-VN');
+        
+        const methodLabel = tx.method === 'manual' ? 'VietQR (Chuyển khoản thủ công)' : tx.method.toUpperCase();
+        document.getElementById('invoice-method-val').textContent = methodLabel;
+        
+        document.getElementById('invoice-tier-title').textContent = tx.packageTitle;
+        document.getElementById('invoice-cycle-val').textContent = tx.cycle === 'annual' ? 'Hàng năm (-15%)' : 'Hàng tháng';
+        
+        const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.price);
+        document.getElementById('invoice-price-val').textContent = formattedPrice;
+        document.getElementById('invoice-total-val').textContent = formattedPrice;
+
+        // Status Badge
+        const statusBadge = document.getElementById('invoice-status-badge');
+        if (tx.status === 'approved') {
+          statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[9px] print:bg-emerald-50 print:text-emerald-700 print:border-emerald-200">ĐÃ THANH TOÁN</span>';
+        } else if (tx.status === 'declined') {
+          statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[9px] print:bg-rose-50 print:text-rose-700 print:border-rose-200">BỊ TỪ CHỐI</span>';
+        } else {
+          statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse print:bg-yellow-50 print:text-yellow-700 print:border-yellow-200">ĐANG CHỜ DUYỆT</span>';
+        }
+
+        loader.classList.add('hidden');
+        content.classList.remove('hidden');
+      } catch (e) {
+        console.error('Error loading invoice:', e);
         loader.classList.add('hidden');
         err.classList.remove('hidden');
-        return;
       }
-
-      // Populate elements
-      document.getElementById('invoice-id-val').textContent = tx.txid;
-      document.getElementById('invoice-user-val').textContent = tx.username;
-      
-      // Search email from tregistered_users
-      let email = '-';
-      try {
-        const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-        const u = users.find(user => user.username === tx.username || user.email === tx.username);
-        if (u) email = u.email;
-      } catch (e) {}
-      document.getElementById('invoice-email-val').textContent = email;
-
-      document.getElementById('invoice-date-val').textContent = new Date(tx.date).toLocaleString('vi-VN');
-      
-      const methodLabel = tx.method === 'manual' ? 'VietQR (Chuyển khoản thủ công)' : tx.method.toUpperCase();
-      document.getElementById('invoice-method-val').textContent = methodLabel;
-      
-      document.getElementById('invoice-tier-title').textContent = tx.packageTitle;
-      document.getElementById('invoice-cycle-val').textContent = tx.cycle === 'annual' ? 'Hàng năm (-15%)' : 'Hàng tháng';
-      
-      const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.price);
-      document.getElementById('invoice-price-val').textContent = formattedPrice;
-      document.getElementById('invoice-total-val').textContent = formattedPrice;
-
-      // Status Badge
-      const statusBadge = document.getElementById('invoice-status-badge');
-      if (tx.status === 'approved') {
-        statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[9px] print:bg-emerald-50 print:text-emerald-700 print:border-emerald-200">ĐÃ THANH TOÁN</span>';
-      } else if (tx.status === 'declined') {
-        statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[9px] print:bg-rose-50 print:text-rose-700 print:border-rose-200">BỊ TỪ CHỐI</span>';
-      } else {
-        statusBadge.innerHTML = '<span class="px-2.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse print:bg-yellow-50 print:text-yellow-700 print:border-yellow-200">ĐANG CHỜ DUYỆT</span>';
-      }
-
-      loader.classList.add('hidden');
-      content.classList.remove('hidden');
     }
 
     hydrateInvoice();

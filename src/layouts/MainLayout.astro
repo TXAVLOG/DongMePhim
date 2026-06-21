@@ -15,6 +15,70 @@ interface Props {
 }
 
 const settings = await SettingService.getSettings();
+const packages = settings.packages || [];
+let packageStyles = '';
+packages.forEach((pkg: any) => {
+  if (pkg.style_type === 'rainbow_effect') {
+    packageStyles += `
+      .package-style-${pkg.id} {
+        background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff);
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: rainbow-text-animation 6s ease infinite;
+        font-weight: bold;
+      }
+      .package-border-${pkg.id} {
+        position: relative;
+        border-color: transparent !important;
+      }
+      .package-border-${pkg.id}::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 2px;
+        background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff);
+        background-size: 400% 400%;
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        animation: rainbow-text-animation 6s ease infinite;
+      }
+      .package-glow-${pkg.id} {
+        animation: rainbow-glow-animation 6s ease infinite;
+      }
+      .package-btn-${pkg.id} {
+        background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff) !important;
+        background-size: 400% 400%;
+        color: #000 !important;
+        font-weight: 900 !important;
+        animation: rainbow-text-animation 6s ease infinite;
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.4) !important;
+      }
+    `;
+  } else if (pkg.style_type === 'custom_color' && pkg.custom_color) {
+    packageStyles += `
+      .package-style-${pkg.id} {
+        color: ${pkg.custom_color} !important;
+        font-weight: bold;
+      }
+      .package-border-${pkg.id} {
+        border-color: ${pkg.custom_color} !important;
+      }
+      .package-glow-${pkg.id} {
+        box-shadow: 0 0 25px ${pkg.custom_color}4d !important;
+      }
+      .package-btn-${pkg.id} {
+        background-color: ${pkg.custom_color} !important;
+        color: #000 !important;
+        box-shadow: 0 4px 14px ${pkg.custom_color}4d !important;
+      }
+    `;
+  }
+});
+
 const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
 const popularMovies = await MovieService.getMovies({ limit: 12 });
 
@@ -81,12 +145,14 @@ const isActive = (path: string) => {
     {useTransition && <ClientRouter />}
     <script define:vars={{ 
       apiEncryptEnable: settings.general?.api_encrypt_enable ?? false, 
-      apiEncryptPass: settings.general?.api_encrypt_pass || 'tphimx'
+      apiEncryptPass: settings.general?.api_encrypt_pass || 'tphimx',
+      settings
     }}>
       window.TXA_API_CONFIG = {
         encryptEnable: apiEncryptEnable,
         encryptPass: apiEncryptPass
       };
+      window.TXA_SITE_SETTINGS = settings;
     </script>
     <script is:inline>
       // Helper function to decrypt AES-256-GCM client-side
@@ -191,6 +257,70 @@ const isActive = (path: string) => {
       }
       applyTheme();
       hydrateSettings();
+
+      // Click pop-under ad handler
+      (function() {
+        if (window.txa_click_ad_registered) return;
+        window.txa_click_ad_registered = true;
+        let clickCount = 0;
+        let randomThreshold = 0;
+
+        function getAdSettings() {
+          const settings = window.TXA_SITE_SETTINGS || {};
+          return settings.ads || { click_ad_enable: false, click_ad_code: '', click_ad_threshold: 5 };
+        }
+
+        function initRandomThreshold(threshold) {
+          const base = parseInt(threshold) || 5;
+          const min = Math.max(1, base - 2);
+          const max = base + 2;
+          randomThreshold = Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function checkUserBypassAds() {
+          const loggedIn = localStorage.getItem('tlogged_in_as');
+          if (!loggedIn) return false;
+          try {
+            const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+            const user = users.find(u => u.username === loggedIn || u.email === loggedIn);
+            const userPackage = user ? user.package : 'Free';
+            const siteSettings = window.TXA_SITE_SETTINGS || {};
+            const packages = siteSettings.packages || [];
+            const userPkg = packages.find(p => p.title === userPackage);
+            if (userPkg && userPkg.permissions && userPkg.permissions.bypass_ads) {
+              return true;
+            }
+          } catch(e) {}
+          return false;
+        }
+
+        document.addEventListener('click', function(e) {
+          const ads = getAdSettings();
+          if (!ads.click_ad_enable || !ads.click_ad_code) return;
+          if (checkUserBypassAds()) return;
+
+          if (!randomThreshold) {
+            initRandomThreshold(ads.click_ad_threshold);
+          }
+
+          clickCount++;
+          if (clickCount >= randomThreshold) {
+            clickCount = 0;
+            initRandomThreshold(ads.click_ad_threshold);
+            try {
+              const url = ads.click_ad_code;
+              const newWin = window.open(url, '_blank');
+              if (newWin) {
+                newWin.blur();
+                window.focus();
+              }
+            } catch(err) {
+              console.error("Popup blocked or failed:", err);
+            }
+          }
+        });
+      })();
+
       document.addEventListener('astro:after-swap', () => {
         applyTheme();
         hydrateSettings();
@@ -327,6 +457,21 @@ const isActive = (path: string) => {
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+    <!-- Dynamic Package Styles -->
+    <style is:global set:html={packageStyles}></style>
+    <style is:global>
+      @keyframes rainbow-text-animation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      @keyframes rainbow-glow-animation {
+        0% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.25), 0 0 45px rgba(0, 0, 255, 0.15); }
+        50% { box-shadow: 0 0 25px rgba(0, 255, 0, 0.25), 0 0 45px rgba(255, 255, 0, 0.15); }
+        100% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.25), 0 0 45px rgba(0, 0, 255, 0.15); }
+      }
+    </style>
   </head>
   <body class="font-body-main text-on-surface bg-surface-deep overflow-x-hidden transition-colors duration-300">
     <!-- Cổng ngụy trang Lớp 1 (Decoy Gate) -->
@@ -784,6 +929,7 @@ const isActive = (path: string) => {
                     </div>
 
                     <a class={`font-label-caps text-label-caps pb-1 ${isActive('/moi-cap-nhat') ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`} href="/moi-cap-nhat">Mới Cập Nhật</a>
+                    <a class={`font-label-caps text-label-caps pb-1 nav-watch-together hidden ${isActive('/xem-chung') ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`} href="/xem-chung">Xem Chung</a>
 
                     <!-- Thêm Dropdown -->
                     <div class="relative group">
@@ -884,6 +1030,10 @@ const isActive = (path: string) => {
         <a href="/admin" class={`auth-user hidden flex flex-col items-center gap-1 ${isActive('/admin') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
           <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
           <span class="text-[10px] font-medium">Quản trị</span>
+        </a>
+        <a href="/xem-chung" class={`auth-user nav-watch-together hidden flex flex-col items-center gap-1 ${isActive('/xem-chung') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">groups</span>
+          <span class="text-[10px] font-medium">Xem chung</span>
         </a>
         <a href="/thong-tin" class={`auth-user hidden flex flex-col items-center gap-1 ${isActive('/thong-tin') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
           <span class="material-symbols-outlined text-xl">account_circle</span>
@@ -1302,20 +1452,42 @@ const isActive = (path: string) => {
               const userEl = document.getElementById('dropdown-username');
               const badgeEl = document.getElementById('dropdown-badge');
               if (userEl) userEl.textContent = username;
+              
+              const getPkgId = (title) => {
+                const t = (title || '').toLowerCase().trim();
+                if (t.includes('year') || t.includes('1 năm') || t.includes('1y') || t.includes('năm') || t.includes('vip 1 năm') || t.includes('vip_1y')) return 'vip_1y';
+                if (t.includes('month') || t.includes('1 tháng') || t.includes('1m') || t.includes('tháng') || t.includes('premium') || t.includes('vip 1 tháng') || t.includes('vip_1m')) return 'vip_1m';
+                return 'free';
+              };
+              const userPackage = userInDb?.package || 'Free';
+              const userPkgId = getPkgId(userPackage);
+
               if (badgeEl) {
-                if (isVIP) {
-                  badgeEl.textContent = 'VIP MEMBER';
-                  badgeEl.className = 'text-[9px] font-black px-1.5 py-0.5 rounded w-max select-none bg-gradient-to-r from-violet-600 to-cyan-500 text-white uppercase font-label-caps';
-                } else {
-                  badgeEl.textContent = 'Cơ Bản';
-                  badgeEl.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded w-max select-none bg-zinc-800 text-zinc-400 uppercase font-label-caps';
-                }
+                badgeEl.textContent = userPackage;
+                badgeEl.className = `text-[9px] font-black px-1.5 py-0.5 rounded w-max select-none uppercase font-label-caps package-style-${userPkgId}`;
+              }
+
+              // Toggle watch together links
+              const wtElements = document.querySelectorAll('.nav-watch-together');
+              const siteSettings = window.TXA_SITE_SETTINGS || {};
+              const packagesList = siteSettings.packages || [];
+              const pkgDef = packagesList.find(p => p.id === userPkgId) || { permissions: { watch_together: false } };
+              
+              if (pkgDef.permissions && pkgDef.permissions.watch_together) {
+                wtElements.forEach(el => {
+                  el.classList.remove('hidden');
+                });
+              } else {
+                wtElements.forEach(el => {
+                  el.classList.add('hidden');
+                });
               }
             }
           }
         } else {
           guestViews.forEach(el => el.classList.remove('hidden'));
           userViews.forEach(el => el.classList.add('hidden'));
+          document.querySelectorAll('.nav-watch-together').forEach(el => el.classList.add('hidden'));
         }
       }
 

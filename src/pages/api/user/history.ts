@@ -1,99 +1,168 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '../../../lib/api/response';
+import { supabase } from '../../../lib/supabase';
 
-// Safe JSON Parse helper
-function safeJsonParse(str: string): any[] {
+// GET: Lấy lịch sử xem của người dùng từ Supabase
+export const GET: APIRoute = async ({ request, url }) => {
   try {
-    const parsed = JSON.parse(str);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-// GET: Lấy lịch sử xem online từ Cookie
-export const GET: APIRoute = async ({ request, cookies }) => {
-  const historyCookie = cookies.get('txa_online_history');
-  const history = historyCookie ? safeJsonParse(historyCookie.value) : [];
-
-  return apiResponse(history, 'success', '', 200, request);
-};
-
-// POST: Lưu hoặc cập nhật lịch sử xem online vào Cookie
-export const POST: APIRoute = async ({ request, cookies }) => {
-  try {
-    const body = (await request.json()) as any;
-    const { slug, episodeSlug, episodeName, currentTime, duration, serverIndex, serverName, updatedAt, title, posterUrl } = body;
-
-    if (!slug || !episodeSlug) {
-      return apiResponse(null, 'error', 'Missing slug or episodeSlug', 400, request);
+    const username = url.searchParams.get('username');
+    if (!username) {
+      return apiResponse([], 'success', '', 200, request);
     }
 
-    // Đọc lịch sử cũ
-    const historyCookie = cookies.get('txa_online_history');
-    let history = historyCookie ? safeJsonParse(historyCookie.value) : [];
+    // 1. Lấy user_id từ username/email
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .or(`username.eq.${username},email.eq.${username}`)
+      .maybeSingle();
 
-    // Tạo bản ghi mới thu nhỏ để tối ưu dung lượng cookie (<4KB)
-    const newRecord = {
-      slug,
-      episodeSlug,
-      episodeName: episodeName || '',
-      currentTime: parseFloat(currentTime) || 0,
-      duration: parseFloat(duration) || 0,
-      serverIndex: parseInt(serverIndex) || 0,
-      serverName: serverName || 'Server VIP',
-      updatedAt: updatedAt || new Date().toISOString(),
-      title: title || '',
-      posterUrl: posterUrl || ''
-    };
+    if (userError || !user) {
+      return apiResponse([], 'success', '', 200, request);
+    }
 
-    // Loại bỏ bản ghi cũ của phim này
-    history = history.filter((item: any) => item.slug !== slug);
+    // 2. Query lịch sử và join bảng movies
+    const { data, error } = await supabase
+      .from('watch_history')
+      .select(`
+        episode_name,
+        episode_slug,
+        current_time,
+        duration,
+        server_index,
+        updated_at,
+        movies (
+          title,
+          slug,
+          poster_url
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
 
-    // Chèn bản ghi mới vào đầu mảng
-    history.unshift(newRecord);
+    if (error) throw error;
 
-    // Giới hạn tối đa 10 phim xem gần nhất để tránh tràn cookie
-    history = history.slice(0, 10);
+    const history = (data || [])
+      .filter((item: any) => item.movies)
+      .map((item: any) => ({
+        slug: item.movies.slug,
+        episodeSlug: item.episode_slug,
+        episodeName: item.episode_name,
+        currentTime: item.current_time,
+        duration: item.duration,
+        serverIndex: item.server_index,
+        updatedAt: item.updated_at,
+        title: item.movies.title,
+        posterUrl: item.movies.poster_url,
+        synced: true
+      }));
 
-    // Lưu cookie (thời hạn 30 ngày)
-    cookies.set('txa_online_history', JSON.stringify(history), {
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      httpOnly: false, // Để client-side JavaScript có thể đọc nếu cần
-      secure: true,
-      sameSite: 'lax'
-    });
+    return apiResponse(history, 'success', '', 200, request);
+  } catch (err: any) {
+    return apiResponse([], 'error', err.message || 'Lỗi hệ thống', 500, request);
+  }
+};
 
-    return apiResponse({ success: true, history }, 'success', '', 200, request);
+// POST: Lưu hoặc cập nhật lịch sử xem vào Supabase
+export const POST: APIRoute = async ({ request }) => {
+  try {
+    const body = (await request.json()) as any;
+    const { username, slug, episodeSlug, episodeName, currentTime, duration, serverIndex, serverName, updatedAt } = body;
+
+    if (!username || !slug || !episodeSlug) {
+      return apiResponse(null, 'error', 'Missing username, slug or episodeSlug', 400, request);
+    }
+
+    // 1. Lấy user_id từ username/email
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .or(`username.eq.${username},email.eq.${username}`)
+      .maybeSingle();
+
+    if (userError || !user) {
+      return apiResponse(null, 'error', 'User not found', 404, request);
+    }
+
+    // 2. Lấy movie_id từ slug
+    const { data: movie, error: movieError } = await supabase
+      .from('movies')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (movieError || !movie) {
+      return apiResponse(null, 'error', 'Movie not found', 404, request);
+    }
+
+    // 3. Upsert vào bảng watch_history
+    const { error: upsertError } = await supabase
+      .from('watch_history')
+      .upsert({
+        user_id: user.id,
+        movie_id: movie.id,
+        episode_name: episodeName || '',
+        episode_slug: episodeSlug,
+        current_time: parseFloat(currentTime) || 0,
+        duration: parseFloat(duration) || 0,
+        server_index: parseInt(serverIndex) || 0,
+        updated_at: updatedAt || new Date().toISOString()
+      }, { onConflict: 'user_id,movie_id' });
+
+    if (upsertError) throw upsertError;
+
+    return apiResponse({ success: true }, 'success', '', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
 
 // DELETE: Xóa lịch sử xem
-export const DELETE: APIRoute = async ({ request, url, cookies }) => {
+export const DELETE: APIRoute = async ({ request, url }) => {
   try {
+    const username = url.searchParams.get('username');
     const slug = url.searchParams.get('slug');
-    
-    // Đọc lịch sử cũ
-    const historyCookie = cookies.get('txa_online_history');
-    let history = historyCookie ? safeJsonParse(historyCookie.value) : [];
+
+    if (!username) {
+      return apiResponse(null, 'error', 'Missing username', 400, request);
+    }
+
+    // Lấy user_id
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .or(`username.eq.${username},email.eq.${username}`)
+      .maybeSingle();
+
+    if (!user) {
+      return apiResponse(null, 'error', 'User not found', 404, request);
+    }
 
     if (slug) {
-      // Xóa cụ thể 1 phim
-      history = history.filter((item: any) => item.slug !== slug);
-      cookies.set('txa_online_history', JSON.stringify(history), {
-        path: '/',
-        maxAge: 30 * 24 * 60 * 60,
-        secure: true,
-        sameSite: 'lax'
-      });
-      return apiResponse({ success: true, message: `Deleted history for slug ${slug}`, history }, 'success', '', 200, request);
+      // Lấy movie_id
+      const { data: movie } = await supabase
+        .from('movies')
+        .select('id')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (movie) {
+        const { error } = await supabase
+          .from('watch_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('movie_id', movie.id);
+        if (error) throw error;
+      }
+      return apiResponse({ success: true, message: `Deleted history for slug ${slug}` }, 'success', '', 200, request);
     } else {
       // Xóa toàn bộ
-      cookies.delete('txa_online_history', { path: '/' });
-      return apiResponse({ success: true, message: 'Cleared all online history' }, 'success', '', 200, request);
+      const { error } = await supabase
+        .from('watch_history')
+        .delete()
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return apiResponse({ success: true, message: 'Cleared all history' }, 'success', '', 200, request);
     }
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);

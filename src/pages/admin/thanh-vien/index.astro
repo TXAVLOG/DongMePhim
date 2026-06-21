@@ -1,5 +1,9 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const packages = settings.packages || [];
 ---
 
 <AdminLayout title="Quản lý Thành viên">
@@ -27,8 +31,9 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         <option value="">-- Chọn hành động hàng loạt --</option>
         <option value="status-active">✓ Hoạt động (Kích hoạt)</option>
         <option value="status-banned">🔒 Khóa tài khoản</option>
-        <option value="package-VIP">⭐ Nâng cấp VIP</option>
-        <option value="package-Free">⬇️ Hạ cấp Free</option>
+        {packages.map((pkg : any) => (
+          <option value={`package-${pkg.title}`}>⭐ Gán gói {pkg.title}</option>
+        ))}
         <option value="role-admin">👑 Gán vai trò Admin</option>
         <option value="role-users">👤 Gán vai trò Users</option>
         <option value="verified-true">📧 Xác minh Email</option>
@@ -54,8 +59,9 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
       <select id="filter-package" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer font-outfit">
         <option value="all">Tất cả gói</option>
-        <option value="VIP">Thành viên VIP</option>
-        <option value="Free">Thành viên Miễn phí</option>
+        {packages.map((pkg : any) => (
+          <option value={pkg.title}>{pkg.title}</option>
+        ))}
       </select>
 
       <select id="filter-role" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer font-outfit">
@@ -71,6 +77,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       </select>
     </div>
   </section>
+
+  <div id="members-page-data" data-packages={JSON.stringify(packages)} class="hidden"></div>
 
   <!-- Members Table -->
   <section class="glass-panel rounded-3xl overflow-hidden mb-8">
@@ -107,84 +115,6 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
   <script is:inline>
     (function() {
-      // Helper: Initial seed data if tregistered_users is empty
-      function getInitialUsers() {
-        const getOffsetDate = (daysAgo) => {
-          const d = new Date();
-          d.setDate(d.getDate() - daysAgo);
-          return d.toISOString();
-        };
-
-        return [
-          {
-            username: "hoang.nguyen_92",
-            email: "hoang.nguyen@gmail.com",
-            createdAt: getOffsetDate(1),
-            package: "VIP",
-            roles: "users",
-            emailVerified: true,
-            status: "active"
-          },
-          {
-            username: "linh_beauty_88",
-            email: "linh.tran.beauty@gmail.com",
-            createdAt: getOffsetDate(3),
-            package: "Free",
-            roles: "users",
-            emailVerified: false,
-            status: "active"
-          },
-          {
-            username: "ducanh_ios_dev",
-            email: "ducanh.dev.ios@yahoo.com",
-            createdAt: getOffsetDate(5),
-            package: "VIP",
-            roles: "users",
-            emailVerified: true,
-            status: "active"
-          },
-          {
-            username: "hacker_lord_99",
-            email: "hacker.lord@spambox.me",
-            createdAt: getOffsetDate(12),
-            package: "Free",
-            roles: "users",
-            emailVerified: false,
-            status: "banned"
-          },
-          {
-            username: "admin",
-            email: "xuananhdepzai9@gmail.com",
-            password: "231199",
-            name: "Xuân Anh Đẹp Zai",
-            avatar: "https://www.gravatar.com/avatar/fb693630f9a2e6ef00d33e9d8c005b4c?d=identicon",
-            gender: "male",
-            province: "Hà Nội",
-            ward: "Hoàn Kiếm",
-            createdAt: getOffsetDate(30),
-            package: "VIP",
-            roles: "admin",
-            role: "admin",
-            emailVerified: true,
-            status: "active"
-          },
-          {
-            username: "mai_phuong_kute",
-            email: "maiphuong9x@outlook.com",
-            createdAt: getOffsetDate(18),
-            package: "VIP",
-            roles: "users",
-            emailVerified: true,
-            status: "active"
-          }
-        ];
-      }
-
-      // Initialize storage
-      if (!localStorage.getItem('tregistered_users')) {
-        localStorage.setItem('tregistered_users', JSON.stringify(getInitialUsers()));
-      }
-
       function initMembersManagement() {
         const tbody = document.getElementById('member-table-tbody');
         if (!tbody) return; // Exit if not on this page
@@ -204,8 +134,24 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         const bulkRunBtn = document.getElementById('bulk-action-run-btn');
         const bulkClearBtn = document.getElementById('bulk-action-clear-btn');
 
-        let users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+        let users = [];
         let selectedUsernames = [];
+        const pageDataEl = document.getElementById('members-page-data');
+        const packages = pageDataEl ? JSON.parse(pageDataEl.dataset.packages || '[]') : [];
+
+        async function loadUsersFromDb() {
+          if (summaryText) summaryText.textContent = 'ĐANG TẢI...';
+          try {
+            const res = await fetch('/api/admin/members');
+            if (res.ok) {
+              const data = await res.json();
+              users = data.data || [];
+              filterAndSearch();
+            }
+          } catch (e) {
+            console.error('Lỗi khi tải danh sách thành viên:', e);
+          }
+        }
 
         function updateBulkPanelState() {
           const checkboxes = document.querySelectorAll('.member-checkbox');
@@ -270,50 +216,44 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
               return;
             }
 
-            const executeBulk = () => {
-              const [type, val] = action.split('-');
-              
-              if (type === 'delete') {
-                users = users.filter(u => !selectedUsernames.includes(u.username));
-                window.showGlobalToast(`Đã xóa thành công ${selectedUsernames.length} thành viên!`, 'success');
-              } else {
-                users = users.map(u => {
-                  if (selectedUsernames.includes(u.username)) {
-                    const updated = { ...u };
-                    if (type === 'status') updated.status = val;
-                    else if (type === 'package') updated.package = val;
-                    else if (type === 'role') updated.roles = val;
-                    else if (type === 'verified') updated.emailVerified = (val === 'true');
-                    return updated;
-                  }
-                  return u;
+            const executeBulk = async () => {
+              try {
+                const res = await fetch('/api/admin/members', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'bulk',
+                    usernames: selectedUsernames,
+                    bulkAction: action
+                  })
                 });
-                window.showGlobalToast(`Đã áp dụng hành động hàng loạt thành công!`, 'success');
-              }
 
-              localStorage.setItem('tregistered_users', JSON.stringify(users));
-              selectedUsernames = [];
-              if (selectAllCheckbox) selectAllCheckbox.checked = false;
-              if (bulkActionSelect) bulkActionSelect.value = '';
-              filterAndSearch();
+                if (res.ok) {
+                  window.showGlobalToast(`Đã áp dụng hành động hàng loạt thành công!`, 'success');
+                  selectedUsernames = [];
+                  if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                  if (bulkActionSelect) bulkActionSelect.value = '';
+                  await loadUsersFromDb();
+                } else {
+                  const errorData = await res.json();
+                  window.showGlobalToast(errorData.message || 'Lỗi thao tác hàng loạt!', 'error');
+                }
+              } catch (e) {
+                window.showGlobalToast('Lỗi kết nối máy chủ!', 'error');
+              }
             };
 
             if (window.txamodal) {
-              const actionLabels = {
-                'status-active': 'Kích hoạt tài khoản hàng loạt',
-                'status-banned': 'Khóa tài khoản hàng loạt',
-                'package-VIP': 'Nâng cấp VIP hàng loạt',
-                'package-Free': 'Hạ cấp Free hàng loạt',
-                'role-admin': 'Gán vai trò Admin hàng loạt',
-                'role-users': 'Gán vai trò Users hàng loạt',
-                'verified-true': 'Xác minh Email hàng loạt',
-                'verified-false': 'Hủy xác minh Email hàng loạt',
-                'delete': 'Xóa tài khoản hàng loạt'
-              };
+              let actionLabel = '';
+              if (action === 'delete') actionLabel = 'Xóa tài khoản hàng loạt';
+              else if (action.startsWith('status-')) actionLabel = `Thay đổi trạng thái thành ${action.substring(7)} hàng loạt`;
+              else if (action.startsWith('package-')) actionLabel = `Thay đổi gói cước thành ${action.substring(8)} hàng loạt`;
+              else if (action.startsWith('role-')) actionLabel = `Thay đổi vai trò thành ${action.substring(5)} hàng loạt`;
+              else if (action.startsWith('verified-')) actionLabel = `Thay đổi xác minh email hàng loạt`;
 
               window.txamodal.show({
                 title: 'Xác nhận hành động hàng loạt',
-                message: `Bạn có chắc chắn muốn thực hiện hành động <strong>${actionLabels[action]}</strong> cho <strong>${selectedUsernames.length}</strong> thành viên đã chọn không?`,
+                message: `Bạn có chắc chắn muốn thực hiện hành động <strong>${actionLabel}</strong> cho <strong>${selectedUsernames.length}</strong> thành viên đã chọn không?`,
                 type: action === 'delete' ? 'danger' : 'info',
                 confirmText: 'Thực hiện ngay',
                 cancelText: 'Hủy bỏ',
@@ -325,29 +265,54 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           };
         }
 
-        window.toggleUserStatus = function(username) {
-          users = users.map(u => {
-            if (u.username === username) {
-              const nextStatus = u.status === 'active' ? 'banned' : 'active';
-              if (window.showGlobalToast) {
-                window.showGlobalToast(`Đã ${nextStatus === 'active' ? 'mở khóa' : 'khóa'} tài khoản ${username}!`, 'success');
-              }
-              return { ...u, status: nextStatus };
+        window.toggleUserStatus = async function(username) {
+          const u = users.find(user => user.username === username);
+          if (!u) return;
+
+          const nextStatus = u.status === 'active' ? 'banned' : 'active';
+          try {
+            const res = await fetch('/api/admin/members', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'edit',
+                username,
+                status: nextStatus
+              })
+            });
+
+            if (res.ok) {
+              window.showGlobalToast(`Đã ${nextStatus === 'active' ? 'mở khóa' : 'khóa'} tài khoản ${username}!`, 'success');
+              await loadUsersFromDb();
+            } else {
+              window.showGlobalToast('Không thể thay đổi trạng thái tài khoản!', 'error');
             }
-            return u;
-          });
-          localStorage.setItem('tregistered_users', JSON.stringify(users));
-          filterAndSearch();
+          } catch (e) {
+            window.showGlobalToast('Lỗi mạng!', 'error');
+          }
         };
 
         window.deleteUser = function(username) {
-          const performDelete = () => {
-            users = users.filter(u => u.username !== username);
-            localStorage.setItem('tregistered_users', JSON.stringify(users));
-            if (window.showGlobalToast) {
-              window.showGlobalToast('Đã xóa thành viên thành công!', 'success');
+          const performDelete = async () => {
+            try {
+              const res = await fetch('/api/admin/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'delete',
+                  username
+                })
+              });
+
+              if (res.ok) {
+                window.showGlobalToast('Đã xóa thành viên thành công!', 'success');
+                await loadUsersFromDb();
+              } else {
+                window.showGlobalToast('Xóa thành viên thất bại!', 'error');
+              }
+            } catch (e) {
+              window.showGlobalToast('Lỗi kết nối mạng!', 'error');
             }
-            filterAndSearch();
           };
 
           if (window.txamodal) {
@@ -364,19 +329,33 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           }
         };
 
-        window.changeUserPackage = function(username) {
-          users = users.map(u => {
-            if (u.username === username) {
-              const nextPackage = u.package === 'VIP' ? 'Free' : 'VIP';
-              if (window.showGlobalToast) {
-                window.showGlobalToast(`Đã chuyển ${username} sang gói ${nextPackage}!`, 'success');
-              }
-              return { ...u, package: nextPackage };
+        window.changeUserPackage = async function(username) {
+          const u = users.find(user => user.username === username);
+          if (!u) return;
+
+          const currentIndex = packages.findIndex(p => p.title === u.package);
+          const nextIndex = (currentIndex + 1) % packages.length;
+          const nextPackage = packages[nextIndex]?.title || 'Free';
+          try {
+            const res = await fetch('/api/admin/members', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'edit',
+                username,
+                package: nextPackage
+              })
+            });
+
+            if (res.ok) {
+              window.showGlobalToast(`Đã chuyển ${username} sang gói ${nextPackage}!`, 'success');
+              await loadUsersFromDb();
+            } else {
+              window.showGlobalToast('Không thể thay đổi gói cước!', 'error');
             }
-            return u;
-          });
-          localStorage.setItem('tregistered_users', JSON.stringify(users));
-          filterAndSearch();
+          } catch (e) {
+            window.showGlobalToast('Lỗi kết nối mạng!', 'error');
+          }
         };
 
         window.showEditMemberModal = (username) => {
@@ -399,8 +378,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                   <div class="flex flex-col gap-1">
                     <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Gói dịch vụ</label>
                     <select id="modal-package" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                      <option value="Free" ${u.package === 'Free' ? 'selected' : ''}>Miễn phí (Free)</option>
-                      <option value="VIP" ${u.package === 'VIP' ? 'selected' : ''}>Thành viên VIP</option>
+                      ${packages.map(pkg => `<option value="${pkg.title}" ${u.package === pkg.title ? 'selected' : ''}>${pkg.title}</option>`).join('')}
                     </select>
                   </div>
                   <div class="flex flex-col gap-1">
@@ -431,7 +409,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             `,
             confirmText: 'Cập nhật',
             cancelText: 'Hủy bỏ',
-            onConfirm: () => {
+            onConfirm: async () => {
               const email = document.getElementById('modal-email').value.trim();
               const pack = document.getElementById('modal-package').value;
               const role = document.getElementById('modal-role').value;
@@ -443,22 +421,31 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                 return;
               }
 
-              users = users.map(user => {
-                if (user.username === username) {
-                  return {
-                    ...user,
+              try {
+                const res = await fetch('/api/admin/members', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'edit',
+                    username,
                     email,
                     package: pack,
-                    roles: role,
+                    role,
                     emailVerified: verified,
                     status
-                  };
+                  })
+                });
+
+                if (res.ok) {
+                  window.showGlobalToast(`Đã cập nhật thông tin thành viên ${username}!`, 'success');
+                  await loadUsersFromDb();
+                } else {
+                  const errorData = await res.json();
+                  window.showGlobalToast(errorData.message || 'Cập nhật thất bại!', 'error');
                 }
-                return user;
-              });
-              localStorage.setItem('tregistered_users', JSON.stringify(users));
-              window.showGlobalToast(`Đã cập nhật thông tin thành viên ${username}!`, 'success');
-              filterAndSearch();
+              } catch (e) {
+                window.showGlobalToast('Lỗi kết nối mạng!', 'error');
+              }
             }
           });
         };
@@ -479,17 +466,30 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           }
 
           tbody.innerHTML = list.map(u => {
-            const registeredDate = new Date(u.createdAt).toLocaleDateString('vi-VN', {
+            const registeredDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN', {
               year: 'numeric',
               month: 'long',
               day: 'numeric',
               hour: '2-digit',
               minute: '2-digit'
-            });
+            }) : '—';
             
-            const isVIP = u.package === 'VIP';
-            const packageBg = isVIP ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
-            const packageText = isVIP ? 'VIP Member' : 'Free Member';
+            const pkg = packages.find(p => p.title === u.package);
+            let styleClass = '';
+            let styleAttr = '';
+            if (pkg) {
+              if (pkg.style_type === 'rainbow_effect') {
+                styleClass = `package-style-${pkg.id} package-border-${pkg.id} package-glow-${pkg.id} border font-bold`;
+              } else if (pkg.style_type === 'custom_color' && pkg.custom_color) {
+                styleClass = `package-border-${pkg.id} border`;
+                styleAttr = `style="color: ${pkg.custom_color}; border-color: ${pkg.custom_color}; font-weight: bold;"`;
+              } else {
+                styleClass = u.package === 'Free' ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+              }
+            } else {
+              styleClass = u.package === 'Free' ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+            }
+            const packageText = u.package;
 
             const isActive = u.status === 'active';
             const statusBg = isActive ? 'bg-emerald-500' : 'bg-rose-500';
@@ -521,7 +521,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                 </td>
                 <td class="px-8 py-4 text-xs text-text-dim font-outfit">${registeredDate}</td>
                 <td class="px-8 py-4">
-                  <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold border ${packageBg} cursor-pointer hover:brightness-110 font-outfit" data-tooltip="Nhấp để đổi nhanh gói">
+                  <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold ${styleClass} cursor-pointer hover:brightness-110 font-outfit" ${styleAttr} data-tooltip="Nhấp để đổi nhanh gói">
                     ${packageText}
                   </button>
                 </td>
@@ -615,8 +615,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                     <div class="flex flex-col gap-1">
                       <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Gói dịch vụ</label>
                       <select id="modal-package" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                        <option value="Free">Miễn phí (Free)</option>
-                        <option value="VIP">Thành viên VIP</option>
+                        ${packages.map(pkg => `<option value="${pkg.title}">${pkg.title}</option>`).join('')}
                       </select>
                     </div>
                     <div class="flex flex-col gap-1">
@@ -647,7 +646,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
               `,
               confirmText: 'Lưu lại',
               cancelText: 'Hủy bỏ',
-              onConfirm: () => {
+              onConfirm: async () => {
                 const username = document.getElementById('modal-username').value.trim();
                 const email = document.getElementById('modal-email').value.trim();
                 const pack = document.getElementById('modal-package').value;
@@ -661,24 +660,36 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                 }
 
                 // Check username duplicates
-                if (users.some(u => u.username === username)) {
+                if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
                   window.showGlobalToast('Tên tài khoản đã tồn tại!', 'error');
                   return;
                 }
 
-                const newU = {
-                  username,
-                  email,
-                  createdAt: new Date().toISOString(),
-                  package: pack,
-                  roles: role,
-                  emailVerified: verified,
-                  status: status
-                };
-                users.push(newU);
-                localStorage.setItem('tregistered_users', JSON.stringify(users));
-                window.showGlobalToast(`Đã thêm thành viên ${username} thành công!`, 'success');
-                filterAndSearch();
+                try {
+                  const res = await fetch('/api/admin/members', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      action: 'add',
+                      username,
+                      email,
+                      package: pack,
+                      role,
+                      emailVerified: verified,
+                      status
+                    })
+                  });
+
+                  if (res.ok) {
+                    window.showGlobalToast(`Đã thêm thành viên ${username} thành công!`, 'success');
+                    await loadUsersFromDb();
+                  } else {
+                    const errorData = await res.json();
+                    window.showGlobalToast(errorData.message || 'Thêm thành viên thất bại!', 'error');
+                  }
+                } catch (e) {
+                  window.showGlobalToast('Lỗi mạng!', 'error');
+                }
               }
             });
           };
@@ -691,7 +702,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         if (filterStatus) filterStatus.onchange = filterAndSearch;
 
         // Run initial load
-        filterAndSearch();
+        loadUsersFromDb();
       }
 
       initMembersManagement();

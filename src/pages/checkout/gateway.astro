@@ -80,53 +80,66 @@ const settings = await SettingService.getSettings();
 
       // Handle Success
       const successBtn = document.getElementById('sim-success-btn');
-      successBtn.onclick = function() {
+      successBtn.onclick = async function() {
         const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
-        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
-        let logs = [];
-        try { logs = JSON.parse(logsStr); } catch (e) {}
 
-        // 1. Add to payment logs
-        logs.push({
-          txid: txid,
-          username: username,
-          packageTitle: packageTitle,
-          price: price,
-          cycle: cycle,
-          method: method,
-          status: 'approved',
-          date: new Date().toISOString()
-        });
-        localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
-
-        // 2. Set expiry
-        const cycleDays = cycle === 'annual' ? 365 : 30;
-        const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
-
-        // 3. Update current user subscription key
-        localStorage.setItem('txa_user_subscription', JSON.stringify({
-          username: username,
-          tier: packageTitle,
-          status: 'active',
-          price: price,
-          cycle: cycle,
-          expiry: expiryDate,
-          updatedAt: new Date().toISOString()
-        }));
-
-        // 4. Update package inside tregistered_users
-        const usersStr = localStorage.getItem('tregistered_users') || '[]';
         try {
-          let users = JSON.parse(usersStr);
-          const uIdx = users.findIndex(u => u.username === username || u.email === username);
-          if (uIdx !== -1) {
-            users[uIdx].package = packageTitle;
-            users[uIdx].joinDate = new Date().toISOString().split('T')[0];
-            users[uIdx].expiryDate = expiryDate.split('T')[0];
-            users[uIdx].status = 'active';
-            localStorage.setItem('tregistered_users', JSON.stringify(users));
+          const resMe = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
+          let userEmail = '';
+          if (resMe.ok) {
+            const resMeData = await resMe.json();
+            userEmail = resMeData.data?.email || '';
           }
-        } catch (e) {}
+
+          // 1. Add to payment logs in database
+          await fetch('/api/user/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txid: txid,
+              username: username,
+              email: userEmail,
+              packageTitle: packageTitle,
+              price: price,
+              cycle: cycle,
+              method: method,
+              status: 'approved',
+              receiptImg: ''
+            })
+          });
+
+          // 2. Set expiry
+          const cycleDays = cycle === 'annual' ? 365 : 30;
+          const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
+
+          // 3. Update package in database
+          await fetch('/api/admin/members', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'edit',
+              username: username,
+              package: packageTitle,
+              joinDate: new Date().toISOString(),
+              expiryDate: expiryDate,
+              status: 'active'
+            })
+          });
+
+          // 4. Update current user subscription key in localStorage
+          localStorage.setItem('txa_user_subscription', JSON.stringify({
+            username: username,
+            tier: packageTitle,
+            status: 'active',
+            price: price,
+            cycle: cycle,
+            expiry: expiryDate,
+            updatedAt: new Date().toISOString()
+          }));
+
+        } catch (e) {
+          console.error('Error simulating sandbox checkout success:', e);
+        }
 
         // Redirect to success page
         window.location.href = `/checkout/success?method=${method}&cycle=${cycle}&price=${price}&txid=${txid}`;

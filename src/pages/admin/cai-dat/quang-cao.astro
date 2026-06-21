@@ -1,0 +1,177 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { SettingService } from "../../../services/SettingService";
+import SettingsSidebar from "../../../components/admin/SettingsSidebar.astro";
+
+const settings = await SettingService.getSettings();
+let activeTab = "quang-cao";
+---
+
+<AdminLayout title="Cài đặt hệ thống - Cấu hình Quảng cáo">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý quảng cáo video pre-roll, click pop-under và các cấu hình quảng cáo khác.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button
+        id="save-settings-btn"
+        class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none"
+      >
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <SettingsSidebar activeTab="quang-cao" />
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8">
+      <div id="tab-quang-cao" class="space-y-8">
+        
+        <!-- SECTION 1: Pre-roll Video Ads -->
+        <div class="space-y-6">
+          <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">play_circle</span>
+            Quảng cáo Video trước khi chiếu (Pre-roll Ads)
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Trạng thái Pre-roll</label>
+              <select id="pre-roll-enable" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white">
+                <option value="false">Tắt quảng cáo</option>
+                <option value="true">Bật quảng cáo</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Loại nguồn phát</label>
+              <select id="pre-roll-type" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white">
+                <option value="video">Link video MP4 trực tiếp</option>
+                <option value="embed">Mã nhúng iframe (YouTube/TikTok/FB/IG)</option>
+              </select>
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn nguồn phát (URL / Iframe code)</label>
+              <textarea id="pre-roll-url" rows="3" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="Nhập link file MP4 hoặc đoạn code mã nhúng iframe..."></textarea>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Thời gian hiển thị nút Skip (Giây)</label>
+              <input type="number" id="pre-roll-skip-seconds" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white" min="0" placeholder="Ví dụ: 5" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Pop-under Click Ads -->
+        <div class="space-y-6 pt-6 border-t border-glass-stroke">
+          <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">ads_click</span>
+            Quảng cáo nhảy trang khi Click (Pop-under Ads)
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Trạng thái Click Ads</label>
+              <select id="click-ad-enable" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white">
+                <option value="false">Tắt quảng cáo click</option>
+                <option value="true">Bật quảng cáo click</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Số lần click để kích hoạt nhảy tab (Threshold)</label>
+              <input type="number" id="click-ad-threshold" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white" min="1" placeholder="Ví dụ: 5" />
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn đích khi click (Redirect URL hoặc mã JS Ads)</label>
+              <input type="text" id="click-ad-code" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="https://shope.ee/..." />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function () {
+      function hydrateFromLocalStorage() {
+        let stored = null;
+        try {
+          const raw = localStorage.getItem("txa_site_settings");
+          if (raw) stored = JSON.parse(raw);
+        } catch (e) {}
+        if (!stored) return;
+
+        const s = stored;
+        
+        // Hydrate Ads Settings
+        const ads = s.ads || {};
+        setSelect("pre-roll-enable", ads.pre_roll_enable ? "true" : "false");
+        setSelect("pre-roll-type", ads.pre_roll_type || "video");
+        setVal("pre-roll-url", ads.pre_roll_url || "");
+        setVal("pre-roll-skip-seconds", ads.pre_roll_skip_seconds !== undefined ? ads.pre_roll_skip_seconds : 5);
+        
+        setSelect("click-ad-enable", ads.click_ad_enable ? "true" : "false");
+        setVal("click-ad-threshold", ads.click_ad_threshold !== undefined ? ads.click_ad_threshold : 5);
+        setVal("click-ad-code", ads.click_ad_code || "");
+      }
+
+      function setVal(id, val) {
+        const el = document.getElementById(id);
+        if (el && val !== undefined && val !== null) el.value = val;
+      }
+      function setSelect(id, val) {
+        const el = document.getElementById(id);
+        if (el && val !== undefined && val !== null) el.value = val;
+      }
+
+      // Save handler
+      document.getElementById("save-settings-btn")?.addEventListener("click", () => {
+        let current = {};
+        try {
+          const stored = localStorage.getItem("txa_site_settings");
+          current = stored ? JSON.parse(stored) : serverSettings;
+        } catch (e) {
+          current = serverSettings;
+        }
+
+        const updatedSettings = {
+          ...current,
+          ads: {
+            pre_roll_enable: document.getElementById("pre-roll-enable")?.value === "true",
+            pre_roll_type: document.getElementById("pre-roll-type")?.value || "video",
+            pre_roll_url: document.getElementById("pre-roll-url")?.value || "",
+            pre_roll_skip_seconds: parseInt(document.getElementById("pre-roll-skip-seconds")?.value) || 0,
+            click_ad_enable: document.getElementById("click-ad-enable")?.value === "true",
+            click_ad_threshold: parseInt(document.getElementById("click-ad-threshold")?.value) || 5,
+            click_ad_code: document.getElementById("click-ad-code")?.value || ""
+          }
+        };
+
+        localStorage.setItem("txa_site_settings", JSON.stringify(updatedSettings));
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast("Lưu cấu hình quảng cáo thành công!", "success");
+        } else {
+          alert("Lưu cấu hình quảng cáo thành công!");
+        }
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      });
+
+      // Init
+      hydrateFromLocalStorage();
+      document.addEventListener("astro:page-load", hydrateFromLocalStorage);
+    })();
+  </script>
+</AdminLayout>

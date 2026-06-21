@@ -1016,13 +1016,19 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
       return true;
     };
 
-    // Action Favorites
+    // Watchlist & Favorites Database Integration
+    const username = localStorage.getItem('tlogged_in_as');
+    let userFavorites: string[] = [];
+    let userPlaylist: string[] = [];
+
     const favBtn = document.getElementById('btn-favorite-action');
     const heartIcon = document.getElementById('heart-icon');
+    const playlistBtn = document.getElementById('btn-playlist-action');
+    const bookmarkIcon = document.getElementById('bookmark-icon');
+
     const updateFavIcon = () => {
       if (!heartIcon) return;
-      const favList = JSON.parse(localStorage.getItem('tfavorites') || '[]');
-      const isFav = favList.includes(movieSlug);
+      const isFav = userFavorites.includes(movieSlug);
       if (isFav) {
         heartIcon.classList.add('text-red-500');
         heartIcon.textContent = 'favorite';
@@ -1035,33 +1041,10 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
         favTooltip.textContent = isFav ? 'Bỏ yêu thích' : 'Yêu thích';
       }
     };
-    updateFavIcon();
 
-    if (favBtn) {
-      favBtn.addEventListener('click', () => {
-        requireLogin(() => {
-          const favList = JSON.parse(localStorage.getItem('tfavorites') || '[]');
-          const idx = favList.indexOf(movieSlug);
-          if (idx === -1) {
-            favList.push(movieSlug);
-            if (window.showGlobalToast) window.showGlobalToast('Đã thêm phim vào danh sách Yêu thích!', 'success');
-          } else {
-            favList.splice(idx, 1);
-            if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim khỏi danh sách Yêu thích!', 'success');
-          }
-          localStorage.setItem('tfavorites', JSON.stringify(favList));
-          updateFavIcon();
-        });
-      });
-    }
-
-    // Action Save Playlist
-    const playlistBtn = document.getElementById('btn-playlist-action');
-    const bookmarkIcon = document.getElementById('bookmark-icon');
     const updatePlaylistIcon = () => {
       if (!bookmarkIcon) return;
-      const playList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
-      const isInPlaylist = playList.includes(movieSlug);
+      const isInPlaylist = userPlaylist.includes(movieSlug);
       if (isInPlaylist) {
         bookmarkIcon.classList.add('text-primary');
         bookmarkIcon.textContent = 'bookmark';
@@ -1074,21 +1057,122 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
         playlistTooltip.textContent = isInPlaylist ? 'Xóa khỏi DS phát' : 'Thêm vào DS phát';
       }
     };
-    updatePlaylistIcon();
+
+    const loadWatchListData = async () => {
+      if (!username) {
+        userFavorites = JSON.parse(localStorage.getItem('tfavorites') || '[]');
+        userPlaylist = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+        updateFavIcon();
+        updatePlaylistIcon();
+        return;
+      }
+      try {
+        const res = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}`);
+        if (res.ok) {
+          const result: any = await res.json();
+          if (result && result.status === 'success' && result.data) {
+            userFavorites = result.data.favorites || [];
+            userPlaylist = result.data.playlist || [];
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to fetch watchlist from server:', e);
+        userFavorites = JSON.parse(localStorage.getItem('tfavorites') || '[]');
+        userPlaylist = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+      }
+      updateFavIcon();
+      updatePlaylistIcon();
+    };
+
+    loadWatchListData();
+
+    if (favBtn) {
+      favBtn.addEventListener('click', () => {
+        requireLogin(async () => {
+          const isFav = userFavorites.includes(movieSlug);
+          if (!username) {
+            const idx = userFavorites.indexOf(movieSlug);
+            if (idx === -1) {
+              userFavorites.push(movieSlug);
+              if (window.showGlobalToast) window.showGlobalToast('Đã thêm phim vào danh sách Yêu thích!', 'success');
+            } else {
+              userFavorites.splice(idx, 1);
+              if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim khỏi danh sách Yêu thích!', 'success');
+            }
+            localStorage.setItem('tfavorites', JSON.stringify(userFavorites));
+            updateFavIcon();
+            return;
+          }
+          
+          try {
+            if (isFav) {
+              const res = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}&slug=${encodeURIComponent(movieSlug)}&type=favorite`, {
+                method: 'DELETE'
+              });
+              if (res.ok) {
+                userFavorites = userFavorites.filter(x => x !== movieSlug);
+                if (window.showGlobalToast) window.showGlobalToast('Đã xóa phim khỏi danh sách Yêu thích!', 'success');
+              }
+            } else {
+              const res = await fetch('/api/user/watchlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, slug: movieSlug, type: 'favorite' })
+              });
+              if (res.ok) {
+                userFavorites.push(movieSlug);
+                if (window.showGlobalToast) window.showGlobalToast('Đã thêm phim vào danh sách Yêu thích!', 'success');
+              }
+            }
+          } catch (e) {
+            console.warn(e);
+          }
+          updateFavIcon();
+        });
+      });
+    }
 
     if (playlistBtn) {
       playlistBtn.addEventListener('click', () => {
-        requireLogin(() => {
-          const playList = JSON.parse(localStorage.getItem('tplaylist') || '[]');
-          const idx = playList.indexOf(movieSlug);
-          if (idx === -1) {
-            playList.push(movieSlug);
-            if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
-          } else {
-            playList.splice(idx, 1);
-            if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
+        requireLogin(async () => {
+          const isInPlaylist = userPlaylist.includes(movieSlug);
+          if (!username) {
+            const idx = userPlaylist.indexOf(movieSlug);
+            if (idx === -1) {
+              userPlaylist.push(movieSlug);
+              if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
+            } else {
+              userPlaylist.splice(idx, 1);
+              if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
+            }
+            localStorage.setItem('tplaylist', JSON.stringify(userPlaylist));
+            updatePlaylistIcon();
+            return;
           }
-          localStorage.setItem('tplaylist', JSON.stringify(playList));
+
+          try {
+            if (isInPlaylist) {
+              const res = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}&slug=${encodeURIComponent(movieSlug)}&type=playlist`, {
+                method: 'DELETE'
+              });
+              if (res.ok) {
+                userPlaylist = userPlaylist.filter(x => x !== movieSlug);
+                if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
+              }
+            } else {
+              const res = await fetch('/api/user/watchlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, slug: movieSlug, type: 'playlist' })
+              });
+              if (res.ok) {
+                userPlaylist.push(movieSlug);
+                if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
+              }
+            }
+          } catch (e) {
+            console.warn(e);
+          }
           updatePlaylistIcon();
         });
       });

@@ -1,6 +1,30 @@
 import React, { useEffect, useRef } from 'react';
 import Artplayer from 'artplayer';
 
+// Override HTMLVideoElement.prototype.requestPictureInPicture to prevent InvalidStateError before metadata is loaded
+if (typeof window !== 'undefined' && typeof HTMLVideoElement !== 'undefined' && HTMLVideoElement.prototype.requestPictureInPicture) {
+  const originalRequestPiP = HTMLVideoElement.prototype.requestPictureInPicture;
+  HTMLVideoElement.prototype.requestPictureInPicture = function () {
+    if (this.readyState < 1) { // 1 means HAVE_METADATA
+      return new Promise((resolve, reject) => {
+        const onLoadedMetadata = () => {
+          this.removeEventListener('loadedmetadata', onLoadedMetadata);
+          this.removeEventListener('error', onError);
+          originalRequestPiP.call(this).then(resolve).catch(reject);
+        };
+        const onError = (e: any) => {
+          this.removeEventListener('loadedmetadata', onLoadedMetadata);
+          this.removeEventListener('error', onError);
+          reject(new DOMException('Video metadata not loaded yet.', 'InvalidStateError'));
+        };
+        this.addEventListener('loadedmetadata', onLoadedMetadata);
+        this.addEventListener('error', onError);
+      });
+    }
+    return originalRequestPiP.call(this);
+  };
+}
+
 export interface Subtitle {
   label: string;
   file: string;
@@ -31,6 +55,8 @@ interface ArtPlayerProps {
   timeOutroEnd?: number;
   siteName?: string;
   siteUrl?: string;
+  maxResolution?: 'SD' | 'HD' | 'FHD' | '4K';
+  hideWatermark?: boolean;
 }
 
 const getAutoSkipSetting = (): boolean => {
@@ -75,7 +101,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   timeOutroStart = 0,
   timeOutroEnd = 0,
   siteName = 'DongMePhim',
-  siteUrl = 'https://dongmephim.com'
+  siteUrl = 'https://dongmephim.com',
+  maxResolution = '4K',
+  hideWatermark = false
 }) => {
   const artRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<Artplayer | null>(null);
@@ -227,45 +255,88 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               hls.loadSource(url);
               hls.attachMedia(video);
               
+              hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
+                let maxAllowedHeight = 99999;
+                if (maxResolution === 'SD') maxAllowedHeight = 480;
+                else if (maxResolution === 'HD') maxAllowedHeight = 720;
+                else if (maxResolution === 'FHD') maxAllowedHeight = 1080;
+                
+                const allowedLevels: number[] = [];
+                hls.levels.forEach((level: any, index: number) => {
+                  if (level.height <= maxAllowedHeight) {
+                    allowedLevels.push(index);
+                  }
+                });
+
+                if (allowedLevels.length > 0) {
+                  const maxIndex = Math.max(...allowedLevels);
+                  hls.maxAutoLevel = maxIndex;
+                  if (hls.currentLevel > maxIndex) {
+                    hls.currentLevel = maxIndex;
+                  }
+                }
+              });
+
+              hls.on(HlsClass.Events.LEVEL_SWITCHING, (event: any, data: any) => {
+                let maxAllowedHeight = 99999;
+                if (maxResolution === 'SD') maxAllowedHeight = 480;
+                else if (maxResolution === 'HD') maxAllowedHeight = 720;
+                else if (maxResolution === 'FHD') maxAllowedHeight = 1080;
+
+                const targetLevel = hls.levels[data.level];
+                if (targetLevel && targetLevel.height > maxAllowedHeight) {
+                  let maxIndex = 0;
+                  hls.levels.forEach((level: any, index: number) => {
+                    if (level.height <= maxAllowedHeight && index > maxIndex) {
+                      maxIndex = index;
+                    }
+                  });
+                  hls.currentLevel = maxIndex;
+                  art.notice.show = `Chất lượng ${targetLevel.height}p yêu cầu nâng cấp gói cước!`;
+                }
+              });
+
               art.on('destroy', () => {
                 hls.destroy();
               });
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
               video.src = url;
             } else {
-              art.notice.show = 'Trình duyệt không hỗ trợ định dạng m3u8';
+              art.notice.show = 'Trình duyệt không hỗ trạng định dạng m3u8';
             }
           },
         },
         type: isM3u8 ? 'm3u8' : undefined,
         // Watermark (Logo tĩnh cố định + Watermark bay ngẫu nhiên)
         layers: [
-          {
-            name: 'txa-watermark-fixed',
-            html: `
-              <div class="txa-watermark-wrapper" style="pointer-events: none; user-select: none;">
-                <div style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 800; color: rgba(255, 255, 255, 0.45); text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.25); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px);">
-                  ${siteName}
+          ...(!hideWatermark ? [
+            {
+              name: 'txa-watermark-fixed',
+              html: `
+                <div class="txa-watermark-wrapper" style="pointer-events: none; user-select: none;">
+                  <div style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 800; color: rgba(255, 255, 255, 0.45); text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.25); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px);">
+                    ${siteName}
+                  </div>
                 </div>
-              </div>
-            `,
-            style: {
-              position: 'absolute',
-              top: '20px',
-              right: '20px',
-              zIndex: '20',
+              `,
+              style: {
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                zIndex: '20',
+              },
             },
-          },
-          {
-            name: 'txa-watermark-floating',
-            html: `<div style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.25); background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px); white-space: nowrap;">${siteName} - ${title}</div>`,
-            style: {
-              position: 'absolute',
-              zIndex: '25',
-              pointerEvents: 'none',
-              animation: 'floatWatermark 16s ease-in-out infinite alternate'
+            {
+              name: 'txa-watermark-floating',
+              html: `<div style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.25); background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px); white-space: nowrap;">${siteName} - ${title}</div>`,
+              style: {
+                position: 'absolute',
+                zIndex: '25',
+                pointerEvents: 'none',
+                animation: 'floatWatermark 16s ease-in-out infinite alternate'
+              }
             }
-          },
+          ] : []),
           {
             name: 'txa-skip-intro',
             html: `
@@ -489,6 +560,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       });
 
       const checkWatermarkIntegrity = () => {
+        if (hideWatermark) return;
         const watermarkEl = art.template.$container.querySelector('.art-layer-txa-watermark-fixed');
         if (!watermarkEl) {
           triggerViolation('Thiếu bản quyền! Vui lòng không can thiệp mã nguồn.');
@@ -543,6 +615,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       const intervalId = setInterval(checkWatermarkIntegrity, 3000);
       
       const observer = new MutationObserver((mutations) => {
+        if (hideWatermark) return;
         for (const mutation of mutations) {
           if (mutation.removedNodes.length > 0) {
             const hasWatermarkRemoved = Array.from(mutation.removedNodes).some(node => {

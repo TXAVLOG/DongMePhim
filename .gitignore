@@ -49,3 +49,7 @@ ehthumbs.db
 Desktop.ini
 
 scratch/
+
+# codegraph outputs
+codegraph.json
+.codegraph/

@@ -1,0 +1,340 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+---
+
+<AdminLayout title="Lịch sử & Phê duyệt Giao dịch">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl font-bold">Quản lý Giao dịch</h2>
+      <p class="text-text-dim text-body-main mt-1">Phê duyệt chuyển khoản thủ công và theo dõi lịch sử thanh toán thành viên.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="btn-refresh-txs" class="px-4 py-2.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+        <span class="material-symbols-outlined text-sm">refresh</span>
+        <span>Làm mới</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filter & Search Panel -->
+  <section class="glass-panel p-6 rounded-3xl mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="relative group w-full md:w-80">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-dim group-focus-within:text-primary transition-colors">search</span>
+      <input id="tx-search" class="bg-surface-container border border-glass-stroke rounded-full pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary w-full transition-all focus:outline-none placeholder:text-zinc-500 text-white font-outfit" placeholder="Tìm kiếm tên tài khoản..." type="text"/>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+      <select id="filter-status" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer font-outfit">
+        <option value="all">Tất cả trạng thái</option>
+        <option value="pending">⏳ Chờ phê duyệt</option>
+        <option value="approved">✓ Đã thanh toán</option>
+        <option value="declined">❌ Bị từ chối</option>
+      </select>
+
+      <select id="filter-method" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer font-outfit">
+        <option value="all">Tất cả phương thức</option>
+        <option value="manual">VietQR (Thủ công)</option>
+        <option value="paypal">PayPal</option>
+        <option value="vnpay">VNPAY</option>
+        <option value="payos">PayOS</option>
+        <option value="sepay">SePay</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Transactions Table -->
+  <section class="glass-panel rounded-3xl overflow-hidden mb-8">
+    <div class="px-8 py-6 flex justify-between items-center border-b border-glass-stroke bg-white/[0.01]">
+      <h3 class="text-title-md text-on-surface font-bold">Nhật ký giao dịch</h3>
+      <span id="txs-summary" class="text-xs text-text-dim font-bold font-label-caps">ĐANG TẢI...</span>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead class="bg-surface-container/40 border-b border-glass-stroke">
+          <tr>
+            <th class="px-8 py-4 font-bold text-text-dim">MÃ GD</th>
+            <th class="px-8 py-4 font-bold text-text-dim">TÀI KHOẢN</th>
+            <th class="px-8 py-4 font-bold text-text-dim">GÓI CƯỚC</th>
+            <th class="px-8 py-4 font-bold text-text-dim">SỐ TIỀN</th>
+            <th class="px-8 py-4 font-bold text-text-dim">PHƯƠNG THỨC</th>
+            <th class="px-8 py-4 font-bold text-text-dim">NGÀY GIAO DỊCH</th>
+            <th class="px-8 py-4 font-bold text-text-dim">MINH CHỨNG</th>
+            <th class="px-8 py-4 font-bold text-text-dim">TRẠNG THÁI</th>
+            <th class="px-8 py-4 font-bold text-text-dim text-right">HÀNH ĐỘNG</th>
+          </tr>
+        </thead>
+        <tbody id="tx-table-tbody" class="divide-y divide-glass-stroke/40">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="p-4 bg-surface-container/20 text-center border-t border-glass-stroke">
+      <p id="show-count-text" class="text-xs text-text-dim font-label-caps font-bold">HIỂN THỊ 0 GIAO DỊCH</p>
+    </div>
+  </section>
+</AdminLayout>
+
+<script is:inline>
+  (function() {
+    let allLogs = [];
+    
+    const tbody = document.getElementById('tx-table-tbody');
+    const searchInput = document.getElementById('tx-search');
+    const filterStatus = document.getElementById('filter-status');
+    const filterMethod = document.getElementById('filter-method');
+    const summaryText = document.getElementById('txs-summary');
+    const showCountText = document.getElementById('show-count-text');
+    const refreshBtn = document.getElementById('btn-refresh-txs');
+
+    async function loadTransactions() {
+      if (summaryText) summaryText.textContent = 'ĐANG TẢI...';
+      try {
+        const res = await fetch('/api/user/payments?username=admin');
+        if (res.ok) {
+          const result = await res.json();
+          allLogs = result.data || [];
+          // Sort newest first
+          allLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          filterAndRender();
+        } else {
+          throw new Error('Lỗi load API');
+        }
+      } catch (e) {
+        console.error('Lỗi khi tải lịch sử giao dịch:', e);
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="9" class="px-8 py-10 text-center text-zinc-500 italic">Không thể kết nối API giao dịch.</td></tr>`;
+        }
+      }
+    }
+
+    function renderTable(list) {
+      if (!tbody) return;
+      if (list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="px-8 py-12 text-center text-zinc-500 italic font-outfit">
+              Không tìm thấy giao dịch nào khớp với bộ lọc.
+            </td>
+          </tr>
+        `;
+        if (showCountText) showCountText.textContent = 'HIỂN THỊ 0 GIAO DỊCH';
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => {
+        const dateStr = new Date(item.date).toLocaleDateString('vi-VN', {
+          year: 'numeric', month: 'numeric', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+        const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
+        
+        let statusBadge = '';
+        if (item.status === 'approved') {
+          statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[9px]">Thành công</span>';
+        } else if (item.status === 'declined') {
+          statusBadge = '<span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[9px]">Từ chối</span>';
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse">Chờ duyệt</span>';
+        }
+
+        const methodLabel = item.method === 'manual' ? 'VietQR (Thủ công)' : item.method.toUpperCase();
+        
+        const receiptHtml = item.receiptImg 
+          ? `<button onclick="viewReceiptImage('${item.txid}')" class="text-primary hover:underline font-bold text-xs bg-transparent border-none cursor-pointer flex items-center gap-1"><span class="material-symbols-outlined text-sm">image</span>Xem ảnh</button>`
+          : '<span class="text-zinc-500">Không có</span>';
+
+        const isPending = item.status === 'pending';
+        const actionsHtml = isPending 
+          ? `<div class="flex justify-end gap-2">
+              <button onclick="approveTransaction('${item.txid}')" class="px-3 py-1 bg-emerald-500 text-slate-950 font-bold hover:brightness-110 active:scale-95 transition-all rounded text-[10px] border-none cursor-pointer">Duyệt</button>
+              <button onclick="declineTransaction('${item.txid}')" class="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 font-bold hover:bg-red-500/20 active:scale-95 transition-all rounded text-[10px] cursor-pointer">Từ chối</button>
+             </div>`
+          : `<span class="text-zinc-500 text-[10px]">Đã xử lý</span>`;
+
+        return `
+          <tr class="hover:bg-white/5 transition-colors">
+            <td class="px-8 py-4 font-mono text-zinc-400">${item.txid}</td>
+            <td class="px-8 py-4 font-semibold text-white">${item.username}</td>
+            <td class="px-8 py-4 text-zinc-300 font-medium">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
+            <td class="px-8 py-4 text-zinc-200 font-bold">${formattedPrice}</td>
+            <td class="px-8 py-4 text-zinc-400 font-bold">${methodLabel}</td>
+            <td class="px-8 py-4 text-zinc-400">${dateStr}</td>
+            <td class="px-8 py-4">${receiptHtml}</td>
+            <td class="px-8 py-4">${statusBadge}</td>
+            <td class="px-8 py-4 text-right">${actionsHtml}</td>
+          </tr>
+        `;
+      }).join('');
+
+      if (showCountText) {
+        showCountText.textContent = `HIỂN THỊ ${list.length} TRÊN TỔNG SỐ ${allLogs.length} GIAO DỊCH`;
+      }
+    }
+
+    function filterAndRender() {
+      const query = searchInput?.value.trim().toLowerCase() || '';
+      const status = filterStatus?.value || 'all';
+      const method = filterMethod?.value || 'all';
+
+      let filtered = allLogs;
+
+      if (query) {
+        filtered = filtered.filter(item => 
+          item.username.toLowerCase().includes(query) || 
+          (item.email && item.email.toLowerCase().includes(query)) ||
+          item.txid.toLowerCase().includes(query)
+        );
+      }
+
+      if (status !== 'all') {
+        filtered = filtered.filter(item => item.status === status);
+      }
+
+      if (method !== 'all') {
+        filtered = filtered.filter(item => item.method === method);
+      }
+
+      renderTable(filtered);
+
+      if (summaryText) {
+        const pendingCount = allLogs.filter(x => x.status === 'pending').length;
+        summaryText.textContent = `${pendingCount} Chờ phê duyệt / ${allLogs.length} Tổng số`;
+      }
+    }
+
+    // Modal view image
+    window.viewReceiptImage = function(txid) {
+      const tx = allLogs.find(item => item.txid === txid);
+      if (!tx || !tx.receiptImg) return;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Hóa đơn chuyển khoản VietQR',
+          message: `
+            <div class="flex flex-col items-center gap-4">
+              <p class="text-xs text-zinc-400">User: <strong class="text-white">${tx.username}</strong> | Mã GD: <strong class="text-white">${tx.txid}</strong></p>
+              <div class="max-w-xs border border-glass-stroke rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                <img src="${tx.receiptImg}" class="w-full h-auto object-contain max-h-[350px]" alt="Receipt" />
+              </div>
+            </div>
+          `,
+          type: 'info',
+          confirmText: 'Đóng',
+          cancelText: '',
+          onConfirm: () => {}
+        });
+      }
+    };
+
+    window.approveTransaction = function(txid) {
+      const tx = allLogs.find(item => item.txid === txid);
+      if (!tx) return;
+
+      const cycleDays = tx.cycle === 'annual' ? 365 : 30;
+      const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
+
+      const performApprove = async () => {
+        try {
+          // 1. Cập nhật trạng thái thanh toán sang approved
+          const resPayment = await fetch('/api/user/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...tx,
+              status: 'approved'
+            })
+          });
+
+          if (!resPayment.ok) throw new Error('Cập nhật trạng thái giao dịch thất bại.');
+
+          // 2. Cập nhật gói cước của người dùng sang gói đã mua
+          const resUser = await fetch('/api/admin/members', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'edit',
+              username: tx.username,
+              package: tx.packageTitle,
+              joinDate: new Date().toISOString(),
+              expiryDate: expiryDate,
+              status: 'active'
+            })
+          });
+
+          if (!resUser.ok) throw new Error('Duyệt thành công nhưng không thể gán gói cước cho thành viên.');
+
+          if (window.showGlobalToast) window.showGlobalToast('Đã phê duyệt giao dịch thành công!', 'success');
+          loadTransactions();
+        } catch (err) {
+          if (window.showGlobalToast) window.showGlobalToast(`Lỗi: ${err.message}`, 'error');
+        }
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Phê duyệt giao dịch',
+          message: `Xác nhận phê duyệt nâng cấp gói <strong>${tx.packageTitle}</strong> cho user <strong>${tx.username}</strong>?`,
+          type: 'info',
+          confirmText: 'Phê duyệt ngay',
+          cancelText: 'Hủy bỏ',
+          onConfirm: performApprove
+        });
+      } else if (confirm('Duyệt giao dịch này?')) {
+        performApprove();
+      }
+    };
+
+    window.declineTransaction = function(txid) {
+      const tx = allLogs.find(item => item.txid === txid);
+      if (!tx) return;
+
+      const performDecline = async () => {
+        try {
+          const resPayment = await fetch('/api/user/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...tx,
+              status: 'declined'
+            })
+          });
+
+          if (!resPayment.ok) throw new Error('Từ chối giao dịch thất bại.');
+
+          if (window.showGlobalToast) window.showGlobalToast('Đã từ chối giao dịch này.', 'info');
+          loadTransactions();
+        } catch (err) {
+          if (window.showGlobalToast) window.showGlobalToast(`Lỗi: ${err.message}`, 'error');
+        }
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Từ chối giao dịch',
+          message: `Bạn có chắc muốn từ chối giao dịch của user <strong>${tx.username}</strong> không?`,
+          type: 'danger',
+          confirmText: 'Từ chối',
+          cancelText: 'Hủy bỏ',
+          onConfirm: performDecline
+        });
+      } else if (confirm('Từ chối giao dịch này?')) {
+        performDecline();
+      }
+    };
+
+    // Event listeners
+    if (searchInput) searchInput.oninput = filterAndRender;
+    if (filterStatus) filterStatus.onchange = filterAndRender;
+    if (filterMethod) filterMethod.onchange = filterAndRender;
+    if (refreshBtn) refreshBtn.onclick = loadTransactions;
+
+    // Load initial
+    loadTransactions();
+    document.addEventListener('astro:page-load', loadTransactions);
+  })();
+</script>

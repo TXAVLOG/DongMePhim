@@ -4,6 +4,7 @@ import { SettingService } from '../../../services/SettingService';
 
 const settings = await SettingService.getSettings();
 let activeTab = 'payment';
+import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - Cấu hình Thanh toán">
@@ -22,35 +23,7 @@ let activeTab = 'payment';
 
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
     <!-- Cài đặt Navigation Sidebar -->
-    <div class="lg:col-span-1 flex flex-col gap-2">
-      <a href="/admin/cai-dat" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'general' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">settings</span> Chung
-      </a>
-      <a href="/admin/cai-dat/api-ser" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'api-ser' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">security</span> API Security
-      </a>
-      <a href="/admin/cai-dat/app-mobile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'app-mobile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">smartphone</span> App Mobile
-      </a>
-      <a href="/admin/cai-dat/smtp" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'smtp' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">mail</span> SMTP Mail
-      </a>
-      <a href="/admin/cai-dat/telegram" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'telegram' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">send</span> Telegram
-      </a>
-      <a href="/admin/cai-dat/dang-ky" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'dang-ky' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">login</span> Đăng nhập & Đăng ký
-      </a>
-      <a href="/admin/cai-dat/social" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'social' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">share</span> Mạng xã hội
-      </a>
-      <a href="/admin/cai-dat/thanh-toan" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'payment' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">payments</span> Cấu hình Thanh toán
-      </a>
-      <a href="/admin/cai-dat/turnstile" class={`w-full text-left px-4 py-3 rounded-xl font-label-caps flex items-center gap-3 transition-colors cursor-pointer ${activeTab === 'turnstile' ? 'sidebar-active text-primary' : 'hover:bg-white/5 text-text-dim'}`}>
-        <span class="material-symbols-outlined">verified_user</span> Turnstile Captcha
-      </a>
-    </div>
+    <SettingsSidebar activeTab="payment" />
 
     <!-- Cài đặt Panel Content -->
     <div class="lg:col-span-3 glass-panel rounded-3xl p-8 space-y-8">
@@ -127,7 +100,48 @@ let activeTab = 'payment';
               <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng SePay</span>
             </div>
             <div class="space-y-3 pl-8">
-              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">API Key</label><input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" /></div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">API Key</label>
+                <input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+              </div>
+              
+              <!-- Verification panel -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-500 font-bold uppercase">ID ngân hàng trên SePay</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="payment-sepay-bank-id" value={settings.payments?.sepay_bank_account_id} placeholder="Ví dụ: 18" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                    <button type="button" id="sepay-verify-btn" class="px-3 py-2 bg-primary/20 border border-primary/30 hover:bg-primary/30 active:scale-95 text-primary rounded-xl text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap">Xác minh</button>
+                  </div>
+                </div>
+                <div class="space-y-1 flex flex-col justify-end">
+                  <button type="button" id="sepay-load-list-btn" class="w-full px-3 py-2 bg-secondary/15 border border-secondary/35 hover:bg-secondary/25 active:scale-95 text-secondary rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 h-[34px]">
+                    <span class="material-symbols-outlined text-sm">cloud_sync</span>
+                    Tải DS từ SePay
+                  </button>
+                </div>
+              </div>
+
+              <!-- List display container -->
+              <div id="sepay-accounts-dropdown-container" class="hidden glass-panel p-3 rounded-xl border border-glass-stroke/50 space-y-1.5">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Chọn tài khoản nhanh</label>
+                <select id="sepay-accounts-select" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg px-2.5 py-1.5 text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
+                  <option value="">-- Chọn tài khoản --</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Ngân hàng (Short Name)</label>
+                <input type="text" id="payment-sepay-bank" value={settings.payments?.sepay_bank_name} placeholder="Ví dụ: Vietcombank" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Số tài khoản</label>
+                <input type="text" id="payment-sepay-no" value={settings.payments?.sepay_account_no} placeholder="Ví dụ: 0071000899999" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Tên chủ tài khoản</label>
+                <input type="text" id="payment-sepay-name" value={settings.payments?.sepay_account_name} placeholder="Ví dụ: NGUYEN VAN A" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white uppercase" />
+              </div>
             </div>
           </div>
 
@@ -225,6 +239,10 @@ let activeTab = 'payment';
         setVal('payment-paypal-client', s.payments?.paypal_client_id);
         setChecked('payment-sepay-enable', s.payments?.sepay_enable);
         setVal('payment-sepay-key', s.payments?.sepay_api_key);
+        setVal('payment-sepay-bank-id', s.payments?.sepay_bank_account_id);
+        setVal('payment-sepay-bank', s.payments?.sepay_bank_name);
+        setVal('payment-sepay-no', s.payments?.sepay_account_no);
+        setVal('payment-sepay-name', s.payments?.sepay_account_name);
         setChecked('payment-vnpay-enable', s.payments?.vnpay_enable);
         setVal('payment-vnpay-code', s.payments?.vnpay_tmn_code);
         setVal('payment-vnpay-secret', s.payments?.vnpay_hash_secret);
@@ -258,6 +276,10 @@ let activeTab = 'payment';
             paypal_client_id: document.getElementById('payment-paypal-client')?.value || '',
             sepay_enable: document.getElementById('payment-sepay-enable')?.checked || false,
             sepay_api_key: document.getElementById('payment-sepay-key')?.value || '',
+            sepay_bank_account_id: document.getElementById('payment-sepay-bank-id')?.value || '',
+            sepay_bank_name: document.getElementById('payment-sepay-bank')?.value || '',
+            sepay_account_no: document.getElementById('payment-sepay-no')?.value || '',
+            sepay_account_name: document.getElementById('payment-sepay-name')?.value || '',
             vnpay_enable: document.getElementById('payment-vnpay-enable')?.checked || false,
             vnpay_tmn_code: document.getElementById('payment-vnpay-code')?.value || '',
             vnpay_hash_secret: document.getElementById('payment-vnpay-secret')?.value || '',
@@ -280,6 +302,102 @@ let activeTab = 'payment';
         }
 
         setTimeout(() => { window.location.reload(); }, 800);
+      });
+
+      // SePay auto-verify & load list click handlers
+      document.getElementById('sepay-verify-btn')?.addEventListener('click', async () => {
+        const apiKey = document.getElementById('payment-sepay-key')?.value;
+        const bankAccountId = document.getElementById('payment-sepay-bank-id')?.value;
+        if (!apiKey) {
+          if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền API Key trước khi xác minh!', 'error');
+          else alert('Vui lòng điền API Key trước khi xác minh!');
+          return;
+        }
+        if (!bankAccountId) {
+          if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền ID tài khoản ngân hàng!', 'error');
+          else alert('Vui lòng điền ID tài khoản ngân hàng!');
+          return;
+        }
+
+        if (window.showGlobalToast) window.showGlobalToast('Đang kết nối tới SePay...', 'info');
+
+        try {
+          const res = await fetch('/api/admin/sepay-verify-bank', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey, bankAccountId, action: 'verify' })
+          });
+          const result = await res.json();
+          if (res.ok && result.data) {
+            const acc = result.data;
+            document.getElementById('payment-sepay-bank').value = acc.bank_short_name || acc.bank_brand_name || '';
+            document.getElementById('payment-sepay-no').value = acc.account_number || '';
+            document.getElementById('payment-sepay-name').value = acc.account_holder_name || '';
+            if (window.showGlobalToast) window.showGlobalToast(`Xác minh thành công: Chủ tài khoản ${acc.account_holder_name}`, 'success');
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xác minh tài khoản.', 'error');
+            else alert(result.message || 'Lỗi xác minh tài khoản.');
+          }
+        } catch(e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API xác minh.', 'error');
+        }
+      });
+
+      document.getElementById('sepay-load-list-btn')?.addEventListener('click', async () => {
+        const apiKey = document.getElementById('payment-sepay-key')?.value;
+        if (!apiKey) {
+          if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền API Key trước khi tải danh sách!', 'error');
+          else alert('Vui lòng điền API Key trước khi tải danh sách!');
+          return;
+        }
+
+        if (window.showGlobalToast) window.showGlobalToast('Đang tải danh sách tài khoản SePay...', 'info');
+
+        try {
+          const res = await fetch('/api/admin/sepay-verify-bank', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey, action: 'list' })
+          });
+          const result = await res.json();
+          if (res.ok && Array.isArray(result.data)) {
+            const list = result.data;
+            const container = document.getElementById('sepay-accounts-dropdown-container');
+            const select = document.getElementById('sepay-accounts-select');
+            
+            if (list.length === 0) {
+              if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy tài khoản ngân hàng nào trên SePay.', 'info');
+              return;
+            }
+
+            select.innerHTML = '<option value="">-- Chọn tài khoản ngân hàng --</option>' + list.map(acc => `
+              <option value="${acc.id}" data-bank="${acc.bank_short_name}" data-no="${acc.account_number}" data-name="${acc.account_holder_name}">
+                ID: ${acc.id} - ${acc.bank_short_name} (${acc.account_number}) - ${acc.account_holder_name}
+              </option>
+            `).join('');
+
+            container.classList.remove('hidden');
+
+            select.onchange = function() {
+              const selectedOption = select.options[select.selectedIndex];
+              if (!selectedOption || !selectedOption.value) return;
+              
+              document.getElementById('payment-sepay-bank-id').value = selectedOption.value;
+              document.getElementById('payment-sepay-bank').value = selectedOption.dataset.bank;
+              document.getElementById('payment-sepay-no').value = selectedOption.dataset.no;
+              document.getElementById('payment-sepay-name').value = selectedOption.dataset.name;
+              
+              if (window.showGlobalToast) window.showGlobalToast(`Đã chọn tài khoản ID ${selectedOption.value}!`, 'success');
+            };
+
+            if (window.showGlobalToast) window.showGlobalToast(`Đã tải ${list.length} tài khoản thành công!`, 'success');
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi tải danh sách tài khoản.', 'error');
+            else alert(result.message || 'Lỗi tải danh sách tài khoản.');
+          }
+        } catch(e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API lấy danh sách.', 'error');
+        }
       });
 
       // Sandbox logs renderer

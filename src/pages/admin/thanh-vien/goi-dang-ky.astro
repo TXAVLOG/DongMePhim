@@ -1,5 +1,9 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { SettingService } from '../../../services/SettingService';
+
+const settings = await SettingService.getSettings();
+const packages = settings.packages || [];
 ---
 
 <AdminLayout title="Quản lý Gói đăng ký">
@@ -31,103 +35,45 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     <div id="subscription-plans-content" class="space-y-12">
       <!-- Subscription Tiers (Bento Grid Style) -->
       <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <!-- Free Tier -->
-        <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden bg-surface-container-low border border-glass-stroke">
-          <div class="flex justify-between items-start mb-6">
-            <div class="p-3 bg-surface-container-high rounded-xl">
-              <span class="material-symbols-outlined text-on-surface-variant">person</span>
+        {packages.map((pkg) => {
+          const isFree = pkg.id === 'free';
+          const cardBorderClass = `package-border-${pkg.id}`;
+          const cardGlowClass = `package-glow-${pkg.id}`;
+          const textClass = `package-style-${pkg.id}`;
+          const btnClass = isFree ? 'border border-glass-stroke hover:bg-surface-container-high text-on-surface' : `package-btn-${pkg.id} hover:brightness-110 active:scale-95 shadow-lg`;
+          
+          return (
+            <div class={`glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden border ${cardBorderClass} ${cardGlowClass} transition-all duration-300`}>
+              {!isFree && pkg.style_type === 'rainbow_effect' && (
+                <div class="absolute top-0 right-0">
+                  <div class="bg-gradient-to-r from-red-500 via-green-500 to-blue-500 text-black px-6 py-1 rotate-45 translate-x-6 translate-y-2 text-[9px] font-black uppercase tracking-wider font-label-caps animate-pulse">POPULAR</div>
+                </div>
+              )}
+              <div class="flex justify-between items-start mb-6">
+                <div class="p-3 bg-surface-container-high rounded-xl">
+                  <span class="material-symbols-outlined text-on-surface-variant">{isFree ? 'person' : 'workspace_premium'}</span>
+                </div>
+                <span class="px-3 py-1 bg-surface-container-highest rounded-full text-label-caps font-label-caps text-on-surface-variant">{isFree ? 'DEFAULT' : pkg.cycle.toUpperCase()}</span>
+              </div>
+              <h3 class={`font-title-md text-title-md mb-2 ${textClass}`}>{pkg.title}</h3>
+              <div class="flex items-baseline gap-1 mb-6">
+                <span class="text-headline-lg font-headline-lg text-3xl">{pkg.price.toLocaleString('vi-VN')}đ</span>
+                <span class="text-on-surface-variant text-[14px]">/ {pkg.cycle === 'lifetime' ? 'Lifetime' : pkg.cycle === 'annual' ? 'Annually' : 'Monthly'}</span>
+              </div>
+              <ul class="space-y-4 mb-8">
+                {pkg.features.map(f => (
+                  <li class="flex items-center gap-3 text-[14px]">
+                    <span class="material-symbols-outlined text-primary text-[20px]">check</span>
+                    <span class="text-on-surface">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <button onclick={`openEditPlanModal('${pkg.id}')`} class={`mt-auto w-full py-3 rounded-lg font-semibold cursor-pointer ${btnClass}`}>
+                Edit Plan
+              </button>
             </div>
-            <span class="px-3 py-1 bg-surface-container-highest rounded-full text-label-caps font-label-caps text-on-surface-variant">DEFAULT</span>
-          </div>
-          <h3 class="font-title-md text-title-md text-on-surface mb-2">Free Plan</h3>
-          <div class="flex items-baseline gap-1 mb-6">
-            <span class="text-headline-lg font-headline-lg text-3xl">0đ</span>
-            <span class="text-on-surface-variant text-[14px]">/ Lifetime</span>
-          </div>
-          <ul class="space-y-4 mb-8">
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-error text-[20px]">close</span>
-              <span class="text-on-surface-variant">Contains Ads</span>
-            </li>
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-primary text-[20px]">check</span>
-              <span class="text-on-surface">Standard Definition (SD)</span>
-            </li>
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-primary text-[20px]">check</span>
-              <span class="text-on-surface">Limited Library</span>
-            </li>
-          </ul>
-          <button class="mt-auto w-full py-3 rounded-lg border border-glass-stroke hover:bg-surface-container-high transition-colors text-on-surface font-semibold cursor-pointer">
-            Edit Plan
-          </button>
-        </div>
-
-        <!-- VIP 1 Month -->
-        <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden border-primary/40 bg-primary-container/5 shadow-[0_0_20px_rgba(124,58,237,0.1)]">
-          <div class="absolute top-0 right-0">
-            <div class="bg-primary px-6 py-1 rotate-45 translate-x-6 translate-y-2 text-on-primary-fixed font-bold text-[10px]">POPULAR</div>
-          </div>
-          <div class="flex justify-between items-start mb-6">
-            <div class="p-3 bg-primary-container/20 rounded-xl">
-              <span class="material-symbols-outlined text-primary">workspace_premium</span>
-            </div>
-          </div>
-          <h3 class="font-title-md text-title-md text-primary mb-2">VIP 1 Month</h3>
-          <div class="flex items-baseline gap-1 mb-6">
-            <span class="text-headline-lg font-headline-lg text-3xl text-on-surface">69,000đ</span>
-            <span class="text-on-surface-variant text-[14px]">/ Monthly</span>
-          </div>
-          <ul class="space-y-4 mb-8">
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
-              <span class="text-on-surface">No Advertisements</span>
-            </li>
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
-              <span class="text-on-surface">4K UHD Streaming</span>
-            </li>
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
-              <span class="text-on-surface">Full Library Access</span>
-            </li>
-          </ul>
-          <button class="mt-auto w-full py-3 rounded-lg bg-primary-container text-on-primary-container font-bold hover:brightness-110 transition-all cursor-pointer shadow-lg shadow-primary-container/20">
-            Edit Plan
-          </button>
-        </div>
-
-        <!-- VIP 1 Year -->
-        <div class="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden bg-surface-container-low border border-glass-stroke">
-          <div class="flex justify-between items-start mb-6">
-            <div class="p-3 bg-surface-container-high rounded-xl">
-              <span class="material-symbols-outlined text-secondary">diamond</span>
-            </div>
-            <span class="px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-full text-label-caps font-label-caps text-xs">BEST VALUE</span>
-          </div>
-          <h3 class="font-title-md text-title-md text-on-surface mb-2">VIP 1 Year</h3>
-          <div class="flex items-baseline gap-1 mb-6">
-            <span class="text-headline-lg font-headline-lg text-3xl text-on-surface">699,000đ</span>
-            <span class="text-on-surface-variant text-[14px]">/ Annually</span>
-          </div>
-          <ul class="space-y-4 mb-8">
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
-              <span class="text-on-surface">Everything in Monthly VIP</span>
-            </li>
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
-              <span class="text-on-surface">Offline Downloads</span>
-            </li>
-            <li class="flex items-center gap-3 text-[14px]">
-              <span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
-              <span class="text-on-surface">Early Access Premières</span>
-            </li>
-          </ul>
-          <button class="mt-auto w-full py-3 rounded-lg border border-glass-stroke hover:bg-surface-container-high transition-colors text-on-surface font-semibold cursor-pointer">
-            Edit Plan
-          </button>
-        </div>
+          );
+        })}
       </section>
 
       <!-- Duyệt Chuyển Khoản Thủ Công (Manual Approvals) -->
@@ -202,59 +148,74 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
   <script is:inline>
     (function() {
+      let loadedUsers = [];
+      let loadedLogs = [];
+
       // 1. Check Payment Gateways Enabled
       function checkPaymentGate() {
-        const settingsStr = localStorage.getItem('txa_site_settings') || '{}';
-        let settings = {};
-        try { settings = JSON.parse(settingsStr); } catch (e) {}
-
-        const payments = settings.payments || {};
-        const anyEnabled = payments.manual_enable || payments.payos_enable || payments.paypal_enable || payments.sepay_enable || payments.vnpay_enable || payments.stripe_enable;
-        
-        const warningGate = document.getElementById('payment-gate-warning');
-        const mainContent = document.getElementById('subscription-plans-content');
-        
-        if (warningGate && mainContent) {
-          if (!anyEnabled) {
-            warningGate.classList.remove('hidden');
-            mainContent.classList.add('hidden');
-          } else {
-            warningGate.classList.add('hidden');
-            mainContent.classList.remove('hidden');
-          }
-        }
+        fetch('/api/admin/settings')
+          .then(res => res.ok ? res.json() : null)
+          .then(result => {
+            const settings = result?.data || {};
+            const payments = settings.payments || {};
+            const anyEnabled = payments.manual_enable || payments.payos_enable || payments.paypal_enable || payments.sepay_enable || payments.vnpay_enable || payments.stripe_enable;
+            
+            const warningGate = document.getElementById('payment-gate-warning');
+            const mainContent = document.getElementById('subscription-plans-content');
+            
+            if (warningGate && mainContent) {
+              if (!anyEnabled) {
+                warningGate.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+              } else {
+                warningGate.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+              }
+            }
+          })
+          .catch(err => console.error('Error checking payment gateways:', err));
       }
 
-      // 2. Seed Registered Users if Empty
-      function seedUsersIfEmpty() {
-        const usersStr = localStorage.getItem('tregistered_users');
-        if (!usersStr || usersStr === '[]') {
-          const defaultUsers = [
-            { username: "Anh Le", email: "anhle@gmail.com", package: "VIP 1 Month", joinDate: "2023-10-12", expiryDate: "2024-11-12", status: "active", roles: "users", emailVerified: true },
-            { username: "Minh Hoang", email: "hoangm@hotmail.com", package: "VIP 1 Year", joinDate: "2024-01-05", expiryDate: "2025-01-05", status: "active", roles: "users", emailVerified: true },
-            { username: "Duy Tung", email: "tungd@outlook.com", package: "Free", joinDate: "2024-05-20", expiryDate: "", status: "standard", roles: "users", emailVerified: false },
-            { username: "Kim Phượng", email: "phuongk@gmail.com", package: "VIP 1 Month", joinDate: "2023-09-10", expiryDate: "2023-10-10", status: "expired", roles: "users", emailVerified: true }
-          ];
-          localStorage.setItem('tregistered_users', JSON.stringify(defaultUsers));
+      // 2. Fetch all data
+      async function loadAllData() {
+        try {
+          const res = await fetch('/api/admin/members');
+          if (res.ok) {
+            const result = await res.json();
+            if (result && result.status === 'success') {
+              loadedUsers = result.data || [];
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching members:', e);
         }
+
+        try {
+          const res = await fetch('/api/user/payments');
+          if (res.ok) {
+            const result = await res.json();
+            if (result && result.status === 'success') {
+              loadedLogs = result.data || [];
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching payments:', e);
+        }
+
+        renderActiveSubscriptions();
+        renderManualApprovals();
       }
 
       // 3. Render Active Subscriptions list
       function renderActiveSubscriptions() {
-        seedUsersIfEmpty();
-        
-        const usersStr = localStorage.getItem('tregistered_users') || '[]';
-        let users = [];
-        try { users = JSON.parse(usersStr); } catch (e) {}
-
         const searchVal = document.getElementById('activeSubsSearch')?.value?.toLowerCase() || '';
         const tbody = document.getElementById('activeSubsBody');
         if (!tbody) return;
 
         // Filter if searched
-        const filteredUsers = users.filter(u => 
-          u.username.toLowerCase().includes(searchVal) || 
-          u.email.toLowerCase().includes(searchVal)
+        const filteredUsers = loadedUsers.filter(u => 
+          (u.username || '').toLowerCase().includes(searchVal) || 
+          (u.email || '').toLowerCase().includes(searchVal)
         );
 
         if (filteredUsers.length === 0) {
@@ -267,7 +228,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         }
 
         tbody.innerHTML = filteredUsers.map(u => {
-          const initials = u.username.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'US';
+          const initials = u.username ? u.username.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
           
           let pkgBadge = '';
           let bgClass = 'bg-surface-container-highest text-on-surface-variant border-glass-stroke';
@@ -306,8 +267,8 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">${initials}</div>
                   <div>
-                    <p class="font-bold text-[14px] text-white">${u.username}</p>
-                    <p class="text-[12px] text-zinc-400">${u.email}</p>
+                    <p class="font-bold text-[14px] text-white">${u.username || 'Người dùng'}</p>
+                    <p class="text-[12px] text-zinc-400">${u.email || ''}</p>
                   </div>
                 </div>
               </td>
@@ -321,7 +282,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                 </div>
               </td>
               <td class="px-8 py-4 text-right">
-                <button onclick="changeUserTier('${u.username}')" class="text-primary hover:text-white transition-colors text-xs font-bold cursor-pointer">Sửa gói</button>
+                <button onclick="changeUserTier('${u.username}')" class="text-primary hover:text-white transition-colors text-xs font-bold cursor-pointer bg-transparent border-none">Sửa gói</button>
               </td>
             </tr>
           `;
@@ -330,11 +291,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
       // 4. Render Manual Bank Approvals Table
       function renderManualApprovals() {
-        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
-        let logs = [];
-        try { logs = JSON.parse(logsStr); } catch (e) {}
-
-        const pendingLogs = logs.filter(item => item.method === 'manual' && item.status === 'pending');
+        const pendingLogs = loadedLogs.filter(item => item.method === 'manual' && item.status === 'pending');
         const section = document.getElementById('manual-approvals-section');
         const tbody = document.getElementById('manualApprovalsBody');
 
@@ -349,18 +306,18 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
         tbody.innerHTML = pendingLogs.map(item => {
           const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
-          const imgHtml = `<button onclick="viewReceiptImage('${item.txid}')" class="text-primary hover:underline font-bold text-xs cursor-pointer flex items-center gap-1"><span class="material-symbols-outlined text-sm">image</span>Xem ảnh</button>`;
+          const imgHtml = `<button onclick="viewReceiptImage('${item.txid}')" class="text-primary hover:underline font-bold text-xs cursor-pointer flex items-center gap-1 bg-transparent border-none"><span class="material-symbols-outlined text-sm">image</span>Xem ảnh</button>`;
 
           return `
             <tr class="hover:bg-white/5 transition-colors">
-              <td class="px-8 py-4 font-mono text-zinc-400">${item.txid.substring(0, 10)}...</td>
+              <td class="px-8 py-4 font-mono text-zinc-400">${(item.txid || '').substring(0, 10)}...</td>
               <td class="px-8 py-4 font-semibold text-white">${item.username}</td>
               <td class="px-8 py-4 text-zinc-300">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
               <td class="px-8 py-4 text-zinc-300 font-bold">${formattedPrice}</td>
               <td class="px-8 py-4">${imgHtml}</td>
               <td class="px-8 py-4 text-right">
                 <div class="flex justify-end gap-2">
-                  <button onclick="approveManualTx('${item.txid}')" class="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer text-[11px]">Duyệt</button>
+                  <button onclick="approveManualTx('${item.txid}')" class="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer text-[11px] border-none">Duyệt</button>
                   <button onclick="declineManualTx('${item.txid}')" class="px-3 py-1 rounded bg-red-500/10 border border-red-500/20 text-red-400 font-bold hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer text-[11px]">Từ chối</button>
                 </div>
               </td>
@@ -371,10 +328,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
       // 5. Expose Manual Actions Globally
       window.viewReceiptImage = function(txid) {
-        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
-        let logs = [];
-        try { logs = JSON.parse(logsStr); } catch (e) {}
-        const tx = logs.find(item => item.txid === txid);
+        const tx = loadedLogs.find(item => item.txid === txid);
         if (!tx || !tx.receiptImg) return;
 
         if (window.txamodal) {
@@ -397,54 +351,77 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       };
 
       window.approveManualTx = function(txid) {
-        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
-        let logs = [];
-        try { logs = JSON.parse(logsStr); } catch (e) {}
-        const idx = logs.findIndex(item => item.txid === txid);
-        if (idx === -1) return;
+        const tx = loadedLogs.find(item => item.txid === txid);
+        if (!tx) return;
 
-        const tx = logs[idx];
         const cycleDays = tx.cycle === 'annual' ? 365 : 30;
         const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
 
-        const performApprove = () => {
-          tx.status = 'approved';
-          localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
-
-          // 1. Cập nhật VIP cho user đó trong tregistered_users
-          const usersStr = localStorage.getItem('tregistered_users') || '[]';
+        const performApprove = async () => {
           try {
-            let users = JSON.parse(usersStr);
-            const uIdx = users.findIndex(u => u.username === tx.username || u.email === tx.username);
-            if (uIdx !== -1) {
-              users[uIdx].package = tx.packageTitle;
-              users[uIdx].joinDate = new Date().toISOString().split('T')[0];
-              users[uIdx].expiryDate = expiryDate.split('T')[0];
-              users[uIdx].status = 'active';
-              localStorage.setItem('tregistered_users', JSON.stringify(users));
+            // Update transaction status
+            const resPayment = await fetch('/api/user/payments', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                txid: tx.txid,
+                username: tx.username,
+                email: tx.email,
+                packageTitle: tx.packageTitle,
+                price: tx.price,
+                cycle: tx.cycle,
+                method: tx.method,
+                status: 'approved',
+                receiptImg: tx.receiptImg
+              })
+            });
+
+            if (!resPayment.ok) {
+              throw new Error('Không thể duyệt hóa đơn.');
             }
-          } catch (e) {}
 
-          // 2. Kích hoạt VIP trong txa_user_subscription nếu đây là user đang đăng nhập
-          const currentLoggedIn = localStorage.getItem('tlogged_in_as');
-          if (currentLoggedIn === tx.username) {
-            localStorage.setItem('txa_user_subscription', JSON.stringify({
-              username: tx.username,
-              tier: tx.packageTitle,
-              status: 'active',
-              price: tx.price,
-              cycle: tx.cycle,
-              expiry: expiryDate,
-              updatedAt: new Date().toISOString()
-            }));
-          }
+            // Update user package
+            const resUser = await fetch('/api/admin/members', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'edit',
+                username: tx.username,
+                package: tx.packageTitle,
+                joinDate: new Date().toISOString(),
+                expiryDate: expiryDate,
+                status: 'active'
+              })
+            });
 
-          if (window.showGlobalToast) {
-            window.showGlobalToast('Phê duyệt giao dịch thành công!', 'success');
+            if (!resUser.ok) {
+              throw new Error('Duyệt hóa đơn thành công nhưng không thể cập nhật gói thành viên.');
+            }
+
+            // Update localStorage txa_user_subscription if current user
+            const currentLoggedIn = localStorage.getItem('tlogged_in_as');
+            if (currentLoggedIn === tx.username) {
+              localStorage.setItem('txa_user_subscription', JSON.stringify({
+                username: tx.username,
+                tier: tx.packageTitle,
+                status: 'active',
+                price: tx.price,
+                cycle: tx.cycle,
+                expiry: expiryDate,
+                updatedAt: new Date().toISOString()
+              }));
+            }
+
+            if (window.showGlobalToast) {
+              window.showGlobalToast('Phê duyệt giao dịch thành công!', 'success');
+            }
+            
+            loadAllData();
+          } catch(err) {
+            if (window.showGlobalToast) {
+              window.showGlobalToast(`Lỗi: ${err.message}`, 'error');
+            }
           }
-          
-          renderManualApprovals();
-          renderActiveSubscriptions();
         };
 
         if (window.txamodal) {
@@ -462,23 +439,40 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       };
 
       window.declineManualTx = function(txid) {
-        const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
-        let logs = [];
-        try { logs = JSON.parse(logsStr); } catch (e) {}
-        const idx = logs.findIndex(item => item.txid === txid);
-        if (idx === -1) return;
+        const tx = loadedLogs.find(item => item.txid === txid);
+        if (!tx) return;
 
-        const tx = logs[idx];
+        const performDecline = async () => {
+          try {
+            const resPayment = await fetch('/api/user/payments', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                txid: tx.txid,
+                username: tx.username,
+                email: tx.email,
+                packageTitle: tx.packageTitle,
+                price: tx.price,
+                cycle: tx.cycle,
+                method: tx.method,
+                status: 'declined',
+                receiptImg: tx.receiptImg
+              })
+            });
 
-        const performDecline = () => {
-          tx.status = 'declined';
-          localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
-
-          if (window.showGlobalToast) {
-            window.showGlobalToast('Đã từ chối giao dịch này.', 'info');
+            if (resPayment.ok) {
+              if (window.showGlobalToast) {
+                window.showGlobalToast('Đã từ chối giao dịch này.', 'info');
+              }
+              loadAllData();
+            } else {
+              if (window.showGlobalToast) {
+                window.showGlobalToast('Lỗi từ chối giao dịch!', 'error');
+              }
+            }
+          } catch(err) {
+            console.error(err);
           }
-
-          renderManualApprovals();
         };
 
         if (window.txamodal) {
@@ -497,49 +491,56 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 
       // 6. Change User Tier Directly
       window.changeUserTier = function(username) {
-        const usersStr = localStorage.getItem('tregistered_users') || '[]';
-        let users = [];
-        try { users = JSON.parse(usersStr); } catch (e) {}
-        const idx = users.findIndex(u => u.username === username);
-        if (idx === -1) return;
+        const u = loadedUsers.find(user => user.username === username);
+        if (!u) return;
 
-        const u = users[idx];
         const newTier = u.package && u.package.includes('VIP') ? 'Free' : 'VIP 1 Year';
-        const expiryDate = newTier === 'Free' ? '' : new Date(Date.now() + 3600 * 1000 * 24 * 365).toISOString().split('T')[0];
+        const expiryDate = newTier === 'Free' ? '' : new Date(Date.now() + 3600 * 1000 * 24 * 365).toISOString();
 
-        const changeTier = () => {
-          u.package = newTier;
-          u.expiryDate = expiryDate;
-          if (newTier === 'Free') {
-            u.status = 'standard';
-          } else {
-            u.status = 'active';
-            u.joinDate = new Date().toISOString().split('T')[0];
-          }
-          localStorage.setItem('tregistered_users', JSON.stringify(users));
-
-          // Update current active sub if logged in
-          const currentLoggedIn = localStorage.getItem('tlogged_in_as');
-          if (currentLoggedIn === username) {
-            if (newTier === 'Free') {
-              localStorage.removeItem('txa_user_subscription');
-            } else {
-              localStorage.setItem('txa_user_subscription', JSON.stringify({
+        const changeTier = async () => {
+          try {
+            const res = await fetch('/api/admin/members', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'edit',
                 username: username,
-                tier: newTier,
-                status: 'active',
-                price: 699000,
-                cycle: 'annual',
-                expiry: new Date(Date.now() + 3600 * 1000 * 24 * 365).toISOString(),
-                updatedAt: new Date().toISOString()
-              }));
-            }
-          }
+                package: newTier,
+                expiryDate: expiryDate,
+                status: 'active'
+              })
+            });
 
-          if (window.showGlobalToast) {
-            window.showGlobalToast(`Đã cập nhật gói thành công cho ${username}!`, 'success');
+            if (res.ok) {
+              const currentLoggedIn = localStorage.getItem('tlogged_in_as');
+              if (currentLoggedIn === username) {
+                if (newTier === 'Free') {
+                  localStorage.removeItem('txa_user_subscription');
+                } else {
+                  localStorage.setItem('txa_user_subscription', JSON.stringify({
+                    username: username,
+                    tier: newTier,
+                    status: 'active',
+                    price: 699000,
+                    cycle: 'annual',
+                    expiry: expiryDate,
+                    updatedAt: new Date().toISOString()
+                  }));
+                }
+              }
+
+              if (window.showGlobalToast) {
+                window.showGlobalToast(`Đã cập nhật gói thành công cho ${username}!`, 'success');
+              }
+              loadAllData();
+            } else {
+              if (window.showGlobalToast) {
+                window.showGlobalToast('Cập nhật gói thất bại!', 'error');
+              }
+            }
+          } catch(err) {
+            console.error(err);
           }
-          renderActiveSubscriptions();
         };
 
         if (window.txamodal) {
@@ -556,10 +557,237 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         }
       };
 
+      let loadedSettings = {};
+      async function loadSettings() {
+        try {
+          const res = await fetch('/api/admin/settings');
+          if (res.ok) {
+            const result = await res.json();
+            loadedSettings = result.data || {};
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      window.openEditPlanModal = function(packageId) {
+        const pkg = loadedSettings.packages?.find(p => p.id === packageId);
+        if (!pkg) return;
+
+        // Get system servers list
+        let systemServers = [];
+        try {
+          const stored = localStorage.getItem('txa_servers');
+          if (stored) {
+            systemServers = JSON.parse(stored);
+          } else {
+            systemServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+          }
+        } catch (e) {
+          systemServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+        }
+
+        const allowedServers = pkg.permissions?.allowed_servers || [];
+
+        // Build HTML for server checklist
+        const serversHtml = systemServers.map(srv => {
+          const checked = allowedServers.includes(srv) ? 'checked' : '';
+          return `
+            <label class="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 border border-glass-stroke/40 rounded-lg p-2.5 hover:bg-white/10 cursor-pointer select-none">
+              <input type="checkbox" name="allowed_servers" value="${srv}" ${checked} class="accent-primary" />
+              <span>${srv}</span>
+            </label>
+          `;
+        }).join('');
+
+        const styleType = pkg.style_type || 'default';
+        const isFree = packageId === 'free';
+
+        const modalContentHtml = `
+          <form id="edit-plan-form" class="space-y-4 text-left max-h-[75vh] overflow-y-auto pr-1">
+            <input type="hidden" name="id" value="${pkg.id}" />
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase">Tên gói cước</label>
+                <input type="text" name="title" value="${pkg.title}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase">Giá tiền (VND)</label>
+                <input type="number" name="price" value="${pkg.price}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} required />
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] text-zinc-400 font-bold uppercase">Các đặc quyền (cách nhau bằng dấu phẩy)</label>
+              <textarea name="features" class="w-full h-16 bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" placeholder="Quyền 1, Quyền 2, Quyền 3..." required>${pkg.features ? pkg.features.join(', ') : ''}</textarea>
+            </div>
+
+            <div class="border-t border-glass-stroke/50 pt-3 space-y-3">
+              <h4 class="text-xs font-black text-primary uppercase">Cấu hình giao diện và màu sắc</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-400 font-bold uppercase">Loại giao diện</label>
+                  <select name="style_type" id="edit-style-type" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} onchange="toggleColorInput(this.value)">
+                    <option value="default" ${styleType === 'default' ? 'selected' : ''}>Mặc định (Tím/Xanh)</option>
+                    <option value="custom_color" ${styleType === 'custom_color' ? 'selected' : ''}>Màu tùy chỉnh (Hex)</option>
+                    <option value="rainbow_effect" ${styleType === 'rainbow_effect' ? 'selected' : ''}>Hiệu ứng Cầu vồng 7 màu</option>
+                  </select>
+                </div>
+                <div class="space-y-1" id="custom-color-wrapper" style="display: ${styleType === 'custom_color' ? 'block' : 'none'}">
+                  <label class="text-[10px] text-zinc-400 font-bold uppercase">Mã màu tùy chỉnh</label>
+                  <div class="flex gap-2">
+                    <input type="color" id="edit-custom-color-picker" value="${pkg.custom_color || '#7c3aed'}" oninput="document.getElementById('edit-custom-color').value = this.value" class="w-9 h-9 bg-transparent border border-glass-stroke rounded-lg p-0 cursor-pointer" />
+                    <input type="text" id="edit-custom-color" name="custom_color" value="${pkg.custom_color || '#7c3aed'}" placeholder="#000000" class="flex-1 bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white uppercase font-mono" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-glass-stroke/50 pt-3 space-y-3">
+              <h4 class="text-xs font-black text-primary uppercase">Cấu hình phân quyền chi tiết</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-400 font-bold uppercase">Chất lượng tối đa</label>
+                  <select name="max_resolution" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white">
+                    <option value="SD" ${pkg.permissions?.max_resolution === 'SD' ? 'selected' : ''}>SD (Standard Definition)</option>
+                    <option value="HD" ${pkg.permissions?.max_resolution === 'HD' ? 'selected' : ''}>HD (High Definition)</option>
+                    <option value="FHD" ${pkg.permissions?.max_resolution === 'FHD' ? 'selected' : ''}>Full HD (1080p)</option>
+                    <option value="4K" ${pkg.permissions?.max_resolution === '4K' ? 'selected' : ''}>Ultra HD 4K</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-400 font-bold uppercase">Giới hạn Playlist phim</label>
+                  <input type="number" name="max_playlists" value="${pkg.permissions?.max_playlists || 10}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 pt-2">
+                <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                  <input type="checkbox" name="watch_together" value="true" ${pkg.permissions?.watch_together ? 'checked' : ''} class="accent-primary" />
+                  <span>Quyền Xem Chung</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                  <input type="checkbox" name="hide_watermark" value="true" ${pkg.permissions?.hide_watermark ? 'checked' : ''} class="accent-primary" />
+                  <span>Bỏ Watermark</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                  <input type="checkbox" name="vip_badge" value="true" ${pkg.permissions?.vip_badge ? 'checked' : ''} class="accent-primary" />
+                  <span>Huy hiệu VIP</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                  <input type="checkbox" name="bypass_ads" value="true" ${pkg.permissions?.bypass_ads ? 'checked' : ''} class="accent-primary" />
+                  <span>Bỏ qua Quảng cáo</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="border-t border-glass-stroke/50 pt-3 space-y-2">
+              <label class="text-[10px] text-zinc-400 font-bold uppercase block">Danh sách Server phát được phép truy cập</label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                ${serversHtml}
+              </div>
+            </div>
+
+            <div class="flex gap-2 justify-end pt-4 border-t border-glass-stroke/50">
+              <button type="button" onclick="closeEditPlanModal()" class="px-4 py-2 rounded-xl bg-white/5 text-zinc-400 font-bold hover:bg-white/10 active:scale-95 transition-all text-xs cursor-pointer border border-glass-stroke/30">Hủy</button>
+              <button type="submit" class="px-5 py-2 bg-primary text-slate-950 font-black rounded-xl hover:brightness-110 active:scale-95 transition-all text-xs cursor-pointer border-none shadow-lg shadow-primary/20">Lưu thay đổi</button>
+            </div>
+          </form>
+        `;
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: `Cập nhật cấu hình: ${pkg.title}`,
+            message: modalContentHtml,
+            type: 'info',
+            confirmText: '', // Hide default confirm
+            cancelText: '',
+            onConfirm: () => {}
+          });
+
+          // Bind form submit
+          const form = document.getElementById('edit-plan-form');
+          if (form) {
+            form.onsubmit = async function(e) {
+              e.preventDefault();
+              const formData = new FormData(form);
+              
+              // Map updated values back to loadedSettings
+              const targetPkg = loadedSettings.packages.find(p => p.id === packageId);
+              if (targetPkg) {
+                targetPkg.title = formData.get('title');
+                if (!isFree) {
+                  targetPkg.price = parseInt(formData.get('price') || '0');
+                  targetPkg.style_type = formData.get('style_type');
+                  if (targetPkg.style_type === 'custom_color') {
+                    targetPkg.custom_color = formData.get('custom_color');
+                  } else {
+                    delete targetPkg.custom_color;
+                  }
+                }
+                
+                targetPkg.features = formData.get('features').split(',').map(s => s.trim()).filter(s => s.length > 0);
+                
+                // Permissions
+                const allowed_servers = [];
+                form.querySelectorAll('input[name="allowed_servers"]:checked').forEach(el => {
+                  allowed_servers.push(el.value);
+                });
+
+                targetPkg.permissions = {
+                  max_resolution: formData.get('max_resolution'),
+                  max_playlists: parseInt(formData.get('max_playlists') || '10'),
+                  watch_together: form.querySelector('input[name="watch_together"]').checked,
+                  hide_watermark: form.querySelector('input[name="hide_watermark"]').checked,
+                  vip_badge: form.querySelector('input[name="vip_badge"]').checked,
+                  bypass_ads: form.querySelector('input[name="bypass_ads"]').checked,
+                  allowed_servers: allowed_servers
+                };
+
+                // Save to API
+                try {
+                  const saveRes = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loadedSettings)
+                  });
+                  if (saveRes.ok) {
+                    if (window.showGlobalToast) window.showGlobalToast('Cập nhật gói cước thành công!', 'success');
+                    closeEditPlanModal();
+                    setTimeout(() => window.location.reload(), 1000);
+                  } else {
+                    if (window.showGlobalToast) window.showGlobalToast('Cập nhật thất bại!', 'error');
+                  }
+                } catch(err) {
+                  if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API!', 'error');
+                }
+              }
+            };
+          }
+        }
+      };
+
+      window.toggleColorInput = function(val) {
+        const wrapper = document.getElementById('custom-color-wrapper');
+        if (wrapper) {
+          wrapper.style.display = val === 'custom_color' ? 'block' : 'none';
+        }
+      };
+
+      window.closeEditPlanModal = function() {
+        const modal = document.getElementById('txa-global-modal');
+        if (modal) {
+          modal.classList.add('opacity-0');
+          setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+          document.body.style.overflow = '';
+        }
+      };
+
       function initSubscriptionsPage() {
         checkPaymentGate();
-        renderActiveSubscriptions();
-        renderManualApprovals();
+        loadAllData();
+        loadSettings();
 
         // Bind Search Input
         const searchInput = document.getElementById('activeSubsSearch');

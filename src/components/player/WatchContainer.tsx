@@ -256,30 +256,76 @@ const findEpisodeIndexBySlug = (serverData: any[], targetSlug?: string): number 
 const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
   const [rating, setRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
-  const [totalRatings, setTotalRatings] = useState<number>(142);
-  const [avgRating, setAvgRating] = useState<number>(8.7);
+  const [totalRatings, setTotalRatings] = useState<number>(0);
+  const [avgRating, setAvgRating] = useState<number>(0);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(`trating_${movieSlug}`);
-      if (stored) {
-        setRating(parseInt(stored, 10));
+    let active = true;
+    const fetchRating = async () => {
+      if (typeof window === 'undefined') return;
+      const username = localStorage.getItem('tlogged_in_as') || '';
+      try {
+        const res = await fetch(`/api/user/rating?slug=${encodeURIComponent(movieSlug)}&username=${encodeURIComponent(username)}`);
+        if (res.ok && active) {
+          const result: any = await res.json();
+          if (result && result.status === 'success' && result.data) {
+            setRating(result.data.userRating || 0);
+            setAvgRating(result.data.averageRating || 0);
+            setTotalRatings(result.data.totalRatings || 0);
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi fetch rating:', err);
       }
-      let seed = 0;
-      for (let i = 0; i < movieSlug.length; i++) seed += movieSlug.charCodeAt(i);
-      const calculatedTotal = 80 + (seed % 150);
-      const calculatedAvg = 7.5 + ((seed % 20) / 10);
-      setTotalRatings(calculatedTotal);
-      setAvgRating(parseFloat(calculatedAvg.toFixed(1)));
-    }
+    };
+    fetchRating();
+    return () => { active = false; };
   }, [movieSlug]);
 
-  const handleRating = (val: number) => {
-    setRating(val);
-    localStorage.setItem(`trating_${movieSlug}`, String(val));
-    setTotalRatings(prev => prev + 1);
-    if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
-      (window as any).showGlobalToast(`Cảm ơn bạn đã đánh giá ${val}/10 sao!`, 'success');
+  const handleRating = async (val: number) => {
+    if (typeof window === 'undefined') return;
+    const username = localStorage.getItem('tlogged_in_as');
+    if (!username) {
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast('Vui lòng đăng nhập để đánh giá phim!', 'error');
+      }
+      setTimeout(() => {
+        if ((window as any).openLoginModal) {
+          (window as any).openLoginModal();
+        }
+      }, 800);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/user/rating', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          slug: movieSlug,
+          rating: val
+        })
+      });
+      if (res.ok) {
+        const result: any = await res.json();
+        if (result && result.status === 'success' && result.data) {
+          setRating(result.data.userRating);
+          setAvgRating(result.data.averageRating);
+          setTotalRatings(result.data.totalRatings);
+          if ((window as any).showGlobalToast) {
+            (window as any).showGlobalToast(`Cảm ơn bạn đã đánh giá ${val}/10 sao!`, 'success');
+          }
+        } else {
+          throw new Error(result.message || 'Lỗi server');
+        }
+      } else {
+        throw new Error('Lỗi kết nối mạng');
+      }
+    } catch (err: any) {
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast(`Lỗi: ${err.message}`, 'error');
+      }
     }
   };
 
@@ -881,6 +927,89 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return findEpisodeIndexBySlug(currentServer?.serverData || [], initialEpisodeSlug);
   });
 
+  const [currentUserPackage, setCurrentUserPackage] = useState<string>('Free');
+  const [userPermissions, setUserPermissions] = useState<any>(null);
+
+  const [showAd, setShowAd] = useState<boolean>(false);
+  const [adSkipSeconds, setAdSkipSeconds] = useState<number>(5);
+  const [adUrl, setAdUrl] = useState<string>('');
+  const [adType, setAdType] = useState<'video' | 'embed'>('video');
+  const [adCountdown, setAdCountdown] = useState<number>(5);
+  const [canSkipAd, setCanSkipAd] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const username = localStorage.getItem('tlogged_in_as') || '';
+    
+    const fetchUserAndAds = async () => {
+      try {
+        const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
+        let pkgName = 'Free';
+        if (res.ok) {
+          const result = (await res.json()) as any;
+          pkgName = result.data?.package || 'Free';
+        }
+        setCurrentUserPackage(pkgName);
+
+        const settings = (window as any).TXA_SITE_SETTINGS || {};
+        const packages = settings.packages || [];
+        const userPkg = packages.find((p: any) => p.title === pkgName);
+        let perms = null;
+        if (userPkg) {
+          perms = userPkg.permissions;
+        } else {
+          const freePkg = packages.find((p: any) => p.id === 'free') || {};
+          perms = freePkg.permissions || {
+            max_resolution: 'SD',
+            allowed_servers: ["Vietsub", "Thuyết Minh", "Lồng Tiếng"],
+            max_playlists: 10,
+            watch_together: false,
+            hide_watermark: false,
+            vip_badge: false,
+            bypass_ads: false
+          };
+        }
+        setUserPermissions(perms);
+
+        // Pre-roll ads logic
+        const ads = settings.ads || {};
+        const bypass = perms?.bypass_ads || false;
+
+        if (ads.pre_roll_enable && ads.pre_roll_url && !bypass) {
+          setShowAd(true);
+          setAdUrl(ads.pre_roll_url);
+          setAdType(ads.pre_roll_type || 'video');
+          const skipSec = parseInt(ads.pre_roll_skip_seconds) || 5;
+          setAdSkipSeconds(skipSec);
+          setAdCountdown(skipSec);
+        }
+      } catch (e) {
+        console.error("Error fetching user details in player:", e);
+      }
+    };
+    fetchUserAndAds();
+  }, [movie.slug]);
+
+  useEffect(() => {
+    if (!showAd) return;
+    if (adCountdown <= 0) {
+      setCanSkipAd(true);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setAdCountdown(prev => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [showAd, adCountdown]);
+
+  const handleAdEnded = () => {
+    setShowAd(false);
+  };
+
+  const handleSkipAd = () => {
+    setShowAd(false);
+  };
+
   useEffect(() => {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       try {
@@ -957,7 +1086,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   const syncOfflineHistories = async () => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return;
-    
+    const username = typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null;
+    if (!username) return;
+
     const list = getLocalHistory();
     const unsynced = list.filter(item => !item.synced);
     
@@ -969,6 +1100,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            username,
             slug: item.slug,
             episodeSlug: item.episodeSlug,
             episodeName: item.episodeName,
@@ -995,61 +1127,36 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   useEffect(() => {
     const mergeHistoryOnLoad = async () => {
-      const localList = getLocalHistory();
-      const localMovieHist = localList.find(x => x.slug === movie.slug);
-      
-      if (localMovieHist && localMovieHist.episodeSlug === currentEpisode?.slug && localMovieHist.currentTime > 10 && (localMovieHist.duration - localMovieHist.currentTime) > 10) {
-        setResumePrompt({
-          show: true,
-          time: localMovieHist.currentTime,
-          episodeSlug: localMovieHist.episodeSlug
-        });
+      const username = typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null;
+
+      if (!username) {
+        const localList = getLocalHistory();
+        const localMovieHist = localList.find(x => x.slug === movie.slug);
+        
+        if (localMovieHist && localMovieHist.episodeSlug === currentEpisode?.slug && localMovieHist.currentTime > 10 && (localMovieHist.duration - localMovieHist.currentTime) > 10) {
+          setResumePrompt({
+            show: true,
+            time: localMovieHist.currentTime,
+            episodeSlug: localMovieHist.episodeSlug
+          });
+        }
+        return;
       }
 
       if (typeof navigator !== 'undefined' && navigator.onLine) {
         try {
-          const res = await fetch('/api/user/history');
+          const res = await fetch(`/api/user/history?username=${encodeURIComponent(username)}`);
           if (res.ok) {
             const onlineList = await res.json();
             if (Array.isArray(onlineList) && onlineList.length > 0) {
-              const freshLocalList = getLocalHistory();
-              let updated = false;
-
-              onlineList.forEach((onlineItem: any) => {
-                const localIdx = freshLocalList.findIndex(x => x.slug === onlineItem.slug);
-                if (localIdx === -1) {
-                  freshLocalList.unshift({
-                    ...onlineItem,
-                    synced: true
+              const movieHist = onlineList.find(x => x.slug === movie.slug);
+              if (movieHist && currentEpisode && movieHist.episodeSlug === currentEpisode.slug) {
+                if (movieHist.currentTime > 10 && (movieHist.duration - movieHist.currentTime) > 10) {
+                  setResumePrompt({
+                    show: true,
+                    time: movieHist.currentTime,
+                    episodeSlug: movieHist.episodeSlug
                   });
-                  updated = true;
-                } else {
-                  const localItem = freshLocalList[localIdx];
-                  const localTime = new Date(localItem.updatedAt).getTime();
-                  const onlineTime = new Date(onlineItem.updatedAt).getTime();
-                  
-                  if (onlineTime > localTime) {
-                    freshLocalList[localIdx] = {
-                      ...onlineItem,
-                      synced: true
-                    };
-                    updated = true;
-                  }
-                }
-              });
-
-              if (updated) {
-                saveLocalHistory(freshLocalList);
-                
-                const updatedMovieHist = freshLocalList.find(x => x.slug === movie.slug);
-                if (updatedMovieHist && currentEpisode && updatedMovieHist.episodeSlug === currentEpisode.slug) {
-                  if (updatedMovieHist.currentTime > 10 && (updatedMovieHist.duration - updatedMovieHist.currentTime) > 10) {
-                    setResumePrompt({
-                      show: true,
-                      time: updatedMovieHist.currentTime,
-                      episodeSlug: updatedMovieHist.episodeSlug
-                    });
-                  }
                 }
               }
             }
@@ -1082,31 +1189,35 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
     const timeRounded = Math.round(time);
     const durationRounded = Math.round(duration);
+    const username = typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null;
 
-    const list = getLocalHistory();
-    const existingIdx = list.findIndex(x => x.slug === movie.slug);
+    if (!username) {
+      const list = getLocalHistory();
+      const existingIdx = list.findIndex(x => x.slug === movie.slug);
 
-    const record: HistoryItem = {
-      slug: movie.slug,
-      episodeSlug: currentEpisode.slug,
-      episodeName: currentEpisode.name,
-      currentTime: timeRounded,
-      duration: durationRounded,
-      serverIndex: serverIndex,
-      serverName: currentServer?.serverName || 'Server VIP',
-      updatedAt: new Date().toISOString(),
-      synced: false,
-      title: movie.title,
-      posterUrl: movie.posterUrl
-    };
+      const record: HistoryItem = {
+        slug: movie.slug,
+        episodeSlug: currentEpisode.slug,
+        episodeName: currentEpisode.name,
+        currentTime: timeRounded,
+        duration: durationRounded,
+        serverIndex: serverIndex,
+        serverName: currentServer?.serverName || 'Server VIP',
+        updatedAt: new Date().toISOString(),
+        synced: false,
+        title: movie.title,
+        posterUrl: movie.posterUrl
+      };
 
-    if (existingIdx !== -1) {
-      list[existingIdx] = record;
-    } else {
-      list.unshift(record);
+      if (existingIdx !== -1) {
+        list[existingIdx] = record;
+      } else {
+        list.unshift(record);
+      }
+      
+      saveLocalHistory(list);
+      return;
     }
-    
-    saveLocalHistory(list);
 
     if (typeof navigator !== 'undefined' && navigator.onLine) {
       try {
@@ -1114,27 +1225,67 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            slug: record.slug,
-            episodeSlug: record.episodeSlug,
-            episodeName: record.episodeName,
-            currentTime: record.currentTime,
-            duration: record.duration,
-            serverIndex: record.serverIndex,
-            serverName: record.serverName,
-            updatedAt: record.updatedAt,
-            title: record.title,
-            posterUrl: record.posterUrl
+            username,
+            slug: movie.slug,
+            episodeSlug: currentEpisode.slug,
+            episodeName: currentEpisode.name,
+            currentTime: timeRounded,
+            duration: durationRounded,
+            serverIndex: serverIndex,
+            serverName: currentServer?.serverName || 'Server VIP',
+            updatedAt: new Date().toISOString(),
+            title: movie.title,
+            posterUrl: movie.posterUrl
           })
         });
-        if (res.ok) {
-          const freshList = getLocalHistory();
-          const target = freshList.find(x => x.slug === movie.slug);
-          if (target) {
-            target.synced = true;
-            saveLocalHistory(freshList);
-          }
+        if (!res.ok) {
+          throw new Error('Failed to save progress to DB');
         }
-      } catch (e) {}
+      } catch (e) {
+        const list = getLocalHistory();
+        const existingIdx = list.findIndex(x => x.slug === movie.slug);
+        const record: HistoryItem = {
+          slug: movie.slug,
+          episodeSlug: currentEpisode.slug,
+          episodeName: currentEpisode.name,
+          currentTime: timeRounded,
+          duration: durationRounded,
+          serverIndex: serverIndex,
+          serverName: currentServer?.serverName || 'Server VIP',
+          updatedAt: new Date().toISOString(),
+          synced: false,
+          title: movie.title,
+          posterUrl: movie.posterUrl
+        };
+        if (existingIdx !== -1) {
+          list[existingIdx] = record;
+        } else {
+          list.unshift(record);
+        }
+        saveLocalHistory(list);
+      }
+    } else {
+      const list = getLocalHistory();
+      const existingIdx = list.findIndex(x => x.slug === movie.slug);
+      const record: HistoryItem = {
+        slug: movie.slug,
+        episodeSlug: currentEpisode.slug,
+        episodeName: currentEpisode.name,
+        currentTime: timeRounded,
+        duration: durationRounded,
+        serverIndex: serverIndex,
+        serverName: currentServer?.serverName || 'Server VIP',
+        updatedAt: new Date().toISOString(),
+        synced: false,
+        title: movie.title,
+        posterUrl: movie.posterUrl
+      };
+      if (existingIdx !== -1) {
+        list[existingIdx] = record;
+      } else {
+        list.unshift(record);
+      }
+      saveLocalHistory(list);
     }
   };
 
@@ -1248,6 +1399,64 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             />
           ) : isUnreleased && unreleasedEpisode ? (
             <UnreleasedPlayerPlaceholder episode={unreleasedEpisode} />
+          ) : showAd ? (
+            <div className="absolute inset-0 bg-black flex items-center justify-center z-[50]">
+              {adType === 'video' ? (
+                <video 
+                  src={adUrl} 
+                  autoPlay 
+                  controls={false} 
+                  className="w-full h-full object-contain" 
+                  onEnded={handleAdEnded}
+                />
+              ) : (
+                <iframe 
+                  src={adUrl} 
+                  className="w-full h-full border-none" 
+                  allow="autoplay"
+                />
+              )}
+              
+              <div className="absolute bottom-6 right-6 flex items-center gap-3">
+                {canSkipAd ? (
+                  <button 
+                    onClick={handleSkipAd}
+                    className="px-5 py-2.5 bg-[#d2bbff] text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all shadow-lg flex items-center gap-1.5 border-none cursor-pointer"
+                  >
+                    <span>Bỏ qua quảng cáo</span>
+                    <span className="material-symbols-outlined text-sm font-bold">skip_next</span>
+                  </button>
+                ) : (
+                  <div className="px-5 py-2.5 bg-black/85 backdrop-blur-md border border-white/10 rounded-xl text-[10px] text-white font-bold tracking-wider uppercase">
+                    Quảng cáo có thể bỏ qua sau {adCountdown}s
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : userPermissions && currentServer && !userPermissions.allowed_servers?.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) ? (
+            <div className="w-full h-full aspect-video bg-[#0d0e14] border border-glass-stroke rounded-2xl flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-2xl">
+              <div className="absolute inset-0 bg-primary/5 blur-[50px] pointer-events-none"></div>
+              <div className="relative z-10 space-y-4 max-w-md">
+                <div className="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_30px_rgba(124,58,237,0.2)] animate-pulse">
+                  <span className="material-symbols-outlined text-3xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+                </div>
+                <h3 className="font-display-hero text-xl font-black text-white tracking-wide uppercase">Nguồn phát VIP giới hạn</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed font-body-main">
+                  Server <span className="text-primary font-bold">{currentServer?.serverName}</span> chỉ dành cho tài khoản sử dụng các gói cước nâng cao. Vui lòng nâng cấp gói để mở khóa.
+                </p>
+                <div className="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl inline-block">
+                  <p className="text-[10px] text-zinc-400 font-body-main">
+                    Gói hiện tại của bạn: <em className="not-italic font-bold text-zinc-200">{currentUserPackage}</em>
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <a href="/nang-cap" className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#d2bbff] to-[#00daf3] text-slate-950 font-black rounded-xl text-[10px] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 border-none uppercase tracking-wider decoration-none no-underline">
+                    <span className="material-symbols-outlined text-xs font-black">workspace_premium</span>
+                    Nâng cấp gói ngay
+                  </a>
+                </div>
+              </div>
+            </div>
           ) : (
             <>
               <ArtPlayer 
@@ -1274,6 +1483,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 timeOutroEnd={currentEpisode?.timeOutroEnd}
                 siteName={siteName}
                 siteUrl={siteUrl}
+                maxResolution={userPermissions?.max_resolution}
               />
 
               {/* Resume Prompt Dialog */}

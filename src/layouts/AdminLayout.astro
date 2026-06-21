@@ -11,6 +11,70 @@ const { title } = Astro.props;
 const settings = await SettingService.getSettings();
 const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
 const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+
+const packages = settings.packages || [];
+let packageStyles = '';
+packages.forEach((pkg: any) => {
+  if (pkg.style_type === 'rainbow_effect') {
+    packageStyles += `
+      .package-style-${pkg.id} {
+        background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff);
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: rainbow-text-animation 6s ease infinite;
+        font-weight: bold;
+      }
+      .package-border-${pkg.id} {
+        position: relative;
+        border-color: transparent !important;
+      }
+      .package-border-${pkg.id}::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 2px;
+        background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff);
+        background-size: 400% 400%;
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        animation: rainbow-text-animation 6s ease infinite;
+      }
+      .package-glow-${pkg.id} {
+        animation: rainbow-glow-animation 6s ease infinite;
+      }
+      .package-btn-${pkg.id} {
+        background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff) !important;
+        background-size: 400% 400%;
+        color: #000 !important;
+        font-weight: 900 !important;
+        animation: rainbow-text-animation 6s ease infinite;
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.4) !important;
+      }
+    `;
+  } else if (pkg.style_type === 'custom_color' && pkg.custom_color) {
+    packageStyles += `
+      .package-style-${pkg.id} {
+        color: ${pkg.custom_color} !important;
+        font-weight: bold;
+      }
+      .package-border-${pkg.id} {
+        border-color: ${pkg.custom_color} !important;
+      }
+      .package-glow-${pkg.id} {
+        box-shadow: 0 0 25px ${pkg.custom_color}4d !important;
+      }
+      .package-btn-${pkg.id} {
+        background-color: ${pkg.custom_color} !important;
+        color: #000 !important;
+        box-shadow: 0 4px 14px ${pkg.custom_color}4d !important;
+      }
+    `;
+  }
+});
 ---
 
 <!DOCTYPE html>
@@ -21,7 +85,7 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title} | {settings.general.site_name} Admin</title>
   <ClientRouter />
-  <script is:inline>
+  <script is:inline define:vars={{ settings }}>
     (function() {
       if (typeof localStorage !== 'undefined') {
         const loggedInUser = localStorage.getItem('tlogged_in_as');
@@ -31,20 +95,38 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
         }
 
         // Tương thích ngược: nếu chuỗi identity là 'admin'
-        if (loggedInUser === 'admin') return;
+        let hasAdminRole = loggedInUser === 'admin';
 
-        let hasAdminRole = false;
-        try {
-          const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-          const user = users.find(u => u.username === loggedInUser || u.email === loggedInUser);
-          if (user && (user.roles === 'admin' || user.role === 'admin')) {
-            hasAdminRole = true;
-          }
-        } catch (e) {}
+        if (!hasAdminRole) {
+          try {
+            const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
+            const user = users.find(u => u.username === loggedInUser || u.email === loggedInUser);
+            if (user && (user.roles === 'admin' || user.role === 'admin')) {
+              hasAdminRole = true;
+            }
+          } catch (e) {}
+        }
 
         if (!hasAdminRole) {
           window.location.href = '/tphim';
+          return;
         }
+
+        // Synchronize database settings to localStorage on page load
+        localStorage.setItem('txa_site_settings', JSON.stringify(settings));
+
+        // Intercept setItem to sync client-side updates back to Supabase
+        const originalSetItem = localStorage.setItem;
+        localStorage.setItem = function(key, value) {
+          originalSetItem.apply(this, arguments);
+          if (key === 'txa_site_settings') {
+            fetch('/api/admin/settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: value
+            }).catch(err => console.error('Lỗi khi lưu cấu hình lên database:', err));
+          }
+        };
       }
     })();
   </script>
@@ -54,6 +136,7 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   
+<style is:global set:html={packageStyles}></style>
 <style is:global>
     .glass-panel {
         background: rgba(18, 18, 20, 0.7);
@@ -78,6 +161,17 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #37333e; border-radius: 10px; }
+
+    @keyframes rainbow-text-animation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes rainbow-glow-animation {
+      0% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.25), 0 0 45px rgba(0, 0, 255, 0.15); }
+      50% { box-shadow: 0 0 25px rgba(0, 255, 0, 0.25), 0 0 45px rgba(255, 255, 0, 0.15); }
+      100% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.25), 0 0 45px rgba(0, 0, 255, 0.15); }
+    }
   </style>
 </head>
 <body class="bg-surface-deep text-on-surface font-body-main selection:bg-primary/30">
@@ -150,6 +244,10 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
           <span class="material-symbols-outlined text-xl">card_membership</span>
           <span class="font-label-caps text-xs">Gói đăng ký</span>
         </a>
+        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-giao-dich" href="/admin/thanh-vien/giao-dich">
+          <span class="material-symbols-outlined text-xl">receipt_long</span>
+          <span class="font-label-caps text-xs">Lịch sử giao dịch</span>
+        </a>
           <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-email" href="/admin/cai-dat/email-logs">
           <span class="material-symbols-outlined text-xl">mail_lock</span>
           <span class="font-label-caps text-xs">Lịch sử mail gửi đi</span>
@@ -167,7 +265,11 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
         </a>
       </nav>
       
-      <div class="px-4 mt-auto py-4 bg-surface-container-lowest/80 backdrop-blur-md">
+      <div class="px-4 mt-auto py-4 bg-surface-container-lowest/80 backdrop-blur-md flex flex-col gap-2">
+        <a href="/admin/cai-dat/quang-cao" class="w-full py-2 bg-gradient-to-r from-secondary/15 to-primary/15 border border-secondary/25 rounded-xl text-secondary font-label-caps text-[10px] hover:from-secondary/25 hover:to-primary/25 transition-all flex items-center justify-center gap-2 text-center decoration-none no-underline">
+          <span class="material-symbols-outlined text-sm">featured_video</span>
+          Cấu hình Quảng cáo
+        </a>
         <a href="/admin/cai-dat" class="w-full py-2 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 rounded-xl text-primary font-label-caps text-[10px] hover:from-primary/30 hover:to-secondary/30 transition-all flex items-center justify-center gap-2 text-center decoration-none no-underline">
           <span class="material-symbols-outlined text-sm">settings</span>
           Cài đặt hệ thống

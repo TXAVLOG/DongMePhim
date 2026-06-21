@@ -66,7 +66,7 @@ const settings = await SettingService.getSettings();
 
 <script is:inline>
   (function() {
-    function initSuccessPage() {
+    async function initSuccessPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const txid = urlParams.get('txid') || urlParams.get('session_id') || 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
       const cycle = urlParams.get('cycle') || 'monthly';
@@ -81,29 +81,50 @@ const settings = await SettingService.getSettings();
       // Update view invoice link
       document.getElementById('view-invoice-link').setAttribute('href', `/invoices/${txid}`);
 
-      // Handle real payment webhook sync if redirecting back from Stripe or PayOS real checkouts
-      // If we got session_id or orderCode but no local log yet, we create it dynamically to simulate a complete loop!
-      const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
-      let logs = [];
-      try { logs = JSON.parse(logsStr); } catch (e) {}
+      // Sync with database
+      try {
+        const resMe = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
+        let userEmail = '';
+        if (resMe.ok) {
+          const resMeData = await resMe.json();
+          userEmail = resMeData.data?.email || '';
+        }
 
-      if (!logs.some(l => l.txid === txid)) {
-        logs.push({
-          txid: txid,
-          username: username,
-          packageTitle: 'Premium VIP',
-          price: price,
-          cycle: cycle,
-          method: urlParams.get('method') || 'online',
-          status: 'approved',
-          date: new Date().toISOString()
+        // 1. Post payment transaction log
+        await fetch('/api/user/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            txid: txid,
+            username: username,
+            email: userEmail,
+            packageTitle: 'Premium VIP',
+            price: price,
+            cycle: cycle,
+            method: urlParams.get('method') || 'online',
+            status: 'approved',
+            receiptImg: ''
+          })
         });
-        localStorage.setItem('txa_payment_logs', JSON.stringify(logs));
 
-        // Sync subscription key
+        // 2. Update user subscription package details
         const cycleDays = cycle === 'annual' ? 365 : 30;
         const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
 
+        await fetch('/api/admin/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'edit',
+            username: username,
+            package: 'Premium VIP',
+            joinDate: new Date().toISOString(),
+            expiryDate: expiryDate,
+            status: 'active'
+          })
+        });
+
+        // 3. Keep in localStorage for client auth-bypassing layout checking
         localStorage.setItem('txa_user_subscription', JSON.stringify({
           username: username,
           tier: 'Premium VIP',
@@ -114,19 +135,8 @@ const settings = await SettingService.getSettings();
           updatedAt: new Date().toISOString()
         }));
 
-        // Sync registered user list
-        const usersStr = localStorage.getItem('tregistered_users') || '[]';
-        try {
-          let users = JSON.parse(usersStr);
-          const uIdx = users.findIndex(u => u.username === username || u.email === username);
-          if (uIdx !== -1) {
-            users[uIdx].package = 'Premium VIP';
-            users[uIdx].joinDate = new Date().toISOString().split('T')[0];
-            users[uIdx].expiryDate = expiryDate.split('T')[0];
-            users[uIdx].status = 'active';
-            localStorage.setItem('tregistered_users', JSON.stringify(users));
-          }
-        } catch (e) {}
+      } catch (err) {
+        console.error('Error syncing payment results with server:', err);
       }
 
       // Spark Confetti

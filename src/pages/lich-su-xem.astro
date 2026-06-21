@@ -45,6 +45,8 @@ const settings = await SettingService.getSettings();
 
     if (!historyGrid || !emptyHistory || !clearAllBtn) return;
 
+    const username = typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null;
+
     // Helper: Read thistory from localStorage
     function getLocalHistory() {
       try {
@@ -82,7 +84,7 @@ const settings = await SettingService.getSettings();
         const watchUrl = `/xem/${item.slug}?ep=${item.episodeSlug}&sv=${item.serverIndex || 0}&ts=${encodeURIComponent(item.serverName || '')}`;
         
         // Status cloud icon
-        const cloudIcon = item.synced 
+        const cloudIcon = (item.synced || username) 
           ? '<span class="material-symbols-outlined text-emerald-400 text-sm" title="Đã đồng bộ máy chủ">cloud_done</span>' 
           : '<span class="material-symbols-outlined text-zinc-500 text-sm animate-pulse" title="Chưa đồng bộ">cloud_sync</span>';
 
@@ -145,22 +147,26 @@ const settings = await SettingService.getSettings();
     window.deleteSingleHistory = function(slug) {
       if (!confirm('Bạn có chắc chắn muốn xóa lịch sử xem của phim này không?')) return;
 
-      const list = getLocalHistory();
-      const newList = list.filter(x => x.slug !== slug);
-      saveLocalHistory(newList);
-      renderHistoryList(newList);
+      if (!username) {
+        const list = getLocalHistory();
+        const newList = list.filter(x => x.slug !== slug);
+        saveLocalHistory(newList);
+        renderHistoryList(newList);
+        if (window.showGlobalToast) window.showGlobalToast('Đã xóa lịch sử xem thành công!', 'success');
+        return;
+      }
 
-      // Call API DELETE to server
       if (typeof navigator !== 'undefined' && navigator.onLine) {
-        fetch(`/api/user/history?slug=${slug}`, { method: 'DELETE' })
+        fetch(`/api/user/history?username=${encodeURIComponent(username)}&slug=${encodeURIComponent(slug)}`, { method: 'DELETE' })
           .then(res => {
-            if (res.ok && window.showGlobalToast) {
-              window.showGlobalToast('Đã xóa lịch sử xem thành công!', 'success');
+            if (res.ok) {
+              if (window.showGlobalToast) window.showGlobalToast('Đã xóa lịch sử xem thành công!', 'success');
+              loadHistoryData();
             }
           })
           .catch(err => console.warn('Failed to delete history on server:', err));
       } else {
-        if (window.showGlobalToast) window.showGlobalToast('Đã xóa lịch sử xem cục bộ (sẽ sync khi online)!', 'success');
+        if (window.showGlobalToast) window.showGlobalToast('Không có kết nối mạng để xóa trên máy chủ!', 'error');
       }
     };
 
@@ -168,61 +174,49 @@ const settings = await SettingService.getSettings();
     clearAllBtn.addEventListener('click', () => {
       if (!confirm('CẢNH BÁO: Bạn có muốn xóa sạch toàn bộ lịch sử xem phim không? Hành động này không thể hoàn tác!')) return;
 
-      localStorage.removeItem('thistory');
-      renderHistoryList([]);
+      if (!username) {
+        localStorage.removeItem('thistory');
+        renderHistoryList([]);
+        if (window.showGlobalToast) window.showGlobalToast('Đã xóa toàn bộ lịch sử xem thành công!', 'success');
+        return;
+      }
 
-      // Call API DELETE to server
       if (typeof navigator !== 'undefined' && navigator.onLine) {
-        fetch('/api/user/history', { method: 'DELETE' })
+        fetch(`/api/user/history?username=${encodeURIComponent(username)}`, { method: 'DELETE' })
           .then(res => {
-            if (res.ok && window.showGlobalToast) {
-              window.showGlobalToast('Đã xóa toàn bộ lịch sử xem thành công!', 'success');
+            if (res.ok) {
+              if (window.showGlobalToast) window.showGlobalToast('Đã xóa toàn bộ lịch sử xem thành công!', 'success');
+              renderHistoryList([]);
             }
           })
           .catch(err => console.warn('Failed to clear history on server:', err));
       } else {
-        if (window.showGlobalToast) window.showGlobalToast('Đã xóa toàn bộ lịch sử xem cục bộ!', 'success');
+        if (window.showGlobalToast) window.showGlobalToast('Không có kết nối mạng để xóa trên máy chủ!', 'error');
       }
     });
 
-    // 1. Load Local
-    const localList = getLocalHistory();
-    renderHistoryList(localList);
+    function loadHistoryData() {
+      if (!username) {
+        const localList = getLocalHistory();
+        renderHistoryList(localList);
+        return;
+      }
 
-    // 2. Fetch Online and Merge
-    if (typeof navigator !== 'undefined' && navigator.onLine) {
-      fetch('/api/user/history')
-        .then(res => res.ok ? res.json() : [])
-        .then(onlineList => {
-          if (Array.isArray(onlineList) && onlineList.length > 0) {
-            const freshLocalList = getLocalHistory();
-            let updated = false;
-
-            onlineList.forEach(onlineItem => {
-              const localIdx = freshLocalList.findIndex(x => x.slug === onlineItem.slug);
-              if (localIdx === -1) {
-                // Not exists, add
-                freshLocalList.unshift({ ...onlineItem, synced: true });
-                updated = true;
-              } else {
-                // Exists, compare updatedAt
-                const localItem = freshLocalList[localIdx];
-                const localTime = new Date(localItem.updatedAt).getTime();
-                const onlineTime = new Date(onlineItem.updatedAt).getTime();
-                if (onlineTime > localTime) {
-                  freshLocalList[localIdx] = { ...onlineItem, synced: true };
-                  updated = true;
-                }
-              }
-            });
-
-            if (updated) {
-              saveLocalHistory(freshLocalList);
-              renderHistoryList(freshLocalList);
-            }
-          }
-        })
-        .catch(err => console.warn('Error fetching online history:', err));
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        fetch(`/api/user/history?username=${encodeURIComponent(username)}`)
+          .then(res => res.ok ? res.json() : [])
+          .then(onlineList => {
+            renderHistoryList(onlineList || []);
+          })
+          .catch(err => {
+            console.warn('Error fetching online history:', err);
+            renderHistoryList([]);
+          });
+      } else {
+        renderHistoryList([]);
+      }
     }
+
+    loadHistoryData();
   });
 </script>

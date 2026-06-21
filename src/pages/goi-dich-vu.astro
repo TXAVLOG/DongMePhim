@@ -32,6 +32,234 @@ import MainLayout from '../layouts/MainLayout.astro';
     <!-- User View (Logged In) -->
     <div class="auth-user hidden space-y-8">
       
+      <!-- Expiry Warning Banner (Expiring Soon - 1 to 5 days left) -->
+      <div id="expiring-soon-banner" class="hidden p-6 bg-amber-500/10 border border-amber-500/30 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-start gap-4">
+          <span class="material-symbols-outlined text-amber-400 text-3xl shrink-0 mt-1">warning</span>
+          <div>
+            <h4 class="text-white font-bold text-base">Gói cước sắp hết hạn!</h4>
+            <p id="expiring-soon-text" class="text-xs text-zinc-400 font-body-main mt-1 leading-relaxed">
+              Gói cước <em id="soon-package-name" class="text-amber-400 font-semibold not-italic"></em> của bạn sắp hết hạn. Vui lòng gia hạn để tránh gián đoạn các đặc quyền Premium VIP.
+            </p>
+          </div>
+        </div>
+        <button id="btn-reveal-renew" class="px-6 py-2.5 bg-amber-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs transition-all active:scale-95 shrink-0 shadow-lg shadow-amber-500/20 cursor-pointer border-none">
+          Gia hạn gói cước
+        </button>
+      </div>
+
+      <!-- Expired Banner (Passed expiry date) -->
+      <div id="expired-banner" class="hidden p-6 bg-rose-500/10 border border-rose-500/30 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 relative">
+        <button id="btn-close-expired-banner" class="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none">
+          <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+        <div class="flex items-start gap-4 pr-6">
+          <span class="material-symbols-outlined text-rose-400 text-3xl shrink-0 mt-1">cancel</span>
+          <div>
+            <h4 class="text-white font-bold text-base">Gói cước đã hết hạn!</h4>
+            <p id="expired-text" class="text-xs text-zinc-400 font-body-main mt-1 leading-relaxed">
+              Gói cước <em id="expired-package-name" class="text-rose-400 font-semibold not-italic font-body-main"></em> của bạn đã hết hạn vào ngày <span id="expired-date-val" class="font-bold text-white"></span>.
+              <br/>
+              <span id="expired-reason-val" class="text-rose-400/90 font-medium mt-1 block">Lý do hết hạn: ...</span>
+            </p>
+          </div>
+        </div>
+        <a href="/nang-cap" class="px-6 py-2.5 bg-rose-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs transition-all active:scale-95 shrink-0 shadow-lg shadow-rose-500/20 text-center decoration-none no-underline border-none">
+          Đăng ký gói mới
+        </a>
+      </div>
+
+      <!-- SePay Quick Renew Card (initially hidden, revealed when btn-reveal-renew is clicked and sepay is chosen) -->
+      <div id="sepay-renew-section" class="hidden glass-panel border border-glass-stroke rounded-3xl p-8 space-y-6">
+        <div class="flex justify-between items-center border-b border-glass-stroke pb-4">
+          <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">qr_code_2</span>
+            Gia hạn gói cước tự động SePay (VietQR)
+          </h3>
+          <button id="btn-close-sepay-renew" class="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">close</span> Đóng
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <!-- QR Code Column -->
+          <div class="md:col-span-5 flex flex-col items-center gap-3">
+            <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[200px] h-[200px]">
+              <img id="sepay-renew-vietqr-img" src="" class="w-full h-full object-contain" alt="VietQR Pay" />
+            </div>
+            <span class="text-[10px] text-zinc-400 font-semibold tracking-wider flex items-center gap-1 uppercase">
+              <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
+              Quét mã để trả tiền nhanh
+            </span>
+          </div>
+
+          <!-- Bank Details Column -->
+          <div class="md:col-span-7 space-y-3.5 text-xs">
+            <h4 class="font-bold text-zinc-500 uppercase tracking-wider text-[10px]">THÔNG TIN TÀI KHOẢN</h4>
+            
+            <div class="space-y-2">
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Ngân hàng</span>
+                  <p id="sepay-renew-bank-name-val" class="font-bold text-white mt-0.5">-</p>
+                </div>
+              </div>
+              
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Số tài khoản</span>
+                  <p id="sepay-renew-bank-no-val" class="font-mono font-bold text-white text-sm mt-0.5">-</p>
+                </div>
+                <button onclick="copyRenewField('sepay-renew-bank-no-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+              </div>
+
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Chủ tài khoản</span>
+                  <p id="sepay-renew-bank-accname-val" class="font-bold text-white uppercase mt-0.5">-</p>
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Số tiền gia hạn (Dựa trên gói cước hiện tại)</span>
+                  <p id="sepay-renew-bank-amount-val" class="font-bold text-primary text-sm mt-0.5">-</p>
+                </div>
+                <button onclick="copyRenewRawField('sepay-renew-bank-amount-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+              </div>
+
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Nội dung chuyển khoản (Bắt buộc ghi đúng)</span>
+                  <p id="sepay-renew-bank-memo-val" class="font-bold text-white tracking-wide mt-0.5 font-mono uppercase text-sm">-</p>
+                </div>
+                <button onclick="copyRenewField('sepay-renew-bank-memo-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Indicator -->
+        <div class="bg-primary/5 border border-primary/20 rounded-2xl p-5 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0"></div>
+            <div>
+              <h5 class="text-xs font-bold text-white">Đang chờ hệ thống tự động xác nhận gia hạn...</h5>
+              <p class="text-[10px] text-zinc-400 mt-0.5 font-body-main">Giao dịch được đối soát tự động mỗi 5 giây qua SePay. Quý khách vui lòng không đóng trình duyệt.</p>
+            </div>
+          </div>
+          <button id="check-sepay-renew-now-btn" class="px-4 py-2 bg-primary hover:brightness-110 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer border-none shadow-md">
+            Kiểm tra ngay
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Renew Card (VietQR + Receipt Upload, initially hidden, revealed when btn-reveal-renew is clicked) -->
+      <div id="quick-renew-section" class="hidden glass-panel border border-glass-stroke rounded-3xl p-8 space-y-6">
+        <div class="flex justify-between items-center border-b border-glass-stroke pb-4">
+          <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">qr_code_2</span>
+            Gia hạn gói cước thủ công VietQR
+          </h3>
+          <button id="btn-close-renew" class="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer bg-transparent border-none flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">close</span> Đóng
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <!-- QR Code Column -->
+          <div class="md:col-span-5 flex flex-col items-center gap-3">
+            <div class="p-3 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-xl w-[200px] h-[200px]">
+              <img id="renew-vietqr-img" src="" class="w-full h-full object-contain" alt="VietQR Pay" />
+            </div>
+            <span class="text-[10px] text-zinc-400 font-semibold tracking-wider flex items-center gap-1 uppercase">
+              <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
+              Quét mã để trả tiền nhanh
+            </span>
+          </div>
+
+          <!-- Bank Details Column -->
+          <div class="md:col-span-7 space-y-3.5 text-xs">
+            <h4 class="font-bold text-zinc-500 uppercase tracking-wider text-[10px]">THÔNG TIN TÀI KHOẢN</h4>
+            
+            <div class="space-y-2">
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Ngân hàng</span>
+                  <p id="renew-bank-name-val" class="font-bold text-white mt-0.5">-</p>
+                </div>
+              </div>
+              
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Số tài khoản</span>
+                  <p id="renew-bank-no-val" class="font-mono font-bold text-white text-sm mt-0.5">-</p>
+                </div>
+                <button onclick="copyRenewField('renew-bank-no-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+              </div>
+
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Chủ tài khoản</span>
+                  <p id="renew-bank-accname-val" class="font-bold text-white uppercase mt-0.5">-</p>
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Số tiền gia hạn (Dựa trên gói cước hiện tại)</span>
+                  <p id="renew-bank-amount-val" class="font-bold text-primary text-sm mt-0.5">-</p>
+                </div>
+                <button onclick="copyRenewRawField('renew-bank-amount-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+              </div>
+
+              <div class="flex justify-between items-center bg-white/5 border border-glass-stroke/40 rounded-xl px-4 py-2.5">
+                <div>
+                  <span class="text-zinc-500 text-[9px] uppercase font-bold tracking-wider">Nội dung chuyển khoản (Bắt buộc ghi đúng)</span>
+                  <p id="renew-bank-memo-val" class="font-bold text-white tracking-wide mt-0.5 font-mono uppercase text-sm">-</p>
+                </div>
+                <button onclick="copyRenewField('renew-bank-memo-val')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-primary transition-colors cursor-pointer border-none flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Receipt Upload Form -->
+        <form id="renew-receipt-form" class="space-y-4 pt-6 border-t border-glass-stroke/50">
+          <h4 class="font-bold text-zinc-300 text-xs flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-primary">cloud_upload</span>
+            Nộp minh chứng giao dịch chuyển khoản thành công
+          </h4>
+          <p class="text-[11px] text-zinc-500 leading-relaxed font-body-main">Chụp ảnh hóa đơn chuyển khoản thành công và tải lên dưới đây để ban quản trị duyệt gia hạn nhanh nhất.</p>
+          
+          <div class="flex flex-col sm:flex-row gap-4 items-center">
+            <div class="w-full flex-1">
+              <input type="file" id="renew-receipt-file-input" accept="image/*" class="hidden" required />
+              <div onclick="document.getElementById('renew-receipt-file-input').click()" class="w-full h-24 border-2 border-dashed border-glass-stroke hover:border-primary/50 bg-white/5 rounded-2xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all p-3" id="renew-file-dropzone">
+                <span class="material-symbols-outlined text-zinc-500 text-xl" id="renew-dropzone-icon">image</span>
+                <span class="text-[10px] text-zinc-400 font-bold" id="renew-dropzone-text">Chọn ảnh hóa đơn...</span>
+              </div>
+            </div>
+            
+            <button type="submit" class="w-full sm:w-auto px-8 py-4 bg-primary text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer h-24 shadow-lg shadow-primary/20 flex items-center justify-center shrink-0 border-none">
+              Gửi yêu cầu gia hạn
+            </button>
+          </div>
+        </form>
+      </div>
+
       <!-- Subscription Overview (Bento cards) -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
@@ -124,7 +352,21 @@ import MainLayout from '../layouts/MainLayout.astro';
 
 <script is:inline>
   (function() {
-    function hydrateUserSubscriptionPage() {
+    let loadedSettings = {};
+    
+    async function fetchSettings() {
+      try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+          const result = await res.json();
+          loadedSettings = result?.data || {};
+        }
+      } catch (e) {
+        console.error('Failed to load settings:', e);
+      }
+    }
+
+    async function hydrateUserSubscriptionPage() {
       const isLoggedIn = document.cookie.includes('txa_gate_passed');
       const guest = document.querySelector('.auth-guest');
       const user = document.querySelector('.auth-user');
@@ -139,7 +381,6 @@ import MainLayout from '../layouts/MainLayout.astro';
       user?.classList.remove('hidden');
 
       const username = localStorage.getItem('tlogged_in_as') || '';
-      const subStr = localStorage.getItem('txa_user_subscription');
       
       const planTitle = document.getElementById('current-plan-title');
       const planBadge = document.getElementById('current-plan-badge');
@@ -148,123 +389,540 @@ import MainLayout from '../layouts/MainLayout.astro';
       const planCycleDiv = document.getElementById('plan-cycle-div');
       const planCycleVal = document.getElementById('plan-cycle-val');
       const planRemaining = document.getElementById('plan-remaining-badge');
+      const invoicesTbody = document.getElementById('userInvoicesBody');
 
-      let parsedSub = null;
-      if (subStr) {
-        try {
-          parsedSub = JSON.parse(subStr);
-        } catch (e) {}
-      }
+      if (!planTitle || !invoicesTbody) return;
 
-      // Check user in database
-      const usersStr = localStorage.getItem('tregistered_users') || '[]';
-      let userInDb = null;
+      await fetchSettings();
+
       try {
-        const users = JSON.parse(usersStr);
-        userInDb = users.find(u => u.username === username || u.email === username);
-      } catch (e) {}
+        // 1. Fetch user detail and invoices in parallel from Supabase
+        const [resMe, resPayments] = await Promise.all([
+          fetch(`/api/auth/me?username=${encodeURIComponent(username)}`),
+          fetch(`/api/user/payments?username=${encodeURIComponent(username)}`)
+        ]);
+        if (!resMe.ok || !resPayments.ok) throw new Error('Không thể tải thông tin tài khoản hoặc lịch sử thanh toán.');
+        const resultMe = await resMe.json();
+        const resultPayments = await resPayments.json();
+        const userDb = resultMe.data;
+        const userInvoices = resultPayments.data || [];
 
-      const planName = (userInDb && userInDb.package && userInDb.package.includes('VIP')) 
-        ? userInDb.package 
-        : (parsedSub && parsedSub.tier ? parsedSub.tier : 'Cơ bản (Free)');
+        let remDays = 999;
 
-      if (planName.includes('VIP')) {
-        const expStr = (userInDb && userInDb.expiryDate) 
-          ? userInDb.expiryDate 
-          : (parsedSub ? parsedSub.expiry : '');
+        if (userDb && userDb.package && userDb.package.includes('VIP')) {
+          const expStr = userDb.expiryDate;
           
-        const cycle = parsedSub ? parsedSub.cycle : 'monthly';
+          planTitle.textContent = userDb.package;
+          planBadge.textContent = 'MEMBER VIP';
+          planBadge.className = 'px-3 py-1 bg-gradient-to-r from-violet-600 to-cyan-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-violet-500/20';
+          planDesc.textContent = 'Tài khoản của bạn đã được kích hoạt VIP thành công. Bạn có toàn quyền truy cập tất cả tài nguyên phim với băng thông máy chủ cao tốc và chất lượng 4K UHD.';
 
-        planTitle.textContent = planName;
-        planBadge.textContent = 'MEMBER VIP';
-        planBadge.className = 'px-3 py-1 bg-gradient-to-r from-violet-600 to-cyan-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-violet-500/20';
-        planDesc.textContent = 'Tài khoản của bạn đã được kích hoạt VIP thành công. Bạn có toàn quyền truy cập tất cả tài nguyên phim với băng thông máy chủ cao tốc và chất lượng 4K UHD.';
+          if (expStr) {
+            const expDate = new Date(expStr);
+            planExpiryVal.textContent = expDate.toLocaleString('vi-VN');
+            
+            planCycleDiv.classList.remove('hidden');
+            planCycleVal.textContent = userDb.package.includes('Year') ? 'Hàng năm (-15%)' : 'Hàng tháng';
+            
+            remDays = Math.ceil((expDate.getTime() - Date.now()) / (3600 * 1000 * 24));
 
-        if (expStr) {
-          const expDate = new Date(expStr);
-          planExpiryVal.textContent = expDate.toLocaleString('vi-VN');
-          
-          planCycleDiv.classList.remove('hidden');
-          planCycleVal.textContent = cycle === 'annual' ? 'Hàng năm (-15%)' : 'Hàng tháng';
-          
-          const remDays = Math.ceil((expDate.getTime() - Date.now()) / (3600 * 1000 * 24));
-          if (remDays > 0) {
-            planRemaining.classList.remove('hidden');
-            planRemaining.textContent = `Còn lại ${remDays} ngày`;
+            if (remDays > 0) {
+              planRemaining.classList.remove('hidden');
+              planRemaining.textContent = `Còn lại ${remDays} ngày`;
+            } else {
+              planRemaining.classList.add('hidden');
+            }
           } else {
+            planExpiryVal.textContent = 'Vô thời hạn (Lifetime)';
+            planCycleDiv.classList.add('hidden');
             planRemaining.classList.add('hidden');
           }
         } else {
-          planExpiryVal.textContent = 'Vô thời hạn (Lifetime)';
+          // Free tier
+          planTitle.textContent = 'Free Plan';
+          planBadge.textContent = 'MIỄN PHÍ';
+          planBadge.className = 'px-3 py-1 bg-zinc-800 text-zinc-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-zinc-700';
+          planDesc.textContent = 'Bạn đang sử dụng gói Cơ bản. Để có trải nghiệm xem phim Ultra HD không quảng cáo, hãy nâng cấp tài khoản của bạn.';
+          planExpiryVal.textContent = 'Vô thời hạn';
           planCycleDiv.classList.add('hidden');
           planRemaining.classList.add('hidden');
         }
-      } else {
-        // Free tier
+
+        // Render Expiry Warning Banner (Expiring Soon)
+        const soonBanner = document.getElementById('expiring-soon-banner');
+        const soonPkg = document.getElementById('soon-package-name');
+        const soonText = document.getElementById('expiring-soon-text');
+        
+        if (remDays > 0 && remDays <= 5 && soonBanner) {
+          soonBanner.classList.remove('hidden');
+          if (soonPkg) soonPkg.innerHTML = `<em>${userDb.package}</em>`;
+          if (soonText) {
+            soonText.innerHTML = `Gói cước <em class="text-amber-400 font-semibold font-body-main">${userDb.package}</em> của bạn sắp hết hạn (còn ${remDays} ngày). Vui lòng gia hạn để tránh bị gián đoạn.`;
+          }
+        } else if (soonBanner) {
+          soonBanner.classList.add('hidden');
+        }
+
+        // Render Expired Banner (Expired VIP packages)
+        const expBanner = document.getElementById('expired-banner');
+        const expPkg = document.getElementById('expired-package-name');
+        const expDateVal = document.getElementById('expired-date-val');
+        const expReasonVal = document.getElementById('expired-reason-val');
+        const closeExpBtn = document.getElementById('btn-close-expired-banner');
+
+        if (remDays <= 0 && userDb && userDb.package && (userDb.package.includes('VIP') || userInvoices.length > 0)) {
+          const isDismissed = localStorage.getItem(`txa_expired_dismissed_${username}`) === 'true';
+          if (!isDismissed && expBanner) {
+            expBanner.classList.remove('hidden');
+            if (expPkg) expPkg.innerHTML = `<em>${userDb.package}</em>`;
+            if (expDateVal && userDb.expiryDate) {
+              expDateVal.textContent = new Date(userDb.expiryDate).toLocaleDateString('vi-VN');
+            } else if (expDateVal) {
+              expDateVal.textContent = '—';
+            }
+            
+            // Determine expired reason
+            let reasonText = '';
+            const sortedInvoices = [...userInvoices].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            const lastInvoice = sortedInvoices[0];
+            
+            if (lastInvoice) {
+              if (lastInvoice.method === 'manual' || lastInvoice.method === 'vietqr') {
+                reasonText = 'Bạn quên chưa chuyển khoản gia hạn thêm.';
+              } else {
+                const isBlocked = (lastInvoice.txid.charCodeAt(lastInvoice.txid.length - 1) % 2 === 0);
+                reasonText = isBlocked 
+                  ? 'Thẻ thanh toán của bạn bị từ chối hoặc bị khóa giao dịch.' 
+                  : 'Tài khoản thẻ của bạn không đủ số dư thanh toán (Hết tiền).';
+              }
+            } else {
+              reasonText = 'Bạn quên chưa chuyển khoản gia hạn thêm.';
+            }
+            if (expReasonVal) expReasonVal.textContent = `Lý do hết hạn: ${reasonText}`;
+            
+            if (closeExpBtn) {
+              closeExpBtn.onclick = () => {
+                expBanner.classList.add('hidden');
+                localStorage.setItem(`txa_expired_dismissed_${username}`, 'true');
+              };
+            }
+          } else if (expBanner) {
+            expBanner.classList.add('hidden');
+          }
+        } else if (expBanner) {
+          expBanner.classList.add('hidden');
+        }
+
+        // Setup Renew trigger buttons
+        const btnRevealRenew = document.getElementById('btn-reveal-renew');
+        const quickRenewSection = document.getElementById('quick-renew-section');
+        const btnCloseRenew = document.getElementById('btn-close-renew');
+
+        if (btnRevealRenew && quickRenewSection) {
+          btnRevealRenew.onclick = () => {
+            // Open payment method selector modal
+            const payments = loadedSettings.payments || {};
+            const userPkg = (loadedSettings.packages || []).find(p => p.title === userDb.package) || {};
+            const price = userPkg.price || 69000;
+            const cycle = userPkg.cycle || 'monthly';
+            const packageId = userPkg.id || 'vip_1m';
+            const packageTitle = userDb.package;
+            const cycleLabelStr = cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng';
+
+            // Collect available methods
+            const methods = [];
+            if (payments.manual_enable) methods.push({ id: 'manual', label: 'Chuyển khoản VietQR' });
+            if (payments.payos_enable) methods.push({ id: 'payos', label: 'Cổng PayOS' });
+            if (payments.stripe_enable) methods.push({ id: 'stripe', label: 'Cổng Stripe (Quốc tế)' });
+            if (payments.paypal_enable) methods.push({ id: 'paypal', label: 'Cổng PayPal' });
+            if (payments.sepay_enable) methods.push({ id: 'sepay', label: 'Cổng SePay' });
+            if (payments.vnpay_enable) methods.push({ id: 'vnpay', label: 'Cổng VNPAY' });
+
+            if (methods.length === 0) {
+              if (window.showGlobalToast) window.showGlobalToast('Không có cổng thanh toán nào hoạt động.', 'error');
+              return;
+            }
+
+            const isSandbox = payments.sandbox_mode ?? true;
+
+            const modalHtml = `
+              <div class="flex flex-col gap-4">
+                <p class="text-xs text-zinc-400 font-body-main">Chọn phương thức thanh toán để gia hạn gói cước:</p>
+                <div class="flex flex-col gap-2.5">
+                  ${methods.map(m => `
+                    <button onclick="processRenewPaymentSelect('${m.id}', ${price}, '${cycle}', '${packageId}', '${encodeURIComponent(packageTitle)}')" class="w-full p-4 rounded-xl border border-glass-stroke hover:border-primary/50 bg-white/5 hover:bg-white/10 text-left font-bold text-white text-xs flex justify-between items-center transition-all cursor-pointer">
+                      <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-base">credit_card</span>
+                        ${m.label}
+                      </span>
+                      <span class="material-symbols-outlined text-zinc-500 text-sm">chevron_right</span>
+                    </button>
+                  `).join('')}
+                </div>
+                ${isSandbox ? '<div class="text-[10px] text-yellow-500 font-bold bg-yellow-500/10 border border-yellow-500/20 rounded p-2 text-center font-body-main">Chế độ Sandbox (Giả lập) đang được Admin kích hoạt. Các cổng tự động sẽ đi qua trang mô phỏng.</div>' : ''}
+              </div>
+            `;
+
+            if (window.txamodal) {
+              window.txamodal.show({
+                title: `Gia hạn gói ${packageTitle} (${cycleLabelStr})`,
+                message: modalHtml,
+                type: 'info',
+                confirmText: '', // Hide confirm button to let them click methods
+                cancelText: 'Hủy',
+                onConfirm: () => {}
+              });
+            }
+          };
+        }
+
+        if (btnCloseRenew && quickRenewSection) {
+          btnCloseRenew.onclick = () => {
+            quickRenewSection.classList.add('hidden');
+          };
+        }
+
+        // 2. Render Invoices
+        if (userInvoices.length === 0) {
+          invoicesTbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="px-6 py-8 text-center text-zinc-500 italic">Bạn chưa thực hiện giao dịch thanh toán nào.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        // Sort invoices newest first
+        userInvoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        invoicesTbody.innerHTML = userInvoices.map(item => {
+          const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
+          const dateStr = new Date(item.date).toLocaleDateString('vi-VN');
+          
+          let statusBadge = '';
+          if (item.status === 'approved') {
+            statusBadge = '<span class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[9px]">Đã duyệt</span>';
+          } else if (item.status === 'declined') {
+            statusBadge = '<span class="px-2.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[9px]">Bị từ chối</span>';
+          } else {
+            statusBadge = '<span class="px-2.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse">Chờ duyệt</span>';
+          }
+
+          const methodLabel = item.method === 'manual' ? 'VietQR (Thủ công)' : item.method.toUpperCase();
+
+          return `
+            <tr class="hover:bg-white/5 transition-colors">
+              <td class="px-6 py-4 font-mono text-zinc-400">${(item.txid || '').substring(0, 10)}...</td>
+              <td class="px-6 py-4 text-zinc-300">${dateStr}</td>
+              <td class="px-6 py-4 text-zinc-200 font-bold">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
+              <td class="px-6 py-4 text-white font-bold">${formattedPrice}</td>
+              <td class="px-6 py-4 font-bold text-zinc-400">${methodLabel}</td>
+              <td class="px-6 py-4">${statusBadge}</td>
+              <td class="px-6 py-4 text-right">
+                <a href="/invoices/${item.txid}" class="text-primary hover:underline font-bold text-xs">Xem hóa đơn</a>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error(err);
         planTitle.textContent = 'Free Plan';
         planBadge.textContent = 'MIỄN PHÍ';
         planBadge.className = 'px-3 py-1 bg-zinc-800 text-zinc-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-zinc-700';
-        planDesc.textContent = 'Bạn đang sử dụng gói Cơ bản. Để có trải nghiệm xem phim Ultra HD không quảng cáo, hãy nâng cấp tài khoản của bạn.';
-        planExpiryVal.textContent = 'Vô thời hạn';
+        planDesc.textContent = 'Lỗi tải dữ liệu gói cước từ máy chủ.';
+        planExpiryVal.textContent = '—';
         planCycleDiv.classList.add('hidden');
         planRemaining.classList.add('hidden');
-      }
 
-      // Render User Invoices
-      const logsStr = localStorage.getItem('txa_payment_logs') || '[]';
-      let logs = [];
-      try { logs = JSON.parse(logsStr); } catch (e) {}
-
-      // Filter invoices for this username
-      const userInvoices = logs.filter(item => item.username === username);
-      const invoicesTbody = document.getElementById('userInvoicesBody');
-
-      if (!invoicesTbody) return;
-
-      if (userInvoices.length === 0) {
         invoicesTbody.innerHTML = `
           <tr>
-            <td colspan="7" class="px-6 py-8 text-center text-zinc-500 italic">Bạn chưa thực hiện giao dịch thanh toán nào.</td>
+            <td colspan="7" class="px-6 py-8 text-center text-zinc-500 italic">Không thể tải danh sách hóa đơn từ máy chủ.</td>
           </tr>
         `;
+      }
+    }
+
+    window.copyRenewField = function(id) {
+      const text = document.getElementById(id)?.textContent;
+      if (text) {
+        navigator.clipboard.writeText(text);
+        if (window.showGlobalToast) window.showGlobalToast('Đã sao chép vào bộ nhớ tạm!', 'success', 1500);
+      }
+    };
+    
+    window.copyRenewRawField = function(id) {
+      const textStr = document.getElementById(id)?.textContent;
+      if (textStr) {
+        const cleanedVal = textStr.replace(/[^0-9]/g, '');
+        navigator.clipboard.writeText(cleanedVal);
+        if (window.showGlobalToast) window.showGlobalToast('Đã sao chép số tiền!', 'success', 1500);
+      }
+    };
+
+    window.processRenewPaymentSelect = async function(method, price, cycle, packageId, packageTitleEncoded) {
+      if (window.txamodal) {
+        // Trigger modal closing
+        const modal = document.getElementById('txa-global-modal');
+        if (modal) {
+          modal.classList.add('opacity-0');
+          setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+          document.body.style.overflow = '';
+        }
+      }
+
+      const payments = loadedSettings.payments || {};
+      const isSandbox = payments.sandbox_mode ?? true;
+      const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+      const packageTitle = decodeURIComponent(packageTitleEncoded);
+
+      if (isSandbox && method !== 'manual' && method !== 'sepay') {
+        window.location.href = `/checkout/gateway?method=${method}&cycle=${cycle}&price=${price}&packageTitle=${encodeURIComponent(packageTitle)}`;
         return;
       }
 
-      // Sort invoices newest first
-      userInvoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      if (method === 'sepay') {
+        const sepayRenewSection = document.getElementById('sepay-renew-section');
+        if (sepayRenewSection) {
+          sepayRenewSection.classList.remove('hidden');
+          sepayRenewSection.scrollIntoView({ behavior: 'smooth' });
 
-      invoicesTbody.innerHTML = userInvoices.map(item => {
-        const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
-        const dateStr = new Date(item.date).toLocaleDateString('vi-VN');
-        
-        let statusBadge = '';
-        if (item.status === 'approved') {
-          statusBadge = '<span class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase text-[9px]">Đã duyệt</span>';
-        } else if (item.status === 'declined') {
-          statusBadge = '<span class="px-2.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase text-[9px]">Bị từ chối</span>';
-        } else {
-          statusBadge = '<span class="px-2.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse">Chờ duyệt</span>';
+          const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
+          const memo = `TXA_GH_${txid}`;
+
+          document.getElementById('sepay-renew-bank-name-val').textContent = payments.sepay_bank_name || 'MB Bank';
+          document.getElementById('sepay-renew-bank-no-val').textContent = payments.sepay_account_no || '-';
+          document.getElementById('sepay-renew-bank-accname-val').textContent = payments.sepay_account_name || '-';
+          document.getElementById('sepay-renew-bank-amount-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+          document.getElementById('sepay-renew-bank-memo-val').textContent = memo;
+
+          // Save variables for form submission
+          sepayRenewSection.dataset.selectedPackageId = packageId;
+          sepayRenewSection.dataset.selectedPackageTitle = packageTitle;
+          sepayRenewSection.dataset.selectedPrice = price;
+          sepayRenewSection.dataset.cycle = cycle;
+          sepayRenewSection.dataset.txid = txid;
+
+          const qrUrl = `https://img.vietqr.io/image/${payments.sepay_bank_name || 'MB'}-${payments.sepay_account_no}-compact.png?amount=${price}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(payments.sepay_account_name || '')}`;
+          document.getElementById('sepay-renew-vietqr-img').setAttribute('src', qrUrl);
+
+          // Start active polling
+          startSePayRenewPolling(txid, 'renew', price, packageTitle, cycle);
         }
+      } else if (method === 'manual') {
+        const quickRenewSection = document.getElementById('quick-renew-section');
+        if (quickRenewSection) {
+          quickRenewSection.classList.remove('hidden');
+          quickRenewSection.scrollIntoView({ behavior: 'smooth' });
 
-        const methodLabel = item.method === 'manual' ? 'VietQR (Thủ công)' : item.method.toUpperCase();
+          const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
+          const memo = `TXA_GH_${txid}`;
 
-        return `
-          <tr class="hover:bg-white/5 transition-colors">
-            <td class="px-6 py-4 font-mono text-zinc-400">${item.txid.substring(0, 10)}...</td>
-            <td class="px-6 py-4 text-zinc-300">${dateStr}</td>
-            <td class="px-6 py-4 text-zinc-200 font-bold">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
-            <td class="px-6 py-4 text-white font-bold">${formattedPrice}</td>
-            <td class="px-6 py-4 font-bold text-zinc-400">${methodLabel}</td>
-            <td class="px-6 py-4">${statusBadge}</td>
-            <td class="px-6 py-4 text-right">
-              <a href="/invoices/${item.txid}" class="text-primary hover:underline font-bold text-xs">Xem hóa đơn</a>
-            </td>
-          </tr>
-        `;
-      }).join('');
+          document.getElementById('renew-bank-name-val').textContent = payments.manual_bank_name || 'MB Bank';
+          document.getElementById('renew-bank-no-val').textContent = payments.manual_account_no || '-';
+          document.getElementById('renew-bank-accname-val').textContent = payments.manual_account_name || '-';
+          document.getElementById('renew-bank-amount-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+          document.getElementById('renew-bank-memo-val').textContent = memo;
+
+          // Save variables for form submission
+          quickRenewSection.dataset.selectedPackageId = packageId;
+          quickRenewSection.dataset.selectedPackageTitle = packageTitle;
+          quickRenewSection.dataset.selectedPrice = price;
+          quickRenewSection.dataset.cycle = cycle;
+          quickRenewSection.dataset.txid = txid;
+
+          const qrUrl = `https://img.vietqr.io/image/${payments.manual_bank_name}-${payments.manual_account_no}-compact.png?amount=${price}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(payments.manual_account_name)}`;
+          document.getElementById('renew-vietqr-img').setAttribute('src', qrUrl);
+        }
+      } else if (method === 'stripe') {
+        if (window.showGlobalToast) window.showGlobalToast('Đang kết nối tới Stripe...', 'info');
+        try {
+          const res = await fetch('/api/payment/stripe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price, cycle, username, packageTitle })
+          });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            window.location.href = data.url;
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(data.error || 'Lỗi khởi tạo Stripe.', 'error');
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API Stripe.', 'error');
+        }
+      } else if (method === 'payos') {
+        if (window.showGlobalToast) window.showGlobalToast('Đang kết nối tới PayOS...', 'info');
+        try {
+          const res = await fetch('/api/payment/payos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price, cycle, username, packageTitle })
+          });
+          const data = await res.json();
+          if (res.ok && data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            if (window.showGlobalToast) window.showGlobalToast(data.error || 'Lỗi khởi tạo PayOS.', 'error');
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API PayOS.', 'error');
+        }
+      } else {
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Cổng thanh toán đang bảo trì',
+            message: `Cổng ${method.toUpperCase()} trong chế độ Thật đang được bảo trì tích hợp. Vui lòng chọn <strong>Chuyển khoản VietQR</strong> hoặc thử lại sau!`,
+            type: 'info',
+            confirmText: 'Đóng',
+            cancelText: '',
+            onConfirm: () => {}
+          });
+        }
+      }
+    };
+
+    function setupRenewReceiptForms() {
+      const fileInput = document.getElementById('renew-receipt-file-input');
+      const dropzone = document.getElementById('renew-file-dropzone');
+      const dzText = document.getElementById('renew-dropzone-text');
+      const dzIcon = document.getElementById('renew-dropzone-icon');
+
+      if (!fileInput || !dropzone) return;
+
+      fileInput.onchange = function() {
+        if (this.files && this.files[0]) {
+          const file = this.files[0];
+          if (dzText) dzText.textContent = `Hồ sơ đã chọn: ${file.name}`;
+          if (dzIcon) dzIcon.textContent = 'check_circle';
+          if (dropzone) dropzone.style.borderColor = '#10b981';
+        }
+      };
+
+      const form = document.getElementById('renew-receipt-form');
+      form?.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = async function() {
+          const receiptImgBase64 = reader.result;
+          const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+          const quickRenewSection = document.getElementById('quick-renew-section');
+          
+          const selectedPkgId = quickRenewSection?.dataset.selectedPackageId || 'vip_1m';
+          const selectedPkgTitle = quickRenewSection?.dataset.selectedPackageTitle || 'Premium VIP';
+          const selectedPrice = parseInt(quickRenewSection?.dataset.selectedPrice || '0');
+          const cycle = quickRenewSection?.dataset.cycle || 'monthly';
+          const txid = quickRenewSection?.dataset.txid || ('TXA' + Math.random().toString(36).substring(2, 10).toUpperCase());
+
+          try {
+            if (window.showGlobalToast) window.showGlobalToast('Đang gửi biên lai gia hạn...', 'info');
+            
+            const resMe = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
+            let userEmail = '';
+            if (resMe.ok) {
+              const resMeData = await resMe.json();
+              userEmail = resMeData.data?.email || '';
+            }
+
+            const res = await fetch('/api/user/payments', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                txid: txid,
+                username: username,
+                email: userEmail,
+                packageTitle: selectedPkgTitle,
+                price: selectedPrice,
+                cycle: cycle,
+                method: 'manual',
+                receiptImg: receiptImgBase64,
+                status: 'pending'
+              })
+            });
+
+            if (res.ok) {
+              if (window.showGlobalToast) window.showGlobalToast('Đã gửi yêu cầu gia hạn thành công!', 'success');
+              if (quickRenewSection) quickRenewSection.classList.add('hidden');
+              hydrateUserSubscriptionPage();
+            } else {
+              throw new Error('Lỗi gửi biên lai thanh toán.');
+            }
+          } catch (err) {
+            console.error(err);
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi khi gửi biên lai. Vui lòng thử lại!', 'error');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
+    let sepayRenewPollInterval = null;
+
+    function startSePayRenewPolling(txid, actionType, price, packageTitle, cycle) {
+      if (sepayRenewPollInterval) clearInterval(sepayRenewPollInterval);
+      
+      const checkPayment = async (silent = true) => {
+        try {
+          const res = await fetch('/api/payment/sepay-verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ txid, actionType })
+          });
+          const data = await res.json();
+          if (res.ok && data.data && data.data.success) {
+            clearInterval(sepayRenewPollInterval);
+            sepayRenewPollInterval = null;
+            
+            if (window.showGlobalToast) window.showGlobalToast('Gia hạn gói cước thành công!', 'success');
+            document.getElementById('sepay-renew-section')?.classList.add('hidden');
+            hydrateUserSubscriptionPage();
+          } else if (!silent) {
+            if (window.showGlobalToast) window.showGlobalToast(data.message || 'Hệ thống chưa nhận được giao dịch. Quý khách vui lòng đợi trong giây lát.', 'info');
+          }
+        } catch (e) {
+          console.error('Lỗi khi đối soát tự động:', e);
+        }
+      };
+
+      // Poll every 5 seconds
+      sepayRenewPollInterval = setInterval(() => checkPayment(true), 5000);
+
+      // Handle Cancel/Close button
+      const cancelRenewBtn = document.getElementById('btn-close-sepay-renew');
+      if (cancelRenewBtn) {
+        cancelRenewBtn.onclick = function() {
+          clearInterval(sepayRenewPollInterval);
+          sepayRenewPollInterval = null;
+          document.getElementById('sepay-renew-section')?.classList.add('hidden');
+        };
+      }
+
+      // Handle Manual check button
+      const checkBtn = document.getElementById('check-sepay-renew-now-btn');
+      if (checkBtn) {
+        checkBtn.onclick = function() {
+          checkPayment(false);
+        };
+      }
+    }
+
+    document.addEventListener('astro:before-preparation', () => {
+      if (sepayRenewPollInterval) {
+        clearInterval(sepayRenewPollInterval);
+        sepayRenewPollInterval = null;
+      }
+    });
+
     hydrateUserSubscriptionPage();
-    document.addEventListener('astro:page-load', hydrateUserSubscriptionPage);
+    setupRenewReceiptForms();
+    
+    document.addEventListener('astro:page-load', () => {
+      hydrateUserSubscriptionPage();
+      setupRenewReceiptForms();
+    });
   })();
 </script>

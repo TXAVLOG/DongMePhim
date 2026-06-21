@@ -138,6 +138,10 @@ export const seedSettings: SiteSettings = {
     paypal_client_id: "mock_paypal_id",
     sepay_enable: true,
     sepay_api_key: "mock_sepay_key",
+    sepay_bank_account_id: "",
+    sepay_bank_name: "",
+    sepay_account_no: "",
+    sepay_account_name: "",
     vnpay_enable: true,
     vnpay_tmn_code: "mock_tmn_code",
     vnpay_hash_secret: "mock_hash_secret",
@@ -148,6 +152,68 @@ export const seedSettings: SiteSettings = {
     manual_bank_name: "Ngân hàng Quân đội MB Bank",
     manual_account_no: "1903568999999",
     manual_account_name: "LE HOANG ANH"
+  },
+  packages: [
+    {
+      id: "free",
+      title: "Gói Free",
+      price: 0,
+      cycle: "lifetime",
+      style_type: "default",
+      features: ["Có chứa quảng cáo ngẫu nhiên", "Xem chất lượng SD tiêu chuẩn", "Chỉ xem các server thường"],
+      permissions: {
+        max_resolution: "SD",
+        allowed_servers: ["Vietsub", "Thuyết Minh", "Lồng Tiếng"],
+        max_playlists: 10,
+        watch_together: false,
+        hide_watermark: false,
+        vip_badge: false,
+        bypass_ads: false
+      }
+    },
+    {
+      id: "vip_1m",
+      title: "VIP 1 Tháng",
+      price: 69000,
+      cycle: "monthly",
+      style_type: "default",
+      features: ["Hoàn toàn không có quảng cáo", "Xem chất lượng cực nét 4K UHD", "Mở khóa toàn bộ các server VIP tốc độ cao", "Hỗ trợ tính năng Xem Chung"],
+      permissions: {
+        max_resolution: "4K",
+        allowed_servers: ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"],
+        max_playlists: 100,
+        watch_together: true,
+        hide_watermark: true,
+        vip_badge: true,
+        bypass_ads: true
+      }
+    },
+    {
+      id: "vip_1y",
+      title: "VIP 1 Năm",
+      price: 699000,
+      cycle: "annual",
+      style_type: "default",
+      features: ["Đầy đủ đặc quyền của VIP Tháng", "Tiết kiệm chi phí so với mua lẻ", "Hỗ trợ xem offline và phát hành sớm"],
+      permissions: {
+        max_resolution: "4K",
+        allowed_servers: ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"],
+        max_playlists: 1000,
+        watch_together: true,
+        hide_watermark: true,
+        vip_badge: true,
+        bypass_ads: true
+      }
+    }
+  ],
+  ads: {
+    pre_roll_enable: false,
+    pre_roll_type: "video",
+    pre_roll_url: "https://www.w3schools.com/html/mov_bbb.mp4",
+    pre_roll_skip_seconds: 5,
+    click_ad_enable: false,
+    click_ad_code: "https://shope.ee",
+    click_ad_threshold: 5
   }
 };
 
@@ -162,8 +228,34 @@ export class LocalSettingProvider implements ISettingProvider {
           if (!parsed.payments) {
             parsed.payments = { ...seedSettings.payments };
             changed = true;
-          } else if (parsed.payments.sandbox_mode === undefined) {
-            parsed.payments.sandbox_mode = true;
+          } else {
+            let paymentsChanged = false;
+            const keysToEnsure = [
+              'sepay_bank_account_id',
+              'sepay_bank_name',
+              'sepay_account_no',
+              'sepay_account_name'
+            ];
+            keysToEnsure.forEach(k => {
+              if (parsed.payments[k] === undefined) {
+                parsed.payments[k] = '';
+                paymentsChanged = true;
+              }
+            });
+            if (parsed.payments.sandbox_mode === undefined) {
+              parsed.payments.sandbox_mode = true;
+              paymentsChanged = true;
+            }
+            if (paymentsChanged) {
+              changed = true;
+            }
+          }
+          if (!parsed.packages) {
+            parsed.packages = JSON.parse(JSON.stringify(seedSettings.packages));
+            changed = true;
+          }
+          if (!parsed.ads) {
+            parsed.ads = { ...seedSettings.ads };
             changed = true;
           }
           if (parsed.social) {
@@ -211,3 +303,4 @@ export class LocalSettingProvider implements ISettingProvider {
     }
   }
 }
+

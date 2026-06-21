@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '../../../lib/api/response';
 import { SettingService } from '../../../services/SettingService';
+import { supabase } from '../../../lib/supabase';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -9,9 +10,13 @@ export const POST: APIRoute = async ({ request }) => {
       body = await request.json();
     } catch (e) {}
 
+    const { username, email, password, turnstileToken } = body;
+    if (!username || !email || !password) {
+      return apiResponse(null, 'error', 'Vui lòng điền đầy đủ thông tin bắt buộc!', 400, request);
+    }
+
     const settings = await SettingService.getSettings();
     if (settings.login?.turnstile_enable) {
-      const turnstileToken = body.turnstileToken;
       const secretKey = settings.login?.turnstile_secret_key;
 
       if (!turnstileToken || !secretKey) {
@@ -31,6 +36,55 @@ export const POST: APIRoute = async ({ request }) => {
       if (!verifyData.success) {
         return apiResponse(null, 'error', 'Mã Captcha không hợp lệ hoặc đã hết hạn!', 400, request);
       }
+    }
+
+    // Check if user already exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('username, email')
+      .or(`username.eq.${username},email.eq.${email}`)
+      .maybeSingle();
+
+    if (checkError) {
+      throw checkError;
+    }
+
+    if (existingUser) {
+      if (existingUser.username?.toLowerCase() === username.toLowerCase()) {
+        return apiResponse(null, 'error', 'Tên tài khoản đã tồn tại!', 400, request);
+      }
+      return apiResponse(null, 'error', 'Địa chỉ email đã được đăng ký!', 400, request);
+    }
+
+    // MD5 implementation or simple random hash for Gravatar avatar
+    const emailClean = email.trim().toLowerCase();
+    let emailHash = '';
+    // A simple hash function to generate MD5-like string
+    let h = 0;
+    for (let i = 0; i < emailClean.length; i++) {
+      h = 31 * h + emailClean.charCodeAt(i);
+      h = h & h; // Convert to 32bit integer
+    }
+    emailHash = Math.abs(h).toString(16).padStart(8, '0');
+
+    // Insert user
+    const { error: insertError } = await supabase
+      .from('users')
+      .insert({
+        username,
+        email,
+        password, // stored plain text to match original system
+        role: 'user',
+        name: username,
+        avatar_url: `https://www.gravatar.com/avatar/${emailHash}?d=identicon`,
+        package: 'Free',
+        status: 'active',
+        email_verified: true,
+        join_date: new Date().toISOString()
+      });
+
+    if (insertError) {
+      throw insertError;
     }
 
     return apiResponse({ success: true, message: "Đăng ký thành công" }, 'success', '', 200, request);

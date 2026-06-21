@@ -123,6 +123,10 @@ export interface PaymentSettings {
   paypal_client_id: string;
   sepay_enable: boolean;
   sepay_api_key: string;
+  sepay_bank_account_id?: string;
+  sepay_bank_name?: string;
+  sepay_account_no?: string;
+  sepay_account_name?: string;
   vnpay_enable: boolean;
   vnpay_tmn_code: string;
   vnpay_hash_secret: string;
@@ -134,9 +138,38 @@ export interface PaymentSettings {
   manual_account_no: string;
   manual_account_name: string;
 }
+export interface PlanPermission {
+  max_resolution: 'SD' | 'HD' | 'FHD' | '4K';
+  allowed_servers: string[];
+  max_playlists: number;
+  watch_together: boolean;
+  hide_watermark: boolean;
+  vip_badge: boolean;
+  bypass_ads: boolean;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  title: string;
+  price: number;
+  cycle: 'lifetime' | 'monthly' | 'annual';
+  style_type: 'default' | 'custom_color' | 'rainbow_effect';
+  custom_color?: string;
+  features: string[];
+  permissions: PlanPermission;
+}
+
+export interface AdSettings {
+  pre_roll_enable: boolean;
+  pre_roll_type: 'video' | 'embed';
+  pre_roll_url: string;
+  pre_roll_skip_seconds: number;
+  click_ad_enable: boolean;
+  click_ad_code: string;
+  click_ad_threshold: number;
+}
 
 export interface SiteSettings {
-  // Categorized settings from DATABASE.md
   general: GeneralSettings;
   smtp: SMTPSettings;
   telegram: TelegramSettings;
@@ -146,6 +179,8 @@ export interface SiteSettings {
   social: SocialSettings;
   luckyDraw: LuckyDrawSettings;
   payments: PaymentSettings;
+  packages: SubscriptionPlan[];
+  ads: AdSettings;
 }
 
 export interface ISettingProvider {
