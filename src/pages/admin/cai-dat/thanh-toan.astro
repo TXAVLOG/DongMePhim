@@ -142,6 +142,61 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
                 <label class="text-[10px] text-zinc-500 font-bold uppercase">Tên chủ tài khoản</label>
                 <input type="text" id="payment-sepay-name" value={settings.payments?.sepay_account_name} placeholder="Ví dụ: NGUYEN VAN A" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white uppercase" />
               </div>
+
+              <!-- Webhook URL Display & Test webhook button -->
+              <div class="space-y-2 pt-3 border-t border-glass-stroke/30">
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-500 font-bold uppercase">URL Webhook nhận thông báo từ SePay</label>
+                  <div class="flex gap-2">
+                    <input type="text" id="sepay-webhook-url-input" readonly value="" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl px-4 py-2 text-xs text-zinc-400 focus:outline-none font-mono" />
+                    <button type="button" id="sepay-copy-webhook-btn" class="px-3 py-2 bg-white/5 border border-glass-stroke hover:bg-white/10 active:scale-95 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center">
+                      <span class="material-symbols-outlined text-sm">content_copy</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex gap-2.5 pt-1.5">
+                  <button type="button" id="sepay-test-webhook-btn" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 active:scale-95 text-slate-950 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 border-none">
+                    <span class="material-symbols-outlined text-sm">send</span>
+                    Send Test Webhook
+                  </button>
+                </div>
+              </div>
+
+              <!-- Postman-like response console (initially hidden) -->
+              <div id="postman-console" class="hidden glass-panel rounded-xl border border-glass-stroke/50 p-4 space-y-3 bg-zinc-950/80 font-mono text-[11px] text-zinc-300">
+                <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span class="text-[10px] text-zinc-500 font-bold tracking-wider">POSTMAN RESPONSE CONSOLE</span>
+                  <button type="button" onclick="document.getElementById('postman-console').classList.add('hidden')" class="text-zinc-500 hover:text-white transition-colors cursor-pointer bg-transparent border-none">
+                    <span class="material-symbols-outlined text-xs">close</span>
+                  </button>
+                </div>
+
+                <!-- Status & Time details -->
+                <div class="flex items-center gap-4 text-xs font-bold">
+                  <div>
+                    Status: <span id="postman-status-badge" class="px-2 py-0.5 rounded font-black text-[10px]">200 OK</span>
+                  </div>
+                  <div>
+                    Time: <span id="postman-time-val" class="text-primary">45 ms</span>
+                  </div>
+                </div>
+
+                <!-- Headers -->
+                <div class="space-y-1">
+                  <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Headers</span>
+                  <div class="text-[10px] text-zinc-500 space-y-0.5 bg-black/40 p-2.5 rounded-lg border border-white/5">
+                    <div>content-type: application/json; charset=utf-8</div>
+                    <div>server: cloudflare / astro</div>
+                  </div>
+                </div>
+
+                <!-- Body -->
+                <div class="space-y-1">
+                  <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Response Body (JSON)</span>
+                  <pre id="postman-body-pre" class="p-3 bg-black/60 rounded-lg border border-white/5 overflow-x-auto text-[10px] text-emerald-400 leading-normal max-h-[150px] custom-scrollbar"></pre>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -215,6 +270,10 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
     (function() {
       // Hydrate form fields client-side
       function hydrateFromLocalStorage() {
+        const webhookInput = document.getElementById('sepay-webhook-url-input');
+        if (webhookInput) {
+          webhookInput.value = window.location.origin + '/api/payment/sepay';
+        }
         let stored = null;
         try {
           const raw = localStorage.getItem('txa_site_settings');
@@ -397,6 +456,88 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           }
         } catch(e) {
           if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API lấy danh sách.', 'error');
+        }
+      });
+
+      // Copy webhook URL button
+      document.getElementById('sepay-copy-webhook-btn')?.addEventListener('click', () => {
+        const url = document.getElementById('sepay-webhook-url-input')?.value;
+        if (url) {
+          navigator.clipboard.writeText(url);
+          if (window.showGlobalToast) window.showGlobalToast('Đã sao chép URL Webhook!', 'success', 1500);
+        }
+      });
+
+      // Test webhook API simulation button
+      document.getElementById('sepay-test-webhook-btn')?.addEventListener('click', async () => {
+        const apiKey = document.getElementById('payment-sepay-key')?.value;
+        if (!apiKey) {
+          if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền API Key trước khi test webhook!', 'error');
+          return;
+        }
+
+        const consoleEl = document.getElementById('postman-console');
+        const statusBadge = document.getElementById('postman-status-badge');
+        const timeVal = document.getElementById('postman-time-val');
+        const bodyPre = document.getElementById('postman-body-pre');
+
+        if (!consoleEl || !statusBadge || !timeVal || !bodyPre) return;
+
+        consoleEl.classList.remove('hidden');
+        bodyPre.className = 'p-3 bg-black/60 rounded-lg border border-white/5 overflow-x-auto text-[10px] text-emerald-400 leading-normal max-h-[150px] custom-scrollbar';
+        bodyPre.textContent = '// Sending request...\n// POST /api/payment/sepay\n// Authorization: Apikey ' + apiKey.substring(0, 8) + '...';
+        statusBadge.textContent = 'PENDING';
+        statusBadge.className = 'px-2 py-0.5 rounded font-black text-[10px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
+        timeVal.textContent = '...';
+
+        const startTime = Date.now();
+
+        try {
+          const res = await fetch('/api/payment/sepay', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Apikey ' + apiKey
+            },
+            body: JSON.stringify({
+              isTest: true,
+              transferType: 'in',
+              transferAmount: 1000,
+              content: 'TEST_WEBHOOK_SEPAY'
+            })
+          });
+
+          const timeElapsed = Date.now() - startTime;
+          timeVal.textContent = timeElapsed + ' ms';
+
+          const text = await res.text();
+          
+          let formattedJson = text;
+          try {
+            const parsed = JSON.parse(text);
+            formattedJson = JSON.stringify(parsed, null, 2);
+          } catch(e) {}
+
+          bodyPre.textContent = formattedJson;
+
+          if (res.ok) {
+            statusBadge.textContent = `${res.status} ${res.statusText || 'OK'}`;
+            statusBadge.className = 'px-2 py-0.5 rounded font-black text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            if (window.showGlobalToast) window.showGlobalToast('Webhook test passed successfully!', 'success');
+          } else {
+            statusBadge.textContent = `${res.status} ${res.statusText || 'Error'}`;
+            statusBadge.className = 'px-2 py-0.5 rounded font-black text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20';
+            bodyPre.className = 'p-3 bg-black/60 rounded-lg border border-white/5 overflow-x-auto text-[10px] text-rose-400 leading-normal max-h-[150px] custom-scrollbar';
+            if (window.showGlobalToast) window.showGlobalToast('Webhook test failed!', 'error');
+          }
+        } catch (e) {
+          const timeElapsed = Date.now() - startTime;
+          timeVal.textContent = timeElapsed + ' ms';
+          statusBadge.textContent = 'NETWORK_ERROR';
+          statusBadge.className = 'px-2 py-0.5 rounded font-black text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20';
+          bodyPre.className = 'p-3 bg-black/60 rounded-lg border border-white/5 overflow-x-auto text-[10px] text-rose-400 leading-normal max-h-[150px] custom-scrollbar';
+          bodyPre.textContent = '// Network error occurred:\n' + e.message;
+          if (window.showGlobalToast) window.showGlobalToast('Không thể kết nối đến Webhook endpoint.', 'error');
         }
       });
 

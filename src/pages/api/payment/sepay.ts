@@ -16,6 +16,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     // 2. Parse body từ SePay gửi sang
     const body = await request.json() as any;
+    
+    // Hỗ trợ kiểm thử webhook từ Admin panel
+    if (body && body.isTest) {
+      return apiResponse({ success: true, isTest: true, message: 'Kết nối Webhook thành công! API Key và cấu hình hợp lệ.' }, 'success', 'Webhook test passed successfully!', 200, request);
+    }
+
     const { transferType, transferAmount, content } = body;
 
     // SePay gửi webhook cho cả giao dịch tiền vào (in) và tiền ra (out). Chỉ xử lý tiền vào.
