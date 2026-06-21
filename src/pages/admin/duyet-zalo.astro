@@ -472,7 +472,17 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
           const parts = decryptedInfo.split(' - IP: ');
           if (parts.length >= 2) {
             displayDevice = friendlyUserAgent(parts[0]);
-            displayLocation = `IP: ${parts[1]}`;
+            let ipRaw = parts[1];
+            // Format IP location (e.g. "IP - - - VN" -> "IP (VN)")
+            ipRaw = ipRaw.replace(/\s*-\s*/g, ' ').replace(/\s+/g, ' ').trim();
+            const ipParts = ipRaw.split(' ');
+            const ip = ipParts[0];
+            const country = ipParts[ipParts.length - 1];
+            if (country && country !== ip && country.length === 2) {
+              displayLocation = `IP: ${ip} (${country})`;
+            } else {
+              displayLocation = `IP: ${ipRaw}`;
+            }
           } else {
             displayDevice = friendlyUserAgent(decryptedInfo);
             displayLocation = decryptedInfo;
@@ -502,7 +512,12 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
                 <span class="w-2 h-2 rounded-full ${item.status === 'approved' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : (item.status === 'rejected' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]')}"></span>
                 ${nickname}
               </div>
-              <div class="text-[10px] text-zinc-500 font-mono mt-0.5 select-all">${item.token}</div>
+              <div class="text-[10px] text-zinc-500 font-mono mt-0.5 flex items-center gap-1 group">
+                <span class="truncate max-w-[120px]" title="${item.token}">${item.token}</span>
+                <button onclick="copyToClipboard('${item.token}', this)" class="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded transition-all cursor-pointer text-zinc-400 hover:text-white" title="Copy token">
+                  <span class="material-symbols-outlined text-[12px]">content_copy</span>
+                </button>
+              </div>
             </td>
             <td class="p-4">
               <div class="text-zinc-200 font-bold flex items-center gap-1">
@@ -541,6 +556,21 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
         el.addEventListener('change', checkSelection);
       });
     }
+
+    // Copy to clipboard
+    window.copyToClipboard = function(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const icon = btn.querySelector('span');
+        const oldIcon = icon.textContent;
+        icon.textContent = 'check';
+        icon.classList.add('text-emerald-400');
+        if (window.showGlobalToast) window.showGlobalToast('Đã copy mã token', 'success');
+        setTimeout(() => {
+          icon.textContent = oldIcon;
+          icon.classList.remove('text-emerald-400');
+        }, 2000);
+      });
+    };
 
     // Render Whitelist Bypass
     function renderWhitelist(searchQuery = '') {

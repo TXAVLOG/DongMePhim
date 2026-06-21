@@ -221,7 +221,8 @@ packages.forEach((pkg: any) => {
             fetch('/api/admin/settings', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: value
+              body: value,
+              keepalive: true
             }).catch(err => console.error('Lỗi khi lưu cấu hình lên database:', err));
           }
         };
