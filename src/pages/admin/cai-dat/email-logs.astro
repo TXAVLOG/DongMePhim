@@ -94,7 +94,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
               <div class="space-y-1">
                 <span
                   id="detail-category"
-                  class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary"
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary"
                   >Category</span
                 >
                 <h2
@@ -116,7 +116,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
             <!-- SMTP and Server Parameters Details -->
             <div
-              class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-950/60 border border-zinc-800/80 rounded-xl p-4 text-[11px] text-zinc-400 font-mono"
+              class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-950/60 border border-zinc-800/80 rounded-xl p-4 text-sm text-zinc-400 font-mono"
             >
               <div class="space-y-1">
                 <div>
@@ -488,15 +488,15 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           return `
           <div onclick="selectLog('${log.id}')" class="p-4 transition-all duration-150 cursor-pointer flex flex-col gap-2 ${activeClass}">
             <div class="flex justify-between items-start">
-              <span class="text-xs font-bold text-white truncate max-w-[70%]">${log.subject}</span>
-              <span class="text-[10px] text-zinc-500 shrink-0 font-mono">${formatTimeAgo(log.time)}</span>
+              <span class="text-sm font-bold text-white truncate max-w-[70%]">${log.subject}</span>
+              <span class="text-xs text-zinc-500 shrink-0 font-mono">${formatTimeAgo(log.time)}</span>
             </div>
-            <div class="flex justify-between items-center text-[11px]">
+            <div class="flex justify-between items-center text-xs mt-2">
               <span class="text-zinc-400 truncate max-w-[60%] font-semibold">${log.recipient}</span>
               <div class="flex items-center gap-2">
-                <span class="px-1.5 py-0.5 rounded text-[8px] font-bold ${categoryColor}">${log.category}</span>
-                <span class="flex items-center gap-1 text-[10px] font-medium ${log.status === "success" ? "text-emerald-400" : "text-rose-500"}">
-                  <span class="w-1.5 h-1.5 rounded-full ${statusColor}"></span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${categoryColor}">${log.category}</span>
+                <span class="flex items-center gap-1 text-xs font-medium ${log.status === "success" ? "text-emerald-400" : "text-rose-500"}">
+                  <span class="w-2 h-2 rounded-full ${statusColor}"></span>
                   ${log.status === "success" ? "Sent" : "Failed"}
                 </span>
               </div>
@@ -537,10 +537,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         catEl.textContent = log.category;
         catEl.className =
           log.category === "Auth Reset"
-            ? "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20"
+            ? "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20"
             : log.category.includes("VIP")
-              ? "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20"
-              : "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50";
+              ? "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20"
+              : "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50";
       }
 
       // Status Badge
