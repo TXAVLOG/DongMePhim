@@ -270,15 +270,18 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
     (function() {
       // Hydrate form fields client-side
       function hydrateFromLocalStorage() {
-        const webhookInput = document.getElementById('sepay-webhook-url-input');
-        if (webhookInput) {
-          webhookInput.value = window.location.origin + '/api/payment/sepay';
-        }
         let stored = null;
         try {
           const raw = localStorage.getItem('txa_site_settings');
           if (raw) stored = JSON.parse(raw);
         } catch (e) {}
+
+        const siteUrl = stored?.general?.site_url || serverSettings.general?.site_url || window.location.origin;
+        const webhookInput = document.getElementById('sepay-webhook-url-input');
+        if (webhookInput) {
+          webhookInput.value = siteUrl.replace(/\/$/, '') + '/api/payment/sepay';
+        }
+
         if (!stored) {
           renderSandboxLogs();
           return;
