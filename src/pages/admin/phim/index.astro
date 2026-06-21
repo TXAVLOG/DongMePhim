@@ -100,10 +100,16 @@ const staticMovies = await MovieService.getMovies();
     </div>
   </section>
 
-  <script define:vars={{ staticMovies }}>
+  <script id="staticMoviesData" type="application/json" set:html={JSON.stringify(staticMovies).replace(/</g, '\\u003c')}></script>
+  <script is:inline>
     // We merge static movies from the server and crawled movies from localStorage client-side
     (function() {
       function initMoviesIndex() {
+        let staticMovies = [];
+        try {
+          staticMovies = JSON.parse(document.getElementById('staticMoviesData').textContent);
+        } catch(e) {}
+        
         const tbody = document.getElementById('movie-table-tbody');
         if (!tbody) return; // Exit if not on this page
 

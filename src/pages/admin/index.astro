@@ -274,7 +274,8 @@ const brokenGrowthPct = 0;
     </div>
   </section>
 
-  <script define:vars={{ staticMovies }}>
+  <script id="staticMoviesData" type="application/json" set:html={JSON.stringify(staticMovies).replace(/</g, '\\u003c')}></script>
+  <script is:inline>
     (function() {
       function getInitialUsers() {
         const getOffsetDate = (daysAgo) => {
@@ -361,6 +362,11 @@ const brokenGrowthPct = 0;
         const historyList = JSON.parse(localStorage.getItem('thistory') || '[]');
 
         function loadDashboardStats() {
+          let staticMovies = [];
+          try {
+            staticMovies = JSON.parse(document.getElementById('staticMoviesData').textContent);
+          } catch(e) {}
+          
           const crawledList = staticMovies.filter((m) => !m.isStatic);
 
           // Populate Recent Movies Table

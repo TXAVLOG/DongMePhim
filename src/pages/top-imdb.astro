@@ -130,8 +130,13 @@ const movies = await MovieService.getMovies({ sortBy: 'imdb_score' });
     </div>
   </main>
 
-  <script is:inline define:vars={{ staticMovies: movies }}>
+  <script id="moviesData" type="application/json" set:html={JSON.stringify(movies).replace(/</g, '\\u003c')}></script>
+  <script is:inline>
     (function() {
+      let staticMovies = [];
+      try {
+        staticMovies = JSON.parse(document.getElementById('moviesData').textContent);
+      } catch(e) {}
       let uniqueMovies = staticMovies;
 
       // Sort strictly by imdbScore descending (highest score first)

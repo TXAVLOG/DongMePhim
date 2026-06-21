@@ -55,7 +55,6 @@ const comments = [
   { name: "Khánh Linh", initial: "K", time: "40 phút trước", color: "primary", content: "Cho mình hỏi lịch chiếu One Piece tiếp theo là bao giờ vậy ạ? Đang hóng quá trời hóng luôn." },
   { name: "Tuấn Trần", initial: "T", time: "1 giờ trước", color: "secondary", content: "Mấy bộ phim lẻ Trung Quốc gần đây toàn hàng cực phẩm, kỹ xảo điện ảnh đỉnh cao, xem mà sướng mắt." }
 ];
-const allMoviesForClient = await MovieService.getMovies();
 ---
 
 <MainLayout isHome={true}>
@@ -565,7 +564,7 @@ const allMoviesForClient = await MovieService.getMovies();
       </div>
     </section>
     <!-- Script blocks -->
-    <script define:vars={{ allMoviesForClient }}>
+    <script is:inline>
       // Helper function to create movie list items with Netflix-style popover cards
       function createMovieListItemHTML(movieData, index, type) {
         const trendColor = index < 3 ? 'emerald' : 'zinc';
@@ -856,7 +855,7 @@ const allMoviesForClient = await MovieService.getMovies();
 
         // Hydration logic
         try {
-          const combinedMovies = (allMoviesForClient || []).filter(m => m.slug && m.slug !== 'undefined' && m.slug !== 'null');
+          const combinedMovies = []; // allMoviesForClient removed due to 1102 Worker error
           const hasMovies = combinedMovies.length > 0;
 
           // 1. Update existing card images/banners (fallback sync)

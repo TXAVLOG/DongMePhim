@@ -119,8 +119,14 @@ const staticMovies = await MovieService.getMovies({ sortBy: 'updatedAt' });
     </div>
   </main>
 
-  <script is:inline define:vars={{ staticMovies }}>
+  <script id="moviesData" type="application/json" set:html={JSON.stringify(staticMovies).replace(/</g, '\\u003c')}></script>
+  <script is:inline>
     (function() {
+      let staticMovies = [];
+      try {
+        staticMovies = JSON.parse(document.getElementById('moviesData').textContent);
+      } catch(e) {}
+
       // Deduplicate slugs và lọc danh sách phim nhận trực tiếp từ server
       const seen = new Set();
       let uniqueMovies = (staticMovies || []).filter(m => {

@@ -80,8 +80,14 @@ const staticMovies = await MovieService.getMovies();
     <p class="text-sm text-on-surface-variant">Bất cứ thay đổi nào ở đây sẽ được đồng bộ lên Cloud khi bạn bấm "Xác nhận đồng bộ" trong trang Duyệt Zalo.</p>
   </div>
 
-  <script is:inline define:vars={{ staticMovies }}>
+  <script id="staticMoviesData" type="application/json" set:html={JSON.stringify(staticMovies).replace(/</g, '\\u003c')}></script>
+  <script is:inline>
     (function() {
+      let staticMovies = [];
+      try {
+        staticMovies = JSON.parse(document.getElementById('staticMoviesData').textContent);
+      } catch(e) {}
+
       const defaultGenres = [
         { name: "Hành động", slug: "hanh-dong" },
         { name: "Tình cảm", slug: "tinh-cam" },
