@@ -566,66 +566,116 @@ const groupedPackages = packages.map((pkg: any) => {
         const u = loadedUsers.find(user => user.username === username);
         if (!u) return;
 
-        const newTier = u.package && u.package.includes('VIP') ? 'Free' : 'VIP 1 Year';
-        const expiryDate = newTier === 'Free' ? '' : new Date(Date.now() + 3600 * 1000 * 24 * 365).toISOString();
+        const plans = [{ id: 'free', title: 'Free' }, ...(loadedSettings.packages || [])];
+        let optionsHtml = '';
+        plans.forEach(p => {
+          const isSelected = (u.package === p.title || u.package === p.id || (p.id === 'free' && (!u.package || u.package.toLowerCase() === 'free'))) ? 'selected' : '';
+          optionsHtml += `<option value="${p.title}" ${isSelected}>${p.title}</option>`;
+        });
 
-        const changeTier = async () => {
-          try {
-            const res = await fetch('/api/admin/members', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'edit',
-                username: username,
-                package: newTier,
-                expiryDate: expiryDate,
-                status: 'active'
-              })
-            });
+        let defaultDays = 30;
+        if (u.expiryDate) {
+          const diffTime = new Date(u.expiryDate).getTime() - Date.now();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays > 0) defaultDays = diffDays;
+        }
 
-            if (res.ok) {
-              const currentLoggedIn = localStorage.getItem('tlogged_in_as');
-              if (currentLoggedIn === username) {
-                if (newTier === 'Free') {
-                  localStorage.removeItem('txa_user_subscription');
-                } else {
-                  localStorage.setItem('txa_user_subscription', JSON.stringify({
-                    username: username,
-                    tier: newTier,
-                    status: 'active',
-                    price: 699000,
-                    cycle: 'annual',
-                    expiry: expiryDate,
-                    updatedAt: new Date().toISOString()
-                  }));
-                }
-              }
-
-              if (window.showGlobalToast) {
-                window.showGlobalToast(`Đã cập nhật gói thành công cho ${username}!`, 'success');
-              }
-              loadAllData();
-            } else {
-              if (window.showGlobalToast) {
-                window.showGlobalToast('Cập nhật gói thất bại!', 'error');
-              }
-            }
-          } catch(err) {
-            console.error(err);
-          }
-        };
+        const modalContent = `
+          <div class="space-y-4 text-left">
+            <p class="text-xs text-zinc-400">Thay đổi gói thành viên cho tài khoản <strong class="text-white">${u.username}</strong></p>
+            <div class="space-y-1">
+              <label class="text-[10px] text-zinc-400 font-bold uppercase">Chọn gói cước</label>
+              <select id="member-package-select" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" onchange="toggleMemberExpiryWrapper(this.value)">
+                ${optionsHtml}
+              </select>
+            </div>
+            <div class="space-y-1" id="member-expiry-wrapper" style="display: ${u.package && u.package.toLowerCase() !== 'free' ? 'block' : 'none'}">
+              <label class="text-[10px] text-zinc-400 font-bold uppercase">Hạn dùng (số ngày kể từ hôm nay)</label>
+              <input type="number" id="member-expiry-days" value="${defaultDays}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
+              <p class="text-[10px] text-zinc-500 mt-1">Nhập số ngày sử dụng (ví dụ: 30, 365). Để trống nếu không giới hạn thời gian.</p>
+            </div>
+            <div class="flex gap-2 justify-end pt-4 border-t border-glass-stroke/50">
+              <button type="button" onclick="closeEditPlanModal()" class="px-4 py-2 rounded-xl bg-white/5 text-zinc-400 font-bold hover:bg-white/10 active:scale-95 transition-all text-xs cursor-pointer border border-glass-stroke/30">Hủy</button>
+              <button id="submit-change-tier-btn" class="px-5 py-2 bg-primary text-slate-950 font-black rounded-xl hover:brightness-110 active:scale-95 transition-all text-xs cursor-pointer border-none shadow-lg shadow-primary/20">Lưu thay đổi</button>
+            </div>
+          </div>
+        `;
 
         if (window.txamodal) {
           window.txamodal.show({
             title: 'Thay đổi gói cước thành viên',
-            message: `Bạn có muốn đổi gói của "${username}" từ <strong>${u.package || 'Free'}</strong> sang <strong>${newTier}</strong>?`,
+            content: modalContent,
             type: 'info',
-            confirmText: 'Thay đổi',
-            cancelText: 'Hủy',
-            onConfirm: changeTier
+            confirmText: '',
+            cancelText: '',
+            onConfirm: () => {}
           });
-        } else if (confirm('Đổi gói của người dùng?')) {
-          changeTier();
+
+          // Bind submit action
+          const submitBtn = document.getElementById('submit-change-tier-btn');
+          if (submitBtn) {
+            submitBtn.onclick = async function() {
+              const selectedPackage = document.getElementById('member-package-select').value;
+              const isFree = selectedPackage.toLowerCase() === 'free';
+              
+              let expiryDate = '';
+              if (!isFree) {
+                const daysInput = document.getElementById('member-expiry-days');
+                const days = daysInput ? parseInt(daysInput.value) : 0;
+                if (days > 0) {
+                  expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * days).toISOString();
+                }
+              }
+
+              try {
+                const res = await fetch('/api/admin/members', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'edit',
+                    username: username,
+                    package: selectedPackage,
+                    expiryDate: expiryDate,
+                    status: 'active'
+                  })
+                });
+
+                if (res.ok) {
+                  const currentLoggedIn = localStorage.getItem('tlogged_in_as');
+                  if (currentLoggedIn === username) {
+                    if (isFree) {
+                      localStorage.removeItem('txa_user_subscription');
+                    } else {
+                      localStorage.setItem('txa_user_subscription', JSON.stringify({
+                        username: username,
+                        tier: selectedPackage,
+                        status: 'active',
+                        price: 0,
+                        cycle: 'custom',
+                        expiry: expiryDate,
+                        updatedAt: new Date().toISOString()
+                      }));
+                    }
+                  }
+
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast(`Đã cập nhật gói thành công cho ${username}!`, 'success');
+                  }
+                  closeEditPlanModal();
+                  loadAllData();
+                } else {
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast('Cập nhật gói thất bại!', 'error');
+                  }
+                }
+              } catch(err) {
+                console.error(err);
+                if (window.showGlobalToast) {
+                  window.showGlobalToast('Lỗi kết nối API!', 'error');
+                }
+              }
+            };
+          }
         }
       };
 
@@ -762,7 +812,10 @@ const groupedPackages = packages.map((pkg: any) => {
             </div>
 
             <div class="border-t border-glass-stroke/50 pt-3 space-y-2">
-              <label class="text-[10px] text-zinc-400 font-bold uppercase block">Danh sách Server phát được phép truy cập</label>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase block">Danh sách Server phát được phép truy cập</label>
+                <button type="button" onclick="toggleSelectAllServers(this)" class="text-[10px] text-primary hover:underline font-bold bg-transparent border-none cursor-pointer">Chọn tất cả</button>
+              </div>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 ${serversHtml}
               </div>
@@ -796,35 +849,46 @@ const groupedPackages = packages.map((pkg: any) => {
             };
           }
 
-          // Bind form price inputs to calculate saving discount dynamically
-          const priceInput = document.getElementById('create-plan-price');
-          const annualPriceInput = document.getElementById('create-plan-annual-price');
-          const savingBadge = document.getElementById('create-saving-badge');
-
-          function updateModalSaving() {
-            if (!priceInput || !annualPriceInput || !savingBadge) return;
-            const monthly = parseFloat(priceInput.value) || 0;
-            const annual = parseFloat(annualPriceInput.value) || 0;
-            if (monthly > 0 && annual > 0) {
-              const originalAnnual = monthly * 12;
-              if (annual < originalAnnual) {
-                const percent = Math.round((1 - annual / originalAnnual) * 100);
-                savingBadge.textContent = `Tiết kiệm ${percent}%`;
-                savingBadge.classList.remove('hidden');
-                return;
-              }
-            }
-            savingBadge.classList.add('hidden');
-          }
-
-          if (priceInput && annualPriceInput) {
-            priceInput.addEventListener('input', updateModalSaving);
-            annualPriceInput.addEventListener('input', updateModalSaving);
-          }
-
-          // Bind form submit
+          // Update Select All buttons status and bind form submit
           const form = document.getElementById('create-plan-form');
           if (form) {
+            const checkboxes = form.querySelectorAll('input[name="allowed_servers"]');
+            const toggleBtn = form.querySelector('button[onclick="toggleSelectAllServers(this)"]');
+            const updateToggleBtnText = () => {
+              if (checkboxes.length > 0 && toggleBtn) {
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                toggleBtn.textContent = allChecked ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+              }
+            };
+            checkboxes.forEach(cb => cb.addEventListener('change', updateToggleBtnText));
+            updateToggleBtnText();
+
+            // Bind form price inputs to calculate saving discount dynamically
+            const priceInput = document.getElementById('create-plan-price');
+            const annualPriceInput = document.getElementById('create-plan-annual-price');
+            const savingBadge = document.getElementById('create-saving-badge');
+
+            const updateModalSaving = () => {
+              if (!priceInput || !annualPriceInput || !savingBadge) return;
+              const monthly = parseFloat(priceInput.value) || 0;
+              const annual = parseFloat(annualPriceInput.value) || 0;
+              if (monthly > 0 && annual > 0) {
+                const originalAnnual = monthly * 12;
+                if (annual < originalAnnual) {
+                  const percent = Math.round((1 - annual / originalAnnual) * 100);
+                  savingBadge.textContent = `Tiết kiệm ${percent}%`;
+                  savingBadge.classList.remove('hidden');
+                  return;
+                }
+              }
+              savingBadge.classList.add('hidden');
+            };
+
+            if (priceInput && annualPriceInput) {
+              priceInput.addEventListener('input', updateModalSaving);
+              annualPriceInput.addEventListener('input', updateModalSaving);
+            }
+
             form.onsubmit = async function(e) {
               e.preventDefault();
               const formData = new FormData(form);
@@ -1026,7 +1090,10 @@ const groupedPackages = packages.map((pkg: any) => {
             </div>
 
             <div class="border-t border-glass-stroke/50 pt-3 space-y-2">
-              <label class="text-[10px] text-zinc-400 font-bold uppercase block">Danh sách Server phát được phép truy cập</label>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase block">Danh sách Server phát được phép truy cập</label>
+                <button type="button" onclick="toggleSelectAllServers(this)" class="text-[10px] text-primary hover:underline font-bold bg-transparent border-none cursor-pointer">Chọn tất cả</button>
+              </div>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 ${serversHtml}
               </div>
@@ -1079,6 +1146,17 @@ const groupedPackages = packages.map((pkg: any) => {
           // Bind form submit
           const form = document.getElementById('edit-plan-form');
           if (form) {
+            const checkboxes = form.querySelectorAll('input[name="allowed_servers"]');
+            const toggleBtn = form.querySelector('button[onclick="toggleSelectAllServers(this)"]');
+            const updateToggleBtnText = () => {
+              if (checkboxes.length > 0 && toggleBtn) {
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                toggleBtn.textContent = allChecked ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+              }
+            };
+            checkboxes.forEach(cb => cb.addEventListener('change', updateToggleBtnText));
+            updateToggleBtnText();
+
             form.onsubmit = async function(e) {
               e.preventDefault();
               const formData = new FormData(form);
@@ -1155,6 +1233,24 @@ const groupedPackages = packages.map((pkg: any) => {
         const wrapper = document.getElementById('custom-color-wrapper');
         if (wrapper) {
           wrapper.style.display = val === 'custom_color' ? 'block' : 'none';
+        }
+      };
+
+      window.toggleSelectAllServers = function(btn) {
+        const form = btn.closest('form');
+        if (!form) return;
+        const checkboxes = form.querySelectorAll('input[name="allowed_servers"]');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => {
+          cb.checked = !allChecked;
+        });
+        btn.textContent = allChecked ? 'Chọn tất cả' : 'Bỏ chọn tất cả';
+      };
+
+      window.toggleMemberExpiryWrapper = function(val) {
+        const wrapper = document.getElementById('member-expiry-wrapper');
+        if (wrapper) {
+          wrapper.style.display = (val.toLowerCase() === 'free') ? 'none' : 'block';
         }
       };
 
