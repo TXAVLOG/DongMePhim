@@ -312,6 +312,7 @@ const isActive = (path: string) => {
         }
       }
 
+      window.checkTxaGate = checkTxaGate;
       checkTxaGate();
       document.addEventListener('astro:after-swap', checkTxaGate);
       document.addEventListener('astro:page-load', checkTxaGate);
@@ -2376,37 +2377,6 @@ const isActive = (path: string) => {
       // Form Submission Actions
       // ══════════════════════════════════════════════════════════════
       (function() {
-        // ══════════════════════════════════════════════════════════════
-        // Tự động sinh tài khoản Admin mặc định (nếu trống)
-        // ══════════════════════════════════════════════════════════════
-        function initDefaultAdmin() {
-          if (typeof localStorage !== 'undefined') {
-            try {
-              const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-              const hasAdmin = users.some(u => u.username === 'admin' || u.email === 'admin@gmail.com' || u.roles === 'admin' || u.role === 'admin');
-              if (!hasAdmin) {
-                users.push({
-                  username: 'admin',
-                  email: 'admin@gmail.com',
-                  password: 'admin123',
-                  createdAt: new Date().toISOString(),
-                  package: 'VIP Lifetime',
-                  status: 'active',
-                  roles: 'admin',
-                  role: 'admin',
-                  emailVerified: true
-                });
-                localStorage.setItem('tregistered_users', JSON.stringify(users));
-                console.log('Tự động khởi tạo tài khoản Admin mặc định thành công.');
-              }
-            } catch(e) {
-              console.error('Lỗi khi tạo admin mặc định:', e);
-            }
-          }
-        }
-        initDefaultAdmin();
-        document.addEventListener('astro:page-load', initDefaultAdmin);
-
         const loginForm = document.getElementById('login-form');
         const regForm = document.getElementById('register-form');
 
@@ -3335,12 +3305,22 @@ const isActive = (path: string) => {
               window.showToast("Mật mã chính xác! Chào mừng bạn.", "success");
             }
             
-            // Xóa class decoy
-            document.documentElement.classList.remove('gate-decoy');
+            // Cập nhật class hiển thị giao diện qua checkTxaGate
+            if (typeof window.checkTxaGate === 'function') {
+              window.checkTxaGate();
+            } else if (typeof checkTxaGate === 'function') {
+              checkTxaGate();
+            } else {
+              document.documentElement.classList.remove('gate-decoy');
+              if (zaloLockEnable === false) {
+                document.documentElement.classList.add('gate-passed');
+              } else {
+                document.documentElement.classList.add('gate-zalo');
+              }
+            }
 
             // Kiểm tra Zalo Lock
             if (zaloLockEnable === false) {
-              document.documentElement.classList.add('gate-passed');
               setTimeout(() => window.location.reload(), 1000);
             } else {
               // Check status Zalo
