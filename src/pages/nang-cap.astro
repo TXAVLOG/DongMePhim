@@ -526,7 +526,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
 
         cards.forEach(card => {
           const cycle = card.getAttribute('data-cycle');
-          if (cycle === 'free') {
+          if (cycle === 'lifetime' || cycle === 'free') {
             card.classList.remove('hidden');
             visibleCount++;
           } else if (cycle === 'monthly') {
