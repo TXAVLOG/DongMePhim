@@ -68,10 +68,10 @@ const allMoviesForClient = await MovieService.getMovies();
     <div class="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-[#0A0A0B]/50 to-transparent hidden md:block"></div>
     
     <!-- Left & Right Arrow controls (Desktop only, hidden md:flex) -->
-    <button id="hero-slide-left" class="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all duration-300 opacity-0 pointer-events-none hidden md:flex cursor-pointer shadow-lg" title="Phim trước">
+    <button id="hero-slide-left" class="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all duration-300 opacity-0 pointer-events-none hidden md:flex cursor-pointer shadow-lg" data-txatooltip="Phim trước">
       <span class="material-symbols-outlined text-2xl font-bold">chevron_left</span>
     </button>
-    <button id="hero-slide-right" class="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all duration-300 opacity-0 pointer-events-none hidden md:flex cursor-pointer shadow-lg" title="Phim tiếp theo">
+    <button id="hero-slide-right" class="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all duration-300 opacity-0 pointer-events-none hidden md:flex cursor-pointer shadow-lg" data-txatooltip="Phim tiếp theo">
       <span class="material-symbols-outlined text-2xl font-bold">chevron_right</span>
     </button>
 
@@ -239,10 +239,10 @@ const allMoviesForClient = await MovieService.getMovies();
         </h3>
         <!-- Carousel navigation arrows -->
         <div class="flex items-center gap-2">
-          <button id="slide-left" class="w-8 h-8 rounded-full border border-glass-stroke flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors cursor-pointer bg-black/20" title="Slide Trái">
+          <button id="slide-left" class="w-8 h-8 rounded-full border border-glass-stroke flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors cursor-pointer bg-black/20" data-txatooltip="Slide Trái">
             <span class="material-symbols-outlined text-sm font-bold">chevron_left</span>
           </button>
-          <button id="slide-right" class="w-8 h-8 rounded-full border border-glass-stroke flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors cursor-pointer bg-black/20" title="Slide Phải">
+          <button id="slide-right" class="w-8 h-8 rounded-full border border-glass-stroke flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors cursor-pointer bg-black/20" data-txatooltip="Slide Phải">
             <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
           </button>
         </div>
@@ -520,7 +520,7 @@ const allMoviesForClient = await MovieService.getMovies();
               <div class="flex items-center gap-2">
                 <div class="w-5 h-5 rounded-full bg-indigo-500 text-white font-bold text-[9px] flex items-center justify-center font-outfit">H</div>
                 <span class="text-xs font-bold text-zinc-300">Hoài Lê</span>
-                <span class="text-[10px] text-primary" title="ADMIN">👑</span>
+                <span class="text-[10px] text-primary" data-txatooltip="ADMIN">👑</span>
               </div>
               <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"ad ko dịch tập đặc biệt dc sao"</p>
               <a href="/phim/nu-hoang-nuoc-mat" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
@@ -613,7 +613,7 @@ const allMoviesForClient = await MovieService.getMovies();
                     <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
                     Xem ngay
                   </span>
-                  <span class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Chi tiết">
+                  <span class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
                     <span class="material-symbols-outlined text-sm">info</span>
                   </span>
                 </div>
@@ -697,7 +697,7 @@ const allMoviesForClient = await MovieService.getMovies();
         
         const lowerAuthor = (comment.author || '').toLowerCase();
         if (lowerAuthor.includes('cô 3 rổ') || lowerAuthor.includes('admin') || lowerAuthor.includes('hoài lê') || lowerAuthor.includes('mod') || lowerAuthor.includes('ad')) {
-          roleBadge = `<span class="text-[10px] text-primary" title="ADMIN">👑</span>`;
+          roleBadge = `<span class="text-[10px] text-primary" data-txatooltip="ADMIN">👑</span>`;
           badgeColor = 'pink-500';
         } else if (lowerAuthor.includes('nam') || lowerAuthor.includes('thư') || lowerAuthor.includes('linh') || lowerAuthor.includes('tiểu')) {
           badgeColor = 'amber-500';
@@ -792,10 +792,10 @@ const allMoviesForClient = await MovieService.getMovies();
             </a>
 
             <div class="mt-2.5 px-1 space-y-0.5 text-center">
-              <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" title="${title}">
+              <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip="${title}">
                 ${title}
               </h3>
-              <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" title="${originalTitle}">
+              <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip="${originalTitle}">
                 ${originalTitle || title}
               </p>
             </div>
@@ -820,10 +820,10 @@ const allMoviesForClient = await MovieService.getMovies();
                     <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
                     Xem ngay
                   </a>
-                  <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Thích">
+                  <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
                     <span class="material-symbols-outlined text-sm">favorite</span>
                   </button>
-                  <a href="/phim/${slug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Chi tiết">
+                  <a href="/phim/${slug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
                     <span class="material-symbols-outlined text-sm">info</span>
                   </a>
                 </div>
@@ -1319,7 +1319,7 @@ const allMoviesForClient = await MovieService.getMovies();
               heroIndicators.innerHTML = heroMovies.map((movie, index) => {
                 const imgUrl = movie.bannerUrl || movie.posterUrl || '';
                 return `
-                  <button data-index="${index}" class="hero-indicator-btn relative w-24 h-14 rounded-xl overflow-hidden border-2 border-white/10 hover:border-white/40 transition-all duration-300 shadow-md hover:shadow-lg shrink-0 cursor-pointer transform hover:-translate-y-0.5" title="${movie.title}">
+                  <button data-index="${index}" class="hero-indicator-btn relative w-24 h-14 rounded-xl overflow-hidden border-2 border-white/10 hover:border-white/40 transition-all duration-300 shadow-md hover:shadow-lg shrink-0 cursor-pointer transform hover:-translate-y-0.5" data-txatooltip="${movie.title}">
                     <img src="${imgUrl}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                     <div class="btn-overlay absolute inset-0 bg-black/40 hover:bg-black/10 transition-colors duration-300"></div>
                   </button>

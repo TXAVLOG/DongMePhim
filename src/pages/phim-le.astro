@@ -210,8 +210,8 @@ const movies = await MovieService.getMovies({ type: 'movie' });
                 </div>
               </a>
               <div class="mt-2.5 px-1 space-y-0.5 text-center">
-                <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" title="${m.title}">${m.title}</h3>
-                <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" title="${originalTitle}">${originalTitle}</p>
+                <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip="${m.title}">${m.title}</h3>
+                <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip="${originalTitle}">${originalTitle}</p>
               </div>
             </div>
           `;

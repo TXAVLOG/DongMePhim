@@ -85,8 +85,8 @@ const settings = await SettingService.getSettings();
         
         // Status cloud icon
         const cloudIcon = (item.synced || username) 
-          ? '<span class="material-symbols-outlined text-emerald-400 text-sm" title="Đã đồng bộ máy chủ">cloud_done</span>' 
-          : '<span class="material-symbols-outlined text-zinc-500 text-sm animate-pulse" title="Chưa đồng bộ">cloud_sync</span>';
+          ? '<span class="material-symbols-outlined text-emerald-400 text-sm" data-txatooltip="Đã đồng bộ máy chủ">cloud_done</span>' 
+          : '<span class="material-symbols-outlined text-zinc-500 text-sm animate-pulse" data-txatooltip="Chưa đồng bộ">cloud_sync</span>';
 
         // Fallback images
         const poster = item.posterUrl || '/favicon.png';
@@ -112,7 +112,7 @@ const settings = await SettingService.getSettings();
             <!-- Content Info -->
             <div class="p-5 flex flex-col flex-1 justify-between gap-4">
               <div>
-                <h3 class="text-white font-bold text-sm leading-snug line-clamp-1 group-hover:text-primary transition-colors font-outfit" title="${item.title || item.slug}">
+                <h3 class="text-white font-bold text-sm leading-snug line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip="${item.title || item.slug}">
                   ${item.title || item.slug}
                 </h3>
                 <p class="text-xs text-on-surface-variant mt-1.5 flex items-center gap-1 font-medium">
@@ -133,7 +133,7 @@ const settings = await SettingService.getSettings();
                   <span class="material-symbols-outlined text-xs font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
                   Xem tiếp
                 </a>
-                <button onclick="deleteSingleHistory('${item.slug}')" class="w-10 h-10 rounded-xl border border-glass-stroke flex items-center justify-center text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all cursor-pointer" title="Xóa">
+                <button onclick="deleteSingleHistory('${item.slug}')" class="w-10 h-10 rounded-xl border border-glass-stroke flex items-center justify-center text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all cursor-pointer" data-txatooltip="Xóa">
                   <span class="material-symbols-outlined text-sm">delete</span>
                 </button>
               </div>

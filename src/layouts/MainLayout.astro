@@ -1292,19 +1292,19 @@ const isActive = (path: string) => {
                     Trải nghiệm điện ảnh đỉnh cao với kho phim khổng lồ, chất lượng 4K cực nét và tốc độ tải cực nhanh. Mang cả rạp chiếu phim về ngôi nhà của bạn.
                 </p>
                 <div class="flex gap-4" id="footer-social-links">
-                    <a id="social-link-facebook" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-facebook ${(settings.social?.social_fb_enable && settings.social?.social_fb_url) ? '' : 'hidden'}`} href={settings.social?.social_fb_url || "#"} target="_blank" rel="noopener noreferrer" title="Facebook">
+                    <a id="social-link-facebook" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-facebook ${(settings.social?.social_fb_enable && settings.social?.social_fb_url) ? '' : 'hidden'}`} href={settings.social?.social_fb_url || "#"} target="_blank" rel="noopener noreferrer" data-txatooltip="Facebook">
                         <Txaicon name="facebook" class="w-5 h-5 fill-current" />
                     </a>
-                    <a id="social-link-facebook-group" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-facebook-group ${(settings.social?.social_fb_group_enable && settings.social?.social_fb_group_url) ? '' : 'hidden'}`} href={settings.social?.social_fb_group_url || "#"} target="_blank" rel="noopener noreferrer" title="Facebook Group">
+                    <a id="social-link-facebook-group" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-facebook-group ${(settings.social?.social_fb_group_enable && settings.social?.social_fb_group_url) ? '' : 'hidden'}`} href={settings.social?.social_fb_group_url || "#"} target="_blank" rel="noopener noreferrer" data-txatooltip="Facebook Group">
                         <Txaicon name="facebook-group" class="w-5 h-5 fill-current" />
                     </a>
-                    <a id="social-link-telegram" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-telegram ${(settings.social?.social_telegram_enable && settings.social?.social_telegram_url) ? '' : 'hidden'}`} href={settings.social?.social_telegram_url || "#"} target="_blank" rel="noopener noreferrer" title="Telegram">
+                    <a id="social-link-telegram" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-telegram ${(settings.social?.social_telegram_enable && settings.social?.social_telegram_url) ? '' : 'hidden'}`} href={settings.social?.social_telegram_url || "#"} target="_blank" rel="noopener noreferrer" data-txatooltip="Telegram">
                         <Txaicon name="telegram" class="w-5 h-5 fill-current" />
                     </a>
-                    <a id="social-link-tiktok" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-tiktok ${(settings.social?.social_tiktok_enable && settings.social?.social_tiktok_url) ? '' : 'hidden'}`} href={settings.social?.social_tiktok_url || "#"} target="_blank" rel="noopener noreferrer" title="TikTok">
+                    <a id="social-link-tiktok" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-tiktok ${(settings.social?.social_tiktok_enable && settings.social?.social_tiktok_url) ? '' : 'hidden'}`} href={settings.social?.social_tiktok_url || "#"} target="_blank" rel="noopener noreferrer" data-txatooltip="TikTok">
                         <Txaicon name="tiktok" class="w-5 h-5 fill-current" />
                     </a>
-                    <a id="social-link-zalo" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-zalo ${(settings.social?.social_zalo_group_enable && settings.social?.social_zalo_group_url) ? '' : 'hidden'}`} href={settings.social?.social_zalo_group_url || "#"} target="_blank" rel="noopener noreferrer" title="Zalo Group">
+                    <a id="social-link-zalo" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-zalo ${(settings.social?.social_zalo_group_enable && settings.social?.social_zalo_group_url) ? '' : 'hidden'}`} href={settings.social?.social_zalo_group_url || "#"} target="_blank" rel="noopener noreferrer" data-txatooltip="Zalo Group">
                         <Txaicon name="zalo" class="w-5 h-5 fill-current" />
                     </a>
                 </div>
@@ -2397,11 +2397,11 @@ const isActive = (path: string) => {
             if (isInPlaylist) {
               iconAdd.classList.add('hidden');
               iconAdded.classList.remove('hidden');
-              btn.setAttribute('title', 'Xóa khỏi DS phát');
+              btn.setAttribute('data-txatooltip', 'Xóa khỏi DS phát');
             } else {
               iconAdd.classList.remove('hidden');
               iconAdded.classList.add('hidden');
-              btn.setAttribute('title', 'Thêm vào DS phát');
+              btn.setAttribute('data-txatooltip', 'Thêm vào DS phát');
             }
 
             // Remove existing listener to avoid duplicates
@@ -2445,11 +2445,11 @@ const isActive = (path: string) => {
                   if (idx === -1) {
                     bAdd.classList.add('hidden');
                     bAdded.classList.remove('hidden');
-                    b.setAttribute('title', 'Xóa khỏi DS phát');
+                    b.setAttribute('data-txatooltip', 'Xóa khỏi DS phát');
                   } else {
                     bAdd.classList.remove('hidden');
                     bAdded.classList.add('hidden');
-                    b.setAttribute('title', 'Thêm vào DS phát');
+                    b.setAttribute('data-txatooltip', 'Thêm vào DS phát');
                   }
                 }
               });

@@ -96,10 +96,10 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex justify-end gap-2">
-                  <button onclick="editServer(${originalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-amber-400 hover:bg-amber-400/10 transition-all cursor-pointer" title="Chỉnh sửa" data-tooltip="Chỉnh sửa server">
+                  <button onclick="editServer(${originalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-amber-400 hover:bg-amber-400/10 transition-all cursor-pointer" data-txatooltip="Chỉnh sửa" data-tooltip="Chỉnh sửa server">
                     <span class="material-symbols-outlined text-[18px]">edit</span>
                   </button>
-                  <button onclick="deleteServer(${originalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer" title="Xóa" data-tooltip="Xóa server">
+                  <button onclick="deleteServer(${originalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer" data-txatooltip="Xóa" data-tooltip="Xóa server">
                     <span class="material-symbols-outlined text-[18px]">delete</span>
                   </button>
                 </div>

@@ -491,7 +491,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               <div class="p-4 bg-zinc-900/60 border border-glass-stroke/70 rounded-2xl relative space-y-4">
                 <div class="flex justify-between items-center gap-2">
                   <input type="text" class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-xs font-bold text-white w-28 focus:outline-none" value="${ep.name}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].name = this.value; movieData.episodes[${serverIdx}].server_data[${epIdx}].slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')"/>
-                  <button type="button" onclick="deleteEpisode(${serverIdx}, ${epIdx})" class="text-zinc-500 hover:text-red-400 p-1 cursor-pointer bg-transparent border-none" title="Xóa tập này">
+                  <button type="button" onclick="deleteEpisode(${serverIdx}, ${epIdx})" class="text-zinc-500 hover:text-red-400 p-1 cursor-pointer bg-transparent border-none" data-txatooltip="Xóa tập này">
                     <span class="material-symbols-outlined text-lg">delete</span>
                   </button>
                 </div>

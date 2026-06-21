@@ -82,10 +82,10 @@ const getLangBadge = (lang?: string) => {
 
   <!-- Text Titles below the Poster container (centered, matches Image 1) -->
   <div class="mt-2.5 px-1 space-y-0.5 text-center">
-    <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" title={title}>
+    <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip={title}>
       {title}
     </h3>
-    <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" title={movie?.originalTitle || ''}>
+    <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip={movie?.originalTitle || ''}>
       {movie?.originalTitle || movie?.title || ''}
     </p>
   </div>
@@ -119,10 +119,10 @@ const getLangBadge = (lang?: string) => {
           <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
           Xem ngay
         </a>
-        <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Thích">
+        <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
           <span class="material-symbols-outlined text-sm">favorite</span>
         </button>
-        <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer card-playlist-btn relative" data-slug={slug} title="Danh sách phát">
+        <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer card-playlist-btn relative" data-slug={slug} data-txatooltip="Danh sách phát">
           <span class="card-icon-add flex items-center justify-center">
             <Txaicon name="playlist-add" class="w-4 h-4" />
           </span>
@@ -130,7 +130,7 @@ const getLangBadge = (lang?: string) => {
             <Txaicon name="playlist-added" class="w-4 h-4" />
           </span>
         </button>
-        <a href={`/phim/${slug}`} class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" title="Chi tiết">
+        <a href={`/phim/${slug}`} class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
           <span class="material-symbols-outlined text-sm">info</span>
         </a>
       </div>

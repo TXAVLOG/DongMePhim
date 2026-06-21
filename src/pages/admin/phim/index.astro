@@ -331,13 +331,13 @@ const staticMovies = await MovieService.getMovies();
                 </td>
                 <td class="px-8 py-4 text-right">
                   <div class="flex gap-2 justify-end">
-                    <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Xem trên web">
+                    <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-txatooltip="Xem trên web">
                       <span class="material-symbols-outlined text-sm">visibility</span>
                     </a>
-                    <a href="/admin/phim/edit?th=${m.slug}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa phim / Cấu hình tập">
+                    <a href="/admin/phim/edit?th=${m.slug}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-txatooltip="Chỉnh sửa phim / Cấu hình tập">
                       <span class="material-symbols-outlined text-sm">edit</span>
                     </a>
-                    <button onclick="deleteMovie('${m.id}', '${m.slug}', ${isStatic}, this)" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa phim này">
+                    <button onclick="deleteMovie('${m.id}', '${m.slug}', ${isStatic}, this)" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" data-txatooltip="Xóa phim này">
                       <span class="material-symbols-outlined text-sm">delete</span>
                     </button>
                   </div>

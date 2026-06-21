@@ -420,15 +420,15 @@ const brokenGrowthPct = 0;
                 </td>
                 <td class="px-8 py-4 text-right">
                   <div class="flex gap-2 justify-end">
-                    <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" title="Xem trên web">
+                    <a href="/phim/${m.slug}" target="_blank" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-txatooltip="Xem trên web">
                       <span class="material-symbols-outlined text-sm">visibility</span>
                     </a>
                     ${isStatic ? `
-                      <button class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-zinc-600 cursor-not-allowed" title="Không thể xóa phim hệ thống" disabled>
+                      <button class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center text-zinc-600 cursor-not-allowed" data-txatooltip="Không thể xóa phim hệ thống" disabled>
                         <span class="material-symbols-outlined text-sm">delete</span>
                       </button>
                     ` : `
-                      <button onclick="deleteCrawledMovie('${m.slug}', this)" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" title="Xóa phim crawled">
+                      <button onclick="deleteCrawledMovie('${m.slug}', this)" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" data-txatooltip="Xóa phim crawled">
                         <span class="material-symbols-outlined text-sm">delete</span>
                       </button>
                     `}

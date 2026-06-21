@@ -435,7 +435,7 @@ const ActorsList: React.FC<{ actors?: string[] }> = ({ actors = [] }) => {
               <div className={`w-11 h-11 rounded-full bg-gradient-to-tr ${gradient} flex items-center justify-center text-white font-bold text-sm border-2 border-white/10 shadow-md group-hover:scale-105 transition-transform duration-300`}>
                 {firstLetter}
               </div>
-              <span className="text-[9px] text-zinc-400 font-medium line-clamp-2 w-full leading-tight group-hover:text-white transition-colors" title={nameTrimmed}>
+              <span className="text-[9px] text-zinc-400 font-medium line-clamp-2 w-full leading-tight group-hover:text-white transition-colors" data-txatooltip={nameTrimmed}>
                 {nameTrimmed}
               </span>
             </div>
@@ -1450,7 +1450,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             <iframe 
               src="/embed/crash" 
               className="w-full h-full border-none rounded-xl"
-              title="Cảnh báo can thiệp hệ thống"
+              data-txatooltip="Cảnh báo can thiệp hệ thống"
             />
           ) : adBlockDetected && currentUserPackage.toLowerCase() === 'free' ? (
             <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-950 p-8 text-center space-y-5 relative overflow-hidden">

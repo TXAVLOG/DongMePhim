@@ -210,10 +210,10 @@ const staticMovies = await MovieService.getMovies();
               
               <!-- Action Hover Overlay -->
               <div class="action-overlay absolute inset-0 bg-surface-deep/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex flex-col items-center justify-center gap-4">
-                <button onclick="editActor(${originalIndex})" class="w-12 h-12 rounded-full bg-primary text-slate-950 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" title="Chỉnh sửa">
+                <button onclick="editActor(${originalIndex})" class="w-12 h-12 rounded-full bg-primary text-slate-950 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Chỉnh sửa">
                   <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">edit</span>
                 </button>
-                <button onclick="deleteActor(${originalIndex})" class="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" title="Xóa">
+                <button onclick="deleteActor(${originalIndex})" class="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Xóa">
                   <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">delete</span>
                 </button>
               </div>
