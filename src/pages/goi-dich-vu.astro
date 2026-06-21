@@ -706,6 +706,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       }
 
       const isSandbox = payments.sandbox_mode ?? true;
+      const isSepaySandbox = payments.sepay_sandbox_mode !== undefined ? !!payments.sepay_sandbox_mode : isSandbox;
       const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
       const packageTitle = decodeURIComponent(packageTitleEncoded);
 
@@ -781,7 +782,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 
           // Inject sandbox info banner if sandbox mode is active
           const sandboxRenewBtnContainer = document.getElementById('sepay-renew-sandbox-btn-container');
-          if (isSandbox && sandboxRenewBtnContainer) {
+          if (isSepaySandbox && sandboxRenewBtnContainer) {
             sandboxRenewBtnContainer.classList.remove('hidden');
             sandboxRenewBtnContainer.innerHTML = `
               <div class="flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-xs text-yellow-400 font-bold">

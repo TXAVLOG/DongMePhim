@@ -835,6 +835,7 @@ const groupedPackages = packages.map((pkg: any) => {
       }
 
       const isSandbox = payments.sandbox_mode ?? true;
+      const isSepaySandbox = payments.sepay_sandbox_mode !== undefined ? !!payments.sepay_sandbox_mode : isSandbox;
       const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
       const packageTitle = decodeURIComponent(packageTitleEncoded);
 
@@ -909,7 +910,7 @@ const groupedPackages = packages.map((pkg: any) => {
 
           // Inject sandbox info banner if sandbox mode is active
           const sandboxBtnContainer = document.getElementById('sepay-sandbox-btn-container');
-          if (isSandbox && sandboxBtnContainer) {
+          if (isSepaySandbox && sandboxBtnContainer) {
             sandboxBtnContainer.classList.remove('hidden');
             sandboxBtnContainer.innerHTML = `
               <div class="flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-xs text-yellow-400 font-bold">

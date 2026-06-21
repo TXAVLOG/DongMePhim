@@ -19,7 +19,9 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Cổng SePay hiện không hoạt động (chưa bật).', 400, request);
     }
 
-    const isSandbox = !!payments.sandbox_mode;
+    const isSandbox = payments.sepay_sandbox_mode !== undefined
+      ? !!payments.sepay_sandbox_mode
+      : !!payments.sandbox_mode;
 
     // Pick the correct API key based on mode
     const sepayApiKey = isSandbox

@@ -130,6 +130,7 @@ export const seedSettings: SiteSettings = {
   },
   payments: {
     sandbox_mode: true,
+    sepay_sandbox_mode: true,
     payos_enable: true,
     payos_client_id: "mock_payos_id",
     payos_api_key: "mock_api_key",
@@ -231,6 +232,10 @@ export class LocalSettingProvider implements ISettingProvider {
             });
             if (parsed.payments.sandbox_mode === undefined) {
               parsed.payments.sandbox_mode = true;
+              paymentsChanged = true;
+            }
+            if (parsed.payments.sepay_sandbox_mode === undefined) {
+              parsed.payments.sepay_sandbox_mode = true;
               paymentsChanged = true;
             }
             if (paymentsChanged) {
