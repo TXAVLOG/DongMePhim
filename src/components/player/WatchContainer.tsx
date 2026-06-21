@@ -994,12 +994,18 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         const bypass = perms?.bypass_ads || false;
 
         if (ads.pre_roll_enable && ads.pre_roll_url && !bypass) {
-          setShowAd(true);
-          setAdUrl(ads.pre_roll_url);
-          setAdType(ads.pre_roll_type || 'video');
-          const skipSec = parseInt(ads.pre_roll_skip_seconds) || 5;
-          setAdSkipSeconds(skipSec);
-          setAdCountdown(skipSec);
+          const rawUrls = ads.pre_roll_url;
+          // Split by newline. If there's a comma, it might break iframe codes so we prefer newline split for pre-roll
+          const urls = rawUrls.split(/\n+/).map((u: string) => u.trim()).filter(Boolean);
+          if (urls.length > 0) {
+            const randomUrl = urls[Math.floor(Math.random() * urls.length)];
+            setShowAd(true);
+            setAdUrl(randomUrl);
+            setAdType(ads.pre_roll_type || 'video');
+            const skipSec = parseInt(ads.pre_roll_skip_seconds) || 5;
+            setAdSkipSeconds(skipSec);
+            setAdCountdown(skipSec);
+          }
         }
       } catch (e) {
         console.error("Error fetching user details in player:", e);
