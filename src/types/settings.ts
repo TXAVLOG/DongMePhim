@@ -124,6 +124,7 @@ export interface PaymentSettings {
   paypal_client_id: string;
   sepay_enable: boolean;
   sepay_api_key: string;
+  sepay_integration_type?: 'vietqr' | 'gateway';
   sepay_bank_account_id?: string;
   sepay_bank_name?: string;
   sepay_account_no?: string;

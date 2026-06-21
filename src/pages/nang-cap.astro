@@ -57,6 +57,8 @@ const getDynamicFeaturesObj = (pkg: any) => {
         </span>
       </div>
 
+      <!-- Tailwind Safelist: grid-cols-1 md:grid-cols-1 md:grid-cols-2 md:grid-cols-3 md:grid-cols-4 max-w-md max-w-3xl max-w-5xl max-w-6xl hidden -->
+
       <!-- Current Package Display -->
       <div class="auth-user hidden text-center px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-2xl max-w-xs mx-auto mb-8">
         <p class="text-xs text-zinc-400 font-body-main">
@@ -65,7 +67,15 @@ const getDynamicFeaturesObj = (pkg: any) => {
       </div>
 
       <!-- Plan Selection Bento Grid -->
-      <div id="plans-container" class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div 
+        id="plans-container" 
+        class={`grid grid-cols-1 gap-8 mx-auto ${
+          packages.length === 1 ? 'max-w-md md:grid-cols-1' :
+          packages.length === 2 ? 'max-w-3xl md:grid-cols-2' :
+          packages.length === 3 ? 'max-w-5xl md:grid-cols-3' :
+          'max-w-6xl md:grid-cols-3 lg:grid-cols-4'
+        }`}
+      >
         {packages.map((pkg) => {
           const isFree = pkg.id === 'free';
           const cardBorderClass = `package-border-${pkg.id}`;
@@ -538,7 +548,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
 
         // Adjust column count dynamically for symmetry
         if (plansContainer) {
-          plansContainer.classList.remove('md:grid-cols-1', 'md:grid-cols-2', 'md:grid-cols-3', 'md:grid-cols-4');
+          plansContainer.classList.remove('md:grid-cols-1', 'md:grid-cols-2', 'md:grid-cols-3', 'md:grid-cols-4', 'max-w-md', 'max-w-3xl', 'max-w-5xl', 'max-w-6xl');
           if (visibleCount === 1) {
             plansContainer.classList.add('md:grid-cols-1', 'max-w-md');
           } else if (visibleCount === 2) {
@@ -719,6 +729,50 @@ const getDynamicFeaturesObj = (pkg: any) => {
       }
 
       if (method === 'sepay') {
+        const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        const memo = `TXA_UP_${txid}`;
+
+        if (payments.sepay_integration_type === 'gateway') {
+          if (window.showGlobalToast) window.showGlobalToast('Đang chuyển hướng đến cổng thanh toán SePay...', 'info');
+          
+          // Create pending payment log in the database
+          (async () => {
+            try {
+              const resMe = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
+              let userEmail = '';
+              if (resMe.ok) {
+                const resMeData = await resMe.json();
+                userEmail = resMeData.data?.email || '';
+              }
+              await fetch('/api/user/payments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  txid,
+                  username,
+                  email: userEmail,
+                  packageTitle,
+                  price,
+                  cycle,
+                  method: 'sepay',
+                  status: 'pending'
+                })
+              });
+
+              // Redirect to SePay checkout gateway
+              const successUrl = `${window.location.origin}/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}`;
+              const failUrl = `${window.location.origin}/checkout/failed?method=sepay&user=${encodeURIComponent(username)}`;
+              const gatewayUrl = `https://pay.sepay.vn/checkout?account_id=${payments.sepay_bank_account_id}&amount=${price}&memo=${memo}&success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(failUrl)}`;
+              window.location.href = gatewayUrl;
+            } catch (err) {
+              console.error('Lỗi khởi tạo giao dịch SePay Gateway:', err);
+              if (window.showGlobalToast) window.showGlobalToast('Lỗi khởi tạo giao dịch. Vui lòng thử lại!', 'error');
+            }
+          })();
+          return;
+        }
+
+        // Fallback to 'vietqr' (Direct on-site display)
         const sepayPortal = document.getElementById('sepay-transfer-portal');
         const userView = document.querySelector('.auth-user');
         
@@ -727,9 +781,6 @@ const getDynamicFeaturesObj = (pkg: any) => {
           sepayPortal.classList.remove('hidden');
           // Scroll to the SePay portal
           setTimeout(() => sepayPortal.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-
-          const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
-          const memo = `TXA_UP_${txid}`;
 
           document.getElementById('sepay-bank-name-val').textContent = payments.sepay_bank_name || 'MB Bank';
           document.getElementById('sepay-bank-no-val').textContent = payments.sepay_account_no || '-';

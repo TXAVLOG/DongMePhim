@@ -138,6 +138,8 @@ export const seedSettings: SiteSettings = {
     paypal_client_id: "mock_paypal_id",
     sepay_enable: true,
     sepay_api_key: "mock_sepay_key",
+    sepay_sandbox_api_key: "",
+    sepay_integration_type: "vietqr",
     sepay_bank_account_id: "",
     sepay_bank_name: "",
     sepay_account_no: "",
@@ -234,11 +236,13 @@ export class LocalSettingProvider implements ISettingProvider {
               'sepay_bank_account_id',
               'sepay_bank_name',
               'sepay_account_no',
-              'sepay_account_name'
+              'sepay_account_name',
+              'sepay_integration_type'
             ];
             keysToEnsure.forEach(k => {
               if (parsed.payments[k] === undefined) {
-                parsed.payments[k] = '';
+                if (k === 'sepay_integration_type') parsed.payments[k] = 'vietqr';
+                else parsed.payments[k] = '';
                 paymentsChanged = true;
               }
             });

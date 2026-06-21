@@ -551,7 +551,6 @@ packages.forEach((pkg: any) => {
           titleEl.innerHTML = options.title || 'Thông báo';
           bodyEl.innerHTML = options.message || options.content || '';
           
-          confirmBtn.textContent = options.confirmText || 'Xác nhận';
           if (options.cancelText) {
             cancelBtn.textContent = options.cancelText;
             cancelBtn.classList.remove('hidden');
@@ -559,10 +558,16 @@ packages.forEach((pkg: any) => {
             cancelBtn.classList.add('hidden');
           }
 
-          if (options.type === 'danger' || options.type === 'error') {
-            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all';
+          if (options.confirmText === '') {
+            confirmBtn.classList.add('hidden');
           } else {
-            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all';
+            confirmBtn.classList.remove('hidden');
+            confirmBtn.textContent = options.confirmText || 'Xác nhận';
+            if (options.type === 'danger' || options.type === 'error') {
+              confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all';
+            } else {
+              confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all';
+            }
           }
 
           const closeModal = () => {

@@ -113,6 +113,13 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
             </div>
             <div class="space-y-3 pl-8">
               <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Phương thức tích hợp</label>
+                <select id="payment-sepay-integration-type" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white cursor-pointer">
+                  <option value="vietqr" selected={settings.payments?.sepay_integration_type === 'vietqr'}>Tự động hiển thị VietQR tại trang web (Polling đối soát)</option>
+                  <option value="gateway" selected={settings.payments?.sepay_integration_type === 'gateway'}>Chuyển hướng sang Cổng thanh toán SePay (pay.sepay.vn)</option>
+                </select>
+              </div>
+              <div class="space-y-1">
                 <label class="text-[10px] text-zinc-500 font-bold uppercase">API Key (Live)</label>
                 <input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
               </div>
@@ -335,6 +342,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         setChecked('payment-paypal-enable', s.payments?.paypal_enable);
         setVal('payment-paypal-client', s.payments?.paypal_client_id);
         setChecked('payment-sepay-enable', s.payments?.sepay_enable);
+        setVal('payment-sepay-integration-type', s.payments?.sepay_integration_type || 'vietqr');
         setVal('payment-sepay-key', s.payments?.sepay_api_key);
         setVal('payment-sepay-sandbox-key', s.payments?.sepay_sandbox_api_key);
         setVal('payment-sepay-bank-id', s.payments?.sepay_bank_account_id);
@@ -374,6 +382,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
             paypal_client_id: document.getElementById('payment-paypal-client')?.value || '',
             sepay_enable: document.getElementById('payment-sepay-enable')?.checked || false,
             sepay_api_key: document.getElementById('payment-sepay-key')?.value || '',
+            sepay_integration_type: document.getElementById('payment-sepay-integration-type')?.value || 'vietqr',
             sepay_sandbox_api_key: document.getElementById('payment-sepay-sandbox-key')?.value || '',
             sepay_bank_account_id: document.getElementById('payment-sepay-bank-id')?.value || '',
             sepay_bank_name: document.getElementById('payment-sepay-bank')?.value || '',

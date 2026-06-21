@@ -708,13 +708,54 @@ import MainLayout from '../layouts/MainLayout.astro';
       }
 
       if (method === 'sepay') {
+        const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        const memo = `TXA_GH_${txid}`;
+
+        if (payments.sepay_integration_type === 'gateway') {
+          if (window.showGlobalToast) window.showGlobalToast('Đang chuyển hướng đến cổng thanh toán SePay...', 'info');
+          
+          // Create pending payment log in the database
+          (async () => {
+            try {
+              const resMe = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
+              let userEmail = '';
+              if (resMe.ok) {
+                const resMeData = await resMe.json();
+                userEmail = resMeData.data?.email || '';
+              }
+              await fetch('/api/user/payments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  txid,
+                  username,
+                  email: userEmail,
+                  packageTitle,
+                  price,
+                  cycle,
+                  method: 'sepay',
+                  status: 'pending'
+                })
+              });
+
+              // Redirect to SePay checkout gateway
+              const successUrl = `${window.location.origin}/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}`;
+              const failUrl = `${window.location.origin}/checkout/failed?method=sepay&user=${encodeURIComponent(username)}`;
+              const gatewayUrl = `https://pay.sepay.vn/checkout?account_id=${payments.sepay_bank_account_id}&amount=${price}&memo=${memo}&success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(failUrl)}`;
+              window.location.href = gatewayUrl;
+            } catch (err) {
+              console.error('Lỗi khởi tạo gia hạn SePay Gateway:', err);
+              if (window.showGlobalToast) window.showGlobalToast('Lỗi khởi tạo gia hạn. Vui lòng thử lại!', 'error');
+            }
+          })();
+          return;
+        }
+
+        // Fallback to 'vietqr' (Direct on-site display)
         const sepayRenewSection = document.getElementById('sepay-renew-section');
         if (sepayRenewSection) {
           sepayRenewSection.classList.remove('hidden');
           setTimeout(() => sepayRenewSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-
-          const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
-          const memo = `TXA_GH_${txid}`;
 
           document.getElementById('sepay-renew-bank-name-val').textContent = payments.sepay_bank_name || 'MB Bank';
           document.getElementById('sepay-renew-bank-no-val').textContent = payments.sepay_account_no || '-';

@@ -1599,7 +1599,6 @@ const isActive = (path: string) => {
             bodyEl.innerHTML = options.message || options.content || '';
           }
           
-          confirmBtn.textContent = options.confirmText || 'Xác nhận';
           if (options.cancelText) {
             cancelBtn.textContent = options.cancelText;
             cancelBtn.classList.remove('hidden');
@@ -1607,10 +1606,16 @@ const isActive = (path: string) => {
             cancelBtn.classList.add('hidden');
           }
 
-          if (options.type === 'danger' || options.type === 'error') {
-            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all border-none cursor-pointer';
+          if (options.confirmText === '') {
+            confirmBtn.classList.add('hidden');
           } else {
-            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all border-none cursor-pointer';
+            confirmBtn.classList.remove('hidden');
+            confirmBtn.textContent = options.confirmText || 'Xác nhận';
+            if (options.type === 'danger' || options.type === 'error') {
+              confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all border-none cursor-pointer';
+            } else {
+              confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all border-none cursor-pointer';
+            }
           }
 
           const closeModal = () => {
