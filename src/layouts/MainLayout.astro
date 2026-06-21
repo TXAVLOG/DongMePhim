@@ -316,11 +316,14 @@ const isActive = (path: string) => {
             clickCount = 0;
             initRandomThreshold(ads.click_ad_threshold);
             try {
-              const url = ads.click_ad_code;
-              const newWin = window.open(url, '_blank');
-              if (newWin) {
-                newWin.blur();
-                window.focus();
+              const urls = ads.click_ad_code.split(/[\n,]+/).map(u => u.trim()).filter(Boolean);
+              if (urls.length > 0) {
+                const url = urls[Math.floor(Math.random() * urls.length)];
+                const newWin = window.open(url, '_blank');
+                if (newWin) {
+                  newWin.blur();
+                  window.focus();
+                }
               }
             } catch(err) {
               console.error("Popup blocked or failed:", err);
@@ -372,6 +375,10 @@ const isActive = (path: string) => {
 
     <!-- Font Awesome CDN -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+
+    {settings.ads?.google_ads_enable && settings.ads?.google_ads_client_id && (
+      <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${settings.ads.google_ads_client_id}`} crossorigin="anonymous"></script>
+    )}
 
     <!-- Cấu hình bảo mật cổng ngụy trang & Zalo (Fast Bypass) -->
     <style is:inline>

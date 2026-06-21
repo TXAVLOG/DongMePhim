@@ -199,7 +199,9 @@ export const seedSettings: SiteSettings = {
     pre_roll_skip_seconds: 5,
     click_ad_enable: false,
     click_ad_code: "https://shope.ee",
-    click_ad_threshold: 5
+    click_ad_threshold: 5,
+    google_ads_enable: false,
+    google_ads_client_id: "ca-pub-123456789"
   }
 };
 

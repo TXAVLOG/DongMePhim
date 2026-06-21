@@ -90,8 +90,31 @@ let activeTab = "quang-cao";
             </div>
 
             <div class="space-y-2 md:col-span-2">
-              <label class="text-xs font-label-caps text-text-dim">Đường dẫn đích khi click (Redirect URL hoặc mã JS Ads)</label>
-              <input type="text" id="click-ad-code" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="https://shope.ee/..." />
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn đích khi click (Mỗi URL 1 dòng, chọn ngẫu nhiên)</label>
+              <textarea id="click-ad-code" rows="4" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="https://shope.ee/...\nhttps://tiki.vn/..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: Google Ads (AdSense) -->
+        <div class="space-y-6 pt-6 border-t border-glass-stroke">
+          <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">public</span>
+            Quảng cáo Google (AdSense API)
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Trạng thái Google Ads</label>
+              <select id="google-ads-enable" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white">
+                <option value="false">Tắt quảng cáo Google</option>
+                <option value="true">Bật quảng cáo Google</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Google AdSense Client ID (ca-pub-xxx)</label>
+              <input type="text" id="google-ads-client-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-pub-123456789" />
             </div>
           </div>
         </div>
@@ -122,6 +145,9 @@ let activeTab = "quang-cao";
         setSelect("click-ad-enable", ads.click_ad_enable ? "true" : "false");
         setVal("click-ad-threshold", ads.click_ad_threshold !== undefined ? ads.click_ad_threshold : 5);
         setVal("click-ad-code", ads.click_ad_code || "");
+
+        setSelect("google-ads-enable", ads.google_ads_enable ? "true" : "false");
+        setVal("google-ads-client-id", ads.google_ads_client_id || "");
       }
 
       function setVal(id, val) {
@@ -152,7 +178,9 @@ let activeTab = "quang-cao";
             pre_roll_skip_seconds: parseInt(document.getElementById("pre-roll-skip-seconds")?.value) || 0,
             click_ad_enable: document.getElementById("click-ad-enable")?.value === "true",
             click_ad_threshold: parseInt(document.getElementById("click-ad-threshold")?.value) || 5,
-            click_ad_code: document.getElementById("click-ad-code")?.value || ""
+            click_ad_code: document.getElementById("click-ad-code")?.value || "",
+            google_ads_enable: document.getElementById("google-ads-enable")?.value === "true",
+            google_ads_client_id: document.getElementById("google-ads-client-id")?.value || ""
           }
         };
 

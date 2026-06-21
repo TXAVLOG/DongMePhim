@@ -171,6 +171,8 @@ export interface AdSettings {
   click_ad_enable: boolean;
   click_ad_code: string;
   click_ad_threshold: number;
+  google_ads_enable?: boolean;
+  google_ads_client_id?: string;
 }
 
 export interface SiteSettings {
