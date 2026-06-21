@@ -18,6 +18,54 @@ const getDynamicFeaturesObj = (pkg: any) => {
     { text: `Server phát: ${p.allowed_servers?.length || 0} server hệ thống`, status: p.allowed_servers?.length > 3 ? 'success' : 'info' }
   ];
 };
+
+const getNormalizedTitle = (title: string) => {
+  return title.replace(/\b(1|12)?\s*(Tháng|Năm|Month|Year|Hàng Tháng|Hàng Năm|Hàng Tuần|Tuần|Hàng Ngày|Ngày|Hàng Quý|Quý|Monthly|Annual|Weekly|Daily|Quarterly|Lifetime)\b/gi, '').trim();
+};
+
+const groupedPackages: any[] = [];
+
+// Trước tiên, đưa các gói có cycle "lifetime" hoặc "free" vào groupedPackages
+packages.forEach((pkg: any) => {
+  if (pkg.cycle === 'lifetime' || pkg.cycle === 'free' || pkg.id === 'free') {
+    groupedPackages.push({
+      ...pkg,
+      normalizedTitle: pkg.title,
+      monthlyPrice: pkg.price,
+      monthlyId: pkg.id
+    });
+  }
+});
+
+// Duyệt qua các gói có cycle "monthly"
+packages.forEach((monthlyPkg: any) => {
+  if (monthlyPkg.cycle === 'monthly') {
+    const normTitle = getNormalizedTitle(monthlyPkg.title);
+    
+    // Tìm gói annual tương ứng
+    const annualPkg = packages.find((p: any) => 
+      p.cycle === 'annual' && getNormalizedTitle(p.title) === normTitle
+    );
+    
+    let savingPercent = 0;
+    let originalAnnualPrice = monthlyPkg.price * 12;
+    if (annualPkg && annualPkg.price < originalAnnualPrice) {
+      savingPercent = Math.round((1 - annualPkg.price / originalAnnualPrice) * 100);
+    }
+    
+    groupedPackages.push({
+      ...monthlyPkg,
+      title: normTitle,
+      normalizedTitle: normTitle,
+      monthlyPrice: monthlyPkg.price,
+      monthlyId: monthlyPkg.id,
+      annualPrice: annualPkg ? annualPkg.price : undefined,
+      annualId: annualPkg ? annualPkg.id : undefined,
+      savingPercent: savingPercent > 0 ? savingPercent : undefined,
+      originalAnnualPrice: originalAnnualPrice
+    });
+  }
+});
 ---
 
 <MainLayout title="Nâng cấp tài khoản VIP">
@@ -70,13 +118,13 @@ const getDynamicFeaturesObj = (pkg: any) => {
       <div 
         id="plans-container" 
         class={`grid grid-cols-1 gap-8 mx-auto ${
-          packages.length === 1 ? 'max-w-md md:grid-cols-1' :
-          packages.length === 2 ? 'max-w-3xl md:grid-cols-2' :
-          packages.length === 3 ? 'max-w-5xl md:grid-cols-3' :
+          groupedPackages.length === 1 ? 'max-w-md md:grid-cols-1' :
+          groupedPackages.length === 2 ? 'max-w-3xl md:grid-cols-2' :
+          groupedPackages.length === 3 ? 'max-w-5xl md:grid-cols-3' :
           'max-w-6xl md:grid-cols-3 lg:grid-cols-4'
         }`}
       >
-        {packages.map((pkg) => {
+        {groupedPackages.map((pkg) => {
           const isFree = pkg.id === 'free';
           const cardBorderClass = `package-border-${pkg.id}`;
           const cardGlowClass = `package-glow-${pkg.id}`;
@@ -88,7 +136,17 @@ const getDynamicFeaturesObj = (pkg: any) => {
             <div 
               class={`glass-panel border rounded-3xl p-8 relative flex flex-col justify-between min-h-[380px] ${cardBorderClass} ${cardGlowClass} transition-all duration-300`} 
               id={`plan-card-${pkg.id}`}
+              data-id={pkg.id}
+              data-monthly-id={pkg.monthlyId}
+              data-monthly-price={pkg.monthlyPrice}
+              data-monthly-title={`${pkg.title} 1 Tháng`}
+              data-annual-id={pkg.annualId || ''}
+              data-annual-price={pkg.annualPrice || ''}
+              data-annual-title={`${pkg.title} 1 Năm`}
               data-cycle={pkg.cycle}
+              data-has-annual={pkg.annualPrice ? 'true' : 'false'}
+              data-saving-percent={pkg.savingPercent || '0'}
+              data-original-annual-price={pkg.originalAnnualPrice || '0'}
             >
               {!isFree && pkg.style_type === 'rainbow_effect' && (
                 <div class="absolute top-0 right-0 overflow-hidden rounded-tr-3xl">
@@ -99,22 +157,34 @@ const getDynamicFeaturesObj = (pkg: any) => {
               )}
               
               <div>
-                <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">
-                  {isFree ? 'GÓI CƠ BẢN' : 'GÓI NÂNG CẤP'}
-                </span>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">
+                    {isFree ? 'GÓI CƠ BẢN' : 'GÓI NÂNG CẤP'}
+                  </span>
+                  {!isFree && pkg.savingPercent && (
+                    <span class="saving-badge hidden px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-black text-[9px] uppercase tracking-wider font-label-caps">
+                      Tiết kiệm {pkg.savingPercent}%
+                    </span>
+                  )}
+                </div>
                 <h3 class={`text-2xl font-black mt-1 ${textClass}`}>
                   {pkg.title}
                 </h3>
                 
                 <div class="mt-6 flex flex-col">
                   <div class="flex items-baseline gap-1">
-                    <span class="text-4xl font-black text-white">
+                    <span class="price-val text-4xl font-black text-white">
                       {pkg.price.toLocaleString('vi-VN')}đ
                     </span>
-                    <span class="text-xs text-zinc-400 font-semibold font-body-main">
-                      {isFree ? '/ Lifetime' : pkg.cycle === 'annual' ? '/ năm' : '/ tháng'}
+                    <span class="price-unit text-xs text-zinc-400 font-semibold font-body-main">
+                      {isFree ? '/ Lifetime' : '/ tháng'}
                     </span>
                   </div>
+                  {!isFree && pkg.annualPrice && (
+                    <div class="annual-price-details text-[10px] text-zinc-400 mt-1.5 font-medium hidden">
+                      Thanh toán theo năm: <span class="line-through text-zinc-500 mr-1 original-annual-price">{pkg.originalAnnualPrice.toLocaleString('vi-VN')}đ</span> <span class="text-emerald-400 actual-annual-price">{pkg.annualPrice.toLocaleString('vi-VN')}đ</span>
+                    </div>
+                  )}
                 </div>
 
                 <ul class="space-y-4 mt-8">
@@ -143,9 +213,9 @@ const getDynamicFeaturesObj = (pkg: any) => {
               
               <button 
                 id={isFree ? undefined : `upgrade-btn-${pkg.id}`}
-                class={`w-full py-3.5 rounded-xl mt-8 text-xs font-black transition-all cursor-pointer ${btnClass}`}
+                class={`w-full upgrade-action-btn py-3.5 rounded-xl mt-8 text-xs font-black transition-all cursor-pointer ${btnClass}`}
                 disabled={isFree}
-                onclick={isFree ? undefined : `selectPlan('${pkg.id}', '${pkg.title}', ${pkg.price})`}
+                onclick={isFree ? undefined : `triggerPlanSelection('${pkg.id}')`}
               >
                 {btnText}
               </button>
@@ -163,7 +233,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
             <thead>
               <tr class="bg-zinc-950/50 border-b border-glass-stroke">
                 <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Tính năng</th>
-                {packages.map((pkg) => (
+                {groupedPackages.map((pkg) => (
                   <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider text-center">
                     <span class={pkg.style_type === 'rainbow_effect' ? `package-style-${pkg.id}` : ''} style={pkg.style_type === 'custom_color' && pkg.custom_color ? `color: ${pkg.custom_color}` : ''}>
                       {pkg.title}
@@ -175,7 +245,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
             <tbody class="divide-y divide-glass-stroke/40">
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Chất lượng tối đa</td>
-                {packages.map((pkg) => (
+                {groupedPackages.map((pkg) => (
                   <td class="px-6 py-4 text-center text-zinc-200 font-bold">
                     {pkg.permissions?.max_resolution || 'SD'}
                   </td>
@@ -183,7 +253,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Quảng cáo trình phát</td>
-                {packages.map((pkg) => (
+                {groupedPackages.map((pkg) => (
                   <td class="px-6 py-4 text-center">
                     {pkg.permissions?.bypass_ads ? (
                       <span class="text-emerald-400 font-bold">Bỏ qua QC</span>
@@ -195,7 +265,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Tính năng Xem Chung</td>
-                {packages.map((pkg) => (
+                {groupedPackages.map((pkg) => (
                   <td class="px-6 py-4 text-center">
                     {pkg.permissions?.watch_together ? (
                       <span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
@@ -207,7 +277,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Ẩn Watermark ẩn danh</td>
-                {packages.map((pkg) => (
+                {groupedPackages.map((pkg) => (
                   <td class="px-6 py-4 text-center">
                     {pkg.permissions?.hide_watermark ? (
                       <span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
@@ -219,7 +289,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Huy hiệu VIP</td>
-                {packages.map((pkg) => (
+                {groupedPackages.map((pkg) => (
                   <td class="px-6 py-4 text-center">
                     {pkg.permissions?.vip_badge ? (
                       <span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
@@ -231,7 +301,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Giới hạn Watchlist</td>
-                {packages.map((pkg) => (
+                {groupedPackages.map((pkg) => (
                   <td class="px-6 py-4 text-center text-zinc-200">
                     {pkg.permissions?.max_playlists || 0} phim
                   </td>
@@ -239,7 +309,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Số lượng Server khả dụng</td>
-                {packages.map((pkg) => (
+                {groupedPackages.map((pkg) => (
                   <td class="px-6 py-4 text-center text-zinc-200 font-mono">
                     {pkg.permissions?.allowed_servers?.length || 0}
                   </td>
@@ -521,27 +591,61 @@ const getDynamicFeaturesObj = (pkg: any) => {
           labelAnnual?.classList.add('text-white');
         }
 
-        // Filter cards dynamically
+        // Cập nhật giá trị và hiển thị trên card
         const plansContainer = document.getElementById('plans-container');
         const cards = plansContainer ? plansContainer.querySelectorAll('[id^="plan-card-"]') : [];
         let visibleCount = 0;
 
         cards.forEach(card => {
-          const cycle = card.getAttribute('data-cycle');
-          if (cycle === 'lifetime' || cycle === 'free') {
+          const hasAnnual = card.getAttribute('data-has-annual') === 'true';
+          const isFree = card.getAttribute('data-id') === 'free';
+
+          if (isFree) {
             card.classList.remove('hidden');
             visibleCount++;
-          } else if (cycle === 'monthly') {
-            if (isMonthly) {
+            return;
+          }
+
+          if (isMonthly) {
+            card.classList.remove('hidden');
+            visibleCount++;
+
+            const monthlyPrice = parseInt(card.getAttribute('data-monthly-price') || '0');
+            const priceValEl = card.querySelector('.price-val');
+            const priceUnitEl = card.querySelector('.price-unit');
+            const savingBadge = card.querySelector('.saving-badge');
+            const annualDetails = card.querySelector('.annual-price-details');
+
+            if (priceValEl) priceValEl.textContent = monthlyPrice.toLocaleString('vi-VN') + 'đ';
+            if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
+            if (savingBadge) savingBadge.classList.add('hidden');
+            if (annualDetails) annualDetails.classList.add('hidden');
+          } else {
+            if (hasAnnual) {
               card.classList.remove('hidden');
               visibleCount++;
-            } else {
-              card.classList.add('hidden');
-            }
-          } else if (cycle === 'annual') {
-            if (!isMonthly) {
-              card.classList.remove('hidden');
-              visibleCount++;
+
+              const annualPrice = parseInt(card.getAttribute('data-annual-price') || '0');
+              const monthlyEquivalent = Math.round(annualPrice / 12);
+              const priceValEl = card.querySelector('.price-val');
+              const priceUnitEl = card.querySelector('.price-unit');
+              const savingBadge = card.querySelector('.saving-badge');
+              const annualDetails = card.querySelector('.annual-price-details');
+
+              if (priceValEl) priceValEl.textContent = monthlyEquivalent.toLocaleString('vi-VN') + 'đ';
+              if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
+              
+              const savingPercent = parseInt(card.getAttribute('data-saving-percent') || '0');
+              if (savingPercent > 0) {
+                if (savingBadge) {
+                  savingBadge.classList.remove('hidden');
+                  savingBadge.textContent = `Tiết kiệm ${savingPercent}%`;
+                }
+                if (annualDetails) annualDetails.classList.remove('hidden');
+              } else {
+                if (savingBadge) savingBadge.classList.add('hidden');
+                if (annualDetails) annualDetails.classList.add('hidden');
+              }
             } else {
               card.classList.add('hidden');
             }
@@ -593,7 +697,21 @@ const getDynamicFeaturesObj = (pkg: any) => {
           }
 
           // Highlight user's current card
-          const currentCard = document.getElementById(`plan-card-${userPkgId}`);
+          const plansContainer = document.getElementById('plans-container');
+          const cards = plansContainer ? plansContainer.querySelectorAll('[id^="plan-card-"]') : [];
+          let targetCardId = userPkgId;
+          
+          if (userPkgId !== 'free') {
+            const matchedCard = Array.from(cards).find(c => 
+              c.getAttribute('data-monthly-id') === userPkgId || 
+              c.getAttribute('data-annual-id') === userPkgId
+            );
+            if (matchedCard) {
+              targetCardId = matchedCard.getAttribute('data-id');
+            }
+          }
+
+          const currentCard = document.getElementById(`plan-card-${targetCardId}`);
           if (currentCard) {
             currentCard.classList.add('ring-2', 'ring-primary/80', 'scale-[1.02]');
             
@@ -612,11 +730,11 @@ const getDynamicFeaturesObj = (pkg: any) => {
             }
 
             // Disable button
-            const btn = currentCard.querySelector('button');
+            const btn = currentCard.querySelector('.upgrade-action-btn');
             if (btn) {
               btn.disabled = true;
               btn.textContent = 'Đang sử dụng';
-              btn.className = 'w-full py-3.5 rounded-xl mt-8 text-xs font-black transition-all cursor-not-allowed bg-zinc-800 text-zinc-500 border border-zinc-700/50';
+              btn.className = 'w-full upgrade-action-btn py-3.5 rounded-xl mt-8 text-xs font-black transition-all cursor-not-allowed bg-zinc-800 text-zinc-500 border border-zinc-700/50';
               btn.removeAttribute('onclick');
             }
           }
@@ -655,6 +773,28 @@ const getDynamicFeaturesObj = (pkg: any) => {
       }
 
       openPaymentSelector(packageId, packageTitle, targetPrice, targetPkg);
+    };
+
+    window.triggerPlanSelection = function(cardId) {
+      const card = document.getElementById(`plan-card-${cardId}`);
+      if (!card) return;
+
+      const isMonthly = billingCycle === 'monthly';
+      const isFree = cardId === 'free';
+
+      if (isFree) return;
+
+      if (isMonthly) {
+        const id = card.getAttribute('data-monthly-id');
+        const title = card.getAttribute('data-monthly-title');
+        const price = parseInt(card.getAttribute('data-monthly-price') || '0');
+        selectPlan(id, title, price);
+      } else {
+        const id = card.getAttribute('data-annual-id');
+        const title = card.getAttribute('data-annual-title');
+        const price = parseInt(card.getAttribute('data-annual-price') || '0');
+        selectPlan(id, title, price);
+      }
     };
 
     function openPaymentSelector(packageId, packageTitle, price, targetPkg) {
