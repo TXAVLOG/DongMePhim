@@ -15,7 +15,7 @@ if (providerType === 'supabase') {
 
 let cachedSettings: SiteSettings | null = null;
 let cacheExpires = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 10 * 1000; // 10 seconds to prevent stale data across Cloudflare edge nodes
 
 export const SettingService = {
   getSettings: async (): Promise<SiteSettings> => {
