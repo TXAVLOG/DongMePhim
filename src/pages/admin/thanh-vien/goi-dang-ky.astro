@@ -25,7 +25,7 @@ const groupedPackages = packages.map((pkg: any) => {
         <h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Subscription Plans</h1>
         <p class="text-on-surface-variant mt-1">Manage service tiers, pricing, and active memberships.</p>
       </div>
-      <button class="bg-primary-container hover:bg-primary-container/80 text-on-primary-container px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 cursor-pointer">
+      <button onclick="openCreatePlanModal()" class="bg-primary-container hover:bg-primary-container/80 text-on-primary-container px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 cursor-pointer">
         <span class="material-symbols-outlined">add_circle</span>
         Create New Plan
       </button>
@@ -79,7 +79,7 @@ const groupedPackages = packages.map((pkg: any) => {
                 )}
               </div>
               <ul class="space-y-4 mb-8">
-                {pkg.features.map(f => (
+                {pkg.features.map((f: any) => (
                   <li class="flex items-center gap-3 text-[14px]">
                     <span class="material-symbols-outlined text-primary text-[20px]">check</span>
                     <span class="text-on-surface">{f}</span>
@@ -150,14 +150,10 @@ const groupedPackages = packages.map((pkg: any) => {
           </table>
         </div>
         <!-- Pagination -->
-        <div class="px-8 py-4 border-t border-glass-stroke flex justify-between items-center text-[13px] text-on-surface-variant">
-          <p>Showing 4 of 1,248 users</p>
-          <div class="flex gap-2">
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary-fixed font-bold cursor-pointer">1</button>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer">2</button>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer">3</button>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+        <div id="activeSubsPagination" class="px-8 py-4 border-t border-glass-stroke flex justify-between items-center text-[13px] text-on-surface-variant">
+          <p id="activeSubsPaginationText">Showing 0 of 0 users</p>
+          <div id="activeSubsPaginationBtns" class="flex gap-2">
+            <!-- Rendered dynamically -->
           </div>
         </div>
       </section>
@@ -224,7 +220,10 @@ const groupedPackages = packages.map((pkg: any) => {
         renderManualApprovals();
       }
 
-      // 3. Render Active Subscriptions list
+      // 3. Render Active Subscriptions list with pagination
+      let currentPage = 1;
+      const itemsPerPage = 5;
+
       function renderActiveSubscriptions() {
         const searchVal = document.getElementById('activeSubsSearch')?.value?.toLowerCase() || '';
         const tbody = document.getElementById('activeSubsBody');
@@ -236,16 +235,28 @@ const groupedPackages = packages.map((pkg: any) => {
           (u.email || '').toLowerCase().includes(searchVal)
         );
 
+        const paginationContainer = document.getElementById('activeSubsPagination');
+        const paginationText = document.getElementById('activeSubsPaginationText');
+        const paginationBtns = document.getElementById('activeSubsPaginationBtns');
+
         if (filteredUsers.length === 0) {
           tbody.innerHTML = `
             <tr>
               <td colspan="6" class="px-8 py-5 text-center text-zinc-500 italic">Không có người dùng phù hợp.</td>
             </tr>
           `;
+          if (paginationContainer) paginationContainer.classList.add('hidden');
           return;
         }
 
-        tbody.innerHTML = filteredUsers.map(u => {
+        const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+        tbody.innerHTML = paginatedUsers.map(u => {
           const initials = u.username ? u.username.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
           
           let pkgBadge = '';
@@ -305,7 +316,50 @@ const groupedPackages = packages.map((pkg: any) => {
             </tr>
           `;
         }).join('');
+
+        // Render Pagination UI
+        if (paginationContainer) {
+          if (totalPages <= 1) {
+            paginationContainer.classList.add('hidden');
+          } else {
+            paginationContainer.classList.remove('hidden');
+            if (paginationText) {
+              paginationText.textContent = `Showing ${startIndex + 1} - ${Math.min(endIndex, filteredUsers.length)} of ${filteredUsers.length} users`;
+            }
+
+            if (paginationBtns) {
+              let btnsHtml = `
+                <button onclick="changeSubsPage(${currentPage - 1})" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer" ${currentPage === 1 ? 'disabled' : ''}>
+                  <span class="material-symbols-outlined text-[20px] ${currentPage === 1 ? 'opacity-40' : ''}">chevron_left</span>
+                </button>
+              `;
+
+              for (let i = 1; i <= totalPages; i++) {
+                const activeClass = i === currentPage ? 'bg-primary text-slate-950 font-bold' : 'hover:bg-surface-container-highest text-white';
+                btnsHtml += `
+                  <button onclick="changeSubsPage(${i})" class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${activeClass}">
+                    ${i}
+                  </button>
+                `;
+              }
+
+              btnsHtml += `
+                <button onclick="changeSubsPage(${currentPage + 1})" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer" ${currentPage === totalPages ? 'disabled' : ''}>
+                  <span class="material-symbols-outlined text-[20px] ${currentPage === totalPages ? 'opacity-40' : ''}">chevron_right</span>
+                </button>
+              `;
+              
+              paginationBtns.innerHTML = btnsHtml;
+            }
+          }
+        }
       }
+
+      window.changeSubsPage = function(page) {
+        if (page < 1) return;
+        currentPage = page;
+        renderActiveSubscriptions();
+      };
 
       // 4. Render Manual Bank Approvals Table
       function renderManualApprovals() {
@@ -587,6 +641,247 @@ const groupedPackages = packages.map((pkg: any) => {
           console.error(e);
         }
       }
+
+      window.openCreatePlanModal = async function() {
+        // Get system servers list
+        let systemServers = [];
+        try {
+          const res = await fetch('/api/admin/servers');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.status === 'success') {
+              systemServers = data.data;
+            }
+          }
+        } catch (e) {
+          console.error('Error loading servers from database:', e);
+        }
+
+        if (!systemServers || systemServers.length === 0) {
+          systemServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+        }
+
+        // Build HTML for server checklist
+        const serversHtml = systemServers.map(srv => {
+          return `
+            <label class="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 border border-glass-stroke/40 rounded-lg p-2.5 hover:bg-white/10 cursor-pointer select-none">
+              <input type="checkbox" name="allowed_servers" value="${srv}" class="accent-primary" />
+              <span>${srv}</span>
+            </label>
+          `;
+        }).join('');
+
+        const modalContentHtml = `
+          <form id="create-plan-form" class="space-y-4 text-left max-h-[75vh] overflow-y-auto pr-1">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase">Tên gói cước</label>
+                <input type="text" name="title" placeholder="Ví dụ: VIP Premium" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase">Giá hàng tháng (VND)</label>
+                <input type="number" id="create-plan-price" name="price" placeholder="Ví dụ: 99000" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1 relative group/lock">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase flex justify-between items-center">
+                  <span>Giá hàng năm (VND)</span>
+                  <span id="create-saving-badge" class="hidden px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-black text-[9px] uppercase tracking-wider font-label-caps">Tự tính</span>
+                </label>
+                <input type="number" id="create-plan-annual-price" name="annual_price" placeholder="Ví dụ: 999000" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase">Loại giao diện</label>
+                <select name="style_type" id="create-style-type" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" onchange="toggleColorInput(this.value)">
+                  <option value="default">Mặc định (Tím/Xanh)</option>
+                  <option value="custom_color">Màu tùy chỉnh (Hex)</option>
+                  <option value="rainbow_effect">Hiệu ứng Cầu vồng 7 màu</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="space-y-1" id="custom-color-wrapper-create" style="display: none">
+              <label class="text-[10px] text-zinc-400 font-bold uppercase">Mã màu tùy chỉnh</label>
+              <div class="flex gap-2">
+                <input type="color" id="create-custom-color-picker" value="#7c3aed" oninput="document.getElementById('create-custom-color').value = this.value" class="w-9 h-9 bg-transparent border border-glass-stroke rounded-lg p-0 cursor-pointer" />
+                <input type="text" id="create-custom-color" name="custom_color" value="#7c3aed" placeholder="#000000" class="flex-1 bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white uppercase font-mono" />
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] text-zinc-400 font-bold uppercase">Các đặc quyền (cách nhau bằng dấu phẩy)</label>
+              <textarea name="features" class="w-full h-16 bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" placeholder="Quyền 1, Quyền 2, Quyền 3..." required></textarea>
+            </div>
+
+            <div class="border-t border-glass-stroke/50 pt-3 space-y-3">
+              <h4 class="text-xs font-black text-primary uppercase">Cấu hình phân quyền chi tiết</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-400 font-bold uppercase">Chất lượng tối đa</label>
+                  <select name="max_resolution" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white">
+                    <option value="SD">SD (Standard Definition)</option>
+                    <option value="HD">HD (High Definition)</option>
+                    <option value="FHD" selected>Full HD (1080p)</option>
+                    <option value="4K">Ultra HD 4K</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-400 font-bold uppercase">Giới hạn Playlist phim</label>
+                  <input type="number" name="max_playlists" value="100" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="watch_together" value="true" class="accent-primary" />
+                    <span>Quyền Xem Chung</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="hide_watermark" value="true" class="accent-primary" />
+                    <span>Bỏ Watermark</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="vip_badge" value="true" class="accent-primary" />
+                    <span>Huy hiệu VIP</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="bypass_ads" value="true" class="accent-primary" />
+                    <span>Bỏ qua Quảng cáo</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-glass-stroke/50 pt-3 space-y-2">
+              <label class="text-[10px] text-zinc-400 font-bold uppercase block">Danh sách Server phát được phép truy cập</label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                ${serversHtml}
+              </div>
+            </div>
+
+            <div class="flex gap-2 justify-end pt-4 border-t border-glass-stroke/50">
+              <button type="button" onclick="closeEditPlanModal()" class="px-4 py-2 rounded-xl bg-white/5 text-zinc-400 font-bold hover:bg-white/10 active:scale-95 transition-all text-xs cursor-pointer border border-glass-stroke/30">Hủy</button>
+              <button type="submit" class="px-5 py-2 bg-primary text-slate-950 font-black rounded-xl hover:brightness-110 active:scale-95 transition-all text-xs cursor-pointer border-none shadow-lg shadow-primary/20">Tạo gói</button>
+            </div>
+          </form>
+        `;
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: `Tạo gói cước mới`,
+            content: modalContentHtml,
+            type: 'info',
+            confirmText: '',
+            cancelText: '',
+            onConfirm: () => {}
+          });
+
+          // Custom color selector display toggle specifically for create form
+          const styleSelector = document.getElementById('create-style-type');
+          if (styleSelector) {
+            styleSelector.onchange = function() {
+              const colorWrapper = document.getElementById('custom-color-wrapper-create');
+              if (colorWrapper) {
+                colorWrapper.style.display = this.value === 'custom_color' ? 'block' : 'none';
+              }
+            };
+          }
+
+          // Bind form price inputs to calculate saving discount dynamically
+          const priceInput = document.getElementById('create-plan-price');
+          const annualPriceInput = document.getElementById('create-plan-annual-price');
+          const savingBadge = document.getElementById('create-saving-badge');
+
+          function updateModalSaving() {
+            if (!priceInput || !annualPriceInput || !savingBadge) return;
+            const monthly = parseFloat(priceInput.value) || 0;
+            const annual = parseFloat(annualPriceInput.value) || 0;
+            if (monthly > 0 && annual > 0) {
+              const originalAnnual = monthly * 12;
+              if (annual < originalAnnual) {
+                const percent = Math.round((1 - annual / originalAnnual) * 100);
+                savingBadge.textContent = `Tiết kiệm ${percent}%`;
+                savingBadge.classList.remove('hidden');
+                return;
+              }
+            }
+            savingBadge.classList.add('hidden');
+          }
+
+          if (priceInput && annualPriceInput) {
+            priceInput.addEventListener('input', updateModalSaving);
+            annualPriceInput.addEventListener('input', updateModalSaving);
+          }
+
+          // Bind form submit
+          const form = document.getElementById('create-plan-form');
+          if (form) {
+            form.onsubmit = async function(e) {
+              e.preventDefault();
+              const formData = new FormData(form);
+              
+              const title = formData.get('title');
+              const newId = 'vip_' + Math.random().toString(36).substring(2, 8); // unique id
+              
+              const allowed_servers = [];
+              form.querySelectorAll('input[name="allowed_servers"]:checked').forEach(el => {
+                allowed_servers.push(el.value);
+              });
+
+              const newPlan = {
+                id: newId,
+                title: title,
+                price: parseInt(formData.get('price') || '0'),
+                annual_price: parseInt(formData.get('annual_price') || '0'),
+                style_type: formData.get('style_type'),
+                custom_color: formData.get('style_type') === 'custom_color' ? formData.get('custom_color') : undefined,
+                features: formData.get('features').split(',').map(s => s.trim()).filter(s => s.length > 0),
+                permissions: {
+                  max_resolution: formData.get('max_resolution'),
+                  max_playlists: parseInt(formData.get('max_playlists') || '100'),
+                  watch_together: form.querySelector('input[name="watch_together"]').checked,
+                  hide_watermark: form.querySelector('input[name="hide_watermark"]').checked,
+                  vip_badge: form.querySelector('input[name="vip_badge"]').checked,
+                  bypass_ads: form.querySelector('input[name="bypass_ads"]').checked,
+                  allowed_servers: allowed_servers
+                }
+              };
+
+              if (!loadedSettings.packages) {
+                loadedSettings.packages = [];
+              }
+              loadedSettings.packages.push(newPlan);
+
+              // Save to API
+              try {
+                const saveRes = await fetch('/api/admin/settings', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(loadedSettings)
+                });
+                if (saveRes.ok) {
+                  if (window.showGlobalToast) window.showGlobalToast('Tạo gói cước mới thành công!', 'success');
+                  closeEditPlanModal();
+                  setTimeout(() => window.location.reload(), 1000);
+                } else {
+                  if (window.showGlobalToast) window.showGlobalToast('Tạo gói cước thất bại!', 'error');
+                }
+              } catch(err) {
+                if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API!', 'error');
+              }
+            };
+          }
+        }
+      };
 
       window.openEditPlanModal = async function(packageId) {
         const pkg = loadedSettings.packages?.find(p => p.id === packageId);
