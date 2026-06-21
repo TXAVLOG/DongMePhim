@@ -9,7 +9,7 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
   try {
     const settings = await SettingService.getSettings();
     const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
-    if (!isSmtpConfigured) return;
+    if (!isSmtpConfigured) return null;
 
     // Lấy danh sách email admin để gửi thông báo
     const adminEmail = settings.smtp.smtp_user; // Email gửi/nhận mặc định
@@ -77,8 +77,11 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
     if (typeof globalThis !== 'undefined') {
       // Mock log storage on server console / local logs if needed
     }
+    
+    return emailLog;
   } catch (e) {
     console.error('Lỗi khi gửi email thông báo duyệt Zalo cho Admin:', e);
+    return null;
   }
 }
 
@@ -110,9 +113,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Thông báo không đồng bộ cho Admin
     // Không làm nghẽn luồng phản hồi cho client
-    notifyAdminNewRequest(nickname, token, email || null);
+    let emailLog = null;
+    try {
+      emailLog = await notifyAdminNewRequest(nickname, token, email || null);
+    } catch (e) {}
 
-    return apiResponse({ success: true, record }, 'success', 'Đăng ký yêu cầu thành công, vui lòng đợi Admin duyệt!', 200, request);
+    return apiResponse({ success: true, record, emailLog }, 'success', 'Đăng ký yêu cầu thành công, vui lòng đợi Admin duyệt!', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }

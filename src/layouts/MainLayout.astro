@@ -3698,9 +3698,9 @@ const isActive = (path: string) => {
             logoClicks = 0;
           }, 1000);
           logoClicks++;
-          if (logoClicks === 3 || logoClicks === 4) {
-            if (window.showToast) {
-              window.showToast(`Bạn đang kích hoạt mã ẩn! Click thêm ${5 - logoClicks} lần nữa...`, 'info');
+          if (logoClicks >= 2 && logoClicks <= 4) {
+            if (window.showGlobalToast) {
+              window.showGlobalToast(`Bạn đang kích hoạt mã ẩn! Click thêm ${5 - logoClicks} lần nữa...`, 'info');
             }
           } else if (logoClicks >= 5) {
             logoClicks = 0;
@@ -3727,8 +3727,8 @@ const isActive = (path: string) => {
           if (code === decoyPasscode) {
             closeBypassModal();
             localStorage.setItem('txa_referred_token', 'true');
-            if (window.showToast) {
-              window.showToast("Mật mã chính xác! Chào mừng bạn.", "success");
+            if (window.showGlobalToast) {
+              window.showGlobalToast("Mật mã chính xác! Chào mừng bạn.", "success");
             }
             
             // Cập nhật class hiển thị giao diện qua checkTxaGate
@@ -3753,8 +3753,8 @@ const isActive = (path: string) => {
               checkZaloStatusOnLoad();
             }
           } else {
-            if (window.showToast) {
-              window.showToast("Mật mã không chính xác!", "error");
+            if (window.showGlobalToast) {
+              window.showGlobalToast("Mật mã không chính xác!", "error");
             }
           }
         };
@@ -3870,18 +3870,27 @@ const isActive = (path: string) => {
             });
             const data = await res.json();
             if (res.ok) {
-              if (window.showToast) window.showToast('Gửi yêu cầu thành công! Vui lòng chờ phê duyệt.', 'success');
+              if (window.showGlobalToast) window.showGlobalToast('Gửi yêu cầu thành công! Vui lòng chờ phê duyệt.', 'success');
+              
+              if (data.emailLog) {
+                try {
+                  const logs = JSON.parse(localStorage.getItem('txa_email_logs') || '[]');
+                  logs.unshift(data.emailLog);
+                  localStorage.setItem('txa_email_logs', JSON.stringify(logs));
+                } catch (e) {}
+              }
+
               localStorage.setItem('zalo_access_status', 'pending');
               closeZaloModal();
               updateZaloUI('pending');
               startZaloPolling();
             } else {
-              if (window.showToast) window.showToast(data.message || 'Đăng ký thất bại', 'error');
+              if (window.showGlobalToast) window.showGlobalToast(data.message || 'Đăng ký thất bại', 'error');
               submitBtn.disabled = false;
               submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Gửi yêu cầu duyệt</span>';
             }
           } catch (err) {
-            if (window.showToast) window.showToast('Lỗi kết nối mạng!', 'error');
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối mạng!', 'error');
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Gửi yêu cầu duyệt</span>';
           }
