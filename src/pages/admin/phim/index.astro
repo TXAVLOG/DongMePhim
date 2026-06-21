@@ -359,6 +359,9 @@ const staticMovies = await MovieService.getMovies();
                     <a href="/admin/phim/edit?th=${m.slug}" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-txatooltip="Chỉnh sửa phim / Cấu hình tập">
                       <span class="material-symbols-outlined text-sm">edit</span>
                     </a>
+                    <button onclick="scanSingleMovie('${m.slug}', this)" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-emerald-400 transition-colors cursor-pointer" data-txatooltip="Quét tập mới dựa theo sourceUrl">
+                      <span class="material-symbols-outlined text-sm">sync</span>
+                    </button>
                     <button onclick="deleteMovie('${m.id}', '${m.slug}', ${isStatic}, this)" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" data-txatooltip="Xóa phim này">
                       <span class="material-symbols-outlined text-sm">delete</span>
                     </button>
@@ -534,9 +537,10 @@ const staticMovies = await MovieService.getMovies();
               try {
                 // Determine sourceUrl. If it's stored in allMovies, fetch it. Else fallback to phimapi.com
                 const mObj = allMovies.find(x => x.slug === item.slug);
-                // Currently we fallback to phimapi.com because it's the standard source.
-                // Could expand later if more sources are tracked.
-                const sourceUrl = `https://phimapi.com/phim/${item.slug}`;
+                let sourceUrl = `https://phimapi.com/phim/${item.slug}`;
+                if (mObj && mObj.sourceUrl && mObj.sourceUrl.trim() !== '') {
+                  sourceUrl = mObj.sourceUrl;
+                }
 
                 const res = await fetch(sourceUrl);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -588,6 +592,60 @@ const staticMovies = await MovieService.getMovies();
             }
           });
         }
+
+        window.scanSingleMovie = async function(slug, btnElement) {
+          let oldHtml = btnElement.innerHTML;
+          btnElement.disabled = true;
+          btnElement.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">autorenew</span>';
+          
+          if (window.showGlobalToast) window.showGlobalToast(\`Đang quét tập mới cho phim \${slug}...\`, 'info');
+
+          try {
+            const mObj = allMovies.find(x => x.slug === slug);
+            let sourceUrl = \`https://phimapi.com/phim/\${slug}\`;
+            if (mObj && mObj.sourceUrl && mObj.sourceUrl.trim() !== '') {
+              sourceUrl = mObj.sourceUrl;
+            }
+
+            const res = await fetch(sourceUrl);
+            if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+            const detailData = await res.json();
+
+            if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
+              const movieDetailObj = mapKKPhimToMovieDetail(detailData);
+              movieDetailObj.updatedAt = new Date().toISOString();
+              
+              const saveRes = await fetch('/api/admin/movie-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'save',
+                  slug: slug,
+                  movieData: movieDetailObj,
+                  isStatic: false
+                })
+              });
+
+              if (saveRes.ok) {
+                if (window.showGlobalToast) window.showGlobalToast('Quét tập mới thành công!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                if (window.showGlobalToast) window.showGlobalToast('Lỗi khi lưu dữ liệu', 'error');
+                btnElement.disabled = false;
+                btnElement.innerHTML = oldHtml;
+              }
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast('Dữ liệu API không hợp lệ', 'error');
+              btnElement.disabled = false;
+              btnElement.innerHTML = oldHtml;
+            }
+          } catch (err) {
+            console.error(\`Lỗi khi quét slug \${slug}:\`, err);
+            if (window.showGlobalToast) window.showGlobalToast('Không thể quét được tập mới', 'error');
+            btnElement.disabled = false;
+            btnElement.innerHTML = oldHtml;
+          }
+        };
 
         // Bind Bulk Delete Button
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
