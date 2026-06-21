@@ -19,74 +19,19 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Cổng SePay hiện không hoạt động (chưa bật).', 400, request);
     }
 
-    const sepayApiKey = payments.sepay_api_key;
-    if (!sepayApiKey && !payments.sandbox_mode) {
-      return apiResponse(null, 'error', 'Cấu hình SePay chưa hoàn tất API Key.', 400, request);
+    const isSandbox = !!payments.sandbox_mode;
+
+    // Pick the correct API key based on mode
+    const sepayApiKey = isSandbox
+      ? (payments.sepay_sandbox_api_key || payments.sepay_api_key)
+      : payments.sepay_api_key;
+
+    if (!sepayApiKey) {
+      const missingKey = isSandbox ? 'sepay_sandbox_api_key (hoặc sepay_api_key)' : 'sepay_api_key';
+      return apiResponse(null, 'error', `Cấu hình SePay chưa có ${missingKey}.`, 400, request);
     }
 
-    if (payments.sandbox_mode) {
-      // 1. Tìm thông tin giao dịch trong DB
-      const { data: log, error: logError } = await supabase
-        .from('txa_payment_logs')
-        .select('*')
-        .eq('txid', txid)
-        .maybeSingle();
-
-      if (logError) throw logError;
-
-      // Cập nhật hoặc tạo log
-      const targetUser = log ? log.username : 'anonymous';
-      const cycle = log ? log.cycle : (actionType === 'renew' ? 'annual' : 'monthly');
-      const packageTitle = log ? log.package_title : (actionType === 'renew' ? 'VIP 1 Năm' : 'VIP 1 Tháng');
-      const price = log ? log.price : (actionType === 'renew' ? 699000 : 69000);
-
-      if (!log) {
-        const { error: insertErr } = await supabase
-          .from('txa_payment_logs')
-          .insert({
-            txid: txid,
-            username: targetUser,
-            package_title: packageTitle,
-            price: price,
-            cycle: cycle,
-            method: 'sepay',
-            status: 'approved',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        if (insertErr) throw insertErr;
-      } else if (log.status !== 'approved') {
-        const { error: updateLogErr } = await supabase
-          .from('txa_payment_logs')
-          .update({
-            status: 'approved',
-            updated_at: new Date().toISOString()
-          })
-          .eq('txid', txid);
-        if (updateLogErr) throw updateLogErr;
-      }
-
-      // Cập nhật hạn dùng cho user tương ứng
-      const cycleDays = cycle === 'annual' ? 365 : 30;
-      const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
-
-      const { error: updateUserErr } = await supabase
-        .from('users')
-        .update({
-          package: packageTitle,
-          join_date: new Date().toISOString(),
-          expiry_date: expiryDate,
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('username', targetUser);
-
-      if (updateUserErr) throw updateUserErr;
-
-      return apiResponse({ success: true, sandbox: true }, 'success', 'Khớp giao dịch thành công (Mô phỏng Sandbox)! Gói cước của bạn đã được kích hoạt.', 200, request);
-    }
-
-    // 1. Tìm thông tin giao dịch trong DB
+    // 1. Tìm thông tin giao dịch trong DB (hoặc tạo pending log)
     const { data: log, error: logError } = await supabase
       .from('txa_payment_logs')
       .select('*')
@@ -94,17 +39,24 @@ export const POST: APIRoute = async ({ request }) => {
       .maybeSingle();
 
     if (logError) throw logError;
+
     if (!log) {
-      return apiResponse(null, 'error', `Không tìm thấy thông tin giao dịch với mã: ${txid}`, 404, request);
+      return apiResponse(null, 'error', `Không tìm thấy thông tin giao dịch với mã: ${txid}. Vui lòng thử lại.`, 404, request);
     }
 
-    // Nếu đã duyệt trước đó (qua Webhook hoặc click trước)
+    // Nếu đã duyệt trước đó (qua Webhook hoặc check trước)
     if (log.status === 'approved') {
       return apiResponse({ success: true, alreadyApproved: true }, 'success', 'Giao dịch đã được kích hoạt thành công!', 200, request);
     }
 
-    // 2. Gọi SePay API để đối soát chủ động (GET /transactions/list)
-    const sepayRes = await fetch('https://my.sepay.vn/userapi/transactions/list?limit=100', {
+    // 2. Gọi SePay API để đối soát
+    // Sandbox và live dùng cùng endpoint, chỉ khác API key
+    const expectedMemo = actionType === 'renew' ? `TXA_GH_${txid}` : `TXA_UP_${txid}`;
+
+    // Lọc theo số tiền để giảm tải, lấy tối đa 50 giao dịch gần nhất
+    const sepayUrl = `https://my.sepay.vn/userapi/transactions/list?limit=50&amount_in=${log.price}`;
+
+    const sepayRes = await fetch(sepayUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -114,30 +66,32 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!sepayRes.ok) {
       const errText = await sepayRes.text();
-      console.error('SePay API Error:', errText);
-      return apiResponse(null, 'error', 'Không thể kết nối đến cổng SePay để đối soát.', 500, request);
+      console.error(`SePay API Error [${isSandbox ? 'sandbox' : 'live'}]:`, errText);
+      return apiResponse(null, 'error', `Không thể kết nối đến cổng SePay${isSandbox ? ' (sandbox)' : ''}. Vui lòng thử lại!`, 500, request);
     }
 
     const sepayData = await sepayRes.json() as any;
-    const transactions = sepayData.transactions || [];
+    const transactions: any[] = sepayData.transactions || [];
 
-    // Cú pháp tìm kiếm trong nội dung chuyển khoản
-    const expectedPrefix = actionType === 'renew' ? `TXA_GH_${txid}` : `TXA_UP_${txid}`;
-    
-    // Tìm giao dịch khớp
+    // Tìm giao dịch khớp: nội dung CK có chứa mã txid và số tiền >= giá
     const matchedTx = transactions.find((t: any) => {
       const content = (t.transaction_content || '').toUpperCase();
       const amountIn = Number(t.amount_in || 0);
-      
-      // Kiểm tra xem nội dung chuyển khoản có chứa mã giao dịch không, và số tiền có đủ không
-      const hasCode = content.includes(expectedPrefix.toUpperCase()) || content.includes(txid.toUpperCase());
+      const hasCode = content.includes(expectedMemo.toUpperCase()) || content.includes(txid.toUpperCase());
       const hasAmount = amountIn >= log.price;
-      
       return hasCode && hasAmount;
     });
 
     if (!matchedTx) {
-      return apiResponse({ success: false }, 'success', 'Hệ thống chưa tìm thấy giao dịch chuyển khoản tương thích trên tài khoản ngân hàng. Vui lòng đợi 10-30 giây và kiểm tra lại!', 200, request);
+      return apiResponse(
+        { success: false, sandbox: isSandbox },
+        'success',
+        isSandbox
+          ? 'Chưa tìm thấy giao dịch trong SePay Sandbox. Hãy thực hiện chuyển khoản thử trong môi trường sandbox của SePay!'
+          : 'Hệ thống chưa tìm thấy giao dịch chuyển khoản tương thích. Vui lòng đợi 10-30 giây và kiểm tra lại!',
+        200,
+        request
+      );
     }
 
     // 3. Khớp giao dịch thành công -> Cập nhật trạng thái thanh toán
@@ -145,6 +99,7 @@ export const POST: APIRoute = async ({ request }) => {
       .from('txa_payment_logs')
       .update({
         status: 'approved',
+        sepay_transaction_id: matchedTx.id || null,
         updated_at: new Date().toISOString()
       })
       .eq('txid', txid);
@@ -168,7 +123,13 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (updateUserErr) throw updateUserErr;
 
-    return apiResponse({ success: true }, 'success', 'Khớp giao dịch thành công! Gói cước của bạn đã được kích hoạt.', 200, request);
+    return apiResponse(
+      { success: true, sandbox: isSandbox },
+      'success',
+      `Khớp giao dịch thành công${isSandbox ? ' (Sandbox)' : ''}! Gói cước của bạn đã được kích hoạt.`,
+      200,
+      request
+    );
 
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);

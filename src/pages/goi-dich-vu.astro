@@ -11,7 +11,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         <h1 class="font-display-hero text-4xl text-white font-bold tracking-tight">Gói dịch vụ của tôi</h1>
         <p class="text-on-surface-variant mt-2 font-body-main">Quản lý quyền lợi thành viên và hóa đơn thanh toán.</p>
       </div>
-      <a href="/nang-cap" class="px-6 py-3 rounded-full text-slate-950 font-bold bg-primary hover:brightness-110 active:scale-95 transition-all text-sm shadow-lg shadow-primary/20 flex items-center gap-2">
+      <a id="header-upgrade-btn" href="/nang-cap" class="px-6 py-3 rounded-full text-slate-950 font-bold bg-primary hover:brightness-110 active:scale-95 transition-all text-sm shadow-lg shadow-primary/20 flex items-center gap-2">
         <span class="material-symbols-outlined text-sm font-bold">workspace_premium</span>
         Nâng cấp VIP ngay
       </a>
@@ -154,6 +154,7 @@ import MainLayout from '../layouts/MainLayout.astro';
               <p class="text-[10px] text-zinc-400 mt-0.5 font-body-main">Giao dịch được đối soát tự động mỗi 5 giây qua SePay. Quý khách vui lòng không đóng trình duyệt.</p>
             </div>
           </div>
+          <div id="sepay-renew-sandbox-btn-container" class="hidden"></div>
           <button id="check-sepay-renew-now-btn" class="px-4 py-2 bg-primary hover:brightness-110 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer border-none shadow-md">
             Kiểm tra ngay
           </button>
@@ -407,22 +408,47 @@ import MainLayout from '../layouts/MainLayout.astro';
         const userDb = resultMe.data;
         const userInvoices = resultPayments.data || [];
 
+        const siteSettings = window.TXA_SITE_SETTINGS || {};
+        const packagesList = siteSettings.packages || [];
+        const userPkg = packagesList.find(p => p.title === (userDb?.package || 'Free'));
+        const userPkgId = userPkg ? userPkg.id : 'free';
+        const isVIPUser = userPkgId !== 'free';
+
+        const upgradeBtn = document.getElementById('header-upgrade-btn');
+        if (upgradeBtn) {
+          if (isVIPUser) {
+            upgradeBtn.innerHTML = `
+              <span class="material-symbols-outlined text-sm font-bold">workspace_premium</span>
+              Gia hạn / Đổi gói cước
+            `;
+          } else {
+            upgradeBtn.innerHTML = `
+              <span class="material-symbols-outlined text-sm font-bold">workspace_premium</span>
+              Nâng cấp VIP ngay
+            `;
+          }
+        }
+
         let remDays = 999;
 
-        if (userDb && userDb.package && userDb.package.includes('VIP')) {
+        if (isVIPUser && userDb) {
           const expStr = userDb.expiryDate;
           
           planTitle.textContent = userDb.package;
-          planBadge.textContent = 'MEMBER VIP';
-          planBadge.className = 'px-3 py-1 bg-gradient-to-r from-violet-600 to-cyan-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-violet-500/20';
+          planBadge.textContent = userDb.package;
+          planBadge.className = `px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full package-style-${userPkgId}`;
           planDesc.textContent = 'Tài khoản của bạn đã được kích hoạt VIP thành công. Bạn có toàn quyền truy cập tất cả tài nguyên phim với băng thông máy chủ cao tốc và chất lượng 4K UHD.';
 
           if (expStr) {
             const expDate = new Date(expStr);
             planExpiryVal.textContent = expDate.toLocaleString('vi-VN');
             
-            planCycleDiv.classList.remove('hidden');
-            planCycleVal.textContent = userDb.package.includes('Year') ? 'Hàng năm (-15%)' : 'Hàng tháng';
+            if (userPkg && userPkg.cycle) {
+              planCycleVal.textContent = userPkg.cycle === 'annual' ? 'Hàng năm' : userPkg.cycle === 'monthly' ? 'Hàng tháng' : 'Vô thời hạn';
+              planCycleDiv.classList.remove('hidden');
+            } else {
+              planCycleDiv.classList.add('hidden');
+            }
             
             remDays = Math.ceil((expDate.getTime() - Date.now()) / (3600 * 1000 * 24));
 
@@ -440,8 +466,8 @@ import MainLayout from '../layouts/MainLayout.astro';
         } else {
           // Free tier
           planTitle.textContent = 'Free Plan';
-          planBadge.textContent = 'MIỄN PHÍ';
-          planBadge.className = 'px-3 py-1 bg-zinc-800 text-zinc-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-zinc-700';
+          planBadge.textContent = userDb?.package || 'Free';
+          planBadge.className = `px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full package-style-${userPkgId}`;
           planDesc.textContent = 'Bạn đang sử dụng gói Cơ bản. Để có trải nghiệm xem phim Ultra HD không quảng cáo, hãy nâng cấp tài khoản của bạn.';
           planExpiryVal.textContent = 'Vô thời hạn';
           planCycleDiv.classList.add('hidden');
@@ -685,7 +711,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         const sepayRenewSection = document.getElementById('sepay-renew-section');
         if (sepayRenewSection) {
           sepayRenewSection.classList.remove('hidden');
-          sepayRenewSection.scrollIntoView({ behavior: 'smooth' });
+          setTimeout(() => sepayRenewSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 
           const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
           const memo = `TXA_GH_${txid}`;
@@ -706,7 +732,22 @@ import MainLayout from '../layouts/MainLayout.astro';
           const qrUrl = `https://img.vietqr.io/image/${payments.sepay_bank_name || 'MB'}-${payments.sepay_account_no}-compact.png?amount=${price}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(payments.sepay_account_name || '')}`;
           document.getElementById('sepay-renew-vietqr-img').setAttribute('src', qrUrl);
 
-          // Start active polling
+          // Inject sandbox info banner if sandbox mode is active
+          const sandboxRenewBtnContainer = document.getElementById('sepay-renew-sandbox-btn-container');
+          if (isSandbox && sandboxRenewBtnContainer) {
+            sandboxRenewBtnContainer.classList.remove('hidden');
+            sandboxRenewBtnContainer.innerHTML = `
+              <div class="flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-xs text-yellow-400 font-bold">
+                <span class="material-symbols-outlined text-sm shrink-0">science</span>
+                <span>Sandbox Mode — Thực hiện chuyển khoản thử trong môi trường <a href="https://my.sepay.vn" target="_blank" class="underline text-yellow-300">SePay Sandbox</a> với nội dung: <span class="font-mono text-white">TXA_GH_${txid}</span></span>
+              </div>
+            `;
+          } else if (sandboxRenewBtnContainer) {
+            sandboxRenewBtnContainer.classList.add('hidden');
+            sandboxRenewBtnContainer.innerHTML = '';
+          }
+
+          // Start active polling (works for both sandbox + live)
           startSePayRenewPolling(txid, 'renew', price, packageTitle, cycle);
         }
       } else if (method === 'manual') {

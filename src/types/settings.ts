@@ -114,6 +114,7 @@ export interface LuckyDrawSettings {
 }
 
 export interface PaymentSettings {
+  sepay_sandbox_api_key: string;
   sandbox_mode: boolean;
   payos_enable: boolean;
   payos_client_id: string;

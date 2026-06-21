@@ -65,7 +65,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
       </div>
 
       <!-- Plan Selection Bento Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div id="plans-container" class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
         {packages.map((pkg) => {
           const isFree = pkg.id === 'free';
           const cardBorderClass = `package-border-${pkg.id}`;
@@ -78,6 +78,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
             <div 
               class={`glass-panel border rounded-3xl p-8 relative flex flex-col justify-between min-h-[380px] ${cardBorderClass} ${cardGlowClass} transition-all duration-300`} 
               id={`plan-card-${pkg.id}`}
+              data-cycle={pkg.cycle}
             >
               {!isFree && pkg.style_type === 'rainbow_effect' && (
                 <div class="absolute top-0 right-0 overflow-hidden rounded-tr-3xl">
@@ -97,15 +98,11 @@ const getDynamicFeaturesObj = (pkg: any) => {
                 
                 <div class="mt-6 flex flex-col">
                   <div class="flex items-baseline gap-1">
-                    <span 
-                      class="text-4xl font-black text-white plan-price-display"
-                      data-price-monthly={pkg.price}
-                      data-price-annual={Math.round(pkg.price * 10)}
-                    >
+                    <span class="text-4xl font-black text-white">
                       {pkg.price.toLocaleString('vi-VN')}đ
                     </span>
-                    <span class="text-xs text-zinc-400 font-semibold font-body-main plan-cycle-display">
-                      {isFree ? '/ Lifetime' : '/ tháng'}
+                    <span class="text-xs text-zinc-400 font-semibold font-body-main">
+                      {isFree ? '/ Lifetime' : pkg.cycle === 'annual' ? '/ năm' : '/ tháng'}
                     </span>
                   </div>
                 </div>
@@ -335,9 +332,12 @@ const getDynamicFeaturesObj = (pkg: any) => {
             <p class="text-[10px] text-zinc-400 mt-0.5 font-body-main">Giao dịch được đối soát tự động mỗi 5 giây qua SePay. Quý khách vui lòng không đóng trình duyệt.</p>
           </div>
         </div>
-        <button id="check-sepay-now-btn" class="px-4 py-2 bg-primary hover:brightness-110 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer border-none shadow-md">
-          Kiểm tra ngay
-        </button>
+        <div class="flex gap-2 items-center">
+          <div id="sepay-sandbox-btn-container" class="hidden"></div>
+          <button id="check-sepay-now-btn" class="px-4 py-2 bg-primary hover:brightness-110 active:scale-95 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer border-none shadow-md">
+            Kiểm tra ngay
+          </button>
+        </div>
       </div>
     </div>
 
@@ -455,11 +455,8 @@ const getDynamicFeaturesObj = (pkg: any) => {
   (function() {
     let billingCycle = 'monthly'; // 'monthly' or 'annual'
     let loadedSettings = {};
+    let userPackagePrice = 0;
     
-    // Config prices
-    const PRICE_MONTHLY = 69000;
-    const PRICE_ANNUAL = 699000;
-
     async function fetchSettings() {
       try {
         const res = await fetch('/api/admin/settings');
@@ -512,25 +509,44 @@ const getDynamicFeaturesObj = (pkg: any) => {
           labelAnnual?.classList.add('text-white');
         }
 
-        // Update each dynamic plan card price
-        const priceDisplays = document.querySelectorAll('.plan-price-display');
-        priceDisplays.forEach(el => {
-          const parentCard = el.closest('[id^="plan-card-"]');
-          if (parentCard && parentCard.id === 'plan-card-free') return; // Skip free card
-          
-          const pMonthly = parseInt(el.getAttribute('data-price-monthly') || '0');
-          const pAnnual = parseInt(el.getAttribute('data-price-annual') || '0');
-          
-          const cycleLabel = parentCard.querySelector('.plan-cycle-display');
-          
-          if (isMonthly) {
-            el.textContent = new Intl.NumberFormat('vi-VN').format(pMonthly) + 'đ';
-            if (cycleLabel) cycleLabel.textContent = '/ tháng';
-          } else {
-            el.textContent = new Intl.NumberFormat('vi-VN').format(pAnnual) + 'đ';
-            if (cycleLabel) cycleLabel.textContent = '/ năm';
+        // Filter cards dynamically
+        const plansContainer = document.getElementById('plans-container');
+        const cards = plansContainer ? plansContainer.querySelectorAll('[id^="plan-card-"]') : [];
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+          const cycle = card.getAttribute('data-cycle');
+          if (cycle === 'free') {
+            card.classList.remove('hidden');
+            visibleCount++;
+          } else if (cycle === 'monthly') {
+            if (isMonthly) {
+              card.classList.remove('hidden');
+              visibleCount++;
+            } else {
+              card.classList.add('hidden');
+            }
+          } else if (cycle === 'annual') {
+            if (!isMonthly) {
+              card.classList.remove('hidden');
+              visibleCount++;
+            } else {
+              card.classList.add('hidden');
+            }
           }
         });
+
+        // Adjust column count dynamically for symmetry
+        if (plansContainer) {
+          plansContainer.classList.remove('md:grid-cols-1', 'md:grid-cols-2', 'md:grid-cols-3', 'md:grid-cols-4');
+          if (visibleCount === 1) {
+            plansContainer.classList.add('md:grid-cols-1', 'max-w-md');
+          } else if (visibleCount === 2) {
+            plansContainer.classList.add('md:grid-cols-2', 'max-w-3xl');
+          } else {
+            plansContainer.classList.add('md:grid-cols-3', 'max-w-5xl');
+          }
+        }
       }
 
       // Initial cycle styles
@@ -543,7 +559,7 @@ const getDynamicFeaturesObj = (pkg: any) => {
         };
       }
 
-      // Resolve package display
+      // Resolve package display & current plan highlights
       const username = localStorage.getItem('tlogged_in_as') || '';
       const pageDataEl = document.getElementById('nangcap-page-data');
       const packages = pageDataEl ? JSON.parse(pageDataEl.dataset.packages || '[]') : [];
@@ -557,9 +573,40 @@ const getDynamicFeaturesObj = (pkg: any) => {
           const userPkg = packages.find(p => p.title === userPackage);
           const userPkgId = userPkg ? userPkg.id : 'free';
           
+          userPackagePrice = userPkg ? userPkg.price : 0;
+          
           const currentPkgDisplay = document.getElementById('current-user-package-display');
           if (currentPkgDisplay) {
             currentPkgDisplay.innerHTML = `<em class="package-style-${userPkgId} font-bold font-body-main">${userPackage}</em>`;
+          }
+
+          // Highlight user's current card
+          const currentCard = document.getElementById(`plan-card-${userPkgId}`);
+          if (currentCard) {
+            currentCard.classList.add('ring-2', 'ring-primary/80', 'scale-[1.02]');
+            
+            // Add a badge "Gói của bạn" inside the card if not already added
+            if (!currentCard.querySelector('.user-package-badge')) {
+              const headerDiv = currentCard.querySelector('div');
+              if (headerDiv) {
+                const badge = document.createElement('span');
+                badge.className = 'user-package-badge ml-2 px-2 py-0.5 bg-primary/20 text-primary border border-primary/30 rounded font-black text-[9px] uppercase tracking-wider font-label-caps inline-block align-middle';
+                badge.textContent = 'Gói của bạn';
+                const h3 = headerDiv.querySelector('h3');
+                if (h3) {
+                  h3.appendChild(badge);
+                }
+              }
+            }
+
+            // Disable button
+            const btn = currentCard.querySelector('button');
+            if (btn) {
+              btn.disabled = true;
+              btn.textContent = 'Đang sử dụng';
+              btn.className = 'w-full py-3.5 rounded-xl mt-8 text-xs font-black transition-all cursor-not-allowed bg-zinc-800 text-zinc-500 border border-zinc-700/50';
+              btn.removeAttribute('onclick');
+            }
           }
         }
       } catch (e) {
@@ -569,6 +616,36 @@ const getDynamicFeaturesObj = (pkg: any) => {
 
     // Expose selectPlan globally
     window.selectPlan = function(packageId, packageTitle, price) {
+      const pageDataEl = document.getElementById('nangcap-page-data');
+      const packages = pageDataEl ? JSON.parse(pageDataEl.dataset.packages || '[]') : [];
+      const targetPkg = packages.find(p => p.id === packageId) || {};
+      const targetPrice = targetPkg.price || price;
+
+      if (userPackagePrice > targetPrice) {
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Cảnh báo hạ cấp gói cước',
+            message: `
+              <div class="flex flex-col gap-3">
+                <p class="text-xs text-zinc-300 leading-relaxed font-body-main">Gói cước hiện tại của bạn có giá trị cao hơn gói bạn đang chọn. Nếu hạ cấp gói, các quyền lợi VIP cũ sẽ bị hủy bỏ ngay lập tức và thay thế bằng các quyền lợi của gói mới.</p>
+                <p class="text-xs text-amber-400 font-bold">Bạn có chắc chắn muốn tiếp tục hạ cấp gói cước?</p>
+              </div>
+            `,
+            type: 'warning',
+            confirmText: 'Tiếp tục',
+            cancelText: 'Hủy',
+            onConfirm: () => {
+              openPaymentSelector(packageId, packageTitle, targetPrice, targetPkg);
+            }
+          });
+        }
+        return;
+      }
+
+      openPaymentSelector(packageId, packageTitle, targetPrice, targetPkg);
+    };
+
+    function openPaymentSelector(packageId, packageTitle, price, targetPkg) {
       const payments = loadedSettings.payments || {};
       const isSandbox = payments.sandbox_mode ?? true;
 
@@ -586,18 +663,15 @@ const getDynamicFeaturesObj = (pkg: any) => {
         return;
       }
 
-      // Check price cycle
-      const cycle = packageId.includes('y') || packageId.includes('year') || packageId.includes('1y') ? 'annual' : 'monthly';
-      const actualPrice = billingCycle === 'annual' && cycle === 'monthly' ? Math.round(price * 10) : price;
-      const cycleLabelStr = cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng';
+      const cycle = targetPkg.cycle || 'monthly';
+      const cycleLabelStr = cycle === 'annual' ? 'Hàng năm' : cycle === 'monthly' ? 'Hàng tháng' : 'Vô thời hạn';
 
-      // Render method selection HTML for txaModal
       const modalHtml = `
         <div class="flex flex-col gap-4">
           <p class="text-xs text-zinc-400">Chọn phương thức thanh toán phù hợp dưới đây:</p>
           <div class="flex flex-col gap-2.5">
             ${methods.map(m => `
-              <button onclick="processPaymentSelect('${m.id}', ${actualPrice}, '${cycle}', '${packageId}', '${encodeURIComponent(packageTitle)}')" class="w-full p-4 rounded-xl border border-glass-stroke hover:border-primary/50 bg-white/5 hover:bg-white/10 text-left font-bold text-white text-xs flex justify-between items-center transition-all cursor-pointer">
+              <button onclick="processPaymentSelect('${m.id}', ${price}, '${cycle}', '${packageId}', '${encodeURIComponent(packageTitle)}')" class="w-full p-4 rounded-xl border border-glass-stroke hover:border-primary/50 bg-white/5 hover:bg-white/10 text-left font-bold text-white text-xs flex justify-between items-center transition-all cursor-pointer">
                 <span class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-primary text-base">credit_card</span>
                   ${m.label}
@@ -613,14 +687,14 @@ const getDynamicFeaturesObj = (pkg: any) => {
       if (window.txamodal) {
         window.txamodal.show({
           title: `Thanh toán gói ${packageTitle} (${cycleLabelStr})`,
-          message: modalHtml,
+          content: modalHtml,
           type: 'info',
           confirmText: '',
           cancelText: 'Đóng',
           onConfirm: () => {}
         });
       }
-    };
+    }
 
     // Expose select gateway globally
     window.processPaymentSelect = async function(method, price, cycle, packageId, packageTitleEncoded) {
@@ -651,6 +725,8 @@ const getDynamicFeaturesObj = (pkg: any) => {
         if (sepayPortal) {
           if (userView) userView.classList.add('hidden');
           sepayPortal.classList.remove('hidden');
+          // Scroll to the SePay portal
+          setTimeout(() => sepayPortal.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 
           const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
           const memo = `TXA_UP_${txid}`;
@@ -670,7 +746,22 @@ const getDynamicFeaturesObj = (pkg: any) => {
           const qrUrl = `https://img.vietqr.io/image/${payments.sepay_bank_name || 'MB'}-${payments.sepay_account_no}-compact.png?amount=${price}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(payments.sepay_account_name || '')}`;
           document.getElementById('sepay-vietqr-img').setAttribute('src', qrUrl);
 
-          // Start active polling
+          // Inject sandbox info banner if sandbox mode is active
+          const sandboxBtnContainer = document.getElementById('sepay-sandbox-btn-container');
+          if (isSandbox && sandboxBtnContainer) {
+            sandboxBtnContainer.classList.remove('hidden');
+            sandboxBtnContainer.innerHTML = `
+              <div class="flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-xs text-yellow-400 font-bold">
+                <span class="material-symbols-outlined text-sm shrink-0">science</span>
+                <span>Sandbox Mode — Thực hiện chuyển khoản thử trong môi trường <a href="https://my.sepay.vn" target="_blank" class="underline text-yellow-300">SePay Sandbox</a> với nội dung: <span class="font-mono text-white">TXA_UP_${txid}</span></span>
+              </div>
+            `;
+          } else if (sandboxBtnContainer) {
+            sandboxBtnContainer.classList.add('hidden');
+            sandboxBtnContainer.innerHTML = '';
+          }
+
+          // Start active polling (works for both sandbox + live — polls /api/payment/sepay-verify)
           startSePayPolling(txid, 'upgrade', price, packageTitle, cycle);
         }
       } else if (method === 'manual') {
@@ -680,7 +771,8 @@ const getDynamicFeaturesObj = (pkg: any) => {
         if (manualPortal) {
           if (userView) userView.classList.add('hidden');
           manualPortal.classList.remove('hidden');
-
+          // Scroll to the manual transfer portal
+          setTimeout(() => manualPortal.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
           const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
           const memo = `TXA_UP_${txid}`;
 

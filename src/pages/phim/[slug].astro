@@ -370,7 +370,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
                                   </div>
                                   <h4 class="text-white font-title-md font-semibold truncate text-sm">{movie.title}</h4>
                                 </div>
-                                <a href={`/xem/${movie.slug}?sv=${idx}&ts=${encodeURIComponent(srv.serverName)}`} class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
+                                <a data-server-idx={idx} href={`/xem/${movie.slug}?sv=${idx}&ts=${encodeURIComponent(srv.serverName)}`} class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
                                   Xem bản này
                                 </a>
                               </div>
@@ -827,9 +827,13 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
     function applyHistory(historyItem: any) {
       if (!historyItem) return;
 
-      const serverIdx = historyItem.serverIndex || 0;
+      let serverIdx = historyItem.serverIndex || 0;
       const epSlug = historyItem.episodeSlug;
-      const serverName = historyItem.serverName || 'Server VIP';
+      let serverName = historyItem.serverName || 'Server VIP';
+      if (serverIdx > 0 && userPkgId === 'free') {
+        serverIdx = 0;
+        serverName = (servers[0] && servers[0].serverName) || 'Server VIP';
+      }
 
       // Activate server button
       const serverBtns = document.querySelectorAll('.server-btn');
@@ -976,8 +980,111 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
       }
     };
 
-    // Run syncWatchHistory on load
-    syncWatchHistory();
+    let userPkgId = 'free'; // default to free
+
+    function showServerLockedModal() {
+      const siteSettings = (window as any).TXA_SITE_SETTINGS || {};
+      const packages: any[] = siteSettings.packages || [];
+      const userPackage = packages.find((p: any) => p.id === userPkgId)?.title || 'Free';
+      
+      const modalContent = `
+        <div class="flex flex-col items-center justify-center p-6 text-center relative overflow-hidden space-y-4">
+          <div class="bg-primary/20 w-14 h-14 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_20px_rgba(124,58,237,0.25)]">
+            <span class="material-symbols-outlined text-2xl text-primary" style="font-variation-settings: 'FILL' 1">lock</span>
+          </div>
+          <h3 class="font-display-hero text-lg font-black text-white tracking-wide uppercase">Nguồn phát VIP giới hạn</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed font-body-main max-w-sm">
+            Nguồn phát này chỉ dành cho tài khoản sử dụng các gói cước nâng cao. Vui lòng nâng cấp gói để mở khóa.
+          </p>
+          <div class="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl">
+            <p class="text-[10px] text-zinc-400 font-body-main">
+              Gói hiện tại của bạn: <em class="not-italic font-bold text-zinc-200">${userPackage}</em>
+            </p>
+          </div>
+          <div class="pt-2">
+            <a href="/nang-cap" class="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#d2bbff] to-[#00daf3] text-slate-950 font-black rounded-xl text-[10px] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 border-none uppercase tracking-wider decoration-none no-underline">
+              <span class="material-symbols-outlined text-xs font-black">workspace_premium</span>
+              Nâng cấp gói ngay
+            </a>
+          </div>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Nguồn phát VIP giới hạn',
+          content: modalContent,
+          type: 'info',
+          confirmText: '',
+          cancelText: 'Đóng',
+          onConfirm: () => {}
+        });
+      }
+    }
+
+    function applyServerLocks() {
+      const isFree = (userPkgId === 'free');
+      if (!isFree) return;
+
+      // 1. Phim Bộ server buttons
+      const serverBtns = document.querySelectorAll('.server-btn');
+      serverBtns.forEach(btn => {
+        const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
+        if (idx > 0) {
+          if (!btn.querySelector('.lock-badge')) {
+            btn.innerHTML = `
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px] text-amber-400 lock-badge" style="font-variation-settings: 'FILL' 1">lock</span>
+                ${btn.textContent.trim()}
+              </span>
+            `;
+          }
+        }
+      });
+
+      // 2. Phim Lẻ watch buttons
+      const watchBtns = document.querySelectorAll('a[data-server-idx]');
+      watchBtns.forEach((btn: any) => {
+        const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
+        if (idx > 0) {
+          if (!btn.querySelector('.lock-badge')) {
+            btn.innerHTML = `
+              <span class="flex items-center justify-center gap-1.5 w-full">
+                <span class="material-symbols-outlined text-[14px] lock-badge" style="font-variation-settings: 'FILL' 1">lock</span>
+                Xem bản VIP
+              </span>
+            `;
+            btn.className = "mt-4 inline-flex items-center justify-center bg-zinc-800 text-zinc-400 border border-zinc-700 font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit cursor-pointer";
+          }
+        }
+      });
+    }
+
+    const checkUserVIP = async () => {
+      const username = localStorage.getItem('tlogged_in_as');
+      if (username) {
+        try {
+          const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
+          if (res.ok) {
+            const data = (await res.json()) as any;
+            const userDb = data?.data;
+            if (userDb) {
+              const siteSettings = (window as any).TXA_SITE_SETTINGS || {};
+              const packages: any[] = siteSettings.packages || [];
+              const userPkg = packages.find((p: any) => p.title === userDb.package);
+              userPkgId = userPkg ? userPkg.id : 'free';
+            }
+          }
+        } catch(e) {
+          console.error(e);
+        }
+      }
+      applyServerLocks();
+      await syncWatchHistory();
+    };
+
+    // Run checkUserVIP on load
+    checkUserVIP();
 
     // Set Server Buttons Click listeners using event delegation
     const serverSelector = document.getElementById('server-selector-container');
@@ -987,6 +1094,11 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
         if (!btn) return;
         const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
         
+        if (idx > 0 && userPkgId === 'free') {
+          showServerLockedModal();
+          return;
+        }
+
         const btns = serverSelector.querySelectorAll('.server-btn');
         btns.forEach((b: any) => {
           b.classList.remove('bg-primary', 'text-on-primary', 'shadow-md');
@@ -998,6 +1110,18 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
         renderEpisodes(idx);
       });
     }
+
+    // Intercept clicks on watch links for Phim Lẻ
+    document.addEventListener('click', (e: any) => {
+      const btn = e.target.closest('a[data-server-idx]');
+      if (!btn) return;
+      
+      const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
+      if (idx > 0 && userPkgId === 'free') {
+        e.preventDefault();
+        showServerLockedModal();
+      }
+    });
 
     // 5. Auth Checks for Action Buttons & Tools
     const checkLogin = () => {

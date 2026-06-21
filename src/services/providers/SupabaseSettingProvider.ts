@@ -19,10 +19,14 @@ export class SupabaseSettingProvider implements ISettingProvider {
       if (data && data.length > 0) {
         data.forEach((row: any) => {
           if (row.key in settings) {
-            (settings as any)[row.key] = {
-              ...(settings as any)[row.key],
-              ...row.value
-            };
+            if (Array.isArray(row.value)) {
+              (settings as any)[row.key] = row.value;
+            } else {
+              (settings as any)[row.key] = {
+                ...(settings as any)[row.key],
+                ...row.value
+              };
+            }
           }
         });
       }

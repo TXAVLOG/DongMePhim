@@ -113,8 +113,16 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
             </div>
             <div class="space-y-3 pl-8">
               <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">API Key</label>
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">API Key (Live)</label>
                 <input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-zinc-500 font-bold uppercase flex items-center gap-1.5">
+                  <span class="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[9px] rounded font-black">SANDBOX</span>
+                  API Key (Sandbox)
+                </label>
+                <input type="password" id="payment-sepay-sandbox-key" value={settings.payments?.sepay_sandbox_api_key} placeholder="Token Sandbox từ SePay (khác Live)" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                <p class="text-[9px] text-zinc-600">Dùng khi bật Sandbox Mode — hệ thống sẽ gọi API SePay Sandbox để xác minh giao dịch thử.</p>
               </div>
               
               <!-- Verification panel -->
@@ -328,6 +336,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         setVal('payment-paypal-client', s.payments?.paypal_client_id);
         setChecked('payment-sepay-enable', s.payments?.sepay_enable);
         setVal('payment-sepay-key', s.payments?.sepay_api_key);
+        setVal('payment-sepay-sandbox-key', s.payments?.sepay_sandbox_api_key);
         setVal('payment-sepay-bank-id', s.payments?.sepay_bank_account_id);
         setVal('payment-sepay-bank', s.payments?.sepay_bank_name);
         setVal('payment-sepay-no', s.payments?.sepay_account_no);
@@ -365,6 +374,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
             paypal_client_id: document.getElementById('payment-paypal-client')?.value || '',
             sepay_enable: document.getElementById('payment-sepay-enable')?.checked || false,
             sepay_api_key: document.getElementById('payment-sepay-key')?.value || '',
+            sepay_sandbox_api_key: document.getElementById('payment-sepay-sandbox-key')?.value || '',
             sepay_bank_account_id: document.getElementById('payment-sepay-bank-id')?.value || '',
             sepay_bank_name: document.getElementById('payment-sepay-bank')?.value || '',
             sepay_account_no: document.getElementById('payment-sepay-no')?.value || '',

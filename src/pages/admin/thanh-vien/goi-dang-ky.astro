@@ -612,9 +612,10 @@ const packages = settings.packages || [];
                 <label class="text-[10px] text-zinc-400 font-bold uppercase">Tên gói cước</label>
                 <input type="text" name="title" value="${pkg.title}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
               </div>
-              <div class="space-y-1">
+              <div class="space-y-1 relative group/lock">
                 <label class="text-[10px] text-zinc-400 font-bold uppercase">Giá tiền (VND)</label>
                 <input type="number" name="price" value="${pkg.price}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} required />
+                ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
               </div>
             </div>
 
@@ -626,13 +627,14 @@ const packages = settings.packages || [];
             <div class="border-t border-glass-stroke/50 pt-3 space-y-3">
               <h4 class="text-xs font-black text-primary uppercase">Cấu hình giao diện và màu sắc</h4>
               <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
+                <div class="space-y-1 relative group/lock">
                   <label class="text-[10px] text-zinc-400 font-bold uppercase">Loại giao diện</label>
                   <select name="style_type" id="edit-style-type" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} onchange="toggleColorInput(this.value)">
                     <option value="default" ${styleType === 'default' ? 'selected' : ''}>Mặc định (Tím/Xanh)</option>
                     <option value="custom_color" ${styleType === 'custom_color' ? 'selected' : ''}>Màu tùy chỉnh (Hex)</option>
                     <option value="rainbow_effect" ${styleType === 'rainbow_effect' ? 'selected' : ''}>Hiệu ứng Cầu vồng 7 màu</option>
                   </select>
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
                 </div>
                 <div class="space-y-1" id="custom-color-wrapper" style="display: ${styleType === 'custom_color' ? 'block' : 'none'}">
                   <label class="text-[10px] text-zinc-400 font-bold uppercase">Mã màu tùy chỉnh</label>
@@ -647,38 +649,52 @@ const packages = settings.packages || [];
             <div class="border-t border-glass-stroke/50 pt-3 space-y-3">
               <h4 class="text-xs font-black text-primary uppercase">Cấu hình phân quyền chi tiết</h4>
               <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
+                <div class="space-y-1 relative group/lock">
                   <label class="text-[10px] text-zinc-400 font-bold uppercase">Chất lượng tối đa</label>
-                  <select name="max_resolution" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white">
+                  <select name="max_resolution" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''}>
                     <option value="SD" ${pkg.permissions?.max_resolution === 'SD' ? 'selected' : ''}>SD (Standard Definition)</option>
                     <option value="HD" ${pkg.permissions?.max_resolution === 'HD' ? 'selected' : ''}>HD (High Definition)</option>
                     <option value="FHD" ${pkg.permissions?.max_resolution === 'FHD' ? 'selected' : ''}>Full HD (1080p)</option>
                     <option value="4K" ${pkg.permissions?.max_resolution === '4K' ? 'selected' : ''}>Ultra HD 4K</option>
                   </select>
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
                 </div>
-                <div class="space-y-1">
+                <div class="space-y-1 relative group/lock">
                   <label class="text-[10px] text-zinc-400 font-bold uppercase">Giới hạn Playlist phim</label>
-                  <input type="number" name="max_playlists" value="${pkg.permissions?.max_playlists || 10}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
+                  <input type="number" name="max_playlists" value="${pkg.permissions?.max_playlists || 10}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} required />
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3 pt-2">
-                <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
-                  <input type="checkbox" name="watch_together" value="true" ${pkg.permissions?.watch_together ? 'checked' : ''} class="accent-primary" />
-                  <span>Quyền Xem Chung</span>
-                </label>
-                <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
-                  <input type="checkbox" name="hide_watermark" value="true" ${pkg.permissions?.hide_watermark ? 'checked' : ''} class="accent-primary" />
-                  <span>Bỏ Watermark</span>
-                </label>
-                <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
-                  <input type="checkbox" name="vip_badge" value="true" ${pkg.permissions?.vip_badge ? 'checked' : ''} class="accent-primary" />
-                  <span>Huy hiệu VIP</span>
-                </label>
-                <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
-                  <input type="checkbox" name="bypass_ads" value="true" ${pkg.permissions?.bypass_ads ? 'checked' : ''} class="accent-primary" />
-                  <span>Bỏ qua Quảng cáo</span>
-                </label>
+                <div class="relative group/lock">
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="watch_together" value="true" ${pkg.permissions?.watch_together ? 'checked' : ''} ${isFree ? 'disabled' : ''} class="accent-primary" />
+                    <span>Quyền Xem Chung</span>
+                  </label>
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
+                </div>
+                <div class="relative group/lock">
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="hide_watermark" value="true" ${pkg.permissions?.hide_watermark ? 'checked' : ''} ${isFree ? 'disabled' : ''} class="accent-primary" />
+                    <span>Bỏ Watermark</span>
+                  </label>
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
+                </div>
+                <div class="relative group/lock">
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="vip_badge" value="true" ${pkg.permissions?.vip_badge ? 'checked' : ''} ${isFree ? 'disabled' : ''} class="accent-primary" />
+                    <span>Huy hiệu VIP</span>
+                  </label>
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
+                </div>
+                <div class="relative group/lock">
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="bypass_ads" value="true" ${pkg.permissions?.bypass_ads ? 'checked' : ''} ${isFree ? 'disabled' : ''} class="accent-primary" />
+                    <span>Bỏ qua Quảng cáo</span>
+                  </label>
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
+                </div>
               </div>
             </div>
 
@@ -699,7 +715,7 @@ const packages = settings.packages || [];
         if (window.txamodal) {
           window.txamodal.show({
             title: `Cập nhật cấu hình: ${pkg.title}`,
-            message: modalContentHtml,
+            content: modalContentHtml,
             type: 'info',
             confirmText: '', // Hide default confirm
             cancelText: '',
@@ -735,15 +751,27 @@ const packages = settings.packages || [];
                   allowed_servers.push(el.value);
                 });
 
-                targetPkg.permissions = {
-                  max_resolution: formData.get('max_resolution'),
-                  max_playlists: parseInt(formData.get('max_playlists') || '10'),
-                  watch_together: form.querySelector('input[name="watch_together"]').checked,
-                  hide_watermark: form.querySelector('input[name="hide_watermark"]').checked,
-                  vip_badge: form.querySelector('input[name="vip_badge"]').checked,
-                  bypass_ads: form.querySelector('input[name="bypass_ads"]').checked,
-                  allowed_servers: allowed_servers
-                };
+                if (isFree) {
+                  targetPkg.permissions = {
+                    max_resolution: targetPkg.permissions?.max_resolution || 'SD',
+                    max_playlists: targetPkg.permissions?.max_playlists || 10,
+                    watch_together: targetPkg.permissions?.watch_together || false,
+                    hide_watermark: targetPkg.permissions?.hide_watermark || false,
+                    vip_badge: targetPkg.permissions?.vip_badge || false,
+                    bypass_ads: targetPkg.permissions?.bypass_ads || false,
+                    allowed_servers: allowed_servers
+                  };
+                } else {
+                  targetPkg.permissions = {
+                    max_resolution: formData.get('max_resolution'),
+                    max_playlists: parseInt(formData.get('max_playlists') || '10'),
+                    watch_together: form.querySelector('input[name="watch_together"]').checked,
+                    hide_watermark: form.querySelector('input[name="hide_watermark"]').checked,
+                    vip_badge: form.querySelector('input[name="vip_badge"]').checked,
+                    bypass_ads: form.querySelector('input[name="bypass_ads"]').checked,
+                    allowed_servers: allowed_servers
+                  };
+                }
 
                 // Save to API
                 try {

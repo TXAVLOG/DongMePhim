@@ -936,6 +936,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [adType, setAdType] = useState<'video' | 'embed'>('video');
   const [adCountdown, setAdCountdown] = useState<number>(5);
   const [canSkipAd, setCanSkipAd] = useState<boolean>(false);
+  const [adBlockDetected, setAdBlockDetected] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -970,6 +971,23 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           };
         }
         setUserPermissions(perms);
+
+        // Check AdBlock state for Free users
+        const isFreeUser = pkgName.toLowerCase() === 'free' || !perms?.bypass_ads;
+        if (isFreeUser) {
+          // Poll window.TXA_ADBLOCK_DETECTED which is set by MainLayout
+          const checkAdBlockState = () => {
+            if (typeof (window as any).TXA_ADBLOCK_DETECTED !== 'undefined') {
+              setAdBlockDetected(!!(window as any).TXA_ADBLOCK_DETECTED);
+            } else {
+              // Not checked yet — wait briefly then re-check
+              setTimeout(checkAdBlockState, 500);
+            }
+          };
+          checkAdBlockState();
+        } else {
+          setAdBlockDetected(false); // Paid user — never blocked
+        }
 
         // Pre-roll ads logic
         const ads = settings.ads || {};
@@ -1324,6 +1342,43 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   };
 
   const selectServer = (idx: number) => {
+    if (idx > 0 && currentUserPackage.toLowerCase() === 'free') {
+      const modalContent = `
+        <div class="flex flex-col items-center justify-center p-6 text-center relative overflow-hidden space-y-4">
+          <div class="bg-primary/20 w-14 h-14 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_20px_rgba(124,58,237,0.25)]">
+            <span class="material-symbols-outlined text-2xl text-primary" style="font-variation-settings: 'FILL' 1">lock</span>
+          </div>
+          <h3 class="font-display-hero text-lg font-black text-white tracking-wide uppercase">Nguồn phát VIP giới hạn</h3>
+          <p class="text-xs text-zinc-400 leading-relaxed font-body-main max-w-sm">
+            Nguồn phát này chỉ dành cho tài khoản sử dụng các gói cước nâng cao. Vui lòng nâng cấp gói để mở khóa.
+          </p>
+          <div class="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl">
+            <p class="text-[10px] text-zinc-400 font-body-main">
+              Gói hiện tại của bạn: <em class="not-italic font-bold text-zinc-200">${currentUserPackage}</em>
+            </p>
+          </div>
+          <div class="pt-2">
+            <a href="/nang-cap" class="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#d2bbff] to-[#00daf3] text-slate-950 font-black rounded-xl text-[10px] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 border-none uppercase tracking-wider decoration-none no-underline">
+              <span class="material-symbols-outlined text-xs font-black">workspace_premium</span>
+              Nâng cấp gói ngay
+            </a>
+          </div>
+        </div>
+      `;
+
+      if ((window as any).txamodal) {
+        (window as any).txamodal.show({
+          title: 'Nguồn phát VIP giới hạn',
+          content: modalContent,
+          type: 'info',
+          confirmText: '',
+          cancelText: 'Đóng',
+          onConfirm: () => {}
+        });
+      }
+      return;
+    }
+
     let preservedTime = 0;
     if (playerGetTimeRef.current) {
       preservedTime = Math.floor(playerGetTimeRef.current());
@@ -1397,6 +1452,39 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               className="w-full h-full border-none rounded-xl"
               title="Cảnh báo can thiệp hệ thống"
             />
+          ) : adBlockDetected && currentUserPackage.toLowerCase() === 'free' ? (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-950 p-8 text-center space-y-5 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 to-zinc-950 pointer-events-none" />
+              <div className="relative z-10 flex flex-col items-center gap-4 max-w-md">
+                <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center animate-pulse">
+                  <span className="material-symbols-outlined text-3xl text-amber-400">block</span>
+                </div>
+                <h3 className="font-display-hero text-xl font-black text-white uppercase tracking-wide">
+                  AdBlock bị chặn
+                </h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Chúng tôi phát hiện bạn đang dùng phần mềm chặn quảng cáo.
+                  Quảng cáo giúp chúng tôi cung cấp dịch vụ <span className="text-white font-bold">miễn phí</span> cho bạn.
+                </p>
+                <p className="text-[10px] text-zinc-500">Tắt AdBlock rồi tải lại trang, hoặc nâng cấp VIP để không có quảng cáo.</p>
+                <div className="flex items-center gap-3 flex-wrap justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="px-5 py-2.5 bg-white/10 border border-white/15 text-white rounded-xl text-xs font-bold hover:bg-white/20 transition-all cursor-pointer"
+                  >
+                    Đã tắt — Tải lại trang
+                  </button>
+                  <a
+                    href="/nang-cap"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#d2bbff] to-[#00daf3] text-slate-950 font-black rounded-xl text-xs hover:brightness-110 transition-all shadow-lg no-underline"
+                  >
+                    <span className="material-symbols-outlined text-sm font-black">workspace_premium</span>
+                    Nâng cấp VIP
+                  </a>
+                </div>
+              </div>
+            </div>
           ) : isUnreleased && unreleasedEpisode ? (
             <UnreleasedPlayerPlaceholder episode={unreleasedEpisode} />
           ) : showAd ? (
@@ -1606,6 +1694,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                 {servers.map((srv, idx) => {
                   const isActive = idx === serverIndex;
+                  const isLocked = idx > 0 && currentUserPackage.toLowerCase() === 'free';
                   return (
                     <button 
                       key={srv.serverName}
@@ -1614,7 +1703,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                       className={`group relative flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer border ${
                         isActive
                           ? 'bg-gradient-to-r from-primary/20 to-primary/5 border-primary/50 text-white shadow-[0_0_15px_rgba(124,58,237,0.15)]' 
-                          : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-primary/30 hover:bg-white/[0.02] hover:text-white'
+                          : isLocked
+                            ? 'bg-surface border-glass-stroke text-zinc-500 hover:border-amber-500/30'
+                            : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-primary/30 hover:bg-white/[0.02] hover:text-white'
                       }`}
                     >
                       {isActive ? (
@@ -1623,12 +1714,18 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                           <span className="w-[2.5px] bg-primary rounded-full animate-[eqBar2_0.7s_ease-in-out_infinite]" style={{ height: '100%' }} />
                           <span className="w-[2.5px] bg-primary rounded-full animate-[eqBar3_0.5s_ease-in-out_infinite]" style={{ height: '40%' }} />
                         </div>
+                      ) : isLocked ? (
+                        <span className="material-symbols-outlined text-[16px] text-amber-400 font-bold shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
                       ) : (
                         <span className="material-symbols-outlined text-[16px] text-zinc-500 group-hover:text-primary transition-colors">play_circle</span>
                       )}
                       
                       <span className="flex-1 text-left truncate">{srv.serverName}</span>
-                      {isActive && <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ping shrink-0" />}
+                      {isLocked ? (
+                        <span className="ml-1 text-[8px] bg-amber-500/20 text-amber-400 px-1 py-0.5 rounded font-black uppercase tracking-wider shrink-0">VIP</span>
+                      ) : isActive ? (
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ping shrink-0" />
+                      ) : null}
                     </button>
                   );
                 })}
