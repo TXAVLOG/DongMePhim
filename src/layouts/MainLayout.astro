@@ -934,7 +934,7 @@ const isActive = (path: string) => {
               <span onclick="switchAuthTab('forgot-password')" class="text-xs font-semibold text-primary hover:underline cursor-pointer">Quên mật khẩu?</span>
             </div>
 
-            {settings.login?.login_google_enable && (
+            {settings.login?.login_google_enable && settings.login?.login_google_client_id && settings.login?.login_google_client_id !== 'mock_google_id' && (
               <>
                 <div class="relative flex py-2 items-center">
                   <div class="flex-grow border-t border-white/5"></div>
