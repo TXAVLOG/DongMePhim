@@ -45,7 +45,7 @@ const settings = await SettingService.getSettings();
 
     if (!historyGrid || !emptyHistory || !clearAllBtn) return;
 
-    const username = typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null;
+    const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
 
     // Helper: Read thistory from localStorage
     function getLocalHistory() {
@@ -220,3 +220,4 @@ const settings = await SettingService.getSettings();
     loadHistoryData();
   });
 </script>
+

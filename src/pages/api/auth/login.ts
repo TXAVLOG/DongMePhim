@@ -2,8 +2,9 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '../../../lib/api/response';
 import { SettingService } from '../../../services/SettingService';
 import { supabase } from '../../../lib/supabase';
+import { createSession } from '../../../lib/auth';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     let body: any = {};
     try {
@@ -58,6 +59,9 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse({ errorType: 'password' }, 'error', 'Mật khẩu không chính xác!', 400, request);
     }
 
+    // Create secure session cookie
+    await createSession(user.id, request, cookies);
+
     return apiResponse({
       user: {
         id: user.id,
@@ -70,7 +74,7 @@ export const POST: APIRoute = async ({ request }) => {
         province: user.province,
         ward: user.ward
       },
-      access_token: "eyJhbGciOiJIUzI1NiIsIn...",
+      access_token: "txa_session",
       token_type: "Bearer",
       expires_in: 31536000
     }, 'success', '', 200, request);

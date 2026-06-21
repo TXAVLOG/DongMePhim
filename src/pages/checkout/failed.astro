@@ -62,7 +62,7 @@ const settings = await SettingService.getSettings();
     function initFailedPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const method = urlParams.get('method') || 'online';
-      const username = urlParams.get('user') || localStorage.getItem('tlogged_in_as') || 'anonymous';
+      const username = urlParams.get('user') || (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
 
       document.getElementById('failed-method-val').textContent = method.toUpperCase();
       document.getElementById('failed-user-val').textContent = username;
@@ -72,3 +72,4 @@ const settings = await SettingService.getSettings();
     document.addEventListener('astro:page-load', initFailedPage);
   })();
 </script>
+

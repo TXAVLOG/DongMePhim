@@ -471,7 +471,7 @@ const groupedPackages = packages.map((pkg: any) => {
             }
 
             // Update localStorage txa_user_subscription if current user
-            const currentLoggedIn = localStorage.getItem('tlogged_in_as');
+            const currentLoggedIn = (window.APP_USER ? window.APP_USER.username : null);
             if (currentLoggedIn === tx.username) {
               localStorage.setItem('txa_user_subscription', JSON.stringify({
                 username: tx.username,
@@ -647,7 +647,7 @@ const groupedPackages = packages.map((pkg: any) => {
                 });
 
                 if (res.ok) {
-                  const currentLoggedIn = localStorage.getItem('tlogged_in_as');
+                  const currentLoggedIn = (window.APP_USER ? window.APP_USER.username : null);
                   if (currentLoggedIn === username) {
                     if (isFree) {
                       localStorage.removeItem('txa_user_subscription');
@@ -1285,3 +1285,4 @@ const groupedPackages = packages.map((pkg: any) => {
     })();
   </script>
 </AdminLayout>
+

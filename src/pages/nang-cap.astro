@@ -647,7 +647,7 @@ const groupedPackages = packages.map((pkg: any) => {
       }
 
       // Resolve package display & current plan highlights
-      const username = localStorage.getItem('tlogged_in_as') || '';
+      const username = (window.APP_USER ? window.APP_USER.username : null) || '';
       const pageDataEl = document.getElementById('nangcap-page-data');
       const packages = pageDataEl ? JSON.parse(pageDataEl.dataset.packages || '[]') : [];
 
@@ -836,7 +836,7 @@ const groupedPackages = packages.map((pkg: any) => {
 
       const isSandbox = payments.sandbox_mode ?? true;
       const isSepaySandbox = payments.sepay_sandbox_mode !== undefined ? !!payments.sepay_sandbox_mode : isSandbox;
-      const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+      const username = (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
       const packageTitle = decodeURIComponent(packageTitleEncoded);
 
       if (isSandbox && method !== 'manual' && method !== 'sepay') {
@@ -1257,7 +1257,7 @@ const groupedPackages = packages.map((pkg: any) => {
         const reader = new FileReader();
         reader.onloadend = async function() {
           const receiptImgBase64 = reader.result;
-          const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+          const username = (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
           const manualPortal = document.getElementById('manual-transfer-portal');
           
           const selectedPkgId = manualPortal?.dataset.selectedPackageId || 'vip_1m';
@@ -1379,3 +1379,4 @@ const groupedPackages = packages.map((pkg: any) => {
     });
   })();
 </script>
+

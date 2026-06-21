@@ -2,6 +2,12 @@
 import '../styles/index.css';
 import { SettingService } from '../services/SettingService';
 import { ClientRouter } from 'astro:transitions';
+import { verifySession } from '../lib/auth';
+
+const currentUser = await verifySession(Astro.request, Astro.cookies);
+if (!currentUser || (currentUser.role !== 'admin' && currentUser.roles !== 'admin')) {
+  return Astro.redirect('/tphim');
+}
 
 interface Props {
   title: string;
@@ -88,7 +94,8 @@ packages.forEach((pkg: any) => {
   <script is:inline define:vars={{ 
     apiEncryptEnable: settings.general?.api_encrypt_enable ?? false, 
     apiEncryptPass: settings.general?.api_encrypt_pass || 'tphimx',
-    settings 
+    settings,
+    currentUser
   }}>
     // Helper function to decrypt AES-256-GCM client-side
     async function clientTxaDecrypt(encoded, passphrase) {
@@ -149,6 +156,7 @@ packages.forEach((pkg: any) => {
       encryptPass: apiEncryptPass
     };
     window.TXA_SITE_SETTINGS = settings;
+    window.APP_USER = currentUser;
 
     // Monkey patch fetch for automatic API decryption in admin panel
     (function() {
@@ -186,7 +194,7 @@ packages.forEach((pkg: any) => {
 
     (function() {
       if (typeof localStorage !== 'undefined') {
-        const loggedInUser = localStorage.getItem('tlogged_in_as');
+        const loggedInUser = (window.APP_USER ? window.APP_USER.username : null);
         if (!loggedInUser) {
           window.location.href = '/tphim';
           return;
@@ -642,7 +650,7 @@ packages.forEach((pkg: any) => {
       };
       window.showGlobalToast = window.txatoast.show;
       // Dynamic Profile updates
-      const loggedIn = localStorage.getItem('tlogged_in_as');
+      const loggedIn = (window.APP_USER ? window.APP_USER.username : null);
       if (loggedIn) {
         let avatar = '/logo-decoy.png';
         let nameDisplay = loggedIn;
@@ -723,3 +731,4 @@ packages.forEach((pkg: any) => {
   </script>
 </body>
 </html>
+

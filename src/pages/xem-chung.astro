@@ -89,7 +89,7 @@ const settings = await SettingService.getSettings();
         const packages = settingsData?.data?.packages || [];
 
         // Fetch current user details
-        const username = localStorage.getItem('tlogged_in_as') || '';
+        const username = (window.APP_USER ? window.APP_USER.username : null) || '';
         const userRes = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
         if (!userRes.ok) throw new Error();
         const userData = await userRes.json();
@@ -152,3 +152,4 @@ const settings = await SettingService.getSettings();
     document.addEventListener('astro:page-load', checkAccess);
   })();
 </script>
+

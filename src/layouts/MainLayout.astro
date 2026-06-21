@@ -5,6 +5,7 @@ import { MovieService } from '../services/MovieService';
 import { ClientRouter } from 'astro:transitions';
 import Txatooltip from '../components/ui/txatooltip.astro';
 import Txaicon from '../components/ui/txaicon.astro';
+import { verifySession } from '../lib/auth';
 
 interface Props {
   title?: string;
@@ -143,6 +144,9 @@ const isActive = (path: string) => {
   }
   return currentPath.startsWith(path);
 };
+
+// Fetch current user session
+const currentUser = await verifySession(Astro.request, Astro.cookies);
 ---
 
 <!DOCTYPE html>
@@ -152,13 +156,15 @@ const isActive = (path: string) => {
     <script define:vars={{ 
       apiEncryptEnable: settings.general?.api_encrypt_enable ?? false, 
       apiEncryptPass: settings.general?.api_encrypt_pass || 'tphimx',
-      settings
+      settings,
+      currentUser
     }}>
       window.TXA_API_CONFIG = {
         encryptEnable: apiEncryptEnable,
         encryptPass: apiEncryptPass
       };
       window.TXA_SITE_SETTINGS = settings;
+      window.APP_USER = currentUser;
     </script>
     <script is:inline>
       // Helper function to decrypt AES-256-GCM client-side
@@ -286,7 +292,7 @@ const isActive = (path: string) => {
         }
 
         function checkUserBypassAds() {
-          const loggedIn = localStorage.getItem('tlogged_in_as');
+          const loggedIn = (window.APP_USER ? window.APP_USER.username : null);
           if (!loggedIn) return false;
           try {
             const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
@@ -417,7 +423,7 @@ const isActive = (path: string) => {
         document.documentElement.classList.remove('gate-passed', 'gate-decoy', 'gate-zalo');
 
         // Check if logged in as Admin first (always bypass decoy and zalo)
-        const username = localStorage.getItem('tlogged_in_as');
+        const username = (window.APP_USER ? window.APP_USER.username : null);
         let isAdmin = false;
         if (username) {
           try {
@@ -473,7 +479,11 @@ const isActive = (path: string) => {
       document.addEventListener('astro:page-load', checkTxaGate);
     </script>
 
-    <!-- Google Fonts -->
+  <script is:inline define:vars={{ currentUser }}>
+    window.APP_USER = currentUser;
+  </script>
+
+  <!-- Default App Scripts -->
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 
@@ -1412,7 +1422,7 @@ const isActive = (path: string) => {
 
           // Check VIP expiry
           if (typeof localStorage !== 'undefined') {
-            const username = localStorage.getItem('tlogged_in_as');
+            const username = (window.APP_USER ? window.APP_USER.username : null);
             if (username) {
               let isVIP = false;
               let userInDb = null;
@@ -1923,7 +1933,7 @@ const isActive = (path: string) => {
           }
 
           document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
-          localStorage.setItem('tlogged_in_as', username);
+          
 
           // Auto pass decoy if admin
           try {
@@ -2076,12 +2086,17 @@ const isActive = (path: string) => {
         initGoogleOneTap();
       });
 
-      window.logout = function() {
+      window.logout = async function() {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+        } catch(e) {}
         document.cookie = "txa_gate_passed=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "txa_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         if (typeof localStorage !== 'undefined') {
-          localStorage.removeItem('tlogged_in_as');
+          
           localStorage.removeItem('thistory');
         }
+        window.APP_USER = null;
         window.dispatchEvent(new Event('auth-changed'));
         if (window.showGlobalToast) {
           window.showGlobalToast('Đã đăng xuất', 'success');
@@ -2794,7 +2809,7 @@ const isActive = (path: string) => {
                 }
 
                 document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
-                localStorage.setItem('tlogged_in_as', user.username);
+                
                 
                 // Keep local tregistered_users synced
                 try {
@@ -3805,7 +3820,7 @@ const isActive = (path: string) => {
           submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> <span>Đang đăng ký...</span>';
 
           try {
-            const userEmail = localStorage.getItem('tlogged_in_as') || null;
+            const userEmail = (window.APP_USER ? window.APP_USER.username : null) || null;
             const res = await fetch('/api/auth/zalo-request', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -3937,7 +3952,7 @@ const isActive = (path: string) => {
 
           // Gọi API đồng bộ trạng thái thực tế từ server
           try {
-            const userEmail = localStorage.getItem('tlogged_in_as') || null;
+            const userEmail = (window.APP_USER ? window.APP_USER.username : null) || null;
             const res = await fetch('/api/auth/zalo-status', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -3999,7 +4014,7 @@ const isActive = (path: string) => {
 
         function getUserPackageFromStorage() {
           try {
-            const loggedIn = localStorage.getItem('tlogged_in_as');
+            const loggedIn = (window.APP_USER ? window.APP_USER.username : null);
             if (!loggedIn) return 'Free';
             const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
             const user = users.find(u => u.username === loggedIn || u.email === loggedIn);
@@ -4128,3 +4143,4 @@ const isActive = (path: string) => {
     </script>
   </body>
 </html>
+

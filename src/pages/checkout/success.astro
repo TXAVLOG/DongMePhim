@@ -71,7 +71,7 @@ const settings = await SettingService.getSettings();
       const txid = urlParams.get('txid') || urlParams.get('session_id') || 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
       const cycle = urlParams.get('cycle') || 'monthly';
       const price = Number(urlParams.get('price')) || 69000;
-      const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+      const username = (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
 
       // Populate details
       document.getElementById('tx-id-val').textContent = txid;
@@ -198,3 +198,4 @@ const settings = await SettingService.getSettings();
     document.addEventListener('astro:page-load', initSuccessPage);
   })();
 </script>
+

@@ -1088,7 +1088,7 @@ const comments = [
           let currentHeroSlug = 'bai-hoc-dang-doi';
 
           let userPlaylist = [];
-          const username = localStorage.getItem('tlogged_in_as') || '';
+          const username = (window.APP_USER ? window.APP_USER.username : null) || '';
 
           async function loadWatchlist() {
             if (username) {
@@ -1456,3 +1456,4 @@ const comments = [
     </section>
   </main>
 </MainLayout>
+

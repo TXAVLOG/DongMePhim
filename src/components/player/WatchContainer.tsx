@@ -263,7 +263,7 @@ const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
     let active = true;
     const fetchRating = async () => {
       if (typeof window === 'undefined') return;
-      const username = localStorage.getItem('tlogged_in_as') || '';
+      const username = (window.APP_USER ? window.APP_USER.username : null) || '';
       try {
         const res = await fetch(`/api/user/rating?slug=${encodeURIComponent(movieSlug)}&username=${encodeURIComponent(username)}`);
         if (res.ok && active) {
@@ -284,7 +284,7 @@ const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
 
   const handleRating = async (val: number) => {
     if (typeof window === 'undefined') return;
-    const username = localStorage.getItem('tlogged_in_as');
+    const username = (window.APP_USER ? window.APP_USER.username : null);
     if (!username) {
       if ((window as any).showGlobalToast) {
         (window as any).showGlobalToast('Vui lòng đăng nhập để đánh giá phim!', 'error');
@@ -541,7 +541,7 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
     fetchComments();
 
     if (typeof window !== 'undefined') {
-      const loggedIn = localStorage.getItem('tlogged_in_as');
+      const loggedIn = (window.APP_USER ? window.APP_USER.username : null);
       if (loggedIn) {
         setAuthorName(loggedIn);
       }
@@ -880,7 +880,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         throw new Error('Không có kết nối mạng. Vui lòng kiểm tra lại đường truyền internet!');
       }
 
-      const loggedInUser = (typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null) || 'Ẩn danh';
+      const loggedInUser = (typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null) || 'Ẩn danh';
       
       const { error } = await supabase
         .from('txa_error_reports')
@@ -940,7 +940,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const username = localStorage.getItem('tlogged_in_as') || '';
+    const username = (window.APP_USER ? window.APP_USER.username : null) || '';
     
     const fetchUserAndAds = async () => {
       try {
@@ -1123,7 +1123,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   const syncOfflineHistories = async () => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return;
-    const username = typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null;
+    const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
     if (!username) return;
 
     const list = getLocalHistory();
@@ -1164,7 +1164,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   useEffect(() => {
     const mergeHistoryOnLoad = async () => {
-      const username = typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null;
+      const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
 
       if (!username) {
         const localList = getLocalHistory();
@@ -1226,7 +1226,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
     const timeRounded = Math.round(time);
     const durationRounded = Math.round(duration);
-    const username = typeof localStorage !== 'undefined' ? localStorage.getItem('tlogged_in_as') : null;
+    const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
 
     if (!username) {
       const list = getLocalHistory();

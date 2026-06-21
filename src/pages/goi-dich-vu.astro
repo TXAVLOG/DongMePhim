@@ -383,7 +383,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       guest?.classList.add('hidden');
       user?.classList.remove('hidden');
 
-      const username = localStorage.getItem('tlogged_in_as') || '';
+      const username = (window.APP_USER ? window.APP_USER.username : null) || '';
       
       const planTitle = document.getElementById('current-plan-title');
       const planBadge = document.getElementById('current-plan-badge');
@@ -707,7 +707,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 
       const isSandbox = payments.sandbox_mode ?? true;
       const isSepaySandbox = payments.sepay_sandbox_mode !== undefined ? !!payments.sepay_sandbox_mode : isSandbox;
-      const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+      const username = (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
       const packageTitle = decodeURIComponent(packageTitleEncoded);
 
       if (isSandbox && method !== 'manual' && method !== 'sepay') {
@@ -1122,7 +1122,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         const reader = new FileReader();
         reader.onloadend = async function() {
           const receiptImgBase64 = reader.result;
-          const username = localStorage.getItem('tlogged_in_as') || 'anonymous';
+          const username = (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
           const quickRenewSection = document.getElementById('quick-renew-section');
            
           const selectedPkgId = quickRenewSection?.dataset.selectedPackageId || 'vip';
@@ -1242,3 +1242,4 @@ import MainLayout from '../layouts/MainLayout.astro';
     });
   })();
 </script>
+
