@@ -10,6 +10,7 @@ interface Props {
 const { title } = Astro.props;
 const settings = await SettingService.getSettings();
 const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
+const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
 ---
 
 <!DOCTYPE html>
@@ -157,9 +158,12 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
           <span class="material-symbols-outlined text-xl">group</span>
           <span class="font-label-caps text-xs">Thành viên</span>
         </a>
-        <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-zalo" href="/admin/duyet-zalo">
-          <span class="material-symbols-outlined text-xl">verified</span>
-          <span class="font-label-caps text-xs">Duyệt Zalo</span>
+        <a class="flex items-center justify-between px-4 py-2.5 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-all duration-200" id="nav-zalo" href="/admin/duyet-zalo">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-xl">verified</span>
+            <span class="font-label-caps text-xs">Duyệt Zalo</span>
+          </div>
+          <span id="zalo-pending-badge" class="hidden px-2 py-0.5 text-[9px] font-black bg-amber-500 text-black rounded-full shadow-[0_0_10px_rgba(245,158,11,0.4)] animate-pulse"></span>
         </a>
       </nav>
       
@@ -229,7 +233,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
     </div>
   </div>
 
-  <script is:inline>
+  <script is:inline define:vars={{ providerType }}>
     // Highlight active sidebar item based on current URL path
     function initAdminLayout() {
       // Toggle Email logs link based on SMTP configuration in localStorage
@@ -462,6 +466,53 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
         if (usernameEl) usernameEl.textContent = nameDisplay;
         if (roleEl) roleEl.textContent = roleDisplay;
       }
+
+      // Zalo pending badge updater
+      async function updateZaloPendingBadge() {
+        const badge = document.getElementById('zalo-pending-badge');
+        if (!badge) {
+          if (window.zaloBadgeInterval) {
+            clearInterval(window.zaloBadgeInterval);
+            window.zaloBadgeInterval = null;
+          }
+          return;
+        }
+
+        let count = 0;
+        if (providerType === 'supabase') {
+          try {
+            const res = await fetch('/api/admin/zalo-action');
+            if (res.ok) {
+              const resData = await res.json();
+              if (resData && typeof resData.count === 'number') {
+                count = resData.count;
+              } else if (resData && resData.data && typeof resData.data.count === 'number') {
+                count = resData.data.count;
+              }
+            }
+          } catch (e) {
+            console.error('Lỗi khi lấy số lượng yêu cầu Zalo:', e);
+          }
+        } else {
+          // Local mode
+          try {
+            const list = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
+            count = list.filter(x => x.status === 'pending').length;
+          } catch (e) {}
+        }
+
+        if (count > 0) {
+          badge.textContent = `+${count}`;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      updateZaloPendingBadge();
+
+      if (window.zaloBadgeInterval) clearInterval(window.zaloBadgeInterval);
+      window.zaloBadgeInterval = setInterval(updateZaloPendingBadge, 5000);
     }
 
     initAdminLayout();
