@@ -70,7 +70,13 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           </div>
 
           <!-- PayOS -->
-          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 relative overflow-hidden">
+            <div class="absolute inset-0 bg-zinc-950/75 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 select-none">
+              <span class="px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 font-black text-xs uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-amber-500/5">
+                <span class="material-symbols-outlined text-sm font-bold">build</span>
+                Đang phát triển
+              </span>
+            </div>
             <div class="flex items-center gap-3">
               <input type="checkbox" id="payment-payos-enable" checked={settings.payments?.payos_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
               <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng PayOS</span>
@@ -83,7 +89,13 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           </div>
 
           <!-- PayPal -->
-          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 relative overflow-hidden">
+            <div class="absolute inset-0 bg-zinc-950/75 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 select-none">
+              <span class="px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 font-black text-xs uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-amber-500/5">
+                <span class="material-symbols-outlined text-sm font-bold">build</span>
+                Đang phát triển
+              </span>
+            </div>
             <div class="flex items-center gap-3">
               <input type="checkbox" id="payment-paypal-enable" checked={settings.payments?.paypal_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
               <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng PayPal</span>
@@ -201,7 +213,13 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           </div>
 
           <!-- VNPAY -->
-          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 relative overflow-hidden">
+            <div class="absolute inset-0 bg-zinc-950/75 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 select-none">
+              <span class="px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 font-black text-xs uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-amber-500/5">
+                <span class="material-symbols-outlined text-sm font-bold">build</span>
+                Đang phát triển
+              </span>
+            </div>
             <div class="flex items-center gap-3">
               <input type="checkbox" id="payment-vnpay-enable" checked={settings.payments?.vnpay_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
               <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng VNPAY</span>
@@ -213,7 +231,13 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           </div>
 
           <!-- Stripe -->
-          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4">
+          <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 relative overflow-hidden">
+            <div class="absolute inset-0 bg-zinc-950/75 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 select-none">
+              <span class="px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 font-black text-xs uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-amber-500/5">
+                <span class="material-symbols-outlined text-sm font-bold">build</span>
+                Đang phát triển
+              </span>
+            </div>
             <div class="flex items-center gap-3">
               <input type="checkbox" id="payment-stripe-enable" checked={settings.payments?.stripe_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
               <span class="text-sm font-bold text-white uppercase text-[10px]">Cổng Stripe</span>
