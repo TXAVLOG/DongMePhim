@@ -588,7 +588,7 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
 <script>
   declare global {
     interface Window {
-      showGlobalToast: (message: string, type?: string) => void;
+      showGlobalToast?: (msg: string, type: string) => void;
       openLoginModal: () => void;
       txamodal?: any;
     }

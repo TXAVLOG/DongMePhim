@@ -204,13 +204,7 @@ packages.forEach((pkg: any) => {
         let hasAdminRole = loggedInUser === 'admin';
 
         if (!hasAdminRole) {
-          try {
-            const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-            const user = users.find(u => u.username === loggedInUser || u.email === loggedInUser);
-            if (user && (user.roles === 'admin' || user.role === 'admin')) {
-              hasAdminRole = true;
-            }
-          } catch (e) {}
+          if (window.APP_USER && (window.APP_USER.role === 'admin' || window.APP_USER.roles === 'admin')) { hasAdminRole = true; }
         }
 
         if (!hasAdminRole) {
@@ -657,12 +651,10 @@ packages.forEach((pkg: any) => {
         let roleDisplay = 'Quản trị viên';
         
         try {
-          const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-          const user = users.find(u => u.username === loggedIn || u.email === loggedIn);
-          if (user) {
-            avatar = user.avatar || avatar;
-            nameDisplay = user.username || loggedIn;
-            roleDisplay = (user.roles === 'admin' || user.role === 'admin') ? 'Super Admin' : 'Quản trị viên';
+          if (window.APP_USER) {
+            avatar = window.APP_USER.avatar || avatar;
+            nameDisplay = window.APP_USER.username || loggedIn;
+            roleDisplay = (window.APP_USER.roles === 'admin' || window.APP_USER.role === 'admin') ? 'Super Admin' : 'Quản trị viên';
           } else if (loggedIn === 'admin') {
             nameDisplay = 'admin';
             roleDisplay = 'Super Admin';
