@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '../../../lib/api/response';
 import { SettingService } from '../../../services/SettingService';
 import { getEmailTemplate } from '../../../templates/emails/emailReader';
+import { SmtpClient } from '../../../lib/api/smtpClient';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -60,40 +61,83 @@ export const POST: APIRoute = async ({ request }) => {
       .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
       .replace(/{year}/g, year);
 
-    // Simulate sending email (print details in server console)
-    console.log(`[SMTP SIMULATOR] Sending reset password email via host ${settings.smtp.smtp_host}:${settings.smtp.smtp_port}`);
-    console.log(`[SMTP SIMULATOR] From: ${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`);
-    console.log(`[SMTP SIMULATOR] To: ${email}`);
-
-    // Create an email log object to send to client
-    const emailLog = {
-      id: 'mail_' + Math.floor(Math.random() * 100000000),
-      time: new Date().toISOString(),
-      recipient: email,
-      sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
-      subject: 'Khôi phục mật khẩu tài khoản DongMePhim',
-      category: 'Auth Reset',
-      status: 'success',
-      responseCode: '250 2.0.0 OK Message accepted',
-      parameters: {
-        name: name || 'Thành viên DongMePhim',
-        email: email,
-        reset_link: resetLink
-      },
-      smtpConfig: {
+    let sendResult;
+    try {
+      sendResult = await SmtpClient.sendMail({
         host: settings.smtp.smtp_host,
         port: settings.smtp.smtp_port,
-        secure: settings.smtp.smtp_secure,
-        user: settings.smtp.smtp_user
-      },
-      html: compiledHtml
-    };
+        secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+        user: settings.smtp.smtp_user,
+        pass: settings.smtp.smtp_pass,
+        fromEmail: settings.smtp.smtp_from_email,
+        fromName: settings.smtp.smtp_from_name,
+      }, {
+        to: email,
+        subject: `Khôi phục mật khẩu tài khoản ${siteName}`,
+        html: compiledHtml
+      });
 
-    return apiResponse({
-      success: true,
-      message: 'Liên kết đặt lại mật khẩu đã được gửi thành công!',
-      emailLog: emailLog
-    }, 'success', '', 200, request);
+      const emailLog = {
+        id: 'mail_' + Math.floor(Math.random() * 100000000),
+        time: new Date().toISOString(),
+        recipient: email,
+        sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
+        subject: `Khôi phục mật khẩu tài khoản ${siteName}`,
+        category: 'Auth Reset',
+        status: 'success',
+        responseCode: sendResult.responseCode || '250 2.0.0 OK Message accepted',
+        parameters: {
+          name: name || `Thành viên ${siteName}`,
+          email: email,
+          reset_link: resetLink
+        },
+        smtpConfig: {
+          host: settings.smtp.smtp_host,
+          port: settings.smtp.smtp_port,
+          secure: settings.smtp.smtp_secure,
+          user: settings.smtp.smtp_user
+        },
+        html: compiledHtml
+      };
+
+      return apiResponse({
+        success: true,
+        message: 'Liên kết đặt lại mật khẩu đã được gửi thành công!',
+        emailLog: emailLog
+      }, 'success', '', 200, request);
+
+    } catch (sendErr: any) {
+      console.error("[SMTP ERROR] Failed to send forgot password email:", sendErr);
+
+      const emailLog = {
+        id: 'mail_' + Math.floor(Math.random() * 100000000),
+        time: new Date().toISOString(),
+        recipient: email,
+        sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
+        subject: `Khôi phục mật khẩu tài khoản ${siteName}`,
+        category: 'Auth Reset',
+        status: 'failed',
+        responseCode: sendErr.message || 'Lỗi kết nối SMTP server',
+        parameters: {
+          name: name || `Thành viên ${siteName}`,
+          email: email,
+          reset_link: resetLink
+        },
+        smtpConfig: {
+          host: settings.smtp.smtp_host,
+          port: settings.smtp.smtp_port,
+          secure: settings.smtp.smtp_secure,
+          user: settings.smtp.smtp_user
+        },
+        html: compiledHtml
+      };
+
+      return apiResponse({
+        success: false,
+        message: `Gửi mail khôi phục thất bại: ${sendErr.message}`,
+        emailLog: emailLog
+      }, 'error', `Gửi mail khôi phục thất bại: ${sendErr.message}`, 400, request);
+    }
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }

@@ -275,85 +275,99 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
                   return;
                 }
 
-                const year = new Date().getFullYear().toString();
-                const sendTime = new Date().toLocaleString("vi-VN");
-                const siteName =
-                  serverSettings.general?.site_name || "DongMePhim";
+                if (window.showGlobalToast)
+                  window.showGlobalToast("Đang thực hiện gửi email test qua SMTP...", "info");
 
-                const templateHtml = `<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
-              <img src="${siteUrl}/favicon.png" alt="Logo" style="width:56px;height:56px;margin-bottom:16px;border-radius:12px;box-shadow:0 0 15px rgba(139,92,246,0.2);" />
-              <h2 style="margin:0;font-size:24px;font-weight:800;color:#8b5cf6;letter-spacing:-0.5px;text-transform:uppercase;">${siteName} SMTP Test</h2>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px 40px 30px;">
-              <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#ffffff;">Xin chào Admin,</h3>
-              <p style="margin:0 0 20px;font-size:14px;color:#a1a1aa;line-height:1.6;">Đây là email kiểm tra kết nối từ hệ thống cấu hình SMTP của ${siteName}.</p>
-              <div style="background-color:#18181b;border:1px solid #27272a;border-radius:16px;padding:20px;margin:24px 0;">
-                <p style="margin:0 0 12px;font-size:13px;color:#8b5cf6;font-weight:bold;text-transform:uppercase;">Thông số kiểm thử:</p>
-                <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;color:#a1a1aa;line-height:1.8;">
-                  <tr><td width="35%">SMTP Host:</td><td style="color:#ffffff;">${host}</td></tr>
-                  <tr><td>SMTP Port:</td><td style="color:#ffffff;">${port}</td></tr>
-                  <tr><td>SMTP Secure:</td><td style="color:#ffffff;">${secure}</td></tr>
-                  <tr><td>SMTP User:</td><td style="color:#ffffff;">${user}</td></tr>
-                  <tr><td>Thời gian gửi:</td><td style="color:#ffffff;">${sendTime}</td></tr>
-                </table>
-              </div>
-              <p style="margin:0;font-size:13px;color:#71717a;">Nếu email này gửi thành công, các tính năng gửi mã và link xác minh sẽ hoạt động bình thường trên hệ thống ${siteName}.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-                const emailLog = {
-                  id: "mail_" + Math.floor(Math.random() * 100000000),
-                  time: new Date().toISOString(),
-                  recipient: testTo,
-                  sender: `${fromName} <${fromEmail}>`,
-                  subject: "Kiểm tra cấu hình SMTP Mail thành công",
-                  category: "SMTP Test",
-                  status: "success",
-                  responseCode: "250 2.0.0 OK Handshake Completed",
-                  parameters: {
+                fetch('/api/admin/send-test-email', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
                     smtp_host: host,
                     smtp_port: port,
                     smtp_secure: secure,
                     smtp_user: user,
-                  },
-                  smtpConfig: {
-                    host: host,
-                    port: parseInt(port) || 465,
-                    secure: secure,
-                    user: user,
-                  },
-                  html: templateHtml,
-                };
+                    smtp_pass: pass,
+                    smtp_from_email: fromEmail,
+                    smtp_from_name: fromName,
+                    testTo: testTo
+                  })
+                })
+                .then(res => res.json())
+                .then(resData => {
+                  const apiData = resData.data || {};
+                  
+                  const emailLog = {
+                    id: "mail_" + Math.floor(Math.random() * 100000000),
+                    time: new Date().toISOString(),
+                    recipient: testTo,
+                    sender: `${fromName} <${fromEmail}>`,
+                    subject: "Kiểm tra cấu hình SMTP Mail" + (apiData.success ? " thành công" : " thất bại"),
+                    category: "SMTP Test",
+                    status: apiData.success ? "success" : "failed",
+                    responseCode: apiData.success ? apiData.responseCode : (apiData.error || "Unknown SMTP Error"),
+                    parameters: {
+                      smtp_host: host,
+                      smtp_port: port,
+                      smtp_secure: secure,
+                      smtp_user: user,
+                    },
+                    smtpConfig: {
+                      host: host,
+                      port: parseInt(port) || 465,
+                      secure: secure,
+                      user: user,
+                    },
+                    html: apiData.html || `
+                      <!DOCTYPE html>
+                      <html>
+                      <body style="margin:0;padding:24px;background-color:#09090b;color:#f4f4f5;font-family:sans-serif;">
+                        <h2 style="color:#ef4444;">Kiểm tra cấu hình SMTP Mail Thất bại</h2>
+                        <p>Thư gửi tới: <strong>${testTo}</strong></p>
+                        <p>Chi tiết lỗi phản hồi từ máy chủ SMTP:</p>
+                        <pre style="background:#18181b;border:1px solid #27272a;padding:16px;border-radius:12px;color:#f87171;white-space:pre-wrap;">${apiData.error || "Unknown SMTP Error"}</pre>
+                      </body>
+                      </html>
+                    `
+                  };
 
-                try {
-                  const logs = JSON.parse(
-                    localStorage.getItem("txa_email_logs") || "[]",
-                  );
-                  logs.unshift(emailLog);
-                  localStorage.setItem("txa_email_logs", JSON.stringify(logs));
-                } catch (e) {}
+                  try {
+                    const logs = JSON.parse(
+                      localStorage.getItem("txa_email_logs") || "[]"
+                    );
+                    logs.unshift(emailLog);
+                    localStorage.setItem("txa_email_logs", JSON.stringify(logs));
+                  } catch (e) {}
 
-                if (window.showGlobalToast)
-                  window.showGlobalToast(
-                    `Đã gửi email test tới ${testTo} thành công! (Lịch sử đã ghi nhận)`,
-                    "success",
-                  );
+                  if (apiData.success) {
+                    if (window.showGlobalToast) {
+                      window.showGlobalToast(
+                        `Đã gửi email test tới ${testTo} thành công! (Lịch sử đã ghi nhận)`,
+                        "success"
+                      );
+                    } else {
+                      alert(`Đã gửi email test tới ${testTo} thành công!`);
+                    }
+                  } else {
+                    if (window.showGlobalToast) {
+                      window.showGlobalToast(
+                        `Gửi email test thất bại: ${apiData.error || "Unknown SMTP Error"}`,
+                        "error"
+                      );
+                    } else {
+                      alert(`Gửi email test thất bại: ${apiData.error || "Unknown SMTP Error"}`);
+                    }
+                  }
+                })
+                .catch(err => {
+                  console.error(err);
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast("Lỗi kết nối tới API gửi mail test!", "error");
+                  } else {
+                    alert("Lỗi kết nối tới API gửi mail test!");
+                  }
+                });
               },
             });
           }

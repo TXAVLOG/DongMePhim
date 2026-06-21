@@ -3434,6 +3434,15 @@ const isActive = (path: string) => {
                 switchAuthTab('login');
               } else {
                 showGlobalToast(data.message || data.error || 'Yêu cầu thất bại!', 'error');
+                
+                if (data.emailLog) {
+                  try {
+                    const logs = JSON.parse(localStorage.getItem('txa_email_logs') || '[]');
+                    logs.unshift(data.emailLog);
+                    localStorage.setItem('txa_email_logs', JSON.stringify(logs));
+                  } catch (e) {}
+                }
+                
                 resetTurnstileWidgets();
               }
             } catch (err) {
