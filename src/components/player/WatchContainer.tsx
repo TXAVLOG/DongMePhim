@@ -1482,11 +1482,11 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   AdBlock bị chặn
                 </h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  Chào bạn, có vẻ như bạn đang sử dụng phần mềm chặn quảng cáo. 
-                  Phim miễn phí thì luôn cần kinh phí duy trì máy chủ.
+                  Xin chào! Hệ thống phát hiện bạn đang sử dụng phần mềm chặn quảng cáo (AdBlock).
+                  Để có thể duy trì máy chủ tốc độ cao và mang đến những bộ phim mới nhất hoàn toàn <span className="text-white font-bold">miễn phí</span>, chúng tôi rất cần nguồn thu từ quảng cáo.
                 </p>
                 <p className="text-[10px] text-zinc-300 font-bold bg-white/5 px-3 py-1.5 rounded border border-white/10">
-                  Vui lòng tắt AdBlock tải lại trang, hoặc nâng cấp VIP để ủng hộ chúng tôi nhé!
+                  Mong bạn thông cảm tắt AdBlock hoặc thêm web vào danh sách ngoại lệ. Nếu không muốn xem quảng cáo, bạn có thể nâng cấp VIP để ủng hộ team nhé!
                 </p>
                 <div className="flex items-center gap-3 flex-wrap justify-center pt-2">
                   <button
