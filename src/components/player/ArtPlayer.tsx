@@ -459,12 +459,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         tooltip: isAutoSkipEnabled ? 'Bật' : 'Tắt',
         switch: isAutoSkipEnabled,
         onSelect: function (item: any) {
-          item.switch = !item.switch;
-          setAutoSkipSetting(item.switch);
-          isAutoSkipEnabled = item.switch;
-          item.tooltip = item.switch ? 'Bật' : 'Tắt';
-          art.notice.show = `Tự động Skip: ${item.switch ? 'Bật' : 'Tắt'}`;
-          return item.switch;
+          const nextState = !item.switch;
+          setAutoSkipSetting(nextState);
+          isAutoSkipEnabled = nextState;
+          item.tooltip = nextState ? 'Bật' : 'Tắt';
+          art.notice.show = `Tự động Skip: ${nextState ? 'Bật' : 'Tắt'}`;
+          return nextState;
         },
       });
 
