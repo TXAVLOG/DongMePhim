@@ -9,22 +9,22 @@ const staticMovies = await MovieService.getMovies();
 const totalMovies = staticMovies.length;
 
 const now = new Date();
-const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+const todayStart = new Date();
+todayStart.setHours(0, 0, 0, 0);
 
-const moviesThisWeek = staticMovies.filter((m: any) => {
+const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+
+const moviesToday = staticMovies.filter((m: any) => {
   const d = m.updatedAt ? new Date(m.updatedAt) : new Date('2024-01-01');
-  return d >= oneWeekAgo;
+  return d >= todayStart;
 }).length;
 
-const moviesLastWeek = staticMovies.filter((m: any) => {
+const moviesYesterday = staticMovies.filter((m: any) => {
   const d = m.updatedAt ? new Date(m.updatedAt) : new Date('2024-01-01');
-  return d >= twoWeeksAgo && d < oneWeekAgo;
+  return d >= yesterdayStart && d < todayStart;
 }).length;
 
-const moviesGrowthPct = moviesLastWeek > 0 
-  ? ((moviesThisWeek - moviesLastWeek) / moviesLastWeek) * 100 
-  : (moviesThisWeek > 0 ? 100 : 0);
+const moviesDiff = moviesToday - moviesYesterday;
 
 // 2. Views Stats
 const totalViews = staticMovies.reduce((acc: number, m: any) => acc + (m.views || 0), 0);
@@ -34,35 +34,32 @@ const formattedViews = totalViews >= 1000000
     ? (totalViews / 1000).toFixed(1) + 'K' 
     : totalViews;
 
-// Query views growth from watch_history table in Supabase
-let viewsThisWeek = 0;
-let viewsLastWeek = 0;
+let viewsToday = 0;
+let viewsYesterday = 0;
 try {
-  const { data: whThisWeek } = await supabase
+  const { data: whToday } = await supabase
     .from('watch_history')
     .select('id')
-    .gte('updated_at', oneWeekAgo.toISOString());
+    .gte('updated_at', todayStart.toISOString());
   
-  const { data: whLastWeek } = await supabase
+  const { data: whYesterday } = await supabase
     .from('watch_history')
     .select('id')
-    .gte('updated_at', twoWeeksAgo.toISOString())
-    .lt('updated_at', oneWeekAgo.toISOString());
+    .gte('updated_at', yesterdayStart.toISOString())
+    .lt('updated_at', todayStart.toISOString());
 
-  viewsThisWeek = whThisWeek?.length || 0;
-  viewsLastWeek = whLastWeek?.length || 0;
+  viewsToday = whToday?.length || 0;
+  viewsYesterday = whYesterday?.length || 0;
 } catch (e) {
   console.warn("Không thể query watch_history cho views growth:", e);
 }
 
-const viewsGrowthPct = viewsLastWeek > 0 
-  ? ((viewsThisWeek - viewsLastWeek) / viewsLastWeek) * 100 
-  : (viewsThisWeek > 0 ? 100 : 0);
+const viewsDiff = viewsToday - viewsYesterday;
 
 // 3. Members Stats
 let totalMembers = 0;
-let membersThisWeek = 0;
-let membersLastWeek = 0;
+let membersToday = 0;
+let membersYesterday = 0;
 
 try {
   const { count } = await supabase
@@ -70,19 +67,19 @@ try {
     .select('*', { count: 'exact', head: true });
   totalMembers = count || 0;
 
-  const { data: mThisWeek } = await supabase
+  const { data: mToday } = await supabase
     .from('users')
     .select('id')
-    .gte('created_at', oneWeekAgo.toISOString());
+    .gte('created_at', todayStart.toISOString());
 
-  const { data: mLastWeek } = await supabase
+  const { data: mYesterday } = await supabase
     .from('users')
     .select('id')
-    .gte('created_at', twoWeeksAgo.toISOString())
-    .lt('created_at', oneWeekAgo.toISOString());
+    .gte('created_at', yesterdayStart.toISOString())
+    .lt('created_at', todayStart.toISOString());
 
-  membersThisWeek = mThisWeek?.length || 0;
-  membersLastWeek = mLastWeek?.length || 0;
+  membersToday = mToday?.length || 0;
+  membersYesterday = mYesterday?.length || 0;
 } catch (e) {
   console.warn("Không thể query users cho stats:", e);
 }
@@ -90,13 +87,11 @@ try {
 // Fallback to local users list if database is empty
 if (totalMembers === 0) {
   totalMembers = 6; 
-  membersThisWeek = 1;
-  membersLastWeek = 1;
+  membersToday = 1;
+  membersYesterday = 0;
 }
 
-const membersGrowthPct = membersLastWeek > 0 
-  ? ((membersThisWeek - membersLastWeek) / membersLastWeek) * 100 
-  : (membersThisWeek > 0 ? 100 : 0);
+const membersDiff = membersToday - membersYesterday;
 
 // 4. Broken Movies Stats
 let brokenMoviesCount = 0;
@@ -105,7 +100,7 @@ staticMovies.forEach((m: any) => {
     brokenMoviesCount++;
   }
 });
-const brokenGrowthPct = 0;
+const brokenDiff = 0;
 ---
 
 <AdminLayout title="Bảng điều khiển">
@@ -139,8 +134,8 @@ const brokenGrowthPct = 0;
       </div>
       <div class="flex items-end justify-between">
         <h3 id="stat-views" class="text-3xl font-display-hero">{formattedViews}</h3>
-        <span id="stat-views-growth" class={viewsGrowthPct >= 0 ? "text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-full" : "text-error text-xs font-bold bg-error/10 px-2 py-1 rounded-full"}>
-          {viewsGrowthPct >= 0 ? '+' : ''}{viewsGrowthPct.toFixed(1)}%
+        <span id="stat-views-growth" class={viewsDiff >= 0 ? "text-emerald-400 text-[10px] font-bold bg-emerald-400/10 px-2.5 py-1 rounded-full whitespace-nowrap" : "text-error text-[10px] font-bold bg-error/10 px-2.5 py-1 rounded-full whitespace-nowrap"}>
+          {viewsDiff >= 0 ? '+' : ''}{viewsDiff} so với hôm qua
         </span>
       </div>
     </div>
@@ -157,8 +152,8 @@ const brokenGrowthPct = 0;
       </div>
       <div class="flex items-end justify-between">
         <h3 id="stat-movies" class="text-3xl font-display-hero">{totalMovies.toLocaleString('vi-VN')}</h3>
-        <span id="stat-movies-growth" class={moviesGrowthPct >= 0 ? "text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-full" : "text-error text-xs font-bold bg-error/10 px-2 py-1 rounded-full"}>
-          {moviesGrowthPct >= 0 ? '+' : ''}{moviesGrowthPct.toFixed(1)}%
+        <span id="stat-movies-growth" class={moviesDiff >= 0 ? "text-emerald-400 text-[10px] font-bold bg-emerald-400/10 px-2.5 py-1 rounded-full whitespace-nowrap" : "text-error text-[10px] font-bold bg-error/10 px-2.5 py-1 rounded-full whitespace-nowrap"}>
+          {moviesDiff >= 0 ? '+' : ''}{moviesDiff} so với hôm qua
         </span>
       </div>
     </a>
@@ -175,8 +170,8 @@ const brokenGrowthPct = 0;
       </div>
       <div class="flex items-end justify-between">
         <h3 id="stat-members" class="text-3xl font-display-hero">{totalMembers.toLocaleString('vi-VN')}</h3>
-        <span id="stat-members-growth" class={membersGrowthPct >= 0 ? "text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-full" : "text-error text-xs font-bold bg-error/10 px-2 py-1 rounded-full"}>
-          {membersGrowthPct >= 0 ? '+' : ''}{membersGrowthPct.toFixed(1)}%
+        <span id="stat-members-growth" class={membersDiff >= 0 ? "text-emerald-400 text-[10px] font-bold bg-emerald-400/10 px-2.5 py-1 rounded-full whitespace-nowrap" : "text-error text-[10px] font-bold bg-error/10 px-2.5 py-1 rounded-full whitespace-nowrap"}>
+          {membersDiff >= 0 ? '+' : ''}{membersDiff} so với hôm qua
         </span>
       </div>
     </a>
@@ -193,8 +188,8 @@ const brokenGrowthPct = 0;
       </div>
       <div class="flex items-end justify-between">
         <h3 id="stat-broken" class="text-3xl font-display-hero">{brokenMoviesCount}</h3>
-        <span id="stat-broken-growth" class={brokenGrowthPct <= 0 ? "text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-full" : "text-error text-xs font-bold bg-error/10 px-2 py-1 rounded-full"}>
-          {brokenGrowthPct >= 0 ? '+' : ''}{brokenGrowthPct.toFixed(1)}%
+        <span id="stat-broken-growth" class={brokenDiff <= 0 ? "text-emerald-400 text-[10px] font-bold bg-emerald-400/10 px-2.5 py-1 rounded-full whitespace-nowrap" : "text-error text-[10px] font-bold bg-error/10 px-2.5 py-1 rounded-full whitespace-nowrap"}>
+          {brokenDiff >= 0 ? '+' : ''}{brokenDiff} so với hôm qua
         </span>
       </div>
     </a>
