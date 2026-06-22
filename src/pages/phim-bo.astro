@@ -159,13 +159,120 @@ const movies = await MovieService.getMovies({ type: 'series' });
         toggleFilterBtn.classList.toggle('bg-zinc-850');
       });
 
-      function getLangBadge(lang) {
-        if (!lang) return 'P.Đề';
-        const lower = lang.toLowerCase();
-        if (lower.includes('thuyết minh') && (lower.includes('vietsub') || lower.includes('phụ đề'))) return 'P.Đề + T.Minh';
-        if (lower.includes('thuyết minh') || lower.includes('t.minh') || lower.includes('tm')) return 'T.Minh';
-        if (lower.includes('lồng tiếng') || lower.includes('lt')) return 'L.Tiếng';
-        return 'P.Đề';
+      function createMovieCardHTML(m, aspect = "aspect-[2/3]") {
+        const title = m.title || '';
+        const slug = m.slug || '';
+        const poster = m.posterUrl || m.poster || '';
+        const quality = m.quality || 'FHD';
+        const lang = m.lang || 'Vietsub';
+        const originalTitle = m.originalTitle || m.origin_name || '';
+        const year = m.releaseYear || m.release_year || '';
+        const status = m.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu';
+        
+        let typeBadgeHTML = '';
+        if (m.type === 'series' && m.episodeCurrent) {
+          let cur = (m.episodeCurrent || '1').trim().replace(/^[tT]ập\s+/, '');
+          if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
+            cur = 'Full';
+          } else if (m.episodeTotal) {
+            let tot = m.episodeTotal.trim().replace(/^[tT]ập\s+/, '');
+            cur = `Tập ${cur}/${tot}`;
+          } else {
+            cur = `Tập ${cur}`;
+          }
+          typeBadgeHTML = `
+            <div class="absolute top-2 left-2 z-20">
+              <span class="bg-black/60 text-white text-[11px] px-2 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm">
+                ${cur}
+              </span>
+            </div>
+          `;
+        }
+
+        const getLangBadge = (lang) => {
+          if (!lang) return 'P.Đề';
+          const lower = lang.toLowerCase();
+          if (lower.includes('thuyết minh') && (lower.includes('vietsub') || lower.includes('phụ đề'))) return 'P.Đề + T.Minh';
+          if (lower.includes('thuyết minh') || lower.includes('t.minh') || lower.includes('tm')) return 'T.Minh';
+          if (lower.includes('lồng tiếng') || lower.includes('lt')) return 'L.Tiếng';
+          return 'P.Đề';
+        };
+
+        const genresHTML = Array.isArray(m.genres) ? m.genres.map(g => `<span>${g}</span>`).join('<span class="text-zinc-600">•</span>') : '';
+
+        return `
+          <div class="relative group w-full">
+            <a href="/phim/${slug}" class="relative block w-full ${aspect} rounded-xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer">
+              <img src="${poster}" alt="${title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='/favicon.png'" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity"></div>
+              
+              ${quality === '4K' ? `
+                <div class="absolute top-2 right-2 z-20">
+                  <span class="bg-amber-500 text-slate-950 text-[11px] px-2 py-0.5 rounded font-black shadow-sm tracking-wider">4K</span>
+                </div>
+              ` : ''}
+
+              ${typeBadgeHTML}
+              
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
+                  <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                </div>
+              </div>
+              
+              <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
+                <span class="bg-[#141416]/80 text-zinc-300 text-[10px] font-bold px-3 py-1 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap">
+                  ${getLangBadge(lang)}
+                </span>
+              </div>
+            </a>
+
+            <div class="mt-2.5 px-1 space-y-0.5 text-center">
+              <h3 class="font-bold text-sm text-white line-clamp-1 group-hover:text-primary transition-colors" data-txatooltip="${title}">
+                ${title}
+              </h3>
+              <p class="text-[11px] text-zinc-500 truncate font-medium" data-txatooltip="${originalTitle}">
+                ${originalTitle || title}
+              </p>
+            </div>
+
+            <!-- Hover Popover details card (Netflix style, desktop only) -->
+            <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+              <div class="relative w-full aspect-video bg-black/40">
+                <img src="${m.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+                <div class="absolute top-3 left-3 flex gap-1">
+                  <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
+                  <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">${getLangBadge(lang)}</span>
+                </div>
+              </div>
+              <div class="p-4 space-y-3.5 text-left whitespace-normal">
+                <div>
+                  <h4 class="font-bold text-white text-base leading-tight line-clamp-1">${title}</h4>
+                  ${originalTitle ? `<p class="text-primary text-[11px] font-semibold mt-0.5 line-clamp-1">${originalTitle}</p>` : ''}
+                </div>
+                <div class="flex items-center gap-2">
+                  <a href="/xem/${slug}?ep=tap-1" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                    <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                    Xem ngay
+                  </a>
+                  <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
+                    <span class="material-symbols-outlined text-sm">favorite</span>
+                  </button>
+                  <a href="/phim/${slug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                    <span class="material-symbols-outlined text-sm">info</span>
+                  </a>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold pt-1">
+                  <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${(Number(m.imdbScore) || 8.0).toFixed(1)}</span>
+                  <span>${year || 2024}</span>
+                  <span>${status}</span>
+                </div>
+                ${genresHTML ? `<div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">${genresHTML}</div>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
       }
 
       function renderMovies(list) {
@@ -179,50 +286,7 @@ const movies = await MovieService.getMovies({ type: 'series' });
         emptyState?.classList.add('hidden');
         grid.classList.remove('hidden');
 
-        grid.innerHTML = list.map(m => {
-          const is4K = m.quality === '4K';
-          const isSeries = m.type === 'series';
-          const statusBadge = isSeries && m.episodeCurrent ? `
-            <div class="absolute top-2 left-2 z-20">
-              <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm">
-                Tập ${m.episodeCurrent.trim().replace(/^[tT]ập\s+/, '')}
-              </span>
-            </div>
-          ` : '';
-
-          const badge4K = is4K ? `
-            <div class="absolute top-2 right-2 z-20">
-              <span class="bg-amber-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm tracking-wider">4K</span>
-            </div>
-          ` : '';
-
-          const originalTitle = m.originalTitle || m.title || '';
-
-          return `
-            <div class="relative group w-full">
-              <a href="/phim/${m.slug}" class="relative block w-full aspect-[2/3] rounded-xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer">
-                <img src="${m.posterUrl}" alt="${m.title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='/favicon.png'" />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity"></div>
-                ${badge4K}
-                ${statusBadge}
-                <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
-                    <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                  </div>
-                </div>
-                <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
-                  <span class="bg-[#141416]/80 text-zinc-300 text-[8px] font-bold px-2.5 py-0.5 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap">
-                    ${getLangBadge(m.lang || m.quality)}
-                  </span>
-                </div>
-              </a>
-              <div class="mt-2.5 px-1 space-y-0.5 text-center">
-                <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip="${m.title}">${m.title}</h3>
-                <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip="${originalTitle}">${originalTitle}</p>
-              </div>
-            </div>
-          `;
-        }).join('');
+        grid.innerHTML = list.map(m => createMovieCardHTML(m)).join('');
       }
 
       function filterMovies() {
