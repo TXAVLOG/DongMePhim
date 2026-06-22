@@ -238,7 +238,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         ...(validDefaultSub ? {
           subtitle: {
             url: proxySubtitleUrl(validDefaultSub.file),
-            type: validDefaultSub.file.endsWith('.srt') ? 'srt' : 'vtt',
+            type: validDefaultSub.file.includes('.srt') ? 'srt' : 'vtt',
             encoding: 'utf-8',
             style: {
               color: '#fff',

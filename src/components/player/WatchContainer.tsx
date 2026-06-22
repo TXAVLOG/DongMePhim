@@ -1105,8 +1105,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     let localUrl = '';
     if (rawSrt && rawSrt.trim()) {
       try {
-        const blob = new Blob([rawSrt], { type: 'text/srt' });
-        localUrl = URL.createObjectURL(blob);
+        const blob = new Blob([rawSrt], { type: 'text/plain;charset=utf-8' });
+        localUrl = URL.createObjectURL(blob) + '#/sub.srt';
         subs.push({
           label: 'Tiếng Việt',
           file: localUrl,
@@ -1119,7 +1119,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     setResolvedSubtitles(subs);
     return () => {
       if (localUrl) {
-        URL.revokeObjectURL(localUrl);
+        // Remove hash before revoking object URL to avoid issues in some browsers
+        const cleanUrl = localUrl.split('#')[0];
+        URL.revokeObjectURL(cleanUrl);
       }
     };
   }, [currentEpisode]);
@@ -1598,7 +1600,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           ) : (
             <>
               <ArtPlayer 
-                key={`${currentEpisode?.slug}_${serverIndex}_${playbackTime}`}
+                key={`${currentEpisode?.slug}_${serverIndex}_${playbackTime}_${resolvedSubtitles.map(s => s.file).join(',')}`}
                 url={currentEpisode?.linkM3u8 || ''}
                 title={`${movie.title} - ${currentEpisode?.name || ''}`}
                 poster={movie.bannerUrl || movie.posterUrl}
