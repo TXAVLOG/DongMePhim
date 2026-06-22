@@ -4,10 +4,8 @@ import { SettingService } from '../services/SettingService';
 import { ClientRouter } from 'astro:transitions';
 import { verifySession } from '../lib/auth';
 
-const currentUser = await verifySession(Astro.request, Astro.cookies) as any;
-if (!currentUser || (currentUser.role !== 'admin' && currentUser.roles !== 'admin')) {
-  return Astro.redirect('/tphim');
-}
+const currentUser = Astro.locals.user || await verifySession(Astro.request, Astro.cookies) as any;
+const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.roles === 'admin');
 
 interface Props {
   title: string;
@@ -271,6 +269,7 @@ packages.forEach((pkg: any) => {
   </style>
 </head>
 <body class="bg-surface-deep text-on-surface font-body-main selection:bg-primary/30">
+  {isAdmin ? (
   <div class="flex min-h-screen">
     <!-- SideNavBar -->
     <aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest/80 backdrop-blur-2xl border-r border-glass-stroke hidden lg:flex flex-col py-8 z-50">
@@ -721,6 +720,11 @@ packages.forEach((pkg: any) => {
     initAdminLayout();
     document.addEventListener('astro:page-load', initAdminLayout);
   </script>
+  ) : (
+    <div class="flex items-center justify-center min-h-screen bg-zinc-950 text-red-500 font-bold font-sans">
+      Không có quyền truy cập trang quản trị!
+    </div>
+  )}
 </body>
 </html>
 
