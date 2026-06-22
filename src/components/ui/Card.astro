@@ -44,14 +44,14 @@ const getLangBadge = (lang?: string) => {
     <!-- Top Right Gold 4K Badge -->
     {quality === '4K' && (
       <div class="absolute top-2 right-2 z-20">
-        <span class="bg-amber-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm tracking-wider">4K</span>
+        <span class="bg-amber-500 text-slate-950 text-[11px] px-2 py-0.5 rounded font-black shadow-sm tracking-wider">4K</span>
       </div>
     )}
 
     <!-- Episode Progress Badge -->
     {movie?.type === 'series' && movie?.episodeCurrent && (
       <div class="absolute top-2 left-2 z-20">
-        <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm">
+        <span class="bg-black/60 text-white text-[11px] px-2 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm">
           {(() => {
             let cur = movie.episodeCurrent.trim().replace(/^[tT]ập\s+/, '');
             if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
@@ -75,7 +75,7 @@ const getLangBadge = (lang?: string) => {
     
     <!-- Centered Language/Subtitle Badge inside the bottom of poster -->
     <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
-      <span class="bg-[#141416]/80 text-zinc-300 text-[8px] font-bold px-2.5 py-0.5 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap">
+      <span class="bg-[#141416]/80 text-zinc-300 text-[10px] font-bold px-3 py-1 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap">
         {getLangBadge(movie?.lang || quality)}
       </span>
     </div>
@@ -83,10 +83,10 @@ const getLangBadge = (lang?: string) => {
 
   <!-- Text Titles below the Poster container (centered, matches Image 1) -->
   <div class="mt-2.5 px-1 space-y-0.5 text-center">
-    <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip={title}>
+    <h3 class="font-bold text-sm text-white line-clamp-1 group-hover:text-primary transition-colors" data-txatooltip={title}>
       {title}
     </h3>
-    <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip={movie?.originalTitle || ''}>
+    <p class="text-[11px] text-zinc-500 truncate font-medium" data-txatooltip={movie?.originalTitle || ''}>
       {movie?.originalTitle || movie?.title || ''}
     </p>
   </div>

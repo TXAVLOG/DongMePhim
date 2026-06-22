@@ -170,15 +170,23 @@ const settings = await SettingService.getSettings();
       pkgBadge.textContent = pkgTitle;
       pkgVal.textContent = pkgTitle;
       
-      if (pkgTitle.toUpperCase().includes('VIP')) {
-        pkgBadge.className = "bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full px-3 py-1 text-[10px] font-bold uppercase animate-pulse";
-        pkgVal.className = "font-bold text-xs text-rose-400";
-        document.getElementById('info-rights-val').textContent = "Không quảng cáo, xem 4K";
-      } else {
-        pkgBadge.className = "bg-primary/20 text-primary border border-primary/30 rounded-full px-3 py-1 text-[10px] font-bold uppercase";
-        pkgVal.className = "font-bold text-xs text-primary";
-        document.getElementById('info-rights-val').textContent = "Xem cơ bản SD, có quảng cáo";
+      const siteSettings = window.TXA_SITE_SETTINGS || {};
+      const packagesList = siteSettings.packages || [];
+      const userPkg = packagesList.find(p => p.title === pkgTitle || p.id === pkgTitle);
+      
+      let rightsText = "Xem cơ bản SD, có quảng cáo";
+      let userPkgId = 'free';
+      if (userPkg) {
+        userPkgId = userPkg.id;
+        const perms = userPkg.permissions || {};
+        const res = perms.max_resolution || 'SD';
+        const ads = perms.bypass_ads ? 'Không quảng cáo' : 'Có quảng cáo';
+        rightsText = `${ads}, xem ${res}`;
       }
+      
+      pkgBadge.className = `text-[10px] font-bold px-3 py-1 rounded-full w-max select-none uppercase package-style-${userPkgId} border border-white/5`;
+      pkgVal.className = `font-bold text-xs package-style-${userPkgId}`;
+      document.getElementById('info-rights-val').textContent = rightsText;
 
       document.getElementById('info-username-val').textContent = user.username;
       document.getElementById('info-email-val').textContent = user.email || 'N/A';
