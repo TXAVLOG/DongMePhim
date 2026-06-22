@@ -10,7 +10,7 @@ export const POST: APIRoute = async ({ request }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { username, email, password, turnstileToken } = body;
+    const { username, email, password, gender, turnstileToken } = body;
     if (!username || !email || !password) {
       return apiResponse(null, 'error', 'Vui lòng điền đầy đủ thông tin bắt buộc!', 400, request);
     }
@@ -77,6 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
         role: 'user',
         name: username,
         avatar_url: `https://www.gravatar.com/avatar/${emailHash}?d=identicon`,
+        gender: gender || 'other',
         package: 'Free',
         status: 'active',
         email_verified: true,

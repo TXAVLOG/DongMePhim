@@ -19,12 +19,34 @@ export const GET: APIRoute = async ({ request }) => {
 
     if (error) throw error;
 
+    // Fetch user genders
+    const authorNames = Array.from(new Set((data || []).map((c: any) => c.author).filter(Boolean)));
+    const userGenderMap = new Map<string, string>();
+    if (authorNames.length > 0) {
+      try {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('username, name, gender')
+          .or(`name.in.(${authorNames.map(n => `"${n.replace(/"/g, '\\"')}"`).join(',')}),username.in.(${authorNames.map(n => `"${n.replace(/"/g, '\\"')}"`).join(',')})`);
+        
+        if (usersData) {
+          usersData.forEach((u: any) => {
+            if (u.name) userGenderMap.set(u.name.toLowerCase().trim(), u.gender || 'other');
+            if (u.username) userGenderMap.set(u.username.toLowerCase().trim(), u.gender || 'other');
+          });
+        }
+      } catch (e) {
+        console.error("Lỗi khi lấy giới tính của các tác giả:", e);
+      }
+    }
+
     let commentsList = (data || []).map((c: any) => ({
       id: c.id,
       author: c.author,
       content: c.content,
       likes: Number(c.likes) || 0,
       dislikes: 0,
+      gender: userGenderMap.get(c.author?.toLowerCase().trim()) || 'other',
       replies: Array.isArray(c.replies) ? c.replies : [],
       createdAt: c.created_at,
       movieSlug: c.movie_slug
@@ -44,6 +66,7 @@ export const GET: APIRoute = async ({ request }) => {
           content: 'Tập mới cuốn ghê, không uổng công ngóng cả tuần trời. Web dịch siêu chất lượng nha!',
           likes: 12,
           dislikes: 0,
+          gender: 'male',
           replies: [
             {
               id: 'seed-reply-1',
@@ -61,6 +84,7 @@ export const GET: APIRoute = async ({ request }) => {
           content: 'Phim này càng xem càng cuốn, mong chờ tập sau quá đi thôiiii',
           likes: 8,
           dislikes: 0,
+          gender: 'female',
           replies: [],
           createdAt: new Date(Date.now() - 14400000).toISOString(),
           movieSlug: slug

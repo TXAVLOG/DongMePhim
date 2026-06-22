@@ -521,12 +521,12 @@ const packages = settings.packages || [];
                 </td>
                 <td class="px-8 py-4 text-xs text-text-dim font-outfit">${registeredDate}</td>
                 <td class="px-8 py-4">
-                  <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold ${styleClass} cursor-pointer hover:brightness-110 font-outfit" ${styleAttr} data-tooltip="Nhấp để đổi nhanh gói">
+                  <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold ${styleClass} cursor-pointer hover:brightness-110 font-outfit" ${styleAttr} data-txatooltip="Nhấp để đổi nhanh gói">
                     ${packageText}
                   </button>
                 </td>
                 <td class="px-8 py-4">
-                  <div class="flex items-center gap-2 cursor-pointer select-none" data-tooltip="Trạng thái xác minh email của thành viên">
+                  <div class="flex items-center gap-2 cursor-pointer select-none" data-txatooltip="Trạng thái xác minh email của thành viên">
                     <span class="material-symbols-outlined text-sm ${verifiedColor}">${verifiedIcon}</span>
                     <span class="text-xs text-text-dim font-outfit">${verifiedText}</span>
                   </div>
@@ -539,13 +539,13 @@ const packages = settings.packages || [];
                 </td>
                 <td class="px-8 py-4 text-right">
                   <div class="flex gap-2 justify-end">
-                    <button onclick="showEditMemberModal('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-tooltip="Chỉnh sửa chi tiết">
+                    <button onclick="showEditMemberModal('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-txatooltip="Chỉnh sửa chi tiết">
                       <span class="material-symbols-outlined text-sm">edit</span>
                     </button>
-                    <button onclick="toggleUserStatus('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-tooltip="${isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}">
+                    <button onclick="toggleUserStatus('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-txatooltip="${isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}">
                       <span class="material-symbols-outlined text-sm">${isActive ? 'block' : 'lock_open'}</span>
                     </button>
-                    <button onclick="deleteUser('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" data-tooltip="Xóa vĩnh viễn">
+                    <button onclick="deleteUser('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-error transition-colors cursor-pointer" data-txatooltip="Xóa vĩnh viễn">
                       <span class="material-symbols-outlined text-sm">delete</span>
                     </button>
                   </div>

@@ -345,14 +345,25 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
         });
       })();
 
+      function checkMobileApp() {
+        if (window.innerWidth <= 540) {
+          document.body.classList.add('mobile-app-active');
+        } else {
+          document.body.classList.remove('mobile-app-active');
+        }
+      }
+      window.addEventListener('resize', checkMobileApp);
+
       document.addEventListener('astro:after-swap', () => {
         applyTheme();
         hydrateSettings();
+        checkMobileApp();
         if (typeof updateAuthState === 'function') updateAuthState();
       });
       document.addEventListener('astro:page-load', () => {
         applyTheme();
         hydrateSettings();
+        checkMobileApp();
         if (typeof updateAuthState === 'function') updateAuthState();
       });
     </script>
@@ -1174,6 +1185,15 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
               <input type="email" id="reg-email" name="email" placeholder="Địa chỉ Email (Gmail, Outlook, iCloud)..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
               <span class="validation-icon material-symbols-outlined absolute right-3.5 top-[13px] text-[18px] hidden select-none"></span>
               <p class="reg-error text-[9px] text-rose-400 font-medium ml-1 mt-0.5 opacity-0 transition-opacity" data-field="email"></p>
+            </div>
+
+            <!-- Gender Selection Field -->
+            <div class="space-y-1 auth-field">
+              <select id="reg-gender" name="gender" class="w-full bg-slate-900 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-zinc-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer">
+                <option value="other" selected>Giới tính: Khác (∞)</option>
+                <option value="male">Giới tính: Nam (♂)</option>
+                <option value="female">Giới tính: Nữ (♀)</option>
+              </select>
             </div>
 
             <!-- Passwords Fields -->
@@ -3213,13 +3233,14 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                 const username = document.getElementById('reg-username').value.trim();
                 const email = document.getElementById('reg-email').value.trim();
                 const password = document.getElementById('reg-password').value;
+                const gender = document.getElementById('reg-gender').value;
 
                 const turnstileToken = window.txaTurnstileTokenRegister || '';
 
                 fetch('/api/auth/register', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ username, email, password, turnstileToken })
+                  body: JSON.stringify({ username, email, password, gender, turnstileToken })
                 })
                 .then(res => res.json())
                 .then(data => {

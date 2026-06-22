@@ -106,6 +106,7 @@ const movies = await MovieService.getMovies({ category: 'Lồng Tiếng' });
           poster={movie.posterUrl}
           quality={movie.quality}
           aspect="aspect-[2/3]"
+          movie={movie}
         />
       ))}
     </div>

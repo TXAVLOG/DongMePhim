@@ -11,12 +11,13 @@ interface Props {
   status?: string;
   class?: string;
   aspect?: string;
+  movie?: any;
 }
 
-const { title, slug, poster, year, quality, status, class: className, aspect = "aspect-[2/3]" } = Astro.props;
+const { title, slug, poster, year, quality, status, class: className, aspect = "aspect-[2/3]", movie: propMovie } = Astro.props;
 
-// Fetch full movie details server-side for rich hover popup
-const movie = await MovieService.getMovieBySlug(slug);
+// Fetch full movie details server-side for rich hover popup only if not provided as a prop
+const movie = propMovie || await MovieService.getMovieBySlug(slug);
 
 const getLangBadge = (lang?: string) => {
   if (!lang) return 'P.Đề';

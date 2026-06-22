@@ -113,6 +113,7 @@ const settings = await SettingService.getSettings();
           poster={movie.posterUrl}
           quality={movie.quality}
           aspect="aspect-[2/3]"
+          movie={movie}
         />
       ))}
     </div>

@@ -107,6 +107,7 @@ const staticMovies = await MovieService.getMovies({ sortBy: 'updatedAt' });
           poster={movie.posterUrl}
           quality={movie.quality}
           aspect="aspect-[2/3]"
+          movie={movie}
         />
       ))}
     </div>

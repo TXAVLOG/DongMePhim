@@ -32,6 +32,47 @@ export const GET: APIRoute = async ({ request }) => {
   }
 };
 
+const slugify = (text: string) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+};
+
+async function fetchActorFromWikipedia(actorName: string) {
+  try {
+    const searchUrl = `https://vi.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(actorName)}&utf8=&format=json&origin=*`;
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) return null;
+    const searchData = await searchRes.json() as any;
+    const firstResult = searchData.query?.search?.[0];
+    if (!firstResult) return null;
+
+    const title = firstResult.title;
+    const detailUrl = `https://vi.wikipedia.org/w/api.php?action=query&prop=pageimages|extracts&exintro=1&explaintext=1&piprop=original&titles=${encodeURIComponent(title)}&format=json&origin=*`;
+    const detailRes = await fetch(detailUrl);
+    if (!detailRes.ok) return null;
+    const detailData = await detailRes.json() as any;
+    const pages = detailData.query?.pages;
+    if (!pages) return null;
+    const pageId = Object.keys(pages)[0];
+    const page = pages[pageId];
+    if (!page) return null;
+
+    return {
+      avatarUrl: page.original?.source || '',
+      bio: page.extract || ''
+    };
+  } catch (e) {
+    console.error(`Lỗi khi lấy thông tin diễn viên ${actorName} từ Wikipedia:`, e);
+    return null;
+  }
+}
+
 // POST: Lưu hoặc Xóa phim trên database Supabase
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -87,13 +128,102 @@ export const POST: APIRoute = async ({ request }) => {
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
+      const { data: savedMovie, error } = await supabase
         .from('movies')
-        .upsert(moviePayload, { onConflict: 'slug' });
+        .upsert(moviePayload, { onConflict: 'slug' })
+        .select('id')
+        .single();
 
       if (error) {
         console.error('Lỗi khi lưu phim vào Supabase:', error);
         return apiResponse(null, 'error', `Lỗi database: ${error.message}`, 500, request);
+      }
+
+      // Xử lý và lưu diễn viên để tránh trùng lặp
+      const rawActors = Array.isArray(m.actors) ? m.actors : (Array.isArray(m.actor) ? m.actor : []);
+      const validActors = rawActors
+        .map((a: any) => typeof a === 'string' ? a.trim() : (a && a.name ? a.name.trim() : ''))
+        .filter((name: string) => name && name.toLowerCase() !== 'đang cập nhật');
+
+      if (savedMovie && validActors.length > 0) {
+        const movieId = savedMovie.id;
+        const actorIds: string[] = [];
+
+        for (const actorName of validActors) {
+          const actorSlug = slugify(actorName);
+          
+          // Kiểm tra xem diễn viên đã tồn tại chưa
+          const { data: existingActor } = await supabase
+            .from('actors')
+            .select('id, avatar_url, bio')
+            .eq('slug', actorSlug)
+            .maybeSingle();
+
+          let actorId = existingActor?.id;
+          let avatarUrl = existingActor?.avatar_url;
+          let bio = existingActor?.bio;
+
+          if (!existingActor) {
+            // Tải thông tin từ Wikipedia
+            const wikiData = await fetchActorFromWikipedia(actorName);
+            avatarUrl = wikiData?.avatarUrl || '';
+            bio = wikiData?.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.';
+
+            // Lưu diễn viên mới
+            const { data: newActor, error: actorInsertError } = await supabase
+              .from('actors')
+              .insert({
+                name: actorName,
+                slug: actorSlug,
+                avatar_url: avatarUrl,
+                bio: bio
+              })
+              .select('id')
+              .single();
+
+            if (!actorInsertError && newActor) {
+              actorId = newActor.id;
+            }
+          } else if (!avatarUrl || !bio || bio.startsWith('Thông tin')) {
+            // Nếu đã tồn tại nhưng thiếu ảnh/bio, thử cập nhật từ Wikipedia
+            const wikiData = await fetchActorFromWikipedia(actorName);
+            if (wikiData) {
+              const updatePayload: any = {};
+              if (wikiData.avatarUrl && !avatarUrl) updatePayload.avatar_url = wikiData.avatarUrl;
+              if (wikiData.bio && (!bio || bio.startsWith('Thông tin'))) updatePayload.bio = wikiData.bio;
+              
+              if (Object.keys(updatePayload).length > 0) {
+                await supabase
+                  .from('actors')
+                  .update(updatePayload)
+                  .eq('id', actorId);
+              }
+            }
+          }
+
+          if (actorId) {
+            actorIds.push(actorId);
+          }
+        }
+
+        if (actorIds.length > 0) {
+          // Xóa liên kết cũ của phim
+          await supabase
+            .from('movie_actors')
+            .delete()
+            .eq('movie_id', movieId);
+
+          // Tạo liên kết mới
+          const mappings = actorIds.map(aId => ({
+            movie_id: movieId,
+            actor_id: aId,
+            role_name: 'Diễn viên'
+          }));
+          
+          await supabase
+            .from('movie_actors')
+            .insert(mappings);
+        }
       }
 
       // Nếu lưu đè phim hệ thống, đảm bảo xóa khỏi bảng txa_deleted_movies nếu lỡ đã bị xóa trước đó

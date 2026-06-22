@@ -498,9 +498,9 @@ packages.forEach((pkg: any) => {
 
       // Listen on document to handle client routing updates dynamically
       const handleMouseOver = (e) => {
-        const target = e.target.closest('[data-tooltip], [data-txatooltip]');
+        const target = e.target.closest('[data-txatooltip]');
         if (target) {
-          const text = target.getAttribute('data-tooltip') || target.getAttribute('data-txatooltip');
+          const text = target.getAttribute('data-txatooltip');
           tooltipEl.textContent = text;
           tooltipEl.classList.remove('opacity-0', 'scale-95');
           tooltipEl.classList.add('opacity-100', 'scale-100');
@@ -508,7 +508,7 @@ packages.forEach((pkg: any) => {
       };
 
       const handleMouseMove = (e) => {
-        const target = e.target.closest('[data-tooltip], [data-txatooltip]');
+        const target = e.target.closest('[data-txatooltip]');
         if (target && tooltipEl) {
           const x = e.clientX + 10;
           const y = e.clientY + 15;
@@ -518,7 +518,7 @@ packages.forEach((pkg: any) => {
       };
 
       const handleMouseOut = (e) => {
-        const target = e.target.closest('[data-tooltip], [data-txatooltip]');
+        const target = e.target.closest('[data-txatooltip]');
         if (target) {
           tooltipEl.classList.add('opacity-0', 'scale-95');
           tooltipEl.classList.remove('opacity-100', 'scale-100');

@@ -118,6 +118,7 @@ const movies = await MovieService.getMovies({ sortBy: 'imdb_score' });
           poster={movie.posterUrl}
           quality={movie.quality}
           aspect="aspect-[2/3]"
+          movie={movie}
         />
       ))}
     </div>

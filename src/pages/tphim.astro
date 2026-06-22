@@ -7,66 +7,40 @@ import { topics } from '../data/topics';
 import { MovieService } from '../services/MovieService';
 import Txaicon from '../components/ui/txaicon.astro';
 
-const topSeries = await MovieService.getMovies({ type: 'series', sortBy: 'views_comments', limit: 10 });
+// Single database query for optimal SSR performance
+const allMoviesForServer = await MovieService.getMovies();
 
-// Fetch dynamic categories from Local database
-const allKorean = await MovieService.getMovies({ category: 'Hàn Quốc' });
-const koreanMovies = allKorean.slice(0, 4).map((m: any) => ({
-  title: m.title,
-  slug: m.slug,
-  poster: m.posterUrl,
-  quality: m.quality,
-  aspect: "aspect-video"
-}));
+// Get pinned or fallback latest movies for hero banner
+const pinnedMovies = allMoviesForServer.filter((m: any) => m.pinned === true || m.pinned === 'true');
+const heroMovies = pinnedMovies.length > 0 ? pinnedMovies : allMoviesForServer.slice(0, 5);
+const firstHero = heroMovies[0] || null;
 
-const allChinese = await MovieService.getMovies({ category: 'Trung Quốc' });
-const chineseMovies = allChinese.slice(0, 3).map((m: any) => ({
-  title: m.title,
-  slug: m.slug,
-  poster: m.posterUrl,
-  aspect: "aspect-video"
-}));
+// Filter Top Series for Rank slider (server-side)
+const topSeries = allMoviesForServer
+  .filter((m: any) => m.type === 'series')
+  .sort((a: any, b: any) => ((b.views || 0) + (b.commentCount || 0)) - ((a.views || 0) + (a.commentCount || 0)))
+  .slice(0, 10);
 
-const allWestern = await MovieService.getMovies({ category: 'Âu Mỹ' });
-const westernMovies = allWestern.slice(0, 3).map((m: any, idx: number) => ({
-  title: m.title,
-  slug: m.slug,
-  poster: m.posterUrl,
-  quality: m.quality,
-  duration: m.durationMinutes,
-  isPremium: (m.imdbScore || 0) >= 9.0,
-  description: m.description,
-  rating: m.imdbScore ? String(m.imdbScore) : undefined,
-  season: m.seasons,
-  isHiddenLg: idx === 2
-}));
+// Filter lists for Sidebar ranking (server-side)
+const soiNoiMovies = [...allMoviesForServer]
+  .sort((a: any, b: any) => (b.views || 0) - (a.views || 0))
+  .slice(0, 5);
 
-const allRanking = await MovieService.getMovies({ sortBy: 'views_comments', limit: 4 });
-const rankingMovies = allRanking.map((m: any, idx: number) => ({
-  title: m.title,
-  description: m.type === 'movie' ? 'Phim Lẻ Cực HOT' : `Cập nhật tập ${m.episodeCurrent}`,
-  trend: idx === 0 ? "up" : idx === 2 ? "flat" : "up",
-  slug: m.slug
-}));
-
-const comments = [
-  { name: "Hoàng Nam", initial: "H", time: "2 phút trước", color: "primary", content: "Tập mới của Bài Học Đáng Đời đỉnh thực sự, twist không ngờ tới luôn. Phim đáng xem nhất năm nay!" },
-  { name: "Anh Thư", initial: "A", time: "15 phút trước", color: "secondary", content: "Vừa cày xong Hyeri Yêu Dấu, phim nhẹ nhàng nhưng sâu sắc. Chất lượng 4K trên DongMePhim quá mượt." },
-  { name: "Khánh Linh", initial: "K", time: "40 phút trước", color: "primary", content: "Cho mình hỏi lịch chiếu One Piece tiếp theo là bao giờ vậy ạ? Đang hóng quá trời hóng luôn." },
-  { name: "Tuấn Trần", initial: "T", time: "1 giờ trước", color: "secondary", content: "Mấy bộ phim lẻ Trung Quốc gần đây toàn hàng cực phẩm, kỹ xảo điện ảnh đỉnh cao, xem mà sướng mắt." }
-];
+const yeuThichMovies = [...allMoviesForServer]
+  .sort((a: any, b: any) => (b.imdbScore || 0) - (a.imdbScore || 0))
+  .slice(0, 5);
 ---
 
 <MainLayout isHome={true}>
   <!-- Hero Banner -->
   <section id="hero-banner" class="relative h-[85vh] w-full overflow-hidden">
     <!-- Image layers for cross-fade transition -->
-    <div id="hero-bg-1" class="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-100" style="background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLs0cwmsQtUMxz8S1kYIBe2vdzk9wlKrAYAA0SaImKjlJwYFoNlbX5Ezes6Vk4D5W-ucCQ2T9RmBKbr_ZMBabRA9Ttc6dmERubqhLsdx1wunz3brbgXi5rroXOR2ruzik_0pwCF5YxH6Uvl1XXNB5hThMgn1BnmAaijvACGEDvmqkuTyiOamRT4EaIM9cR5bB6VIsLFANxSFbHoSZwiBE2ropgLTIEGcBH_t4b9HchPMwtxA3L-vMixjNaq2')"></div>
+    <div id="hero-bg-1" class="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-100" style={`background-image: url('${firstHero ? (firstHero.bannerUrl || firstHero.posterUrl) : "/logo-icon.gif"}')`}></div>
     <div id="hero-bg-2" class="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0"></div>
     <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent"></div>
     <div class="absolute inset-0 bg-gradient-to-r from-[#0A0A0B] via-[#0A0A0B]/50 to-transparent hidden md:block"></div>
     
-    <!-- Left & Right Arrow controls (Desktop only, hidden md:flex) -->
+    <!-- Left & Right Arrow controls (Desktop only) -->
     <button id="hero-slide-left" class="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all duration-300 opacity-0 pointer-events-none hidden md:flex cursor-pointer shadow-lg" data-txatooltip="Phim trước">
       <span class="material-symbols-outlined text-2xl font-bold">chevron_left</span>
     </button>
@@ -77,24 +51,24 @@ const comments = [
     <div class="relative h-full flex items-center max-w-container-max mx-auto px-gutter pt-20">
       <div id="hero-content" class="max-w-2xl space-y-6 transition-all duration-500 transform translate-y-0 opacity-100">
         <div class="flex items-center gap-3">
-          <span id="hero-imdb" class="bg-primary/20 text-primary font-label-caps text-label-caps px-2 py-1 rounded shadow-sm backdrop-blur-md">10.0 IMDB</span>
-          <span id="hero-year" class="bg-white/10 text-white font-label-caps text-label-caps px-2 py-1 rounded shadow-sm backdrop-blur-md">2024</span>
-          <span id="hero-type" class="bg-white/10 text-white font-label-caps text-label-caps px-2 py-1 rounded shadow-sm backdrop-blur-md">Phim Bộ</span>
+          <span id="hero-imdb" class="bg-primary/20 text-primary font-label-caps text-label-caps px-2 py-1 rounded shadow-sm backdrop-blur-md">{firstHero?.imdbScore ? `${firstHero.imdbScore.toFixed(1)} IMDb` : '8.0 IMDb'}</span>
+          <span id="hero-year" class="bg-white/10 text-white font-label-caps text-label-caps px-2 py-1 rounded shadow-sm backdrop-blur-md">{firstHero?.releaseYear || '2024'}</span>
+          <span id="hero-type" class="bg-white/10 text-white font-label-caps text-label-caps px-2 py-1 rounded shadow-sm backdrop-blur-md">{firstHero?.type === 'movie' ? 'Phim Lẻ' : firstHero?.type === 'hoathinh' ? 'Hoạt Hình' : 'Phim Bộ'}</span>
         </div>
         <h1 id="hero-title" class="font-display-hero text-display-hero md:text-[64px] font-extrabold leading-tight text-white drop-shadow-lg line-clamp-2">
-            Bài Học Đáng Đời
+            {firstHero?.title || 'Chào Mừng Đến Với DongMePhim'}
         </h1>
         <p id="hero-desc" class="text-on-surface-variant text-lg md:text-xl line-clamp-3 leading-relaxed">
-            Khi kỷ cương trong trường học sụp đổ, những thành trì đạo moral cuối cùng dần mất đi sự tôn nghiêm. Một câu chuyện gai góc về giáo dục, sự trừng phạt và những giá trị nhân bản bị lãng quên.
+            {firstHero?.description || 'Trải nghiệm điện ảnh đỉnh cao tại DongMePhim.'}
         </p>
         <div class="flex flex-wrap gap-4 pt-4">
-          <a id="hero-play-link" href="/phim/bai-hoc-dang-doi" class="cursor-pointer">
+          <a id="hero-play-link" href={firstHero ? `/phim/${firstHero.slug}` : "#"} class="cursor-pointer" style={firstHero ? "" : "display: none;"}>
             <Button variant="premium" size="lg" className="rounded-xl px-8 py-4 gap-2 text-white font-title-md">
               <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
               Xem Phim
             </Button>
           </a>
-          <Button id="hero-playlist-btn" variant="secondary" size="lg" className="rounded-xl px-8 py-4 gap-2 font-title-md cursor-pointer relative group">
+          <Button id="hero-playlist-btn" variant="secondary" size="lg" className="rounded-xl px-8 py-4 gap-2 font-title-md cursor-pointer relative group" style={firstHero ? {} : { display: 'none' }}>
             <span id="hero-playlist-icon-add" class="flex items-center justify-center">
               <Txaicon name="playlist-add" class="w-5 h-5" />
             </span>
@@ -112,7 +86,7 @@ const comments = [
     <div id="hero-indicators" class="absolute bottom-8 right-8 z-30 flex items-center gap-3 hidden md:flex"></div>
   </section>
 
-  <!-- Content Categories (Mini Bento) -> Upgraded to Topics Grid -->
+  <!-- Content Categories -> Topics Grid -->
   <section class="px-gutter -mt-16 relative z-10 max-w-container-max mx-auto space-y-4">
     <h3 class="font-headline-lg text-lg text-white font-bold tracking-tight px-1 drop-shadow-md">Bạn đang quan tâm gì?</h3>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -138,28 +112,64 @@ const comments = [
   </section>
 
   <main class="max-w-container-max mx-auto px-gutter py-section-gap space-y-section-gap">
-    <!-- Phim Hàn Quốc Mới -->
-    <section>
-      <div class="flex justify-between items-end mb-6">
-        <div>
-          <h2 class="font-headline-lg text-headline-lg text-primary flex items-center gap-2">
-            Phim Hàn Quốc Mới
-            <span class="material-symbols-outlined">trending_up</span>
-          </h2>
-          <p class="text-on-surface-variant font-body-main mt-1">Cập nhật xu hướng điện ảnh xứ kim chi</p>
-        </div>
-        <a class="text-primary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
+    <!-- Phim Lẻ Mới -->
+    <section class="lazy-section" data-endpoint="/api/movies?type=movie&limit=4" data-grid-id="movies-grid" data-aspect="aspect-[2/3]">
+      <div class="flex items-center gap-3 mb-6">
+        <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+          Phim Lẻ Mới
+        </h2>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/phim-le">
+          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+        </a>
       </div>
-      <div id="korean-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
-        {koreanMovies.map((movie: any) => (
-          <Card 
-            title={movie.title}
-            slug={movie.slug}
-            poster={movie.poster}
-            quality={movie.quality}
-            aspect={movie.aspect}
-          />
-        ))}
+      <div id="movies-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter min-h-[280px]">
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+      </div>
+    </section>
+
+    <!-- Phim Hàn Quốc Mới -->
+    <section class="lazy-section" data-endpoint="/api/movies?category=Hàn Quốc&limit=10" data-grid-id="korean-grid" data-layout="slider" data-more-url="/quoc-gia/han-quoc">
+      <div class="flex flex-col md:flex-row gap-6 items-stretch">
+        <!-- Mobile Section Header (visible on mobile only) -->
+        <div class="flex md:hidden justify-between items-center w-full mb-1">
+          <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Hàn Quốc</span> mới
+          </h2>
+          <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/han-quoc">
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+          </a>
+        </div>
+        
+        <!-- Desktop Left Header Column (hidden on mobile) -->
+        <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+          <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+            Phim <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hàn Quốc</span> <br/>
+            mới
+          </h2>
+          <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/han-quoc">
+            <span>Xem toàn bộ</span>
+            <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+          </a>
+        </div>
+
+        <!-- Right Slider Content -->
+        <div class="relative flex-1 min-w-0">
+          <div id="korean-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+          </div>
+          <!-- Arrow Control -->
+          <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+            <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -167,7 +177,7 @@ const comments = [
     <section>
       <div class="flex justify-between items-end mb-6">
         <div>
-          <h2 class="font-headline-lg text-headline-lg text-primary flex items-center gap-2">
+          <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
             Top 10 Phim Bộ Hôm Nay
             <span class="material-symbols-outlined text-transparent bg-clip-text bg-gradient-to-tr from-primary to-secondary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
           </h2>
@@ -193,38 +203,94 @@ const comments = [
               status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}
               aspect="aspect-[3/4]"
               class="z-10 relative"
+              movie={movie}
             />
           </div>
         ))}
       </div>
     </section>
 
-    <!-- Phim Trung Quốc Mới -->
-    <section>
-      <div class="flex justify-between items-end mb-6">
-        <div>
-          <h2 class="font-headline-lg text-headline-lg text-secondary flex items-center gap-2">
-            Phim Trung Quốc Mới
-            <span class="material-symbols-outlined">stars</span>
-          </h2>
-          <p class="text-on-surface-variant font-body-main mt-1">Những tuyệt phẩm cổ trang và hiện đại</p>
-        </div>
-        <a class="text-secondary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
+    <!-- Phim Bộ Mới -->
+    <section class="lazy-section" data-endpoint="/api/movies?type=series&limit=4" data-grid-id="series-grid" data-aspect="aspect-[2/3]">
+      <div class="flex items-center gap-3 mb-6">
+        <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+          Phim Bộ Mới
+        </h2>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/phim-bo">
+          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+        </a>
       </div>
-      <div id="chinese-grid" class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-        {chineseMovies.map((movie: any) => (
-          <Card 
-            title={movie.title}
-            slug={movie.slug}
-            poster={movie.poster}
-            aspect={movie.aspect}
-          />
-        ))}
+      <div id="series-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter min-h-[280px]">
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
       </div>
     </section>
 
+    <!-- Phim Trung Quốc Mới -->
+    <section class="lazy-section" data-endpoint="/api/movies?category=Trung Quốc&limit=10" data-grid-id="chinese-grid" data-layout="slider" data-more-url="/quoc-gia/trung-quoc">
+      <div class="flex flex-col md:flex-row gap-6 items-stretch">
+        <!-- Mobile Section Header (visible on mobile only) -->
+        <div class="flex md:hidden justify-between items-center w-full mb-1">
+          <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Trung Quốc</span> mới
+          </h2>
+          <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/trung-quoc">
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+          </a>
+        </div>
+        
+        <!-- Desktop Left Header Column (hidden on mobile) -->
+        <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+          <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+            Phim <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Trung Quốc</span> <br/>
+            mới
+          </h2>
+          <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/trung-quoc">
+            <span>Xem toàn bộ</span>
+            <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+          </a>
+        </div>
 
-    <!-- Upgraded Bento Section: Top Comments Carousel & Three-Column Grid (Image 2 style) -->
+        <!-- Right Slider Content -->
+        <div class="relative flex-1 min-w-0">
+          <div id="chinese-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+          </div>
+          <!-- Arrow Control -->
+          <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+            <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phim Hoạt Hình Mới -->
+    <section class="lazy-section" data-endpoint="/api/movies?type=hoathinh&limit=4" data-grid-id="anime-grid" data-aspect="aspect-[2/3]">
+      <div class="flex items-center gap-3 mb-6">
+        <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+          Phim Hoạt Hình Mới
+        </h2>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/the-loai/hoat-hinh">
+          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+        </a>
+      </div>
+      <div id="anime-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter min-h-[280px]">
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+      </div>
+    </section>
+
+    <!-- Upgraded Bento Section: Top Comments Carousel & Three-Column Grid -->
     <section class="glass-card bg-[#141416]/50 border border-glass-stroke rounded-3xl p-6 md:p-8 space-y-8 shadow-2xl relative overflow-hidden">
       <!-- Glow backgrounds -->
       <div class="absolute -left-20 -top-20 w-80 h-80 bg-primary/5 blur-[120px] rounded-full"></div>
@@ -232,7 +298,7 @@ const comments = [
 
       <!-- TOP BÌNH LUẬN Header -->
       <div class="flex items-center justify-between relative z-10 border-b border-glass-stroke pb-4">
-        <h3 class="font-headline-lg text-lg text-primary flex items-center gap-2">
+        <h3 class="font-headline-lg text-lg text-primary flex items-center gap-2 font-outfit">
           <span class="material-symbols-outlined text-amber-400">forum</span>
           <span class="uppercase tracking-wider">Top Bình Luận</span>
         </h3>
@@ -249,1211 +315,998 @@ const comments = [
 
       <!-- TOP BÌNH LUẬN Horizontal Carousel -->
       <div id="comments-carousel" class="flex gap-4 overflow-x-auto pb-4 scroll-smooth scrollbar-none snap-x relative z-10">
-        <!-- Comment Card 1 -->
-        <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
-          <div class="flex justify-between items-start gap-3">
-            <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-xs">
-                TK
-              </div>
-              <div>
-                <div class="flex items-center gap-1">
-                  <span class="text-xs font-bold text-white">Tờ Ka</span>
-                  <span class="text-[10px] text-blue-400 font-bold">♂</span>
-                </div>
-                <span class="text-[9px] text-zinc-500">Thành viên</span>
-              </div>
-            </div>
-            <a href="/phim/bai-hoc-dang-doi" class="w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke shrink-0 block hover:scale-105 transition-transform bg-zinc-900">
-              <img src="https://lh3.googleusercontent.com/aida/AP1WRLs0cwmsQtUMxz8S1kYIBe2vdzk9wlKrAYAA0SaImKjlJwYFoNlbX5Ezes6Vk4D5W-ucCQ2T9RmBKbr_ZMBabRA9Ttc6dmERubqhLsdx1wunz3brbgXi5rroXOR2ruzik_0pwCF5YxH6Uvl1XXNB5hThMgn1BnmAaijvACGEDvmqkuTyiOamRT4EaIM9cR5bB6VIsLFANxSFbHoSZwiBE2ropgLTIEGcBH_t4b9HchPMwtxA3L-vMixjNaq2" class="w-full h-full object-cover" />
-            </a>
-          </div>
-          <p class="text-xs text-zinc-300 italic line-clamp-3 mt-3 font-body-main">"Hình như bộ này chuyển thể từ manhwa giáo dục chân chính pk"</p>
-          <div class="flex items-center gap-3 mt-4 pt-3 border-t border-glass-stroke/30 text-[10px] text-zinc-500">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">visibility</span> 120</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">thumb_up</span> 14</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">forum</span> 4</span>
-          </div>
-        </div>
-
-        <!-- Comment Card 2 -->
-        <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
-          <div class="flex justify-between items-start gap-3">
-            <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold text-xs">
-                HM
-              </div>
-              <div>
-                <div class="flex items-center gap-1">
-                  <span class="text-xs font-bold text-white">huimad</span>
-                  <span class="text-[10px] text-blue-400 font-bold">♂</span>
-                </div>
-                <span class="text-[9px] text-zinc-500">Thành viên</span>
-              </div>
-            </div>
-            <a href="/phim/hyeri-yeu-dau" class="w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke shrink-0 block hover:scale-105 transition-transform bg-zinc-900">
-              <img src="https://lh3.googleusercontent.com/aida/AP1WRLuO6KpL4MWKknm8mFvjIZPSY4YBrZyq_71GCcSte_U3eMOYxus5HxfYZ9PigFtZi-oDK15E-Cjzp2hXYfJ_GHzrJJKIlX8Bg1xpXfqfKvSELRjoBCaXdUC5mxRycPk60HvAwDOHGEEPBdvStM3Sb3txVvEs_V-AY30knzPYp-ELQUkk3RmcDcL-CTo2VrZMC43rH48cNSzwsmX3NkMjXHrEVLY7Ay04IIk_wODemFeS2Ng16LSfF5ea7MSh" class="w-full h-full object-cover" />
-            </a>
-          </div>
-          <p class="text-xs text-zinc-300 italic line-clamp-3 mt-3 font-body-main">"lót đít hóng t11"</p>
-          <div class="flex items-center gap-3 mt-4 pt-3 border-t border-glass-stroke/30 text-[10px] text-zinc-500">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">visibility</span> 95</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">thumb_up</span> 8</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">forum</span> 0</span>
-          </div>
-        </div>
-
-        <!-- Comment Card 3 -->
-        <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
-          <div class="flex justify-between items-start gap-3">
-            <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-xs">
-                C3
-              </div>
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold tracking-widest uppercase">Admin</span>
-                  <span class="text-xs font-bold text-white">Cô 3 Rổ</span>
-                  <span class="text-[10px] text-pink-400 font-bold">♀</span>
-                </div>
-                <span class="text-[9px] text-zinc-500">Người kiểm duyệt</span>
-              </div>
-            </div>
-            <a href="/phim/nghe-thuat-lua-doi" class="w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke shrink-0 block hover:scale-105 transition-transform bg-zinc-900">
-              <img src="https://lh3.googleusercontent.com/aida/AP1WRLvm-KnVg4nBEHswFKKhesNV70CJMm6igqUtinLPPrIJ_4Kcn3TrZB8WxUim06kwLSgvkpoJLz_Fsw1ZsJR_AjlZfOLNewlWmYB0w1kkBq5yAjrC2iFRnKdgYNfPBrDj7MBvwsFGMfQqFraz3DHFBzR74sDJtNikr4oTdppPL4qoa5EUpOjZXDARYm6n8DogRqs8I3whgQpr5Ii6reom2PW6AmEA0tKU235oyiaF_D10hGqcDoafAV6uuyd5" class="w-full h-full object-cover" />
-            </a>
-          </div>
-          <p class="text-xs text-zinc-300 italic line-clamp-3 mt-3 font-body-main">"Đã ai tới đây chưa"</p>
-          <div class="flex items-center gap-3 mt-4 pt-3 border-t border-glass-stroke/30 text-[10px] text-zinc-500">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">visibility</span> 180</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">thumb_up</span> 22</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">forum</span> 6</span>
-          </div>
-        </div>
-
-        <!-- Comment Card 4 -->
-        <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
-          <div class="flex justify-between items-start gap-3">
-            <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-xs">
-                C3
-              </div>
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold tracking-widest uppercase">Admin</span>
-                  <span class="text-xs font-bold text-white">Cô 3 Rổ</span>
-                  <span class="text-[10px] text-pink-400 font-bold">♀</span>
-                </div>
-                <span class="text-[9px] text-zinc-500">Người kiểm duyệt</span>
-              </div>
-            </div>
-            <a href="/phim/bac-thay-giai-hoa" class="w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke shrink-0 block hover:scale-105 transition-transform bg-zinc-900">
-              <img src="https://lh3.googleusercontent.com/aida/AP1WRLsohDUhkIkESPFFcrxCvncMlDGTnF6SKHWfNvxemTj0ETR7_-uvCDT24bGETBUIYD2a9tI-TYDHRm9qyFTPVT2XI8acDiKKsgLkKT80JpCOom3QhHCd8uxHLPbKohufSlTCdZ6TCQXQNA8rrzkHtHEw4qpYA2xz0E6gNoc6Gxa5XpFLQzG9aNy5aM7GOk6dyggEuCGD5wfphNuFaXSvy4ah6VvDCwx1JQHfD-TI_EIYhdllGEZPE6TgFV0K" class="w-full h-full object-cover" />
-            </a>
-          </div>
-          <p class="text-xs text-zinc-300 italic line-clamp-3 mt-3 font-body-main">"Update SS8-SS9 nha mấy đứa"</p>
-          <div class="flex items-center gap-3 mt-4 pt-3 border-t border-glass-stroke/30 text-[10px] text-zinc-500">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">visibility</span> 220</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">thumb_up</span> 30</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">forum</span> 7</span>
-          </div>
-        </div>
-
-        <!-- Comment Card 5 -->
-        <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
-          <div class="flex justify-between items-start gap-3">
-            <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-xs">
-                C3
-              </div>
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold tracking-widest uppercase">Admin</span>
-                  <span class="text-xs font-bold text-white">Cô 3 Rổ</span>
-                  <span class="text-[10px] text-pink-400 font-bold">♀</span>
-                </div>
-                <span class="text-[9px] text-zinc-500">Người kiểm duyệt</span>
-              </div>
-            </div>
-            <a href="/phim/cau-truyen-hinh" class="w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke shrink-0 block hover:scale-105 transition-transform bg-zinc-900">
-              <img src="https://lh3.googleusercontent.com/aida/AP1WRLskEpjrTbHRx6Jj3TAoagePHNQcXAyfE57exarNW0uRrctCdcc2Ns3Gccg-Q-sHR-iGafdXbWGBY3VqNGMMuNWRowyO8JZHlFLslh1G5WNrcjJ3y-OsTKgIzQGIYkOO5N88CKrVCPSenE4g8yUwk_MMtWZukOp8Pey1U0z24BjmBKodM448SynZ3QPSKC1mnooHd98SJMI_XxGvi66yl7YdJWaJyz_WDpl2GVANjq5HCB5SoVUfM8sY3Auj" class="w-full h-full object-cover" />
-            </a>
-          </div>
-          <p class="text-xs text-zinc-300 italic line-clamp-3 mt-3 font-body-main">"Tập 4 rồi nha bey"</p>
-          <div class="flex items-center gap-3 mt-4 pt-3 border-t border-glass-stroke/30 text-[10px] text-zinc-500">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">visibility</span> 140</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">thumb_up</span> 18</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">forum</span> 4</span>
-          </div>
-        </div>
+         <p class="text-xs text-zinc-500 py-8 text-center w-full font-outfit">Đang tải bình luận...</p>
       </div>
 
-      <!-- Bottom Grid: SÔI NỔI NHẤT, YÊU THÍCH NHẤT, BÌNH LUẬN MỚI -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-6 border-t border-glass-stroke relative z-10">
+      <!-- Bottom Grid: SÔI NỔI NHẤT, YÊU THÍCH NHẤT, THỂ LOẠI HOT, BÌNH LUẬN MỚI -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pt-6 border-t border-glass-stroke relative z-10">
         <!-- SÔI NỔI NHẤT -->
         <div class="space-y-4">
-          <h4 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/40 pb-2">
+          <h4 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/40 pb-2 font-outfit">
             <span class="material-symbols-outlined text-amber-400 text-sm">analytics</span> Sôi nổi nhất
           </h4>
           <div id="soi-noi-list" class="space-y-3">
-            <!-- Rank 1 -->
-            <a href="/phim/truc-ngoc" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
-              <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">1.</span>
-              <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Trục Ngọc</span>
-            </a>
-            <!-- Rank 2 -->
-            <a href="/phim/bat-kha-chien-bai" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
-              <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">2.</span>
-              <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Bất Khả Chiến Bại</span>
-            </a>
-            <!-- Rank 3 -->
-            <a href="/phim/bai-hoc-dang-doi" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
-              <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">3.</span>
-              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold w-4">trending_up</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="https://lh3.googleusercontent.com/aida/AP1WRLs0cwmsQtUMxz8S1kYIBe2vdzk9wlKrAYAA0SaImKjlJwYFoNlbX5Ezes6Vk4D5W-ucCQ2T9RmBKbr_ZMBabRA9Ttc6dmERubqhLsdx1wunz3brbgXi5rroXOR2ruzik_0pwCF5YxH6Uvl1XXNB5hThMgn1BnmAaijvACGEDvmqkuTyiOamRT4EaIM9cR5bB6VIsLFANxSFbHoSZwiBE2ropgLTIEGcBH_t4b9HchPMwtxA3L-vMixjNaq2" class="w-full h-full object-cover" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Bài Học Đáng Đời</span>
-            </a>
-            <!-- Rank 4 -->
-            <a href="/phim/tieng-yeu-nay-anh-dich-duoc-khong" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
-              <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">4.</span>
-              <span class="material-symbols-outlined text-pink-400 text-sm font-bold w-4">trending_down</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Tiếng yêu này anh dịch được không?</span>
-            </a>
-            <!-- Rank 5 -->
-            <a href="/phim/trao-em-ca-vu-tru" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
-              <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">5.</span>
-              <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Trao Em Cả Vũ Trụ</span>
-            </a>
+            {soiNoiMovies.map((movie, index) => {
+              const trendColor = index < 3 ? 'emerald' : 'zinc';
+              const trendIcon = index === 0 ? 'trending_up' : index === 2 ? 'trending_up' : index === 3 ? 'trending_down' : 'remove';
+              return (
+                <a href={`/phim/${movie.slug}`} class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
+                  <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">{index + 1}.</span>
+                  <span class={`material-symbols-outlined text-${trendColor}-400 text-sm font-bold w-4`}>{trendIcon}</span>
+                  <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
+                    <img src={movie.posterUrl || '/favicon.png'} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                  </div>
+                  <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors line-clamp-1 flex-1 font-outfit">{movie.title}</span>
+                </a>
+              );
+            })}
           </div>
-          <a href="/moi-cap-nhat" class="text-[10px] text-zinc-500 font-bold hover:text-white block pt-2 transition-colors uppercase cursor-pointer">Xem thêm</a>
+          <a href="/moi-cap-nhat" class="text-[10px] text-zinc-500 font-bold hover:text-white block pt-2 transition-colors uppercase cursor-pointer font-outfit">Xem thêm</a>
         </div>
 
         <!-- YÊU THÍCH NHẤT -->
         <div class="space-y-4">
-          <h4 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/40 pb-2">
+          <h4 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/40 pb-2 font-outfit">
             <span class="material-symbols-outlined text-amber-400 text-sm">favorite</span> Yêu thích nhất
           </h4>
           <div id="yeu-thich-list" class="space-y-3">
-            <!-- Rank 1 -->
-            <a href="/phim/one-piece" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
+            {yeuThichMovies.map((movie, index) => (
+              <a href={`/phim/${movie.slug}`} class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
+                <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">{index + 1}.</span>
+                <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
+                <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
+                  <img src={movie.posterUrl || '/favicon.png'} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                </div>
+                <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors line-clamp-1 flex-1 font-outfit">{movie.title}</span>
+              </a>
+            ))}
+          </div>
+          <a href="/top-imdb" class="text-[10px] text-zinc-500 font-bold hover:text-white block pt-2 transition-colors uppercase cursor-pointer font-outfit">Xem thêm</a>
+        </div>
+
+        <!-- THỂ LOẠI HOT -->
+        <div class="space-y-4">
+          <h4 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/40 pb-2 font-outfit">
+            <span class="material-symbols-outlined text-amber-400 text-sm">trending_up</span> Thể loại HOT
+          </h4>
+          <div class="space-y-3">
+            <a href="/the-loai/tam-ly" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
               <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">1.</span>
-              <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">ONE PIECE</span>
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold w-4">trending_up</span>
+              <span class="px-2.5 py-1 text-xs font-bold text-pink-400 bg-pink-500/10 border border-pink-500/20 rounded-full font-outfit group-hover/item:brightness-125 transition-all">Tâm Lý</span>
             </a>
-            <!-- Rank 2 -->
-            <a href="/phim/con-ra-the-thong-gi-nua" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
+            <a href="/the-loai/chinh-kich" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
               <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">2.</span>
-              <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Còn Ra Thể Thống Gì Nữa</span>
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold w-4">trending_up</span>
+              <span class="px-2.5 py-1 text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full font-outfit group-hover/item:brightness-125 transition-all">Chính Kịch</span>
             </a>
-            <!-- Rank 3 -->
-            <a href="/phim/phu-nhan-dai-quan-the-ky-21" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
+            <a href="/the-loai/tinh-cam" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
               <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">3.</span>
-              <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Phu Nhân Đại Quân Thế Kỳ 21</span>
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold w-4">trending_up</span>
+              <span class="px-2.5 py-1 text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full font-outfit group-hover/item:brightness-125 transition-all">Tình Cảm</span>
             </a>
-            <!-- Rank 4 -->
-            <a href="/phim/cong-anh-ma-chay" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
+            <a href="/the-loai/hanh-dong" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
               <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">4.</span>
-              <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Cõng Anh Mà Chạy</span>
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold w-4">trending_up</span>
+              <span class="px-2.5 py-1 text-xs font-bold text-green-400 bg-green-500/10 border border-green-500/20 rounded-full font-outfit group-hover/item:brightness-125 transition-all">Hành Động</span>
             </a>
-            <!-- Rank 5 -->
-            <a href="/phim/bat-kha-chien-bai" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer">
+            <a href="/the-loai/hai-huoc" class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
               <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">5.</span>
-              <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
-              <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-                <img src="/favicon.png" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </div>
-              <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors">Bất Khả Chiến Bại</span>
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold w-4">trending_up</span>
+              <span class="px-2.5 py-1 text-xs font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-full font-outfit group-hover/item:brightness-125 transition-all">Hài Hước</span>
             </a>
           </div>
-          <a href="/top-imdb" class="text-[10px] text-zinc-500 font-bold hover:text-white block pt-2 transition-colors uppercase cursor-pointer">Xem thêm</a>
+          <a href="/chu-de" class="text-[10px] text-zinc-500 font-bold hover:text-white block pt-2 transition-colors uppercase cursor-pointer font-outfit">Xem thêm</a>
         </div>
 
         <!-- BÌNH LUẬN MỚI -->
         <div class="space-y-4">
-          <h4 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/40 pb-2">
+          <h4 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/40 pb-2 font-outfit">
             <span class="material-symbols-outlined text-amber-400 text-sm">flash_on</span> Bình luận mới
           </h4>
           <div id="binh-luan-moi-list" class="space-y-3">
-            <!-- Row 1 -->
-            <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300">
-              <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded-full bg-zinc-700 text-white font-bold text-[9px] flex items-center justify-center font-outfit">T</div>
-                <span class="text-xs font-bold text-zinc-300">Tiểu</span>
-              </div>
-              <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"Tình Yêu Có Pháo Hoa"</p>
-            </div>
-            <!-- Row 2 -->
-            <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300">
-              <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded-full bg-indigo-500 text-white font-bold text-[9px] flex items-center justify-center font-outfit">H</div>
-                <span class="text-xs font-bold text-zinc-300">Hoài Lê</span>
-                <span class="text-[10px] text-primary" data-txatooltip="ADMIN">👑</span>
-              </div>
-              <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"ad ko dịch tập đặc biệt dc sao"</p>
-              <a href="/phim/nu-hoang-nuoc-mat" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
-                <span class="material-symbols-outlined text-[10px]">play_circle</span> Nữ Hoàng Nước Mắt
-              </a>
-            </div>
-            <!-- Row 3 -->
-            <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300">
-              <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded-full bg-teal-500 text-white font-bold text-[9px] flex items-center justify-center font-outfit">N</div>
-                <span class="text-xs font-bold text-zinc-300 font-outfit">Narcisus Lawrence</span>
-              </div>
-              <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"manhwa chưa có end bạn ơi, với lại Bong Geun Dae là phi..."</p>
-              <a href="/phim/bai-hoc-dang-doi" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
-                <span class="material-symbols-outlined text-[10px]">play_circle</span> Bài Học Đáng Đời
-              </a>
-            </div>
-            <!-- Row 4 -->
-            <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300">
-              <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded-full bg-pink-500 text-white font-bold text-[9px] flex items-center justify-center font-outfit">S</div>
-                <span class="text-xs font-bold text-zinc-300 font-outfit">sha</span>
-              </div>
-              <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"trong truyện kh có nv geun dea á c"</p>
-              <a href="/phim/bai-hoc-dang-doi" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
-                <span class="material-symbols-outlined text-[10px]">play_circle</span> Bài Học Đáng Đời
-              </a>
-            </div>
-            <!-- Row 5 -->
-            <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300">
-              <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded-full bg-amber-500 text-white font-bold text-[9px] flex items-center justify-center font-outfit font-outfit">C</div>
-                <span class="text-xs font-bold text-zinc-300 font-outfit">Cụ Vấn</span>
-              </div>
-              <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"Hay"</p>
-              <a href="/phim/doi-thieu-nien-sieu-dang" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
-                <span class="material-symbols-outlined text-[10px]">play_circle</span> Đội Thiếu Niên Siêu Đẳng
-              </a>
-            </div>
+             <p class="text-xs text-zinc-500 py-4 text-center font-outfit">Đang tải...</p>
           </div>
         </div>
       </div>
     </section>
-    <!-- Script blocks -->
-    <script is:inline>
-      // Helper function to create movie list items with Netflix-style popover cards
-      function createMovieListItemHTML(movieData, index, type) {
-        const trendColor = index < 3 ? 'emerald' : 'zinc';
-        const trendIcon = index === 0 ? 'trending_up' : index === 2 ? 'trending_up' : index === 3 ? 'trending_down' : 'remove';
-        
-        const originalTitle = movieData.originalTitle || '';
-        const imdbScore = movieData.imdbScore ? movieData.imdbScore.toFixed(1) : '8.0';
-        const ageRating = movieData.ageRating || 'T13';
-        const releaseYear = movieData.releaseYear || 2024;
-        const seasons = movieData.seasons || 'Phần 1';
-        const quality = movieData.quality || 'FHD';
-        const lang = movieData.lang || 'Vietsub';
-        const genres = movieData.genres || [];
-        
-        const genresHTML = genres.map(g => `<span>${g}</span>`).join('<span class="text-zinc-600">•</span>');
-        
-        return `
-          <a href="/phim/${movieData.slug}" class="relative group flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer w-full">
-            <span class="text-sm font-black text-zinc-600 group-hover:text-primary transition-colors w-4 font-outfit">${index + 1}.</span>
-            <span class="material-symbols-outlined text-${trendColor}-400 text-sm font-bold w-4">${trendIcon}</span>
-            <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
-              <img src="${movieData.posterUrl || '/favicon.png'}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-            </div>
-            <span class="text-xs font-bold text-zinc-300 group-hover:text-white transition-colors line-clamp-1 flex-1">${movieData.title}</span>
-            
-            <!-- Netflix-style Popover Card (visible on hover) -->
-            <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
-              <div class="relative w-full aspect-video bg-black/40">
-                <img src="${movieData.bannerUrl || movieData.posterUrl || '/favicon.png'}" alt="${movieData.title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-                <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
-                <div class="absolute top-3 left-3 flex gap-1">
-                  <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
-                  <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">${lang}</span>
-                </div>
-              </div>
-              
-              <div class="p-4 space-y-3.5 text-left whitespace-normal">
-                <div>
-                  <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">${movieData.title}</h4>
-                  ${originalTitle ? `<p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">${originalTitle}</p>` : ''}
-                </div>
-                
-                <div class="flex items-center gap-2">
-                  <span class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.2)] cursor-pointer">
-                    <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                    Xem ngay
-                  </span>
-                  <span class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
-                    <span class="material-symbols-outlined text-sm">info</span>
-                  </span>
-                </div>
-                
-                <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
-                  <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${imdbScore}</span>
-                  <span class="border border-zinc-500 text-zinc-300 px-1.5 py-0.5 rounded text-[9px] font-bold">${ageRating}</span>
-                  <span>${releaseYear}</span>
-                  <span>${seasons}</span>
-                </div>
-                
-                ${genresHTML ? `
-                <div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">
-                  ${genresHTML}
-                </div>
-                ` : ''}
-              </div>
-            </div>
-          </a>
-        `;
-      }
 
-      // Helper function to create carousel comment cards
-      function createCarouselCommentCardHTML(comment) {
-        const initial = (comment.author || 'T').substring(0, 2).toUpperCase();
-        
-        let roleBadge = 'Thành viên';
-        let badgeColor = 'emerald-500';
-        let adminTag = '';
-        
-        const lowerAuthor = (comment.author || '').toLowerCase();
-        if (lowerAuthor.includes('cô 3 rổ') || lowerAuthor.includes('admin') || lowerAuthor.includes('hoài lê') || lowerAuthor.includes('mod') || lowerAuthor.includes('ad')) {
-          roleBadge = 'Người kiểm duyệt';
-          badgeColor = 'pink-500';
-          adminTag = `<span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold tracking-widest uppercase mr-1">Admin</span>`;
-        } else if (lowerAuthor.includes('nam') || lowerAuthor.includes('thư') || lowerAuthor.includes('linh') || lowerAuthor.includes('tiểu')) {
-          badgeColor = 'amber-500';
-        } else if (lowerAuthor.charCodeAt(0) % 2 === 0) {
-          badgeColor = 'indigo-500';
-        } else {
-          badgeColor = 'teal-500';
-        }
-
-        const views = comment.views !== undefined ? comment.views : Math.floor(Math.random() * 150) + 10;
-
-        return `
-          <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
-            <div class="flex justify-between items-start gap-3">
-              <div class="flex items-center gap-2">
-                <div class="w-9 h-9 rounded-full bg-${badgeColor} flex items-center justify-center text-white font-bold text-xs">
-                  ${initial}
-                </div>
-                <div>
-                  <div class="flex items-center gap-1">
-                    ${adminTag}
-                    <span class="text-xs font-bold text-white">${comment.author}</span>
-                  </div>
-                  <span class="text-[9px] text-zinc-500">${roleBadge}</span>
-                </div>
-              </div>
-              <a href="/phim/${comment.movieSlug}" class="w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke shrink-0 block hover:scale-105 transition-transform bg-zinc-900">
-                <img src="${comment.moviePoster || '/favicon.png'}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-              </a>
-            </div>
-            <p class="text-xs text-zinc-300 italic line-clamp-3 mt-3 font-body-main">"${comment.content}"</p>
-            <div class="flex items-center gap-3 mt-4 pt-3 border-t border-glass-stroke/30 text-[10px] text-zinc-500">
-              <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">visibility</span> ${views}</span>
-              <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">thumb_up</span> ${comment.likes || 0}</span>
-              <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">forum</span> ${comment.replies ? comment.replies.length : 0}</span>
-            </div>
-          </div>
-        `;
-      }
-
-      // Helper function to create sidebar comment rows
-      function createSidebarCommentRowHTML(comment) {
-        const initial = (comment.author || 'T').substring(0, 1).toUpperCase();
-        
-        let roleBadge = '';
-        let badgeColor = 'zinc-700';
-        
-        const lowerAuthor = (comment.author || '').toLowerCase();
-        if (lowerAuthor.includes('cô 3 rổ') || lowerAuthor.includes('admin') || lowerAuthor.includes('hoài lê') || lowerAuthor.includes('mod') || lowerAuthor.includes('ad')) {
-          roleBadge = `<span class="text-[10px] text-primary" data-txatooltip="ADMIN">👑</span>`;
-          badgeColor = 'pink-500';
-        } else if (lowerAuthor.includes('nam') || lowerAuthor.includes('thư') || lowerAuthor.includes('linh') || lowerAuthor.includes('tiểu')) {
-          badgeColor = 'amber-500';
-        } else if (lowerAuthor.charCodeAt(0) % 2 === 0) {
-          badgeColor = 'indigo-500';
-        } else {
-          badgeColor = 'teal-500';
-        }
-
-        return `
-          <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300">
-            <div class="flex items-center gap-2">
-              <div class="w-5 h-5 rounded-full bg-${badgeColor} text-white font-bold text-[9px] flex items-center justify-center font-outfit">${initial}</div>
-              <span class="text-xs font-bold text-zinc-300">${comment.author}</span>
-              ${roleBadge}
-            </div>
-            <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"${comment.content}"</p>
-            <a href="/phim/${comment.movieSlug}" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
-              <span class="material-symbols-outlined text-[10px]">play_circle</span> ${comment.movieTitle}
-            </a>
-          </div>
-        `;
-      }
-
-      // Helper function to create movie cards dynamically
-      function createMovieCardHTML(movie, aspect = "aspect-[2/3]") {
-        const title = movie.title || '';
-        const slug = movie.slug || '';
-        const poster = movie.posterUrl || movie.poster || '';
-        const quality = movie.quality || 'FHD';
-        const lang = movie.lang || 'Vietsub';
-        const originalTitle = movie.originalTitle || movie.origin_name || '';
-        const year = movie.releaseYear || '';
-        const status = movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu';
-        
-        let typeBadgeHTML = '';
-        if (movie.type === 'series' && movie.episodeCurrent) {
-          let cur = (movie.episodeCurrent || '1').trim().replace(/^[tT]ập\s+/, '');
-          if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
-            cur = 'Full';
-          } else if (movie.episodeTotal) {
-            let tot = movie.episodeTotal.trim().replace(/^[tT]ập\s+/, '');
-            cur = `Tập ${cur}/${tot}`;
-          } else {
-            cur = `Tập ${cur}`;
-          }
-          typeBadgeHTML = `
-            <div class="absolute top-2 left-2 z-20">
-              <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm">
-                ${cur}
-              </span>
-            </div>
-          `;
-        }
-
-        const getLangBadge = (lang) => {
-          if (!lang) return 'P.Đề';
-          const lower = lang.toLowerCase();
-          if (lower.includes('thuyết minh') && (lower.includes('vietsub') || lower.includes('phụ đề'))) return 'P.Đề + T.Minh';
-          if (lower.includes('thuyết minh') || lower.includes('t.minh') || lower.includes('tm')) return 'T.Minh';
-          if (lower.includes('lồng tiếng') || lower.includes('lt')) return 'L.Tiếng';
-          return 'P.Đề';
-        };
-
-        const genresHTML = Array.isArray(movie.genres) ? movie.genres.map(g => `<span>${g}</span>`).join('<span class="text-zinc-600">•</span>') : '';
-
-        return `
-          <div class="relative group w-full">
-            <a href="/phim/${slug}" class="relative block w-full ${aspect} rounded-xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer">
-              <img src="${poster}" alt="${title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='/favicon.png'" />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity"></div>
-              
-              ${quality === '4K' ? `
-                <div class="absolute top-2 right-2 z-20">
-                  <span class="bg-amber-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm tracking-wider">4K</span>
-                </div>
-              ` : ''}
-
-              ${typeBadgeHTML}
-              
-              <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
-                  <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                </div>
-              </div>
-              
-              <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
-                <span class="bg-[#141416]/80 text-zinc-300 text-[8px] font-bold px-2.5 py-0.5 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap">
-                  ${getLangBadge(lang)}
-                </span>
-              </div>
-            </a>
-
-            <div class="mt-2.5 px-1 space-y-0.5 text-center">
-              <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip="${title}">
-                ${title}
-              </h3>
-              <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip="${originalTitle}">
-                ${originalTitle || title}
-              </p>
-            </div>
-
-            <!-- Hover Popover details card (Netflix style, desktop only) -->
-            <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
-              <div class="relative w-full aspect-video bg-black/40">
-                <img src="${movie.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-                <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
-                <div class="absolute top-3 left-3 flex gap-1">
-                  <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
-                  <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">${lang}</span>
-                </div>
-              </div>
-              <div class="p-4 space-y-3.5 text-left whitespace-normal">
-                <div>
-                  <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">${title}</h4>
-                  ${originalTitle ? `<p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">${originalTitle}</p>` : ''}
-                </div>
-                <div class="flex items-center gap-2">
-                  <a href="/xem/${slug}?ep=tap-1" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.2)] cursor-pointer">
-                    <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                    Xem ngay
-                  </a>
-                  <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
-                    <span class="material-symbols-outlined text-sm">favorite</span>
-                  </button>
-                  <a href="/phim/${slug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
-                    <span class="material-symbols-outlined text-sm">info</span>
-                  </a>
-                </div>
-                <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
-                  <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${(movie.imdbScore || 8.0).toFixed(1)}</span>
-                  <span>${year || 2024}</span>
-                  <span>${status}</span>
-                </div>
-                ${genresHTML ? `<div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">${genresHTML}</div>` : ''}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      // Bind all initialization to 'astro:page-load' for view transition compatibility
-      document.addEventListener('astro:page-load', async () => {
-        // Comments carousel sliding
-        const carousel = document.getElementById('comments-carousel');
-        const slideLeft = document.getElementById('slide-left');
-        const slideRight = document.getElementById('slide-right');
-        
-        slideLeft?.addEventListener('click', () => {
-          carousel?.scrollBy({ left: -296, behavior: 'smooth' });
-        });
-        
-        slideRight?.addEventListener('click', () => {
-          carousel?.scrollBy({ left: 296, behavior: 'smooth' });
-        });
-
-        // Hydration logic
-        try {
-          const combinedMovies = []; // allMoviesForClient removed due to 1102 Worker error
-          const hasMovies = combinedMovies.length > 0;
-
-          // 1. Update existing card images/banners (fallback sync)
-          if (hasMovies) {
-            combinedMovies.forEach(movieData => {
-              const slug = movieData.slug;
-              if (!slug) return;
-
-              const links = document.querySelectorAll(`a[href*="/phim/${slug}"], a[href*="/xem/${slug}"]`);
-              links.forEach(link => {
-                const img = link.querySelector('img');
-                if (img) img.src = movieData.posterUrl;
-                
-                const parentCard = link.closest('.group.relative.w-full') || link.closest('a');
-                if (parentCard) {
-                  const cardImg = parentCard.querySelector('img');
-                  if (cardImg && cardImg !== img) cardImg.src = movieData.posterUrl;
-                  const popoverBanner = parentCard.querySelector('.pointer-events-none img');
-                  if (popoverBanner) popoverBanner.src = movieData.bannerUrl || movieData.posterUrl;
-                  const popoverTitle = parentCard.querySelector('.pointer-events-none h4');
-                  if (popoverTitle) popoverTitle.textContent = movieData.title;
-                }
-              });
-            });
-          }
-
-          // 2. Render Sôi nổi nhất list
-          const soiNoiContainer = document.getElementById('soi-noi-list');
-          if (soiNoiContainer) {
-            const sortedByViews = [...combinedMovies].sort((a, b) => (b.views || 0) - (a.views || 0));
-            const top5Views = sortedByViews.slice(0, 5);
-            let html = '';
-            top5Views.forEach((movieData, index) => {
-              html += createMovieListItemHTML(movieData, index, 'soi-noi');
-            });
-            soiNoiContainer.innerHTML = html;
-          }
-
-          // 3. Render Yêu thích nhất list
-          const yeuThichContainer = document.getElementById('yeu-thich-list');
-          if (yeuThichContainer) {
-            const sortedByImdb = [...combinedMovies].sort((a, b) => (b.imdbScore || 0) - (a.imdbScore || 0));
-            const top5Imdb = sortedByImdb.slice(0, 5);
-            let html = '';
-            top5Imdb.forEach((movieData, index) => {
-              html += createMovieListItemHTML(movieData, index, 'yeu-thich');
-            });
-            yeuThichContainer.innerHTML = html;
-          }
-
-          // 4. Render Phim Hàn Quốc Mới
-          const koreanGrid = document.getElementById('korean-grid');
-          if (koreanGrid) {
-            const koreanList = combinedMovies.filter(m => m.category === 'Hàn Quốc' || (Array.isArray(m.genres) && m.genres.includes('Hàn Quốc')));
-            if (koreanList.length > 0) {
-              let html = '';
-              koreanList.slice(0, 4).forEach(m => {
-                html += createMovieCardHTML(m, "aspect-[2/3]");
-              });
-              koreanGrid.innerHTML = html;
-            }
-          }
-
-          // 5. Render Phim Trung Quốc Mới
-          const chineseGrid = document.getElementById('chinese-grid');
-          if (chineseGrid) {
-            const chineseList = combinedMovies.filter(m => m.category === 'Trung Quốc' || (Array.isArray(m.genres) && m.genres.includes('Trung Quốc')));
-            if (chineseList.length > 0) {
-              let html = '';
-              chineseList.slice(0, 3).forEach(m => {
-                html += createMovieCardHTML(m, "aspect-video");
-              });
-              chineseGrid.innerHTML = html;
-            }
-          }
-
-          // 6. Render Top 10 Phim Bộ Hôm Nay
-          const topSeriesScroll = document.getElementById('top-series-scroll');
-          if (topSeriesScroll) {
-            const seriesList = combinedMovies.filter(m => m.type === 'series');
-            if (seriesList.length > 0) {
-              const sortedSeries = [...seriesList].sort((a, b) => {
-                const scoreA = (a.views || 0) + (a.commentCount || 0);
-                const scoreB = (b.views || 0) + (b.commentCount || 0);
-                return scoreB - scoreA;
-              });
-              let html = '';
-              sortedSeries.slice(0, 10).forEach((movie, index) => {
-                html += `
-                  <div class="flex-shrink-0 w-44 md:w-52 relative pl-10 snap-center group">
-                    <div class="absolute bottom-0 left-0 text-[120px] md:text-[140px] font-black leading-none select-none pointer-events-none text-transparent bg-clip-text bg-gradient-to-tr from-primary/80 via-primary/20 to-transparent z-0 font-display-hero transform translate-y-6">
-                      ${index + 1}
-                    </div>
-                    ${createMovieCardHTML(movie, "aspect-[3/4]")}
-                  </div>
-                `;
-              });
-              topSeriesScroll.innerHTML = html;
-            }
-          }
-
-          // 7. Render Phim Âu Mỹ Mới
-          const westernGrid = document.getElementById('western-grid');
-          if (westernGrid) {
-            const westernList = combinedMovies.filter(m => m.category === 'Âu Mỹ' || (Array.isArray(m.genres) && m.genres.includes('Âu Mỹ')));
-            if (westernList.length > 0) {
-              let html = '';
-              westernList.slice(0, 3).forEach((m, idx) => {
-                const isHiddenLgClass = idx === 2 ? 'hidden lg:block' : '';
-                const isPremium = (m.imdbScore || 0) >= 9.0;
-                
-                html += `
-                  <a href="/phim/${m.slug}" class="group relative aspect-[16/9] rounded-2xl overflow-hidden glass-card border-transparent border-2 movie-card-hover transition-all duration-500 shadow-xl bg-surface-card cursor-pointer ${isHiddenLgClass}">
-                    <img class="w-full h-full object-cover" loading="lazy" src="${m.posterUrl || '/favicon.png'}" alt="${m.title}" onerror="this.src='/favicon.png'" />
-                    ${isPremium ? `<div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>` : ''}
-                    ${isPremium ? `
-                      <div class="absolute top-4 right-4">
-                        <span class="premium-button text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-lg uppercase tracking-wider">PREMIUM</span>
-                      </div>
-                    ` : ''}
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
-                      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/90 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-2xl shadow-primary/30">
-                        <span class="material-symbols-outlined text-3xl ml-1" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                      </div>
-                    </div>
-                    <div class="absolute bottom-0 left-0 p-6 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-                      <h4 class="font-headline-lg text-2xl mb-1 text-white group-hover:text-primary transition-colors">${m.title}</h4>
-                      ${m.description ? `<p class="text-sm text-on-surface-variant line-clamp-1">${m.description}</p>` : `
-                        <div class="flex gap-4 text-sm text-on-surface-variant">
-                          <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">schedule</span> ${m.durationMinutes || '120 phút'}</span>
-                          <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">star</span> ${(m.imdbScore || 8.0).toFixed(1)}</span>
-                          <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">hd</span> ${m.quality || 'FHD'}</span>
-                        </div>
-                      `}
-                    </div>
-                  </a>
-                `;
-              });
-              westernGrid.innerHTML = html;
-            }
-          }
-
-          // Helper to map movie slug to details
-          const moviesMap = {};
-          combinedMovies.forEach(m => {
-            if (m.slug) {
-              moviesMap[m.slug] = m;
-            }
-          });
-
-          // Static seed lookup
-          const seedMoviesLookup = {
-            'bai-hoc-dang-doi': { title: 'Bài Học Đáng Đời', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLs0cwmsQtUMxz8S1kYIBe2vdzk9wlKrAYAA0SaImKjlJwYFoNlbX5Ezes6Vk4D5W-ucCQ2T9RmBKbr_ZMBabRA9Ttc6dmERubqhLsdx1wunz3brbgXi5rroXOR2ruzik_0pwCF5YxH6Uvl1XXNB5hThMgn1BnmAaijvACGEDvmqkuTyiOamRT4EaIM9cR5bB6VIsLFANxSFbHoSZwiBE2ropgLTIEGcBH_t4b9HchPMwtxA3L-vMixjNaq2' },
-            'hyeri-yeu-dau': { title: 'Hyeri Yêu Dấu', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLuO6KpL4MWKknm8mFvjIZPSY4YBrZyq_71GCcSte_U3eMOYxus5HxfYZ9PigFtZi-oDK15E-Cjzp2hXYfJ_GHzrJJKIlX8Bg1xpXfqfKvSELRjoBCaXdUC5mxRycPk60HvAwDOHGEEPBdvStM3Sb3txVvEs_V-AY30knzPYp-ELQUkk3RmcDcL-CTo2VrZMC43rH48cNSzwsmX3NkMjXHrEVLY7Ay04IIk_wODemFeS2Ng16LSfF5ea7MSh' },
-            'nghe-thuat-lua-doi': { title: 'Nghệ Thuật Lừa Dối', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLvm-KnVg4nBEHswFKKhesNV70CJMm6igqUtinLPPrIJ_4Kcn3TrZB8WxUim06kwLSgvkpoJLz_Fsw1ZsJR_AjlZfOLNewlWmYB0w1kkBq5yAjrC2iFRnKdgYNfPBrDj7MBvwsFGMfQqFraz3DHFBzR74sDJtNikr4oTdppPL4qoa5EUpOjZXDARYm6n8DogRqs8I3whgQpr5Ii6reom2PW6AmEA0tKU235oyiaF_D10hGqcDoafAV6uuyd5' },
-            'bac-thay-giai-hoa': { title: 'Bậc Thầy Giải Hòa', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLsohDUhkIkESPFFcrxCvncMlDGTnF6SKHWfNvxemTj0ETR7_-uvCDT24bGETBUIYD2a9tI-TYDHRm9qyFTPVT2XI8acDiKKsgLkKT80JpCOom3QhHCd8uxHLPbKohufSlTCdZ6TCQXQNA8rrzkHtHEw4qpYA2xz0E6gNoc6Gxa5XpFLQzG9aNy5aM7GOk6dyggEuCGD5wfphNuFaXSvy4ah6VvDCwx1JQHfD-TI_EIYhdllGEZPE6TgFV0K' },
-            'cau-truyen-hinh': { title: 'Cầu Truyền Hình', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLskEpjrTbHRx6Jj3TAoagePHNQcXAyfE57exarNW0uRrctCdcc2Ns3Gccg-Q-sHR-iGafdXbWGBY3VqNGMMuNWRowyO8JZHlFLslh1G5WNrcjJ3y-OsTKgIzQGIYkOO5N88CKrVCPSenE4g8yUwk_MMtWZukOp8Pey1U0z24BjmBKodM448SynZ3QPSKC1mnooHd98SJMI_XxGvi66yl7YdJWaJyz_WDpl2GVANjq5HCB5SoVUfM8sY3Auj' },
-            'one-piece': { title: 'ONE PIECE', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLskEpjrTbHRx6Jj3TAoagePHNQcXAyfE57exarNW0uRrctCdcc2Ns3Gccg-Q-sHR-iGafdXbWGBY3VqNGMMuNWRowyO8JZHlFLslh1G5WNrcjJ3y-OsTKgIzQGIYkOO5N88CKrVCPSenE4g8yUwk_MMtWZukOp8Pey1U0z24BjmBKodM448SynZ3QPSKC1mnooHd98SJMI_XxGvi66yl7YdJWaJyz_WDpl2GVANjq5HCB5SoVUfM8sY3Auj' }
-          };
-
-          // 4. Fetch comments from Supabase API
-          let allComments = [];
-          try {
-            const res = await fetch('/api/comments');
-            if (res.ok) {
-              const result = await res.json();
-              if (result && result.status === 'success' && Array.isArray(result.data)) {
-                allComments = result.data.map(c => {
-                  const slug = c.movieSlug || '';
-                  const movieObj = moviesMap[slug] || seedMoviesLookup[slug] || { title: slug.replace(/-/g, ' '), posterUrl: '/favicon.png' };
-                  return {
-                    id: c.id,
-                    author: c.author,
-                    content: c.content,
-                    likes: c.likes || 0,
-                    replies: c.replies || [],
-                    movieSlug: slug,
-                    movieTitle: movieObj.title,
-                    moviePoster: movieObj.posterUrl || movieObj.bannerUrl
-                  };
-                });
-              }
-            }
-          } catch(e) {
-            console.error('Error fetching comments from API:', e);
-          }
-
-          // 5. Render Carousel Top Bình Luận
-          const carouselContainer = document.getElementById('comments-carousel');
-          if (carouselContainer) {
-            if (allComments.length > 0) {
-              let carouselHtml = '';
-              const top10Comments = allComments.slice(0, 10);
-              top10Comments.forEach(c => {
-                carouselHtml += createCarouselCommentCardHTML(c);
-              });
-              carouselContainer.innerHTML = carouselHtml;
-            } else {
-              carouselContainer.innerHTML = '<p class="text-xs text-zinc-500 py-8 text-center w-full">Chưa có bình luận nào.</p>';
-            }
-          }
-
-          // 6. Render Bình Luận Mới sidebar
-          const newCommentsContainer = document.getElementById('binh-luan-moi-list');
-          if (newCommentsContainer) {
-            if (allComments.length > 0) {
-              let sidebarHtml = '';
-              const top5Comments = allComments.slice(0, 5);
-              top5Comments.forEach(c => {
-                sidebarHtml += createSidebarCommentRowHTML(c);
-              });
-              newCommentsContainer.innerHTML = sidebarHtml;
-            } else {
-              newCommentsContainer.innerHTML = '<p class="text-xs text-zinc-500 py-4 text-center">Chưa có bình luận nào.</p>';
-            }
-          }
-
-          // 7. Hero Banner Slide Cycle Animation
-          const heroBanner = document.getElementById('hero-banner');
-          const heroContent = document.getElementById('hero-content');
-          const heroImdb = document.getElementById('hero-imdb');
-          const heroYear = document.getElementById('hero-year');
-          const heroType = document.getElementById('hero-type');
-          const heroTitle = document.getElementById('hero-title');
-          const heroDesc = document.getElementById('hero-desc');
-          const heroPlayLink = document.getElementById('hero-play-link');
-          const bg1 = document.getElementById('hero-bg-1');
-          const bg2 = document.getElementById('hero-bg-2');
-
-          let currentHeroSlug = 'bai-hoc-dang-doi';
-
-          let userPlaylist = [];
-          const username = (window.APP_USER ? window.APP_USER.username : null) || '';
-
-          async function loadWatchlist() {
-            if (username) {
-              try {
-                const res = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}`);
-                if (res.ok) {
-                  const result = await res.json();
-                  userPlaylist = result.data?.playlist || [];
-                }
-              } catch(e) {
-                console.error('Error loading watchlist:', e);
-              }
-            } else {
-              userPlaylist = JSON.parse(localStorage.getItem('tplaylist') || '[]');
-            }
-            updateHeroPlaylistBtn();
-          }
-
-          const updateHeroPlaylistBtn = () => {
-            const playlistBtn = document.getElementById('hero-playlist-btn');
-            const iconAdd = document.getElementById('hero-playlist-icon-add');
-            const iconAdded = document.getElementById('hero-playlist-icon-added');
-            const playlistText = document.getElementById('hero-playlist-text');
-            const tooltip = playlistBtn?.querySelector('.txatooltip');
-            if (!playlistBtn || !iconAdd || !iconAdded || !playlistText) return;
-
-            const isInPlaylist = userPlaylist.includes(currentHeroSlug);
-
-            if (isInPlaylist) {
-              iconAdd.classList.add('hidden');
-              iconAdded.classList.remove('hidden');
-              playlistText.textContent = 'Đã lưu';
-              playlistBtn.classList.add('bg-primary/20', 'border-primary');
-              if (tooltip) tooltip.textContent = 'Xóa khỏi DS phát';
-            } else {
-              iconAdd.classList.remove('hidden');
-              iconAdded.classList.add('hidden');
-              playlistText.textContent = 'Danh sách';
-              playlistBtn.classList.remove('bg-primary/20', 'border-primary');
-              if (tooltip) tooltip.textContent = 'Thêm vào DS phát';
-            }
-          };
-          window.updateHeroPlaylistBtn = updateHeroPlaylistBtn;
-
-          const playlistBtn = document.getElementById('hero-playlist-btn');
-          if (playlistBtn) {
-            playlistBtn.addEventListener('click', async () => {
-              const isLoggedIn = document.cookie.includes('txa_gate_passed');
-              if (!isLoggedIn) {
-                if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập để thực hiện chức năng này!', 'error');
-                setTimeout(() => {
-                  if (window.openLoginModal) window.openLoginModal();
-                }, 800);
-                return;
-              }
-
-              const isInPlaylist = userPlaylist.includes(currentHeroSlug);
-              if (username) {
-                try {
-                  if (isInPlaylist) {
-                    const res = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}&slug=${encodeURIComponent(currentHeroSlug)}&type=playlist`, {
-                      method: 'DELETE'
-                    });
-                    if (res.ok) {
-                      userPlaylist = userPlaylist.filter(slug => slug !== currentHeroSlug);
-                      if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
-                    }
-                  } else {
-                    const res = await fetch('/api/user/watchlist', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        username: username,
-                        slug: currentHeroSlug,
-                        type: 'playlist'
-                      })
-                    });
-                    if (res.ok) {
-                      userPlaylist.push(currentHeroSlug);
-                      if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
-                    }
-                  }
-                } catch(e) {
-                  console.error('Error updating watchlist:', e);
-                }
-              } else {
-                if (isInPlaylist) {
-                  userPlaylist = userPlaylist.filter(slug => slug !== currentHeroSlug);
-                  if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
-                } else {
-                  userPlaylist.push(currentHeroSlug);
-                  if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
-                }
-                localStorage.setItem('tplaylist', JSON.stringify(userPlaylist));
-              }
-              updateHeroPlaylistBtn();
-            });
-          }
-
-          // Initial load
-          loadWatchlist();
-
-          if (combinedMovies.length > 0 && heroBanner && heroContent && heroTitle && heroDesc && heroPlayLink && bg1 && bg2) {
-            // Check for pinned movies in list or in API override registry
-            let apiRegistry = {};
-            try {
-              const registryStr = localStorage.getItem('txa_episodes_config');
-              if (registryStr) apiRegistry = JSON.parse(registryStr);
-            } catch(e) {}
-
-            const pinnedList = combinedMovies.filter(m => {
-              const isPinnedInLocal = m.pinned === true || m.pinned === 'true';
-              const isPinnedInApi = apiRegistry[m.slug] && (apiRegistry[m.slug].pinned === true || apiRegistry[m.slug].pinned === 'true');
-              return isPinnedInLocal || isPinnedInApi;
-            });
-
-            const heroMovies = pinnedList.length > 0 
-              ? pinnedList
-              : combinedMovies.slice(0, 5);
-
-            let currentHeroIndex = 0;
-            let activeBg = 1;
-            let heroIntervalId = null;
-
-            const heroSlideLeft = document.getElementById('hero-slide-left');
-            const heroSlideRight = document.getElementById('hero-slide-right');
-            const heroIndicators = document.getElementById('hero-indicators');
-
-            const updateHero = (index) => {
-              const movie = heroMovies[index];
-              currentHeroSlug = movie.slug || 'bai-hoc-dang-doi';
-              const imgUrl = movie.bannerUrl || movie.posterUrl || '';
-              
-              // Cross-fade backgrounds
-              if (activeBg === 1) {
-                bg2.style.backgroundImage = `url('${imgUrl}')`;
-                bg2.style.opacity = '1';
-                bg1.style.opacity = '0';
-                activeBg = 2;
-              } else {
-                bg1.style.backgroundImage = `url('${imgUrl}')`;
-                bg1.style.opacity = '1';
-                bg2.style.opacity = '0';
-                activeBg = 1;
-              }
-
-              // Transition content
-              heroContent.style.opacity = '0';
-              heroContent.style.transform = 'translateY(10px)';
-
-              // Update left/right arrows visibility/interactivity
-              if (heroSlideLeft) {
-                if (index === 0) {
-                  heroSlideLeft.classList.add('opacity-0', 'pointer-events-none');
-                  heroSlideLeft.classList.remove('opacity-100');
-                } else {
-                  heroSlideLeft.classList.remove('opacity-0', 'pointer-events-none');
-                  heroSlideLeft.classList.add('opacity-100');
-                }
-              }
-
-              if (heroSlideRight) {
-                if (index === heroMovies.length - 1) {
-                  heroSlideRight.classList.add('opacity-0', 'pointer-events-none');
-                  heroSlideRight.classList.remove('opacity-100');
-                } else {
-                  heroSlideRight.classList.remove('opacity-0', 'pointer-events-none');
-                  heroSlideRight.classList.add('opacity-100');
-                }
-              }
-
-              // Update indicator buttons active state
-              const buttons = heroIndicators?.querySelectorAll('.hero-indicator-btn');
-              if (buttons) {
-                buttons.forEach((btn, idx) => {
-                  if (idx === index) {
-                    btn.classList.add('border-primary', 'shadow-[0_0_15px_rgba(124,58,237,0.6)]', 'scale-105', 'brightness-110', 'opacity-100');
-                    btn.classList.remove('border-white/10', 'opacity-60');
-                    const overlay = btn.querySelector('.btn-overlay');
-                    if (overlay) overlay.classList.add('bg-black/0');
-                    if (overlay) overlay.classList.remove('bg-black/40');
-                  } else {
-                    btn.classList.remove('border-primary', 'shadow-[0_0_15px_rgba(124,58,237,0.6)]', 'scale-105', 'brightness-110', 'opacity-100');
-                    btn.classList.add('border-white/10', 'opacity-60');
-                    const overlay = btn.querySelector('.btn-overlay');
-                    if (overlay) overlay.classList.remove('bg-black/0');
-                    if (overlay) overlay.classList.add('bg-black/40');
-                  }
-                });
-              }
-
-              setTimeout(() => {
-                // Update badges
-                if (heroImdb) {
-                  const score = movie.imdbScore ? movie.imdbScore.toFixed(1) : '8.0';
-                  heroImdb.textContent = `${score} IMDb`;
-                }
-                if (heroYear) heroYear.textContent = movie.releaseYear || '2024';
-                if (heroType) {
-                  const typeText = movie.type === 'movie' ? 'Phim Lẻ' : movie.type === 'hoathinh' ? 'Hoạt Hình' : 'Phim Bộ';
-                  heroType.textContent = typeText;
-                }
-
-                // Update text
-                heroTitle.textContent = movie.title;
-                heroDesc.textContent = movie.description || 'Không có mô tả cho phim này.';
-
-                // Update play link
-                heroPlayLink.href = `/phim/${movie.slug}`;
-
-                // Fade content back in
-                heroContent.style.opacity = '1';
-                heroContent.style.transform = 'translateY(0)';
-
-                // Update playlist button state
-                updateHeroPlaylistBtn();
-              }, 400);
-            };
-
-            // Render indicator buttons
-            const renderIndicators = () => {
-              if (!heroIndicators) return;
-              if (heroMovies.length <= 1) {
-                heroIndicators.classList.add('hidden');
-                return;
-              }
-              heroIndicators.innerHTML = heroMovies.map((movie, index) => {
-                const imgUrl = movie.bannerUrl || movie.posterUrl || '';
-                return `
-                  <button data-index="${index}" class="hero-indicator-btn relative w-24 h-14 rounded-xl overflow-hidden border-2 border-white/10 hover:border-white/40 transition-all duration-300 shadow-md hover:shadow-lg shrink-0 cursor-pointer transform hover:-translate-y-0.5" data-txatooltip="${movie.title}">
-                    <img src="${imgUrl}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-                    <div class="btn-overlay absolute inset-0 bg-black/40 hover:bg-black/10 transition-colors duration-300"></div>
-                  </button>
-                `;
-              }).join('');
-
-              // Add click events to indicators
-              const buttons = heroIndicators.querySelectorAll('.hero-indicator-btn');
-              buttons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                  const targetIndex = parseInt(btn.getAttribute('data-index'));
-                  if (!isNaN(targetIndex)) {
-                    currentHeroIndex = targetIndex;
-                    updateHero(currentHeroIndex);
-                    resetHeroInterval();
-                  }
-                });
-              });
-            };
-
-            // Setup navigation arrows
-            if (heroSlideLeft) {
-              heroSlideLeft.addEventListener('click', () => {
-                if (currentHeroIndex > 0) {
-                  currentHeroIndex--;
-                  updateHero(currentHeroIndex);
-                  resetHeroInterval();
-                }
-              });
-            }
-
-            if (heroSlideRight) {
-              heroSlideRight.addEventListener('click', () => {
-                if (currentHeroIndex < heroMovies.length - 1) {
-                  currentHeroIndex++;
-                  updateHero(currentHeroIndex);
-                  resetHeroInterval();
-                }
-              });
-            }
-
-            const startHeroInterval = () => {
-              if (heroMovies.length > 1) {
-                heroIntervalId = setInterval(() => {
-                  currentHeroIndex = (currentHeroIndex + 1) % heroMovies.length;
-                  updateHero(currentHeroIndex);
-                }, 7000);
-              }
-            };
-
-            const resetHeroInterval = () => {
-              if (heroIntervalId) {
-                clearInterval(heroIntervalId);
-              }
-              startHeroInterval();
-            };
-
-            // Render indicators on load
-            renderIndicators();
-
-            // Initialize first hero movie
-            updateHero(currentHeroIndex);
-
-            // Start cycle
-            startHeroInterval();
-          } else if (combinedMovies.length === 0 && heroTitle && heroDesc && heroPlayLink) {
-            // Empty state fallback
-            heroTitle.textContent = 'Chào Mừng Đến Với DongMePhim';
-            heroDesc.textContent = 'Trải nghiệm điện ảnh đỉnh cao. Hãy tìm kiếm phim hoặc cào dữ liệu phim từ kho lưu trữ để bắt đầu thưởng thức phim ngay bây giờ!';
-            heroPlayLink.style.display = 'none';
-            if (heroImdb) heroImdb.style.display = 'none';
-            if (heroYear) heroYear.style.display = 'none';
-            if (heroType) heroType.style.display = 'none';
-             if (bg1) {
-               bg1.style.backgroundImage = "url('/logo-icon.gif')";
-               bg1.style.backgroundSize = "contain";
-               bg1.style.backgroundRepeat = "no-repeat";
-               bg1.style.backgroundPosition = "center";
-               bg1.style.opacity = '0.15';
-             }
-          }
-
-        } catch (e) {
-          console.error('Error during client-side hydration:', e);
-        }
-      });
-    </script>
     <!-- Phim Âu Mỹ Mới -->
-    <section>
-      <div class="flex justify-between items-end mb-6">
-        <div>
-          <h2 class="font-headline-lg text-headline-lg text-primary flex items-center gap-2">
-            Phim Âu Mỹ Mới
-            <span class="material-symbols-outlined">public</span>
+    <section class="lazy-section" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my">
+      <div class="flex flex-col md:flex-row gap-6 items-stretch">
+        <!-- Mobile Section Header (visible on mobile only) -->
+        <div class="flex md:hidden justify-between items-center w-full mb-1">
+          <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">US-UK</span> mới
           </h2>
-          <p class="text-on-surface-variant font-body-main mt-1">Bom tấn Hollywood và những series kịch tính</p>
-        </div>
-        <a class="text-primary font-label-caps tracking-wider hover:underline hover:text-white transition-colors" href="#">Xem tất cả</a>
-      </div>
-      <div id="western-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-gutter">
-        {westernMovies.map((movie: any) => (
-          <a href={`/phim/${movie.slug}`} class={`group relative aspect-[16/9] rounded-2xl overflow-hidden glass-card border-transparent border-2 movie-card-hover transition-all duration-500 shadow-xl bg-surface-card cursor-pointer ${movie.isHiddenLg ? 'hidden lg:block' : ''}`}>
-            <img class="w-full h-full object-cover" loading="lazy" src={movie.poster} alt={movie.title} />
-            {movie.isPremium && <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>}
-            
-            {movie.isPremium && (
-              <div class="absolute top-4 right-4">
-                <span class="premium-button text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-lg uppercase tracking-wider">PREMIUM</span>
-              </div>
-            )}
-
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100">
-              <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/90 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-2xl shadow-primary/30">
-                <span class="material-symbols-outlined text-3xl ml-1" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-              </div>
-            </div>
-
-            <div class="absolute bottom-0 left-0 p-6 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-              <h4 class="font-headline-lg text-2xl mb-1 text-white group-hover:text-primary transition-colors">{movie.title}</h4>
-              
-              {movie.description ? (
-                <p class="text-sm text-on-surface-variant line-clamp-1">{movie.description}</p>
-              ) : (
-                <div class="flex gap-4 text-sm text-on-surface-variant">
-                  {movie.duration && <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">schedule</span> {movie.duration}</span>}
-                  {movie.rating && <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">star</span> {movie.rating}</span>}
-                  {movie.quality && <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">hd</span> {movie.quality}</span>}
-                  {movie.season && <span class="flex items-center gap-1 font-label-caps"><span class="material-symbols-outlined text-sm">movie</span> {movie.season}</span>}
-                </div>
-              )}
-            </div>
+          <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/au-my">
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
           </a>
-        ))}
+        </div>
+        
+        <!-- Desktop Left Header Column (hidden on mobile) -->
+        <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+          <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+            Phim <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">US-UK</span> <br/>
+            mới
+          </h2>
+          <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/au-my">
+            <span>Xem toàn bộ</span>
+            <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+          </a>
+        </div>
+
+        <!-- Right Slider Content -->
+        <div class="relative flex-1 min-w-0">
+          <div id="western-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+          </div>
+          <!-- Arrow Control -->
+          <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+            <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phim Chiếu Rạp Mới -->
+    <section class="lazy-section" data-endpoint="/api/movies?category=Chiếu Rạp&limit=4" data-grid-id="cinema-grid" data-aspect="aspect-[2/3]">
+      <div class="flex items-center gap-3 mb-6">
+        <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+          Phim Chiếu Rạp Mới
+        </h2>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/the-loai/chieu-rap">
+          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+        </a>
+      </div>
+      <div id="cinema-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter min-h-[280px]">
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
       </div>
     </section>
   </main>
 </MainLayout>
 
+<!-- Script blocks -->
+<script define:vars={{ heroMoviesForClient: heroMovies }}>
+  // Helper function to create movie list items with Netflix-style popover cards
+  function createMovieListItemHTML(movieData, index, type) {
+    const trendColor = index < 3 ? 'emerald' : 'zinc';
+    const trendIcon = index === 0 ? 'trending_up' : index === 2 ? 'trending_up' : index === 3 ? 'trending_down' : 'remove';
+    
+    const originalTitle = movieData.originalTitle || '';
+    const imdbScore = movieData.imdbScore ? movieData.imdbScore.toFixed(1) : '8.0';
+    const ageRating = movieData.ageRating || 'T13';
+    const releaseYear = movieData.releaseYear || 2024;
+    const seasons = movieData.seasons || 'Phần 1';
+    const quality = movieData.quality || 'FHD';
+    const lang = movieData.lang || 'Vietsub';
+    const genres = movieData.genres || [];
+    
+    const genresHTML = genres.map(g => `<span>${g}</span>`).join('<span class="text-zinc-600">•</span>');
+    
+    return `
+      <a href="/phim/${movieData.slug}" class="relative group flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer w-full">
+        <span class="text-sm font-black text-zinc-600 group-hover:text-primary transition-colors w-4 font-outfit">${index + 1}.</span>
+        <span class="material-symbols-outlined text-${trendColor}-400 text-sm font-bold w-4">${trendIcon}</span>
+        <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
+          <img src="${movieData.posterUrl || '/favicon.png'}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+        </div>
+        <span class="text-xs font-bold text-zinc-300 group-hover:text-white transition-colors line-clamp-1 flex-1 font-outfit">${movieData.title}</span>
+        
+        <!-- Netflix-style Popover Card (visible on hover) -->
+        <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+          <div class="relative w-full aspect-video bg-black/40">
+            <img src="${movieData.bannerUrl || movieData.posterUrl || '/favicon.png'}" alt="${movieData.title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+            <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+            <div class="absolute top-3 left-3 flex gap-1">
+              <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
+              <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">${lang}</span>
+            </div>
+          </div>
+          <div class="p-4 space-y-3.5 text-left whitespace-normal">
+            <div>
+              <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">${movieData.title}</h4>
+              ${originalTitle ? `<p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">${originalTitle}</p>` : ''}
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                Xem ngay
+              </span>
+              <span class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                <span class="material-symbols-outlined text-sm">info</span>
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+              <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${imdbScore}</span>
+              <span class="border border-zinc-500 text-zinc-300 px-1.5 py-0.5 rounded text-[9px] font-bold">${ageRating}</span>
+              <span>${releaseYear}</span>
+              <span>${seasons}</span>
+            </div>
+            ${genresHTML ? `<div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">${genresHTML}</div>` : ''}
+          </div>
+        </div>
+      </a>
+    `;
+  }
+
+  // Helper function to create carousel comment cards
+  function createCarouselCommentCardHTML(comment) {
+    const initial = (comment.author || 'T').substring(0, 2).toUpperCase();
+    let roleBadge = 'Thành viên';
+    let badgeColor = 'emerald-500';
+    let adminTag = '';
+    
+    const lowerAuthor = (comment.author || '').toLowerCase();
+    if (lowerAuthor.includes('cô 3 rổ') || lowerAuthor.includes('admin') || lowerAuthor.includes('hoài lê') || lowerAuthor.includes('mod') || lowerAuthor.includes('ad')) {
+      roleBadge = 'Người kiểm duyệt';
+      badgeColor = 'pink-500';
+      adminTag = `<span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold tracking-widest uppercase mr-1">Admin</span>`;
+    } else if (lowerAuthor.includes('nam') || lowerAuthor.includes('thư') || lowerAuthor.includes('linh') || lowerAuthor.includes('tiểu')) {
+      badgeColor = 'amber-500';
+    } else if (lowerAuthor.charCodeAt(0) % 2 === 0) {
+      badgeColor = 'indigo-500';
+    } else {
+      badgeColor = 'teal-500';
+    }
+
+    const views = comment.views !== undefined ? comment.views : Math.floor(Math.random() * 150) + 10;
+
+    let authorTag = '';
+    const userGender = comment.gender || 'other';
+    if (userGender === 'male') {
+      authorTag = `<span class="text-blue-400 font-bold ml-1 text-[10px]" title="Nam">♂</span>`;
+    } else if (userGender === 'female') {
+      authorTag = `<span class="text-rose-400 font-bold ml-1 text-[10px]" title="Nữ">♀</span>`;
+    } else {
+      authorTag = `<span class="text-primary font-bold ml-1 text-xs" title="Khác">∞</span>`;
+    }
+
+    return `
+      <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
+        <div class="flex justify-between items-start gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-full bg-${badgeColor} flex items-center justify-center text-white font-bold text-xs">
+              ${initial}
+            </div>
+            <div>
+              <div class="flex items-center gap-0.5">
+                ${adminTag}
+                <span class="text-xs font-bold text-white">${comment.author}</span>
+                ${authorTag}
+              </div>
+              <span class="text-[9px] text-zinc-500">${roleBadge}</span>
+            </div>
+          </div>
+          <a href="/phim/${comment.movieSlug}" class="w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke shrink-0 block hover:scale-105 transition-transform bg-zinc-900 shadow-md">
+            <img src="${comment.moviePoster || '/favicon.png'}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+          </a>
+        </div>
+        <p class="text-xs text-zinc-300 italic line-clamp-3 mt-3 font-body-main">"${comment.content}"</p>
+        <div class="flex items-center gap-4 mt-4 pt-3 border-t border-glass-stroke/30 text-[10px] text-zinc-500 font-outfit">
+          <span class="flex items-center gap-1 cursor-pointer hover:text-white transition-colors"><span class="material-symbols-outlined text-[14px]">thumb_up</span> ${comment.likes || 0}</span>
+          <span class="flex items-center gap-1 cursor-pointer hover:text-white transition-colors"><span class="material-symbols-outlined text-[14px]">thumb_down</span> 0</span>
+          <span class="flex items-center gap-1 cursor-pointer hover:text-white transition-colors"><span class="material-symbols-outlined text-[14px]">chat_bubble</span> ${comment.replies ? comment.replies.length : 0}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Helper function to create sidebar comment rows
+  function createSidebarCommentRowHTML(comment) {
+    const initial = (comment.author || 'T').substring(0, 1).toUpperCase();
+    let roleBadge = '';
+    let badgeColor = 'zinc-700';
+    
+    const lowerAuthor = (comment.author || '').toLowerCase();
+    if (lowerAuthor.includes('cô 3 rổ') || lowerAuthor.includes('admin') || lowerAuthor.includes('hoài lê') || lowerAuthor.includes('mod') || lowerAuthor.includes('ad')) {
+      roleBadge = `<span class="text-[10px] text-primary" data-txatooltip="ADMIN">👑</span>`;
+      badgeColor = 'pink-500';
+    } else if (lowerAuthor.includes('nam') || lowerAuthor.includes('thư') || lowerAuthor.includes('linh') || lowerAuthor.includes('tiểu')) {
+      badgeColor = 'amber-500';
+    } else if (lowerAuthor.charCodeAt(0) % 2 === 0) {
+      badgeColor = 'indigo-500';
+    } else {
+      badgeColor = 'teal-500';
+    }
+
+    return `
+      <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300">
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 rounded-full bg-${badgeColor} text-white font-bold text-[9px] flex items-center justify-center font-outfit">${initial}</div>
+          <span class="text-xs font-bold text-zinc-300">${comment.author}</span>
+          ${roleBadge}
+        </div>
+        <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"${comment.content}"</p>
+        <a href="/phim/${comment.movieSlug}" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
+          <span class="material-symbols-outlined text-[10px]">play_circle</span> ${comment.movieTitle}
+        </a>
+      </div>
+    `;
+  }
+
+  // Helper function to create movie cards dynamically
+  function createMovieCardHTML(movie, aspect = "aspect-[2/3]") {
+    const title = movie.title || '';
+    const slug = movie.slug || '';
+    const poster = movie.posterUrl || movie.poster || '';
+    const quality = movie.quality || 'FHD';
+    const lang = movie.lang || 'Vietsub';
+    const originalTitle = movie.originalTitle || movie.origin_name || '';
+    const year = movie.releaseYear || '';
+    const status = movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu';
+    
+    let typeBadgeHTML = '';
+    if (movie.type === 'series' && movie.episodeCurrent) {
+      let cur = (movie.episodeCurrent || '1').trim().replace(/^[tT]ập\s+/, '');
+      if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
+        cur = 'Full';
+      } else if (movie.episodeTotal) {
+        let tot = movie.episodeTotal.trim().replace(/^[tT]ập\s+/, '');
+        cur = `Tập ${cur}/${tot}`;
+      } else {
+        cur = `Tập ${cur}`;
+      }
+      typeBadgeHTML = `
+        <div class="absolute top-2 left-2 z-20">
+          <span class="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm font-outfit">
+            ${cur}
+          </span>
+        </div>
+      `;
+    }
+
+    const getLangBadge = (lang) => {
+      if (!lang) return 'P.Đề';
+      const lower = lang.toLowerCase();
+      if (lower.includes('thuyết minh') && (lower.includes('vietsub') || lower.includes('phụ đề'))) return 'P.Đề + T.Minh';
+      if (lower.includes('thuyết minh') || lower.includes('t.minh') || lower.includes('tm')) return 'T.Minh';
+      if (lower.includes('lồng tiếng') || lower.includes('lt')) return 'L.Tiếng';
+      return 'P.Đề';
+    };
+
+    const genresHTML = Array.isArray(movie.genres) ? movie.genres.map(g => `<span>${g}</span>`).join('<span class="text-zinc-600">•</span>') : '';
+
+    return `
+      <div class="relative group w-full">
+        <a href="/phim/${slug}" class="relative block w-full ${aspect} rounded-xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer">
+          <img src="${poster}" alt="${title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='/favicon.png'" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity"></div>
+          
+          ${quality === '4K' ? `
+            <div class="absolute top-2 right-2 z-20">
+              <span class="bg-amber-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm tracking-wider font-outfit">4K</span>
+            </div>
+          ` : ''}
+
+          ${typeBadgeHTML}
+          
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
+              <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+            </div>
+          </div>
+          
+          <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
+            <span class="bg-[#141416]/80 text-zinc-300 text-[8px] font-bold px-2.5 py-0.5 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit">
+              ${getLangBadge(lang)}
+            </span>
+          </div>
+        </a>
+
+        <div class="mt-2.5 px-1 space-y-0.5 text-center">
+          <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip="${title}">
+            ${title}
+          </h3>
+          <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip="${originalTitle}">
+            ${originalTitle || title}
+          </p>
+        </div>
+
+        <!-- Hover Popover details card (Netflix style, desktop only) -->
+        <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+          <div class="relative w-full aspect-video bg-black/40">
+            <img src="${movie.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+            <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+            <div class="absolute top-3 left-3 flex gap-1">
+              <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
+              <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">${getLangBadge(lang)}</span>
+            </div>
+          </div>
+          <div class="p-4 space-y-3.5 text-left whitespace-normal">
+            <div>
+              <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">${title}</h4>
+              ${originalTitle ? `<p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">${originalTitle}</p>` : ''}
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="/xem/${slug}?ep=tap-1" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                Xem ngay
+              </a>
+              <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
+                <span class="material-symbols-outlined text-sm">favorite</span>
+              </button>
+              <a href="/phim/${slug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                <span class="material-symbols-outlined text-sm">info</span>
+              </a>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+              <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${(movie.imdbScore || 8.0).toFixed(1)}</span>
+              <span>${year || 2024}</span>
+              <span>${status}</span>
+            </div>
+            ${genresHTML ? `<div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">${genresHTML}</div>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Helper function to create movie slider cards with 16:9 aspect ratio and bottom-left badges
+  function createMovieSliderCardHTML(movie) {
+    const title = movie.title || '';
+    const slug = movie.slug || '';
+    const poster = movie.posterUrl || movie.poster || '';
+    const quality = movie.quality || 'FHD';
+    const lang = movie.lang || 'Vietsub';
+    const originalTitle = movie.originalTitle || movie.origin_name || '';
+    
+    // Format label badges
+    let badgesHTML = '';
+    const cleanLang = lang.toLowerCase();
+    let label = 'PĐ';
+    let labelClass = 'bg-zinc-800/80 border border-white/10';
+    if (cleanLang.includes('thuyết minh') || cleanLang.includes('tm')) {
+      label = 'TM';
+      labelClass = 'bg-blue-600/80 border border-blue-500/20';
+    } else if (cleanLang.includes('lồng tiếng') || cleanLang.includes('lt')) {
+      label = 'LT';
+      labelClass = 'bg-pink-600/80 border border-pink-500/20';
+    }
+    
+    let epLabel = '';
+    if (movie.episodeCurrent) {
+      let cur = (movie.episodeCurrent || '1').trim().replace(/^[tT]ập\s+/, '');
+      if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
+        epLabel = 'Full';
+      } else {
+        epLabel = `Tập ${cur}`;
+      }
+    }
+    
+    badgesHTML = `
+      <div class="absolute bottom-2 left-2 z-20 flex gap-1 font-outfit select-none pointer-events-none">
+        <span class="${labelClass} text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm">${label}</span>
+        ${epLabel ? `<span class="bg-black/60 text-white text-[8px] font-semibold px-1.5 py-0.5 rounded border border-white/5 backdrop-blur-sm shadow-sm">${epLabel}</span>` : ''}
+      </div>
+    `;
+
+    return `
+      <div class="flex-shrink-0 w-[240px] md:w-[280px] snap-center group">
+        <a href="/phim/${slug}" class="relative block w-full aspect-[16/9] rounded-2xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer">
+          <img src="${poster}" alt="${title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='/favicon.png'" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity"></div>
+          
+          ${badgesHTML}
+          
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
+              <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+            </div>
+          </div>
+        </a>
+
+        <div class="mt-2.5 px-1 space-y-0.5">
+          <h3 class="font-bold text-xs text-white line-clamp-1 group-hover:text-primary transition-colors font-outfit" data-txatooltip="${title}">
+            ${title}
+          </h3>
+          <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip="${originalTitle}">
+            ${originalTitle || title}
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Bind all initialization to 'astro:page-load'
+  document.addEventListener('astro:page-load', async () => {
+    // 1. IntersectionObserver for Scroll-based Lazy Rendering
+    const lazySections = document.querySelectorAll('.lazy-section');
+    
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const section = entry.target;
+            const endpoint = section.getAttribute('data-endpoint');
+            const gridId = section.getAttribute('data-grid-id');
+            const aspect = section.getAttribute('data-aspect') || 'aspect-[2/3]';
+            const layout = section.getAttribute('data-layout');
+            const grid = document.getElementById(gridId);
+            
+            if (endpoint && grid) {
+              fetch(endpoint)
+                .then(res => res.json())
+                .then(result => {
+                  const moviesList = result.data || [];
+                  if (moviesList.length > 0) {
+                    let html = '';
+                    moviesList.forEach((m) => {
+                      if (layout === 'slider') {
+                        html += createMovieSliderCardHTML(m);
+                      } else {
+                        html += createMovieCardHTML(m, aspect);
+                      }
+                    });
+                    grid.innerHTML = html;
+                  } else {
+                    grid.innerHTML = '<p class="text-xs text-zinc-500 py-8 text-center col-span-full font-outfit">Chưa có phim nào trong mục này.</p>';
+                  }
+                })
+                .catch(err => {
+                  console.error('Error fetching lazy section:', err);
+                  grid.innerHTML = '<p class="text-xs text-red-400 py-8 text-center col-span-full font-outfit">Lỗi tải dữ liệu.</p>';
+                });
+            }
+            observer.unobserve(section);
+          }
+        });
+      }, { rootMargin: '100px 0px 400px 0px' });
+      
+      lazySections.forEach(section => observer.observe(section));
+    } else {
+      // Fallback if IntersectionObserver not supported
+      lazySections.forEach(section => {
+        const endpoint = section.getAttribute('data-endpoint');
+        const gridId = section.getAttribute('data-grid-id');
+        const aspect = section.getAttribute('data-aspect') || 'aspect-[2/3]';
+        const layout = section.getAttribute('data-layout');
+        const grid = document.getElementById(gridId);
+        if (endpoint && grid) {
+          fetch(endpoint)
+            .then(res => res.json())
+            .then(result => {
+              const moviesList = result.data || [];
+              let html = '';
+              moviesList.forEach(m => {
+                if (layout === 'slider') {
+                  html += createMovieSliderCardHTML(m);
+                } else {
+                  html += createMovieCardHTML(m, aspect);
+                }
+              });
+              grid.innerHTML = html;
+            });
+        }
+      });
+    }
+
+    // Scroll controls for slider layout sections
+    document.querySelectorAll('.lazy-section[data-layout="slider"]').forEach(section => {
+      const gridId = section.getAttribute('data-grid-id');
+      const grid = document.getElementById(gridId);
+      const nextBtn = section.querySelector('.slider-next-btn');
+      if (grid && nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          grid.scrollBy({ left: grid.clientWidth * 0.85, behavior: 'smooth' });
+        });
+      }
+    });
+
+    // 2. Comments carousel sliding
+    const carousel = document.getElementById('comments-carousel');
+    const slideLeft = document.getElementById('slide-left');
+    const slideRight = document.getElementById('slide-right');
+    
+    slideLeft?.addEventListener('click', () => {
+      carousel?.scrollBy({ left: -296, behavior: 'smooth' });
+    });
+    
+    slideRight?.addEventListener('click', () => {
+      carousel?.scrollBy({ left: 296, behavior: 'smooth' });
+    });
+
+    // 3. Hydration logic
+    try {
+      const combinedMovies = heroMoviesForClient || [];
+      const hasMovies = combinedMovies.length > 0;
+
+      // Helper to map movie slug to details
+      const moviesMap = {};
+      combinedMovies.forEach(m => {
+        if (m.slug) {
+          moviesMap[m.slug] = m;
+        }
+      });
+
+      // Static seed lookup for comment posters
+      const seedMoviesLookup = {
+        'bai-hoc-dang-doi': { title: 'Bài Học Đáng Đời', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLs0cwmsQtUMxz8S1kYIBe2vdzk9wlKrAYAA0SaImKjlJwYFoNlbX5Ezes6Vk4D5W-ucCQ2T9RmBKbr_ZMBabRA9Ttc6dmERubqhLsdx1wunz3brbgXi5rroXOR2ruzik_0pwCF5YxH6Uvl1XXNB5hThMgn1BnmAaijvACGEDvmqkuTyiOamRT4EaIM9cR5bB6VIsLFANxSFbHoSZwiBE2ropgLTIEGcBH_t4b9HchPMwtxA3L-vMixjNaq2' },
+        'hyeri-yeu-dau': { title: 'Hyeri Yêu Dấu', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLuO6KpL4MWKknm8mFvjIZPSY4YBrZyq_71GCcSte_U3eMOYxus5HxfYZ9PigFtZi-oDK15E-Cjzp2hXYfJ_GHzrJJKIlX8Bg1xpXfqfKvSELRjoBCaXdUC5mxRycPk60HvAwDOHGEEPBdvStM3Sb3txVvEs_V-AY30knzPYp-ELQUkk3RmcDcL-CTo2VrZMC43rH48cNSzwsmX3NkMjXHrEVLY7Ay04IIk_wODemFeS2Ng16LSfF5ea7MSh' },
+        'nghe-thuat-lua-doi': { title: 'Nghệ Thuật Lừa Dối', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLvm-KnVg4nBEHswFKKhesNV70CJMm6igqUtinLPPrIJ_4Kcn3TrZB8WxUim06kwLSgvkpoJLz_Fsw1ZsJR_AjlZfOLNewlWmYB0w1kkBq5yAjrC2iFRnKdgYNfPBrDj7MBvwsFGMfQqFraz3DHFBzR74sDJtNikr4oTdppPL4qoa5EUpOjZXDARYm6n8DogRqs8I3whgQpr5Ii6reom2PW6AmEA0tKU235oyiaF_D10hGqcDoafAV6uuyd5' },
+        'bac-thay-giai-hoa': { title: 'Bậc Thầy Giải Hòa', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLsohDUhkIkESPFFcrxCvncMlDGTnF6SKHWfNvxemTj0ETR7_-uvCDT24bGETBUIYD2a9tI-TYDHRm9qyFTPVT2XI8acDiKKsgLkKT80JpCOom3QhHCd8uxHLPbKohufSlTCdZ6TCQXQNA8rrzkHtHEw4qpYA2xz0E6gNoc6Gxa5XpFLQzG9aNy5aM7GOk6dyggEuCGD5wfphNuFaXSvy4ah6VvDCwx1JQHfD-TI_EIYhdllGEZPE6TgFV0K' },
+        'cau-truyen-hinh': { title: 'Cầu Truyền Hình', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLskEpjrTbHRx6Jj3TAoagePHNQcXAyfE57exarNW0uRrctCdcc2Ns3Gccg-Q-sHR-iGafdXbWGBY3VqNGMMuNWRowyO8JZHlFLslh1G5WNrcjJ3y-OsTKgIzQGIYkOO5N88CKrVCPSenE4g8yUwk_MMtWZukOp8Pey1U0z24BjmBKodM448SynZ3QPSKC1mnooHd98SJMI_XxGvi66yl7YdJWaJyz_WDpl2GVANjq5HCB5SoVUfM8sY3Auj' },
+        'one-piece': { title: 'ONE PIECE', posterUrl: 'https://lh3.googleusercontent.com/aida/AP1WRLskEpjrTbHRx6Jj3TAoagePHNQcXAyfE57exarNW0uRrctCdcc2Ns3Gccg-Q-sHR-iGafdXbWGBY3VqNGMMuNWRowyO8JZHlFLslh1G5WNrcjJ3y-OsTKgIzQGIYkOO5N88CKrVCPSenE4g8yUwk_MMtWZukOp8Pey1U0z24BjmBKodM448SynZ3QPSKC1mnooHd98SJMI_XxGvi66yl7YdJWaJyz_WDpl2GVANjq5HCB5SoVUfM8sY3Auj' }
+      };
+
+      // 4. Fetch comments from Supabase API
+      let allComments = [];
+      try {
+        const res = await fetch('/api/comments');
+        if (res.ok) {
+          const result = await res.json();
+          if (result && result.status === 'success' && Array.isArray(result.data)) {
+            allComments = result.data.map(c => {
+              const slug = c.movieSlug || '';
+              const movieObj = moviesMap[slug] || seedMoviesLookup[slug] || { title: slug.replace(/-/g, ' '), posterUrl: '/favicon.png' };
+              return {
+                id: c.id,
+                author: c.author,
+                content: c.content,
+                likes: c.likes || 0,
+                replies: c.replies || [],
+                gender: c.gender || 'other',
+                movieSlug: slug,
+                movieTitle: movieObj.title,
+                moviePoster: movieObj.posterUrl || movieObj.bannerUrl
+              };
+            });
+          }
+        }
+      } catch(e) {
+        console.error('Error fetching comments from API:', e);
+      }
+
+      // 5. Render Carousel Top Bình Luận
+      const carouselContainer = document.getElementById('comments-carousel');
+      if (carouselContainer) {
+        if (allComments.length > 0) {
+          let carouselHtml = '';
+          const top10Comments = allComments.slice(0, 10);
+          top10Comments.forEach(c => {
+            carouselHtml += createCarouselCommentCardHTML(c);
+          });
+          carouselContainer.innerHTML = carouselHtml;
+        } else {
+          carouselContainer.innerHTML = '<p class="text-xs text-zinc-500 py-8 text-center w-full font-outfit">Chưa có bình luận nào.</p>';
+        }
+      }
+
+      // 6. Render Bình Luận Mới sidebar
+      const newCommentsContainer = document.getElementById('binh-luan-moi-list');
+      if (newCommentsContainer) {
+        if (allComments.length > 0) {
+          let sidebarHtml = '';
+          const top5Comments = allComments.slice(0, 5);
+          top5Comments.forEach(c => {
+            sidebarHtml += createSidebarCommentRowHTML(c);
+          });
+          newCommentsContainer.innerHTML = sidebarHtml;
+        } else {
+          newCommentsContainer.innerHTML = '<p class="text-xs text-zinc-500 py-4 text-center font-outfit">Chưa có bình luận nào.</p>';
+        }
+      }
+
+      // 7. Hero Banner Slide Cycle Animation
+      const heroBanner = document.getElementById('hero-banner');
+      const heroContent = document.getElementById('hero-content');
+      const heroImdb = document.getElementById('hero-imdb');
+      const heroYear = document.getElementById('hero-year');
+      const heroType = document.getElementById('hero-type');
+      const heroTitle = document.getElementById('hero-title');
+      const heroDesc = document.getElementById('hero-desc');
+      const heroPlayLink = document.getElementById('hero-play-link');
+      const heroPlaylistBtn = document.getElementById('hero-playlist-btn');
+      const bg1 = document.getElementById('hero-bg-1');
+      const bg2 = document.getElementById('hero-bg-2');
+
+      let currentHeroSlug = firstHero ? firstHero.slug : 'bai-hoc-dang-doi';
+
+      let userPlaylist = [];
+      const username = (window.APP_USER ? window.APP_USER.username : null) || '';
+
+      async function loadWatchlist() {
+        if (username) {
+          try {
+            const res = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}`);
+            if (res.ok) {
+              const result = await res.json();
+              userPlaylist = result.data?.playlist || [];
+            }
+          } catch(e) {
+            console.error('Error loading watchlist:', e);
+          }
+        } else {
+          userPlaylist = JSON.parse(localStorage.getItem('tplaylist') || '[]');
+        }
+        updateHeroPlaylistBtn();
+      }
+
+      const updateHeroPlaylistBtn = () => {
+        const playlistBtn = document.getElementById('hero-playlist-btn');
+        const iconAdd = document.getElementById('hero-playlist-icon-add');
+        const iconAdded = document.getElementById('hero-playlist-icon-added');
+        const playlistText = document.getElementById('hero-playlist-text');
+        const tooltip = playlistBtn?.querySelector('.txatooltip');
+        if (!playlistBtn || !iconAdd || !iconAdded || !playlistText) return;
+
+        const isInPlaylist = userPlaylist.includes(currentHeroSlug);
+
+        if (isInPlaylist) {
+          iconAdd.classList.add('hidden');
+          iconAdded.classList.remove('hidden');
+          playlistText.textContent = 'Đã lưu';
+          playlistBtn.classList.add('bg-primary/20', 'border-primary');
+          if (tooltip) tooltip.textContent = 'Xóa khỏi DS phát';
+        } else {
+          iconAdd.classList.remove('hidden');
+          iconAdded.classList.add('hidden');
+          playlistText.textContent = 'Danh sách';
+          playlistBtn.classList.remove('bg-primary/20', 'border-primary');
+          if (tooltip) tooltip.textContent = 'Thêm vào DS phát';
+        }
+      };
+      window.updateHeroPlaylistBtn = updateHeroPlaylistBtn;
+
+      const playlistBtn = document.getElementById('hero-playlist-btn');
+      if (playlistBtn) {
+        playlistBtn.addEventListener('click', async () => {
+          const isLoggedIn = document.cookie.includes('txa_gate_passed');
+          if (!isLoggedIn) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập để thực hiện chức năng này!', 'error');
+            setTimeout(() => {
+              if (window.openLoginModal) window.openLoginModal();
+            }, 800);
+            return;
+          }
+
+          const isInPlaylist = userPlaylist.includes(currentHeroSlug);
+          if (username) {
+            try {
+              if (isInPlaylist) {
+                const res = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}&slug=${encodeURIComponent(currentHeroSlug)}&type=playlist`, {
+                  method: 'DELETE'
+                });
+                if (res.ok) {
+                  userPlaylist = userPlaylist.filter(slug => slug !== currentHeroSlug);
+                  if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
+                }
+              } else {
+                const res = await fetch('/api/user/watchlist', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    username: username,
+                    slug: currentHeroSlug,
+                    type: 'playlist'
+                  })
+                });
+                if (res.ok) {
+                  userPlaylist.push(currentHeroSlug);
+                  if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
+                }
+              }
+            } catch(e) {
+              console.error('Error updating watchlist:', e);
+            }
+          } else {
+            if (isInPlaylist) {
+              userPlaylist = userPlaylist.filter(slug => slug !== currentHeroSlug);
+              if (window.showGlobalToast) window.showGlobalToast('Đã gỡ phim khỏi Danh sách phát!', 'success');
+            } else {
+              userPlaylist.push(currentHeroSlug);
+              if (window.showGlobalToast) window.showGlobalToast('Đã lưu phim vào Danh sách phát!', 'success');
+            }
+            localStorage.setItem('tplaylist', JSON.stringify(userPlaylist));
+          }
+          updateHeroPlaylistBtn();
+        });
+      }
+
+      // Initial load
+      loadWatchlist();
+
+      if (combinedMovies.length > 0 && heroBanner && heroContent && heroTitle && heroDesc && heroPlayLink && bg1 && bg2) {
+        let apiRegistry = {};
+        try {
+          const registryStr = localStorage.getItem('txa_episodes_config');
+          if (registryStr) apiRegistry = JSON.parse(registryStr);
+        } catch(e) {}
+
+        const pinnedList = combinedMovies.filter(m => {
+          const isPinnedInLocal = m.pinned === true || m.pinned === 'true';
+          const isPinnedInApi = apiRegistry[m.slug] && (apiRegistry[m.slug].pinned === true || apiRegistry[m.slug].pinned === 'true');
+          return isPinnedInLocal || isPinnedInApi;
+        });
+
+        const heroMovies = pinnedList.length > 0 
+          ? pinnedList
+          : combinedMovies.slice(0, 5);
+
+        let currentHeroIndex = 0;
+        let activeBg = 1;
+        let heroIntervalId = null;
+
+        const heroSlideLeft = document.getElementById('hero-slide-left');
+        const heroSlideRight = document.getElementById('hero-slide-right');
+        const heroIndicators = document.getElementById('hero-indicators');
+
+        const updateHero = (index) => {
+          const movie = heroMovies[index];
+          currentHeroSlug = movie.slug || 'bai-hoc-dang-doi';
+          const imgUrl = movie.bannerUrl || movie.posterUrl || '';
+          
+          if (activeBg === 1) {
+            bg2.style.backgroundImage = `url('${imgUrl}')`;
+            bg2.style.opacity = '1';
+            bg1.style.opacity = '0';
+            activeBg = 2;
+          } else {
+            bg1.style.backgroundImage = `url('${imgUrl}')`;
+            bg1.style.opacity = '1';
+            bg2.style.opacity = '0';
+            activeBg = 1;
+          }
+
+          heroContent.style.opacity = '0';
+          heroContent.style.transform = 'translateY(10px)';
+
+          if (heroSlideLeft) {
+            if (index === 0) {
+              heroSlideLeft.classList.add('opacity-0', 'pointer-events-none');
+              heroSlideLeft.classList.remove('opacity-100');
+            } else {
+              heroSlideLeft.classList.remove('opacity-0', 'pointer-events-none');
+              heroSlideLeft.classList.add('opacity-100');
+            }
+          }
+
+          if (heroSlideRight) {
+            if (index === heroMovies.length - 1) {
+              heroSlideRight.classList.add('opacity-0', 'pointer-events-none');
+              heroSlideRight.classList.remove('opacity-100');
+            } else {
+              heroSlideRight.classList.remove('opacity-0', 'pointer-events-none');
+              heroSlideRight.classList.add('opacity-100');
+            }
+          }
+
+          const buttons = heroIndicators?.querySelectorAll('.hero-indicator-btn');
+          if (buttons) {
+            buttons.forEach((btn, idx) => {
+              if (idx === index) {
+                btn.classList.add('border-primary', 'shadow-[0_0_15px_rgba(124,58,237,0.6)]', 'scale-105', 'brightness-110', 'opacity-100');
+                btn.classList.remove('border-white/10', 'opacity-60');
+                const overlay = btn.querySelector('.btn-overlay');
+                if (overlay) overlay.classList.add('bg-black/0');
+                if (overlay) overlay.classList.remove('bg-black/40');
+              } else {
+                btn.classList.remove('border-primary', 'shadow-[0_0_15px_rgba(124,58,237,0.6)]', 'scale-105', 'brightness-110', 'opacity-100');
+                btn.classList.add('border-white/10', 'opacity-60');
+                const overlay = btn.querySelector('.btn-overlay');
+                if (overlay) overlay.classList.remove('bg-black/0');
+                if (overlay) overlay.classList.add('bg-black/40');
+              }
+            });
+          }
+
+          setTimeout(() => {
+            if (heroImdb) {
+              const score = movie.imdbScore ? movie.imdbScore.toFixed(1) : '8.0';
+              heroImdb.textContent = `${score} IMDb`;
+            }
+            if (heroYear) heroYear.textContent = movie.releaseYear || '2024';
+            if (heroType) {
+              const typeText = movie.type === 'movie' ? 'Phim Lẻ' : movie.type === 'hoathinh' ? 'Hoạt Hình' : 'Phim Bộ';
+              heroType.textContent = typeText;
+            }
+
+            heroTitle.textContent = movie.title;
+            heroDesc.textContent = movie.description || 'Không có mô tả cho phim này.';
+            heroPlayLink.href = `/phim/${movie.slug}`;
+
+            heroContent.style.opacity = '1';
+            heroContent.style.transform = 'translateY(0)';
+
+            updateHeroPlaylistBtn();
+          }, 400);
+        };
+
+        const renderIndicators = () => {
+          if (!heroIndicators) return;
+          if (heroMovies.length <= 1) {
+            heroIndicators.classList.add('hidden');
+            return;
+          }
+          heroIndicators.innerHTML = heroMovies.map((movie, index) => {
+            const imgUrl = movie.bannerUrl || movie.posterUrl || '';
+            return `
+              <button data-index="${index}" class="hero-indicator-btn relative w-24 h-14 rounded-xl overflow-hidden border-2 border-white/10 hover:border-white/40 transition-all duration-300 shadow-md hover:shadow-lg shrink-0 cursor-pointer transform hover:-translate-y-0.5" data-txatooltip="${movie.title}">
+                <img src="${imgUrl}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                <div class="btn-overlay absolute inset-0 bg-black/40 hover:bg-black/10 transition-colors duration-300"></div>
+              </button>
+            `;
+          }).join('');
+
+          const buttons = heroIndicators.querySelectorAll('.hero-indicator-btn');
+          buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+              const targetIndex = parseInt(btn.getAttribute('data-index'));
+              if (!isNaN(targetIndex)) {
+                currentHeroIndex = targetIndex;
+                updateHero(currentHeroIndex);
+                resetHeroInterval();
+              }
+            });
+          });
+        };
+
+        if (heroSlideLeft) {
+          heroSlideLeft.addEventListener('click', () => {
+            if (currentHeroIndex > 0) {
+              currentHeroIndex--;
+              updateHero(currentHeroIndex);
+              resetHeroInterval();
+            }
+          });
+        }
+
+        if (heroSlideRight) {
+          heroSlideRight.addEventListener('click', () => {
+            if (currentHeroIndex < heroMovies.length - 1) {
+              currentHeroIndex++;
+              updateHero(currentHeroIndex);
+              resetHeroInterval();
+            }
+          });
+        }
+
+        const startHeroInterval = () => {
+          if (heroMovies.length > 1) {
+            heroIntervalId = setInterval(() => {
+              currentHeroIndex = (currentHeroIndex + 1) % heroMovies.length;
+              updateHero(currentHeroIndex);
+            }, 7000);
+          }
+        };
+
+        const resetHeroInterval = () => {
+          if (heroIntervalId) {
+            clearInterval(heroIntervalId);
+          }
+          startHeroInterval();
+        };
+
+        renderIndicators();
+        updateHero(currentHeroIndex);
+        startHeroInterval();
+      } else if (combinedMovies.length === 0 && heroTitle && heroDesc && heroPlayLink) {
+        heroTitle.textContent = 'Chào Mừng Đến Với DongMePhim';
+        heroDesc.textContent = 'Trải nghiệm điện ảnh đỉnh cao. Hãy tìm kiếm phim hoặc cào dữ liệu phim từ kho lưu trữ để bắt đầu thưởng thức phim ngay bây giờ!';
+        heroPlayLink.style.display = 'none';
+        if (heroPlaylistBtn) heroPlaylistBtn.style.display = 'none';
+        if (heroImdb) heroImdb.style.display = 'none';
+        if (heroYear) heroYear.style.display = 'none';
+        if (heroType) heroType.style.display = 'none';
+        if (bg1) {
+          bg1.style.backgroundImage = "url('/logo-icon.gif')";
+          bg1.style.backgroundSize = "contain";
+          bg1.style.backgroundRepeat = "no-repeat";
+          bg1.style.backgroundPosition = "center";
+          bg1.style.opacity = '0.15';
+        }
+      }
+
+    } catch (e) {
+      console.error('Error during client-side hydration:', e);
+    }
+  });
+</script>

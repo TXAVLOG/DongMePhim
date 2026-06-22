@@ -4,6 +4,7 @@ import { MovieService } from '../../services/MovieService';
 import type { Movie } from '../../types/movie';
 import { Button } from '../../components/ui/Button';
 import NotFound from '../../components/ui/NotFound.astro';
+import { supabase } from '../../lib/supabase';
 
 const { slug } = Astro.params;
 
@@ -98,6 +99,55 @@ if (movie) {
 
 // Fetch related movies for the recommendations tab
 const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : [];
+
+// Fetch actor details for this movie if available
+const slugify = (text: string) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+};
+
+let castActors = [];
+if (movie && movie.actors && movie.actors.length > 0) {
+  const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+  if (isSupabase) {
+    try {
+      const { data: dbActors } = await supabase
+        .from('actors')
+        .select('*')
+        .in('name', movie.actors);
+      
+      const dbActorMap = new Map((dbActors || []).map(a => [a.name.toLowerCase().trim(), a]));
+      
+      castActors = movie.actors.map((actorName: string) => {
+        const dbActor = dbActorMap.get(actorName.toLowerCase().trim());
+        return {
+          name: actorName,
+          slug: dbActor?.slug || slugify(actorName),
+          avatarUrl: dbActor?.avatar_url || ''
+        };
+      });
+    } catch (e) {
+      console.error('Error fetching movie cast from Supabase:', e);
+      castActors = movie.actors.map((actorName: string) => ({
+        name: actorName,
+        slug: slugify(actorName),
+        avatarUrl: ''
+      }));
+    }
+  } else {
+    castActors = movie.actors.map((actorName: string) => ({
+      name: actorName,
+      slug: slugify(actorName),
+      avatarUrl: ''
+    }));
+  }
+}
 ---
 
 {movie ? (
@@ -447,17 +497,23 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
 
               <!-- Tab 3: Diễn Viên -->
               <div id="tab-cast" class="detail-tab-panel hidden grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                {movie.actors && movie.actors.length > 0 ? (
-                  movie.actors.map((actor: string) => (
-                    <div class="flex flex-col items-center text-center space-y-2">
-                      <div class="w-14 h-14 rounded-full bg-surface-variant border border-glass-stroke flex items-center justify-center text-xs font-bold text-primary shadow-inner select-none">
-                        {actor.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
-                      </div>
+                {castActors && castActors.length > 0 ? (
+                  castActors.map((actor: any) => (
+                    <a href={`/nghe-si/${actor.slug}`} class="flex flex-col items-center text-center space-y-2 group/cast cursor-pointer">
+                      {actor.avatarUrl ? (
+                        <div class="w-14 h-14 rounded-full overflow-hidden border border-glass-stroke shadow-inner group-hover/cast:border-primary group-hover/cast:scale-105 transition-all">
+                          <img src={actor.avatarUrl} alt={actor.name} class="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div class="w-14 h-14 rounded-full bg-surface-variant border border-glass-stroke flex items-center justify-center text-xs font-bold text-primary shadow-inner select-none group-hover/cast:border-primary group-hover/cast:scale-105 transition-all">
+                          {actor.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                        </div>
+                      )}
                       <div>
-                        <p class="text-xs font-bold text-white truncate max-w-[100px]">{actor}</p>
+                        <p class="text-xs font-bold text-white truncate max-w-[100px] group-hover/cast:text-primary transition-colors">{actor.name}</p>
                         <p class="text-[9px] text-on-surface-variant uppercase tracking-wider font-bold">Diễn viên</p>
                       </div>
-                    </div>
+                    </a>
                   ))
                 ) : (
                   <p class="text-xs text-on-surface-variant col-span-full py-4 text-center">Chưa cập nhật thông tin diễn viên.</p>
