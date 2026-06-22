@@ -1038,13 +1038,6 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             // Live update inventory list
             await loadExistingMoviesDict();
             renderCrawledList();
-
-            success++;
-            document.getElementById('statSuccess').textContent = success;
-            addLog(`✓ Cào thành công: "${movieDetailObj.title}" (${movieDetailObj.episodeCurrent})`, 'success');
-            
-            // Live update inventory list
-            renderCrawledList();
           } else {
             throw new Error('Payload API bị lỗi hoặc trống');
           }
