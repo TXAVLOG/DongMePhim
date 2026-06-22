@@ -2153,9 +2153,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                             <img src={thumb} alt={ep.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                             
                             {/* Hover Play Button Overlay */}
-                            <div className="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <div className="bg-amber-400 text-slate-950 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-200">
-                                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="w-10 h-10 rounded-full border-2 border-white bg-black/35 flex items-center justify-center text-white shadow-lg transform scale-90 group-hover:scale-100 transition-all duration-200">
+                                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
                               </div>
                             </div>
 
@@ -2166,7 +2166,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                               </span>
                             )}
                           </div>
-                          <span className={`text-[11px] font-bold transition-colors ${isCurrent ? 'text-amber-400' : 'text-zinc-400 group-hover:text-white'}`}>
+                          <span className={`text-[11px] font-bold transition-colors ${isCurrent ? 'text-amber-400' : 'text-zinc-400 group-hover:text-amber-400'}`}>
                             {ep.name}
                           </span>
                         </div>
