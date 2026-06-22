@@ -1639,13 +1639,13 @@ if (movie && movie.actors && movie.actors.length > 0) {
       
       commentsCountEl.textContent = String(comments.length);
       
-      const getPlanByPackageNameOrId = (pkgNameOrId) => {
-        const settings = window.TXA_SITE_SETTINGS || {};
+      const getPlanByPackageNameOrId = (pkgNameOrId: any) => {
+        const settings = (window as any).TXA_SITE_SETTINGS || {};
         const packages = settings.packages || [];
         const normalized = (pkgNameOrId || 'free').toLowerCase().trim();
-        let plan = packages.find(p => p.id.toLowerCase() === normalized);
+        let plan = packages.find((p: any) => p.id.toLowerCase() === normalized);
         if (plan) return plan;
-        plan = packages.find(p => p.title.toLowerCase() === normalized);
+        plan = packages.find((p: any) => p.title.toLowerCase() === normalized);
         if (plan) return plan;
         if (normalized === 'free' || normalized === 'gói free') {
           return { id: 'free', title: 'Gói Free' };

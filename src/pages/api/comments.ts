@@ -94,6 +94,7 @@ export const GET: APIRoute = async ({ request }) => {
           likes: 12,
           dislikes: 0,
           gender: 'male',
+          package: 'Free',
           replies: [
             {
               id: 'seed-reply-1',
@@ -112,6 +113,7 @@ export const GET: APIRoute = async ({ request }) => {
           likes: 8,
           dislikes: 0,
           gender: 'female',
+          package: 'Free',
           replies: [],
           createdAt: new Date(Date.now() - 14400000).toISOString(),
           movieSlug: slug
