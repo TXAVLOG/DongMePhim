@@ -333,8 +333,9 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
   </div>
 
   <script is:inline>
-    // State
-    let activeTab = 'standard'; // 'standard' | 'advanced'
+    document.addEventListener('astro:page-load', () => {
+      // State
+      let activeTab = 'standard'; // 'standard' | 'advanced'
     let standardSubTab = 'url'; // 'url' | 'batch' | 'filter'
     let filterType = 'country'; // 'country' | 'genre'
     let isRunning = false;
@@ -776,7 +777,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           let posterUrl = item.poster_url || item.thumb_url || '';
           if (posterUrl) {
             if (!posterUrl.startsWith('http')) {
-              if (posterUrl.startsWith('uploads/')) {
+              if (posterUrl.startsWith('uploads/') || posterUrl.startsWith('upload/')) {
                 posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
               } else {
                 posterUrl = `${cdnDomain}/uploads/movies/${posterUrl.replace(/^\//, '')}`;
@@ -870,13 +871,21 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       
       let posterUrl = m.poster_url || '';
       if (posterUrl && !posterUrl.startsWith('http')) {
-        const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, '');
-        posterUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+        if (posterUrl.startsWith('uploads/') || posterUrl.startsWith('upload/')) {
+          posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
+        } else {
+          const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, '');
+          posterUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+        }
       }
       let bannerUrl = m.thumb_url || m.poster_url || '';
       if (bannerUrl && !bannerUrl.startsWith('http')) {
-        const cleanPath = bannerUrl.replace(/^\/?uploads\/movies\//, '');
-        bannerUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+        if (bannerUrl.startsWith('uploads/') || bannerUrl.startsWith('upload/')) {
+          bannerUrl = `${cdnDomain}/${bannerUrl.replace(/^\//, '')}`;
+        } else {
+          const cleanPath = bannerUrl.replace(/^\/?uploads\/movies\//, '');
+          bannerUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
+        }
       }
 
       const genres = Array.isArray(m.category) ? m.category.map(c => c.name) : [];
@@ -1284,11 +1293,12 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       }
     });
 
-    // Initial runs
-    (async () => {
-      await loadExistingMoviesDict();
-      renderCrawledList();
-    })();
+      // Initial runs
+      (async () => {
+        await loadExistingMoviesDict();
+        renderCrawledList();
+      })();
+    });
   </script>
 
   <style>
