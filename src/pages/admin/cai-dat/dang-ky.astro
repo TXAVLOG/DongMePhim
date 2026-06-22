@@ -313,11 +313,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
       }
 
       function checkSmtpConfigured() {
-        let current = {};
-        try {
-          const stored = localStorage.getItem('txa_site_settings');
-          current = stored ? JSON.parse(stored) : serverSettings;
-        } catch (e) { current = serverSettings; }
+        const current = serverSettings;
 
         const overlay = document.getElementById('smtp-lock-overlay');
         const isSmtpConfigured = !!(current.smtp?.smtp_host && current.smtp?.smtp_user && current.smtp?.smtp_pass);
@@ -350,12 +346,9 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
 
       // Hydrate form fields client-side
       function hydrateFromLocalStorage() {
-        let stored = null;
-        try {
-          const raw = localStorage.getItem('txa_site_settings');
-          if (raw) stored = JSON.parse(raw);
-        } catch (e) {}
+        const stored = serverSettings;
         if (!stored) {
+
           checkSmtpConfigured();
           toggleRegistrationSubForm();
           toggleEmailVerificationFields();
@@ -365,7 +358,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           if (serverSettings.login?.login_google_enable && serverSettings.login?.login_google_client_id) {
             setTimeout(() => { window.initGoogleGSIAndButton(); }, 100);
           }
-          return;
+                    return;
         }
 
         const s = stored;
@@ -457,11 +450,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
       }
 
       function updateCallbackURIs() {
-        let current = {};
-        try {
-          const stored = localStorage.getItem('txa_site_settings');
-          current = stored ? JSON.parse(stored) : serverSettings;
-        } catch (e) { current = serverSettings; }
+        const current = serverSettings;
         let siteUrl = current.general?.site_url || window.location.origin;
         if (siteUrl.includes('localhost') && !window.location.hostname.includes('localhost')) {
           siteUrl = window.location.origin;
@@ -615,11 +604,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
 
       // Save handler
       document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
-        let current = {};
-        try {
-          const stored = localStorage.getItem('txa_site_settings');
-          current = stored ? JSON.parse(stored) : serverSettings;
-        } catch (e) { current = serverSettings; }
+        const current = serverSettings;
 
         // Token Expiry Validation (180s to 3000s)
         const expiryInput = document.getElementById('user-verification-expiry');
@@ -679,7 +664,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           alert('Lưu cấu hình hệ thống thành công!');
         }
 
-        setTimeout(() => { window.location.reload(); }, 800);
+        
       });
 
       // Google GSI auto-reinit listeners

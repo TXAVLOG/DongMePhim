@@ -66,11 +66,7 @@ let activeTab = 'general';
     (function() {
       // Hydrate form fields client-side
       function hydrateFromLocalStorage() {
-        let stored = null;
-        try {
-          const raw = localStorage.getItem('txa_site_settings');
-          if (raw) stored = JSON.parse(raw);
-        } catch (e) {}
+        const stored = serverSettings;
         if (!stored) return;
 
         const s = stored;
@@ -88,11 +84,7 @@ let activeTab = 'general';
 
       // Save handler
       document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
-        let current = {};
-        try {
-          const stored = localStorage.getItem('txa_site_settings');
-          current = stored ? JSON.parse(stored) : serverSettings;
-        } catch (e) { current = serverSettings; }
+        const current = serverSettings;
 
         const updatedSettings = {
           ...current,
@@ -115,7 +107,7 @@ let activeTab = 'general';
           alert('Lưu cấu hình hệ thống thành công!');
         }
 
-        setTimeout(() => { window.location.reload(); }, 800);
+        
       });
 
       // Init

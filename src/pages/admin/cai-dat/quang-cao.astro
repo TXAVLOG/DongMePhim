@@ -126,11 +126,7 @@ let activeTab = "quang-cao";
   <script is:inline define:vars={{ serverSettings: settings }}>
     (function () {
       function hydrateFromLocalStorage() {
-        let stored = null;
-        try {
-          const raw = localStorage.getItem("txa_site_settings");
-          if (raw) stored = JSON.parse(raw);
-        } catch (e) {}
+        const stored = serverSettings;
         if (!stored) return;
 
         const s = stored;
@@ -166,13 +162,7 @@ let activeTab = "quang-cao";
         btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
         btn.disabled = true;
 
-        let current = {};
-        try {
-          const stored = localStorage.getItem("txa_site_settings");
-          current = stored ? JSON.parse(stored) : serverSettings;
-        } catch (e) {
-          current = serverSettings;
-        }
+        const current = serverSettings;
 
         const updatedSettings = {
           ...current,
@@ -197,9 +187,7 @@ let activeTab = "quang-cao";
             body: JSON.stringify(updatedSettings)
           });
           
-          // Cập nhật lại cache localStorage mà không kích hoạt interceptor (tránh gọi 2 lần API)
-          const originalSetItem = localStorage.constructor.prototype.setItem || Storage.prototype.setItem;
-          originalSetItem.call(localStorage, "txa_site_settings", JSON.stringify(updatedSettings));
+          
 
           if (window.showGlobalToast) {
             window.showGlobalToast("Lưu cấu hình quảng cáo vào Database thành công!", "success");
@@ -207,9 +195,7 @@ let activeTab = "quang-cao";
             alert("Lưu cấu hình quảng cáo thành công!");
           }
 
-          setTimeout(() => {
-            window.location.reload();
-          }, 800);
+          
         } catch (error) {
           console.error("Save error:", error);
           if (window.showGlobalToast) window.showGlobalToast("Lỗi khi lưu Database!", "error");

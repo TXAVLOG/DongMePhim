@@ -324,7 +324,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           if (raw) stored = JSON.parse(raw);
         } catch (e) {}
 
-        let siteUrl = stored?.general?.site_url || serverSettings.general?.site_url || window.location.origin;
+        let siteUrl = stored?.general?.site_url || serverSettings.general?.site_url || serverSettings.general?.site_url || window.location.origin;
         if (siteUrl.includes('localhost') && !window.location.hostname.includes('localhost')) {
           siteUrl = window.location.origin;
         }
@@ -374,11 +374,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
 
       // Save handler
       document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
-        let current = {};
-        try {
-          const stored = localStorage.getItem('txa_site_settings');
-          current = stored ? JSON.parse(stored) : serverSettings;
-        } catch (e) { current = serverSettings; }
+        const current = serverSettings;
 
         const updatedSettings = {
           ...current,
@@ -420,7 +416,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           alert('Lưu cấu hình hệ thống thành công!');
         }
 
-        setTimeout(() => { window.location.reload(); }, 800);
+        
       });
 
       // SePay auto-verify & load list click handlers

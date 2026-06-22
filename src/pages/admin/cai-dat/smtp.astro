@@ -155,11 +155,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
   <script is:inline define:vars={{ serverSettings: settings }}>
     (function () {
       function hydrateFromLocalStorage() {
-        let stored = null;
-        try {
-          const raw = localStorage.getItem("txa_site_settings");
-          if (raw) stored = JSON.parse(raw);
-        } catch (e) {}
+        const stored = serverSettings;
         if (!stored) return;
 
         const s = stored;
@@ -185,13 +181,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
       document
         .getElementById("save-settings-btn")
         ?.addEventListener("click", () => {
-          let current = {};
-          try {
-            const stored = localStorage.getItem("txa_site_settings");
-            current = stored ? JSON.parse(stored) : serverSettings;
-          } catch (e) {
-            current = serverSettings;
-          }
+          const current = serverSettings;
 
           const updatedSettings = {
             ...current,
@@ -225,9 +215,7 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
             alert("Lưu cấu hình hệ thống thành công!");
           }
 
-          setTimeout(() => {
-            window.location.reload();
-          }, 800);
+          
         });
 
       // SMTP TEST EMAIL
