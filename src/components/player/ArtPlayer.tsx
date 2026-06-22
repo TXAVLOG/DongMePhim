@@ -313,10 +313,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             {
               name: 'txa-watermark-fixed',
               html: `
-                <div class="txa-watermark-wrapper" style="pointer-events: none; user-select: none;">
-                  <div style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 800; color: rgba(255, 255, 255, 0.45); text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.25); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px);">
-                    ${siteName}
-                  </div>
+                <div class="txa-watermark-wrapper" style="pointer-events: none; user-select: none; display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.55); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
+                  <img src="/logo-icon.gif" style="height: 18px; width: auto; object-fit: contain;" />
+                  <span style="font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${siteName}</span>
                 </div>
               `,
               style: {
@@ -328,7 +327,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             },
             {
               name: 'txa-watermark-floating',
-              html: `<div style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.25); background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(2px); white-space: nowrap;">${siteName} - ${title}</div>`,
+              html: `
+                <div class="txa-watermark-floating-box" style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.95); background: rgba(15,15,20,0.7); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(3px); white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 6px;">
+                  <span style="display: inline-block; width: 6px; height: 6px; background: #d2bbff; border-radius: 50%; box-shadow: 0 0 8px #d2bbff;"></span>
+                  <span>${siteName} - ${title}</span>
+                </div>
+              `,
               style: {
                 position: 'absolute',
                 zIndex: '25',
@@ -706,6 +710,23 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           50% { top: 40%; left: 75%; }
           75% { top: 85%; left: 60%; }
           100% { top: 15%; left: 80%; }
+        }
+        .art-layer-txa-watermark-floating {
+          z-index: 99 !important;
+        }
+        .art-layer-txa-watermark-fixed {
+          z-index: 98 !important;
+        }
+        .art-fullscreen .art-layer-txa-watermark-floating .txa-watermark-floating-box {
+          font-size: 14px !important;
+          padding: 6px 14px !important;
+        }
+        .art-fullscreen .art-layer-txa-watermark-fixed {
+          top: 30px !important;
+          right: 30px !important;
+        }
+        .art-fullscreen .art-layer-txa-watermark-fixed .txa-watermark-wrapper {
+          padding: 6px 14px !important;
         }
       `}</style>
       <div 
