@@ -105,14 +105,14 @@ packages.forEach((pkg: any) => {
         if (keysToBlock.includes(key)) {
           return null;
         }
-        return origGet.apply(this, arguments);
+        return origGet.apply(window.localStorage, arguments);
       };
       
       window.localStorage.setItem = function(key, val) {
         if (keysToBlock.includes(key)) {
           return;
         }
-        return origSet.apply(this, arguments);
+        return origSet.apply(window.localStorage, arguments);
       };
       
       keysToBlock.forEach(k => window.localStorage.removeItem(k));

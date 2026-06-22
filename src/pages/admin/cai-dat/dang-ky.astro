@@ -360,6 +360,8 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           toggleRegistrationSubForm();
           toggleEmailVerificationFields();
           updateExpiryLabel();
+          syncToggleVisibility();
+          updateCallbackURIs();
           if (serverSettings.login?.login_google_enable && serverSettings.login?.login_google_client_id) {
             setTimeout(() => { window.initGoogleGSIAndButton(); }, 100);
           }
@@ -408,6 +410,23 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           setTimeout(() => { window.initGoogleGSIAndButton(); }, 100);
         }
       }
+
+      // Copy Callback URI button click listener
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.copy-callback-btn');
+        if (btn) {
+          const container = btn.closest('.flex');
+          const input = container?.querySelector('.callback-uri-input');
+          if (input && input.value) {
+            navigator.clipboard.writeText(input.value);
+            if (window.showGlobalToast) {
+              window.showGlobalToast('Đã sao chép URL Redirect/Callback!', 'success', 1500);
+            } else {
+              alert('Đã sao chép URL Redirect/Callback!');
+            }
+          }
+        }
+      });
 
       function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
       function setChecked(id, val) { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; }
