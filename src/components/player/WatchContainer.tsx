@@ -1090,9 +1090,39 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [playbackTime, setPlaybackTime] = useState<number>(0);
   const [isHacked, setIsHacked] = useState<boolean>(false);
   const playerGetTimeRef = useRef<(() => number) | null>(null);
+  const [resolvedSubtitles, setResolvedSubtitles] = useState<any[]>([]);
 
   const currentServer = servers[serverIndex] || null;
   const currentEpisode = currentServer?.serverData[episodeIndex] || null;
+
+  useEffect(() => {
+    if (!currentEpisode) {
+      setResolvedSubtitles([]);
+      return;
+    }
+    const subs = [...(currentEpisode.subtitles || [])];
+    const rawSrt = (currentEpisode as any).subtitles_srt || (currentEpisode as any).subtitlesSrt;
+    let localUrl = '';
+    if (rawSrt && rawSrt.trim()) {
+      try {
+        const blob = new Blob([rawSrt], { type: 'text/srt' });
+        localUrl = URL.createObjectURL(blob);
+        subs.push({
+          label: 'Tiếng Việt',
+          file: localUrl,
+          default: true
+        });
+      } catch (e) {
+        console.error('Error creating blob for subtitles_srt:', e);
+      }
+    }
+    setResolvedSubtitles(subs);
+    return () => {
+      if (localUrl) {
+        URL.revokeObjectURL(localUrl);
+      }
+    };
+  }, [currentEpisode]);
 
   const totalEps = currentServer?.serverData.length || 0;
   const episodesPerTab = totalEps > 100 ? 100 : 25;
@@ -1578,7 +1608,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 onPlayerReady={(getTime) => {
                   playerGetTimeRef.current = getTime;
                 }}
-                subtitles={currentEpisode?.subtitles}
+                subtitles={resolvedSubtitles}
                 qualities={[
                   { html: 'Auto', url: currentEpisode?.linkM3u8 || '', default: true }
                 ]}

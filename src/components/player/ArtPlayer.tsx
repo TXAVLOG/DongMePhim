@@ -159,8 +159,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       const isValidSubUrl = (u?: string) => {
         if (!u) return false;
         try {
+          if (u.startsWith('blob:')) return true;
           new URL(u, window.location.origin);
-          return u.trim().length > 0 && (u.startsWith('http') || u.startsWith('/'));
+          return u.trim().length > 0 && (u.startsWith('http') || u.startsWith('/') || u.startsWith('blob:'));
         } catch { return false; }
       };
       const validDefaultSub = defaultSub && isValidSubUrl(defaultSub.file) ? defaultSub : undefined;
