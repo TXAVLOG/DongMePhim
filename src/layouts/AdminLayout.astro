@@ -102,6 +102,9 @@ packages.forEach((pkg: any) => {
       const keysToBlock = ['txa_site_settings', 'txa_genres', 'txa_actors', 'txa_servers'];
       
       window.localStorage.getItem = function(key) {
+        if (key === 'txa_site_settings') {
+          return JSON.stringify(settings);
+        }
         if (keysToBlock.includes(key)) {
           return null;
         }
