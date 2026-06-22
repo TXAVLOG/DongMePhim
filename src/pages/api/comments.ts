@@ -84,42 +84,7 @@ export const GET: APIRoute = async ({ request }) => {
       commentsList = commentsList.slice(0, 10);
     }
 
-    // Seed data mẫu nếu cơ sở dữ liệu trống cho phim cụ thể này
-    if (slug && commentsList.length === 0) {
-      commentsList = [
-        {
-          id: 'seed-1',
-          author: 'Hoàng Nam',
-          content: 'Tập mới cuốn ghê, không uổng công ngóng cả tuần trời. Web dịch siêu chất lượng nha!',
-          likes: 12,
-          dislikes: 0,
-          gender: 'male',
-          package: 'Free',
-          replies: [
-            {
-              id: 'seed-reply-1',
-              author: 'Cô 3 Rổ',
-              content: 'Cảm ơn bạn đã ủng hộ web nha! Nhớ giới thiệu cho bạn bè cùng xem nha bạn.',
-              createdAt: new Date(Date.now() - 3600000).toISOString()
-            }
-          ],
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-          movieSlug: slug
-        },
-        {
-          id: 'seed-2',
-          author: 'Khánh Linh',
-          content: 'Phim này càng xem càng cuốn, mong chờ tập sau quá đi thôiiii',
-          likes: 8,
-          dislikes: 0,
-          gender: 'female',
-          package: 'Free',
-          replies: [],
-          createdAt: new Date(Date.now() - 14400000).toISOString(),
-          movieSlug: slug
-        }
-      ];
-    }
+
 
     return apiResponse(commentsList, 'success', 'Lấy bình luận thành công!', 200, request);
   } catch (err: any) {

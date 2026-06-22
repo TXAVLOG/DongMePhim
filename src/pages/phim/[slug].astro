@@ -260,9 +260,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
                 {movie.seasons || (movie.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1')}
               </span>
 
-              <span class="border border-primary/40 text-primary bg-primary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
-                {movie.status === 'completed' ? `Tập Hoàn tất (${totalEps}/${totalEps})` : `Đang chiếu (${totalEps} tập)`}
-              </span>
+
 
               <span class="border border-secondary/40 text-secondary bg-secondary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
                 {movie.quality}
