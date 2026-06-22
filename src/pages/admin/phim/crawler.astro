@@ -784,11 +784,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           let posterUrl = item.poster_url || item.thumb_url || '';
           if (posterUrl) {
             if (!posterUrl.startsWith('http')) {
-              if (posterUrl.startsWith('uploads/') || posterUrl.startsWith('upload/')) {
-                posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
-              } else {
-                posterUrl = `${cdnDomain}/uploads/movies/${posterUrl.replace(/^\//, '')}`;
-              }
+              posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
             }
           } else {
             posterUrl = '/logo.png';
@@ -878,21 +874,11 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       
       let posterUrl = m.poster_url || '';
       if (posterUrl && !posterUrl.startsWith('http')) {
-        if (posterUrl.startsWith('uploads/') || posterUrl.startsWith('upload/')) {
-          posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
-        } else {
-          const cleanPath = posterUrl.replace(/^\/?uploads\/movies\//, '');
-          posterUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
-        }
+        posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
       }
       let bannerUrl = m.thumb_url || m.poster_url || '';
       if (bannerUrl && !bannerUrl.startsWith('http')) {
-        if (bannerUrl.startsWith('uploads/') || bannerUrl.startsWith('upload/')) {
-          bannerUrl = `${cdnDomain}/${bannerUrl.replace(/^\//, '')}`;
-        } else {
-          const cleanPath = bannerUrl.replace(/^\/?uploads\/movies\//, '');
-          bannerUrl = `${cdnDomain}/uploads/movies/${cleanPath}`;
-        }
+        bannerUrl = `${cdnDomain}/${bannerUrl.replace(/^\//, '')}`;
       }
 
       const genres = Array.isArray(m.category) ? m.category.map(c => c.name) : [];
@@ -1036,6 +1022,30 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             const movieDetailObj = mapKKPhimToMovieDetail(detailData);
             movieDetailObj.updatedAt = new Date().toISOString();
             
+            // Fetch TMDB images and override if available
+            if (detailData.movie.tmdb && detailData.movie.tmdb.id) {
+              const tmdbId = detailData.movie.tmdb.id;
+              const tmdbType = detailData.movie.tmdb.type === 'tv' ? 'tv' : 'movie';
+              const apiKey = '211be8d45c0d31404f644ecdcf9caad5';
+              try {
+                const tmdbRes = await fetch(`https://api.themoviedb.org/3/${tmdbType}/${tmdbId}?api_key=${apiKey}&language=vi-VN`);
+                if (tmdbRes.ok) {
+                  const tmdbData = await tmdbRes.json();
+                  if (tmdbData.poster_path) {
+                    movieDetailObj.posterUrl = `https://image.tmdb.org/t/p/original${tmdbData.poster_path}`;
+                  }
+                  if (tmdbData.backdrop_path) {
+                    movieDetailObj.bannerUrl = `https://image.tmdb.org/t/p/original${tmdbData.backdrop_path}`;
+                  }
+                  if (tmdbData.vote_average) {
+                    movieDetailObj.tmdbScore = tmdbData.vote_average;
+                  }
+                }
+              } catch (e) {
+                addLog(`⚠️ Không thể lấy thông tin TMDB: ${e.message}`, 'warning');
+              }
+            }
+
             // Save to database Supabase via API
             const saveRes = await fetch('/api/admin/movie-action', {
               method: 'POST',
