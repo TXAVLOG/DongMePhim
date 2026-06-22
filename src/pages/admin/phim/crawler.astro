@@ -280,7 +280,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           </button>
         </div>
         
-        <div class="overflow-y-auto flex-1 p-5 font-mono text-[11px] space-y-1.5 bg-black/60 custom-scrollbar max-h-[350px]" id="logTerminalBody">
+        <div class="overflow-y-auto flex-1 p-5 bg-black/60 custom-scrollbar max-h-[350px]" id="logTerminalBody" style="font-family: SF Mono, SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.6;">
           <div class="text-zinc-600">Console initialized. Ready for crawl tasks...</div>
         </div>
       </div>
@@ -738,6 +738,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     const selectAllSearch = document.getElementById('selectAllSearch');
     const cartCount = document.getElementById('cartCount');
 
+    searchKeywordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchOnlineBtn.click();
+      }
+    });
+
     searchOnlineBtn.addEventListener('click', async () => {
       const keyword = searchKeywordInput.value.trim();
       if (!keyword) {
@@ -962,6 +969,11 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       isRunning = true;
       shouldStop = false;
 
+      // Hide search container during crawl if on advanced tab
+      if (activeTab === 'advanced') {
+        containerSearchTab.classList.add('hidden');
+      }
+
       // Reset statistics
       let success = 0;
       let skipped = 0;
@@ -1068,6 +1080,11 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       progressTimeEstimate.textContent = 'Hoàn tất!';
       addLog(`🎉 TIẾN TRÌNH CÀO PHIM KẾT THÚC! Thành công: ${success}, Bỏ qua: ${skipped}, Lỗi: ${failed}`, 'success');
       if (window.showGlobalToast) window.showGlobalToast(`Cào hoàn tất! Thành công: ${success} phim.`, 'success');
+
+      // Restore search container if on advanced tab
+      if (activeTab === 'advanced') {
+        containerSearchTab.classList.remove('hidden');
+      }
     }
 
     // Trigger crawl standard
