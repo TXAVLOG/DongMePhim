@@ -220,7 +220,10 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         contextmenu: [
           {
             html: `<b>${siteName}</b>`,
-            click: () => window.open(siteUrl, '_blank')
+            click: () => {
+              const url = (siteUrl && !siteUrl.includes('localhost') && !siteUrl.includes('127.0.0.1')) ? siteUrl : window.location.origin;
+              window.open(url, '_blank');
+            }
           },
           {
             html: 'Tắt / Bật tiếng',
@@ -455,31 +458,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         tooltip: isAutoSkipEnabled ? 'Bật' : 'Tắt',
         switch: isAutoSkipEnabled,
         onSelect: function (item: any) {
-          const newValue = !isAutoSkipEnabled; // Đồng bộ logic
-          const nextValue = !isAutoSkipEnabled;
-          setAutoSkipSetting(nextValue);
-          isAutoSkipEnabled = nextValue;
-          item.switch = nextValue;
-          item.tooltip = nextValue ? 'Bật' : 'Tắt';
-          art.notice.show = `Tự động Skip: ${nextValue ? 'Bật' : 'Tắt'}`;
-
-          const settingPanel = art.template.$setting;
-          if (settingPanel) {
-            const items = settingPanel.querySelectorAll('.art-setting-item');
-            items.forEach((el: any) => {
-              if (el.textContent?.includes('Tự động Skip')) {
-                const tooltipEl = el.querySelector('.art-setting-tooltip');
-                if (tooltipEl) {
-                  tooltipEl.textContent = nextValue ? 'Bật' : 'Tắt';
-                }
-                const switchEl = el.querySelector('.art-setting-switch input') as HTMLInputElement;
-                if (switchEl) {
-                  switchEl.checked = nextValue;
-                }
-              }
-            });
-          }
-          return nextValue;
+          item.switch = !item.switch;
+          setAutoSkipSetting(item.switch);
+          isAutoSkipEnabled = item.switch;
+          item.tooltip = item.switch ? 'Bật' : 'Tắt';
+          art.notice.show = `Tự động Skip: ${item.switch ? 'Bật' : 'Tắt'}`;
+          return item.switch;
         },
       });
 

@@ -5,7 +5,7 @@ import { apiResponse } from '../../../lib/api/response';
 export const GET: APIRoute = async ({ url, request }) => {
   const query = url.searchParams.get('q') || '';
   if (!query) {
-    return apiResponse({ data: [] }, 'success', '', 200, request);
+    return apiResponse([], 'success', '', 200, request);
   }
 
   try {
@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       episodeCurrent: m.episodeCurrent || 'Full',
       type: m.type || 'movie'
     }));
-    return apiResponse({ data: limited }, 'success', '', 200, request);
+    return apiResponse(limited, 'success', '', 200, request);
   } catch (error) {
     console.error("API Search Error:", error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), {

@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ request }) => {
       genres: m.genres || []
     }));
 
-    return apiResponse({ data: mapped }, 'success', 'Lấy danh sách phim thành công!', 200, request);
+    return apiResponse(mapped, 'success', 'Lấy danh sách phim thành công!', 200, request);
   } catch (err: any) {
     console.error('Lỗi API movies list:', err);
     return new Response(JSON.stringify({ error: err.message || 'Internal Server Error' }), {

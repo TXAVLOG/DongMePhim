@@ -95,6 +95,29 @@ packages.forEach((pkg: any) => {
     settings,
     currentUser
   }}>
+    // Intercept and disable localstorage caching for site settings, servers, actors, genres
+    if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+      const origGet = window.localStorage.getItem;
+      const origSet = window.localStorage.setItem;
+      const keysToBlock = ['txa_site_settings', 'txa_genres', 'txa_actors', 'txa_servers'];
+      
+      window.localStorage.getItem = function(key) {
+        if (keysToBlock.includes(key)) {
+          return null;
+        }
+        return origGet.apply(this, arguments);
+      };
+      
+      window.localStorage.setItem = function(key, val) {
+        if (keysToBlock.includes(key)) {
+          return;
+        }
+        return origSet.apply(this, arguments);
+      };
+      
+      keysToBlock.forEach(k => window.localStorage.removeItem(k));
+    }
+
     // Helper function to decrypt AES-256-GCM client-side
     async function clientTxaDecrypt(encoded, passphrase) {
       try {
