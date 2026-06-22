@@ -9,6 +9,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.roles === 'admin');
 
     if (!isAdmin) {
+      if (pathname === '/api/admin/members' && context.request.method === 'POST') {
+        try {
+          const body = await context.request.clone().json();
+          const loggedInUser = currentUser ? currentUser.username : null;
+          if (body.action === 'edit' && body.username && loggedInUser && body.username.toLowerCase() === loggedInUser.toLowerCase()) {
+            if (body.role !== 'admin' && body.roles !== 'admin') {
+              context.locals.user = currentUser;
+              return next();
+            }
+          }
+        } catch (e) {}
+      }
+
       if (pathname.startsWith('/api/')) {
         return new Response(
           JSON.stringify({

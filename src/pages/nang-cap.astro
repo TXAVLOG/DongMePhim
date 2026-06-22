@@ -511,6 +511,10 @@ const groupedPackages = packages.map((pkg: any) => {
     let userPackagePrice = 0;
     
     async function fetchSettings() {
+      if (window.TXA_SITE_SETTINGS) {
+        loadedSettings = window.TXA_SITE_SETTINGS;
+        return;
+      }
       try {
         const res = await fetch('/api/admin/settings');
         if (res.ok) {

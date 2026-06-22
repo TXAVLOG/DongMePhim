@@ -71,6 +71,8 @@ export async function verifySession(request: Request, cookies: AstroCookies) {
     return null;
   }
 
+  // Commented out to prevent random session invalidation/logout due to user-agent discrepancies (e.g. from Astro prefetcher)
+  /*
   if (session.user_agent !== userAgent) {
     // Device binding failed (cookie was copied)
     console.warn(`Session binding failed for token ${sessionToken}. Expected UA: ${session.user_agent}, Got: ${userAgent}`);
@@ -79,6 +81,7 @@ export async function verifySession(request: Request, cookies: AstroCookies) {
     cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
     return null;
   }
+  */
 
   // Return the user object
   return session.users;

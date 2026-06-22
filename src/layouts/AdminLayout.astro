@@ -98,7 +98,10 @@ packages.forEach((pkg: any) => {
     // Helper function to decrypt AES-256-GCM client-side
     async function clientTxaDecrypt(encoded, passphrase) {
       try {
-        const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+        let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) {
+          base64 += '=';
+        }
         const binaryStr = atob(base64);
         const raw = new Uint8Array(binaryStr.length);
         for (let i = 0; i < binaryStr.length; i++) {
@@ -143,7 +146,10 @@ packages.forEach((pkg: any) => {
         const decoder = new TextDecoder();
         return decoder.decode(decryptedBuffer);
       } catch (e) {
-        console.error("Client-side decryption error:", e);
+        console.error("Client-side decryption error! Details:", e);
+        console.error("Passphrase used:", passphrase);
+        console.error("Ciphertext preview:", encoded ? (encoded.substring(0, 60) + "...") : "none");
+        console.error("Ciphertext length:", encoded ? encoded.length : 0);
         throw e;
       }
     }
@@ -183,7 +189,8 @@ packages.forEach((pkg: any) => {
               });
             }
           } catch (e) {
-            console.error("Client-side fetch automatic decryption failed:", e);
+            console.error("Client-side fetch automatic decryption failed! Details:", e);
+            console.error("Endpoint:", args[0]);
           }
         }
         return res;

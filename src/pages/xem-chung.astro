@@ -82,11 +82,16 @@ const settings = await SettingService.getSettings();
       }
 
       try {
-        // Fetch settings dynamically to get current package definitions
-        const settingsRes = await fetch('/api/admin/settings');
-        if (!settingsRes.ok) throw new Error();
-        const settingsData = await settingsRes.json();
-        const packages = settingsData?.data?.packages || [];
+        // Fetch settings dynamically to get current package definitions or use cached global settings
+        let packages = [];
+        if (window.TXA_SITE_SETTINGS) {
+          packages = window.TXA_SITE_SETTINGS.packages || [];
+        } else {
+          const settingsRes = await fetch('/api/admin/settings');
+          if (!settingsRes.ok) throw new Error();
+          const settingsData = await settingsRes.json();
+          packages = settingsData?.data?.packages || [];
+        }
 
         // Fetch current user details
         const username = (window.APP_USER ? window.APP_USER.username : null) || '';
