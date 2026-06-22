@@ -121,6 +121,8 @@ export const seedSettings: SiteSettings = {
     social_tiktok_url: "",
     social_zalo_group_enable: true,
     social_zalo_group_url: "https://zalo.me/g/nc4aaozaxnr5fszvnxdb",
+    social_discord_enable: false,
+    social_discord_url: "",
     decoy_enable: false,
     decoy_passcode: "phimtxadinhvai",
     zalo_lock_enable: false,
@@ -268,6 +270,11 @@ export class LocalSettingProvider implements ISettingProvider {
             if (parsed.social.social_tiktok_url === "https://tiktok.com/@dongmephim") {
               parsed.social.social_tiktok_url = seedSettings.social.social_tiktok_url;
               parsed.social.social_tiktok_enable = seedSettings.social.social_tiktok_enable;
+              changed = true;
+            }
+            if (parsed.social.social_discord_enable === undefined) {
+              parsed.social.social_discord_enable = seedSettings.social.social_discord_enable;
+              parsed.social.social_discord_url = seedSettings.social.social_discord_url;
               changed = true;
             }
           }

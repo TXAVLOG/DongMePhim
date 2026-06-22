@@ -372,6 +372,11 @@ const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
 };
 
 const DiscordBanner: React.FC = () => {
+  const settings = (typeof window !== 'undefined' ? (window as any).TXA_SITE_SETTINGS : null) || {};
+  const showDiscord = settings.social?.social_discord_enable && settings.social?.social_discord_url;
+  
+  if (!showDiscord) return null;
+
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-tr from-[#5865F2] via-[#404eed] to-[#5865F2] p-5 text-white shadow-xl group border border-[#404eed]/40">
       <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-xl group-hover:scale-125 transition-transform duration-500"></div>
@@ -388,7 +393,7 @@ const DiscordBanner: React.FC = () => {
           Tham gia cộng đồng để chém gió cùng các mọt phim, đóng góp ý kiến và nhận thông báo phát sóng tập mới sớm nhất!
         </p>
         <a 
-          href="https://discord.gg" 
+          href={settings.social?.social_discord_url || "https://discord.gg"} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="mt-2 w-full py-2 bg-white text-[#5865F2] hover:bg-white/95 transition-all text-xs font-bold rounded-xl text-center shadow-lg active:scale-95 flex items-center justify-center gap-1.5 border-none decoration-none no-underline"
@@ -736,6 +741,25 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
             const isModerator = c.author.toLowerCase().includes('cô 3 rổ') || c.author.toLowerCase().includes('admin');
             const initial = c.author.substring(0, 1).toUpperCase();
 
+            const getPlanByPackageNameOrId = (pkgNameOrId?: string) => {
+              if (typeof window === 'undefined') return { id: 'free', title: 'Gói Free' };
+              const settings = (window as any).TXA_SITE_SETTINGS || {};
+              const packages = settings.packages || [];
+              const normalized = (pkgNameOrId || 'free').toLowerCase().trim();
+              let plan = packages.find((p: any) => p.id.toLowerCase() === normalized);
+              if (plan) return plan;
+              plan = packages.find((p: any) => p.title.toLowerCase() === normalized);
+              if (plan) return plan;
+              if (normalized === 'free' || normalized === 'gói free') {
+                return { id: 'free', title: 'Gói Free' };
+              }
+              return { id: 'free', title: pkgNameOrId || 'Gói Free' };
+            };
+
+            const plan = getPlanByPackageNameOrId((c as any).package);
+            const pkgId = plan.id;
+            const pkgTitle = plan.title;
+
             return (
               <div key={c.id} className="border-b border-glass-stroke/30 pb-4 last:border-none space-y-3">
                 <div className="flex items-start gap-3">
@@ -743,10 +767,15 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
                     {initial}
                   </div>
                   <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold ${isModerator ? 'text-pink-400' : 'text-zinc-200'}`}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs font-bold ${isModerator ? 'text-pink-400' : `package-style-${pkgId}`}`}>
                         {c.author}
                       </span>
+                      {!isModerator && (
+                        <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-${pkgId}`}>
+                          {pkgTitle}
+                        </span>
+                      )}
                       {isModerator && (
                         <span className="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider scale-90">
                           Admin
@@ -809,6 +838,9 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
                     {c.replies.map((r: ReplyItem) => {
                       const isRepModerator = r.author.toLowerCase().includes('cô 3 rổ') || r.author.toLowerCase().includes('admin');
                       const repInitial = r.author.substring(0, 1).toUpperCase();
+                      const repPlan = getPlanByPackageNameOrId((r as any).package);
+                      const repPkgId = repPlan.id;
+                      const repPkgTitle = repPlan.title;
 
                       return (
                         <div key={r.id} className="flex items-start gap-3 animate-[fadeIn_0.3s_ease-out]">
@@ -816,10 +848,15 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
                             {repInitial}
                           </div>
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[11px] font-bold ${isRepModerator ? 'text-pink-400' : 'text-zinc-200'}`}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-[11px] font-bold ${isRepModerator ? 'text-pink-400' : `package-style-${repPkgId}`}`}>
                                 {r.author}
                               </span>
+                              {!isRepModerator && (
+                                <span className={`text-[7px] font-bold px-1.2 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-${repPkgId}`}>
+                                  {repPkgTitle}
+                                </span>
+                              )}
                               {isRepModerator && (
                                 <span className="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[7px] font-bold uppercase tracking-wider scale-90">
                                   Admin

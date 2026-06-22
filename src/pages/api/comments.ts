@@ -19,38 +19,65 @@ export const GET: APIRoute = async ({ request }) => {
 
     if (error) throw error;
 
-    // Fetch user genders
-    const authorNames = Array.from(new Set((data || []).map((c: any) => c.author).filter(Boolean)));
+    // Fetch user packages & genders
+    const authorNamesSet = new Set<string>();
+    (data || []).forEach((c: any) => {
+      if (c.author) authorNamesSet.add(c.author);
+      if (Array.isArray(c.replies)) {
+        c.replies.forEach((r: any) => {
+          if (r.author) authorNamesSet.add(r.author);
+        });
+      }
+    });
+    const authorNames = Array.from(authorNamesSet).filter(Boolean);
     const userGenderMap = new Map<string, string>();
+    const userPackageMap = new Map<string, string>();
     if (authorNames.length > 0) {
       try {
         const { data: usersData } = await supabase
           .from('users')
-          .select('username, name, gender')
+          .select('username, name, gender, package')
           .or(`name.in.(${authorNames.map(n => `"${n.replace(/"/g, '\\"')}"`).join(',')}),username.in.(${authorNames.map(n => `"${n.replace(/"/g, '\\"')}"`).join(',')})`);
         
         if (usersData) {
           usersData.forEach((u: any) => {
-            if (u.name) userGenderMap.set(u.name.toLowerCase().trim(), u.gender || 'other');
-            if (u.username) userGenderMap.set(u.username.toLowerCase().trim(), u.gender || 'other');
+            const pkg = u.package || 'Free';
+            if (u.name) {
+              const key = u.name.toLowerCase().trim();
+              userGenderMap.set(key, u.gender || 'other');
+              userPackageMap.set(key, pkg);
+            }
+            if (u.username) {
+              const key = u.username.toLowerCase().trim();
+              userGenderMap.set(key, u.gender || 'other');
+              userPackageMap.set(key, pkg);
+            }
           });
         }
       } catch (e) {
-        console.error("Lỗi khi lấy giới tính của các tác giả:", e);
+        console.error("Lỗi khi lấy giới tính/gói cước của các tác giả:", e);
       }
     }
 
-    let commentsList = (data || []).map((c: any) => ({
-      id: c.id,
-      author: c.author,
-      content: c.content,
-      likes: Number(c.likes) || 0,
-      dislikes: 0,
-      gender: userGenderMap.get(c.author?.toLowerCase().trim()) || 'other',
-      replies: Array.isArray(c.replies) ? c.replies : [],
-      createdAt: c.created_at,
-      movieSlug: c.movie_slug
-    }));
+    let commentsList = (data || []).map((c: any) => {
+      const replies = Array.isArray(c.replies) ? c.replies.map((r: any) => ({
+        ...r,
+        package: userPackageMap.get(r.author?.toLowerCase().trim()) || 'Free'
+      })) : [];
+
+      return {
+        id: c.id,
+        author: c.author,
+        content: c.content,
+        likes: Number(c.likes) || 0,
+        dislikes: 0,
+        gender: userGenderMap.get(c.author?.toLowerCase().trim()) || 'other',
+        package: userPackageMap.get(c.author?.toLowerCase().trim()) || 'Free',
+        replies: replies,
+        createdAt: c.created_at,
+        movieSlug: c.movie_slug
+      };
+    });
 
     // Giới hạn 10 bình luận gần nhất nếu là query trang chủ (không truyền slug)
     if (!slug) {

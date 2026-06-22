@@ -104,6 +104,8 @@ export interface SocialSettings {
   social_tiktok_url: string;
   social_zalo_group_enable: boolean;
   social_zalo_group_url: string;
+  social_discord_enable?: boolean;
+  social_discord_url?: string;
   decoy_enable: boolean;
   decoy_passcode: string;
   zalo_lock_enable: boolean;

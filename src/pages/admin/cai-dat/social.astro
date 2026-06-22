@@ -85,6 +85,17 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
             </div>
           </div>
 
+          <div class="space-y-4 md:col-span-2 pb-4 border-b border-glass-stroke/50">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="social-discord-enable" checked={settings.social?.social_discord_enable} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+              <span class="text-sm font-bold">Hiển thị liên kết Discord</span>
+            </div>
+            <div class="space-y-2 pl-8">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn server Discord</label>
+              <input type="url" id="social-discord-url" value={settings.social?.social_discord_url || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="https://discord.gg/..." />
+            </div>
+          </div>
+
           <div class="space-y-4 md:col-span-2 pt-4">
             <h4 class="text-sm font-bold text-primary uppercase tracking-wider">Cấu hình Cổng bảo mật 3 lớp (Decoy & Zalo Gate)</h4>
           </div>
@@ -133,6 +144,8 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         setVal('social-tiktok-url', s.social?.social_tiktok_url);
         setChecked('social-zalo-group-enable', s.social?.social_zalo_group_enable);
         setVal('social-zalo-group-url', s.social?.social_zalo_group_url);
+        setChecked('social-discord-enable', s.social?.social_discord_enable);
+        setVal('social-discord-url', s.social?.social_discord_url);
         setChecked('general-decoy-enable', s.general?.decoy_enable ?? true);
         setVal('general-decoy-passcode', s.general?.decoy_passcode || 'phimtxadinhvai');
         setChecked('general-zalo-lock-enable', s.general?.zalo_lock_enable ?? true);
@@ -165,6 +178,8 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
             social_tiktok_url: document.getElementById('social-tiktok-url')?.value || '',
             social_zalo_group_enable: document.getElementById('social-zalo-group-enable')?.checked || false,
             social_zalo_group_url: document.getElementById('social-zalo-group-url')?.value || '',
+            social_discord_enable: document.getElementById('social-discord-enable')?.checked || false,
+            social_discord_url: document.getElementById('social-discord-url')?.value || '',
           }
         };
 
