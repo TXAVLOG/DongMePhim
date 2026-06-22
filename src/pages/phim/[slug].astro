@@ -265,6 +265,21 @@ if (movie && movie.actors && movie.actors.length > 0) {
               ))}
             </div>
 
+            <!-- Trạng thái hoàn thành/đang chiếu -->
+            <div class="flex justify-center lg:justify-start pt-1">
+              {movie.status === 'completed' ? (
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold rounded-xl shadow-sm">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Hoàn tất ({totalEps}/{totalEps})
+                </span>
+              ) : (
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 border border-blue-500/25 text-blue-400 text-[10px] font-bold rounded-xl shadow-sm">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                  Đang chiếu (Tập {totalEps})
+                </span>
+              )}
+            </div>
+
             <!-- Tóm tắt phim -->
             <div class="space-y-2">
               <h4 class="text-xs font-black uppercase tracking-widest text-primary">Giới thiệu</h4>

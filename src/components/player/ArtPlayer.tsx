@@ -137,6 +137,11 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       }
 
       let isAutoSkipEnabled = getAutoSkipSetting();
+      const handleAutoSkipEvent = (e: any) => {
+        isAutoSkipEnabled = e.detail;
+      };
+      window.addEventListener('txa-autoskip-changed', handleAutoSkipEvent);
+      
       const isM3u8 = realUrl.includes('.m3u8') || realUrl.includes('stream');
       const defaultSub = subtitles?.find(s => s.default) || subtitles?.[0];
 
@@ -185,7 +190,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         aspectRatio: true,
         fullscreen: true,
         fullscreenWeb: true,
-        subtitleOffset: true,
+        subtitleOffset: false,
         miniProgressBar: true,
         mutex: true,
         backdrop: true,
@@ -634,6 +639,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       art.on('destroy', () => {
         clearInterval(intervalId);
         observer.disconnect();
+        window.removeEventListener('txa-autoskip-changed', handleAutoSkipEvent);
       });
     };
 

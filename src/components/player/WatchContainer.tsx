@@ -952,6 +952,22 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         }
         setCurrentUserPackage(pkgName);
 
+        // Tải danh sách yêu thích và danh sách phát
+        if (username) {
+          try {
+            const wlRes = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}`);
+            if (wlRes.ok) {
+              const wlData = await wlRes.json();
+              const favs = wlData.data?.favorites || [];
+              const plist = wlData.data?.playlist || [];
+              setIsFavorited(favs.includes(movie.slug));
+              setIsInPlaylist(plist.includes(movie.slug));
+            }
+          } catch (e) {
+            console.error("Lỗi khi tải danh sách yêu thích/xem sau:", e);
+          }
+        }
+
         const settings = (window as any).TXA_SITE_SETTINGS || {};
         const packages = settings.packages || [];
         const userPkg = packages.find((p: any) => p.title === pkgName);
@@ -1091,6 +1107,186 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [isHacked, setIsHacked] = useState<boolean>(false);
   const playerGetTimeRef = useRef<(() => number) | null>(null);
   const [resolvedSubtitles, setResolvedSubtitles] = useState<any[]>([]);
+
+  const [isFavorited, setIsFavorited] = useState<boolean>(false);
+  const [isInPlaylist, setIsInPlaylist] = useState<boolean>(false);
+  const [isCinemaMode, setIsCinemaMode] = useState<boolean>(false);
+
+  const [autoNext, setAutoNext] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
+    try {
+      const stored = localStorage.getItem('tsettings');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.autoNext !== false;
+      }
+    } catch (e) {}
+    return true;
+  });
+
+  const [autoSkip, setAutoSkip] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+    try {
+      const stored = localStorage.getItem('tsettings');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return !!parsed.autoSkip;
+      }
+    } catch (e) {}
+    return false;
+  });
+
+  const toggleFavorite = async () => {
+    if (typeof window === 'undefined') return;
+    const username = (window.APP_USER ? window.APP_USER.username : null);
+    if (!username) {
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast('Vui lòng đăng nhập để sử dụng tính năng này!', 'error');
+      }
+      setTimeout(() => {
+        if ((window as any).openLoginModal) {
+          (window as any).openLoginModal();
+        }
+      }, 800);
+      return;
+    }
+
+    const nextState = !isFavorited;
+    setIsFavorited(nextState);
+
+    try {
+      if (!nextState) {
+        const delRes = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}&slug=${encodeURIComponent(movie.slug)}&type=favorite`, {
+          method: 'DELETE'
+        });
+        if (delRes.ok) {
+          if ((window as any).showGlobalToast) {
+            (window as any).showGlobalToast('Đã xóa khỏi danh sách Yêu thích!', 'success');
+          }
+        } else {
+          throw new Error('Lỗi xóa yêu thích');
+        }
+      } else {
+        const res = await fetch('/api/user/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, slug: movie.slug, type: 'favorite' })
+        });
+        if (res.ok) {
+          if ((window as any).showGlobalToast) {
+            (window as any).showGlobalToast('Đã thêm vào danh sách Yêu thích!', 'success');
+          }
+        } else {
+          const errData = await res.json();
+          throw new Error(errData.message || 'Lỗi thêm yêu thích');
+        }
+      }
+    } catch (e: any) {
+      setIsFavorited(!nextState);
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast(e.message || 'Lỗi xử lý yêu thích', 'error');
+      }
+    }
+  };
+
+  const togglePlaylist = async () => {
+    if (typeof window === 'undefined') return;
+    const username = (window.APP_USER ? window.APP_USER.username : null);
+    if (!username) {
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast('Vui lòng đăng nhập để sử dụng tính năng này!', 'error');
+      }
+      setTimeout(() => {
+        if ((window as any).openLoginModal) {
+          (window as any).openLoginModal();
+        }
+      }, 800);
+      return;
+    }
+
+    const nextState = !isInPlaylist;
+    setIsInPlaylist(nextState);
+
+    try {
+      if (!nextState) {
+        const delRes = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}&slug=${encodeURIComponent(movie.slug)}&type=playlist`, {
+          method: 'DELETE'
+        });
+        if (delRes.ok) {
+          if ((window as any).showGlobalToast) {
+            (window as any).showGlobalToast('Đã xóa khỏi Danh sách phát!', 'success');
+          }
+        } else {
+          throw new Error('Lỗi xóa danh sách phát');
+        }
+      } else {
+        const res = await fetch('/api/user/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, slug: movie.slug, type: 'playlist' })
+        });
+        if (res.ok) {
+          if ((window as any).showGlobalToast) {
+            (window as any).showGlobalToast('Đã thêm vào Danh sách phát!', 'success');
+          }
+        } else {
+          const errData = await res.json();
+          throw new Error(errData.message || 'Lỗi thêm danh sách phát');
+        }
+      }
+    } catch (e: any) {
+      setIsInPlaylist(!nextState);
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast(e.message || 'Lỗi xử lý danh sách phát', 'error');
+      }
+    }
+  };
+
+  const toggleAutoNext = () => {
+    const nextState = !autoNext;
+    setAutoNext(nextState);
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('tsettings');
+        const parsed = stored ? JSON.parse(stored) : {};
+        parsed.autoNext = nextState;
+        localStorage.setItem('tsettings', JSON.stringify(parsed));
+      } catch (e) {}
+    }
+    if ((window as any).showGlobalToast) {
+      (window as any).showGlobalToast(`Tự động chuyển tập: ${nextState ? 'Bật' : 'Tắt'}`, 'success');
+    }
+  };
+
+  const toggleAutoSkip = () => {
+    const nextState = !autoSkip;
+    setAutoSkip(nextState);
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('tsettings');
+        const parsed = stored ? JSON.parse(stored) : {};
+        parsed.autoSkip = nextState;
+        localStorage.setItem('tsettings', JSON.stringify(parsed));
+      } catch (e) {}
+    }
+    window.dispatchEvent(new CustomEvent('txa-autoskip-changed', { detail: nextState }));
+    if ((window as any).showGlobalToast) {
+      (window as any).showGlobalToast(`Bỏ qua giới thiệu: ${nextState ? 'Bật' : 'Tắt'}`, 'success');
+    }
+  };
+
+  const toggleCinemaMode = () => {
+    setIsCinemaMode(!isCinemaMode);
+  };
+
+  const handleShare = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast('Đã sao chép liên kết xem phim vào bộ nhớ tạm!', 'success');
+      }
+    }
+  };
 
   const currentServer = servers[serverIndex] || null;
   const currentEpisode = currentServer?.serverData[episodeIndex] || null;
@@ -1359,6 +1555,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   };
 
   const handleEnded = () => {
+    if (!autoNext) return;
     if (currentServer && episodeIndex < currentServer.serverData.length - 1) {
       if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
         (window as any).showGlobalToast('Hết tập! Tự động chuyển sang tập tiếp theo sau 3 giây...', 'info');
@@ -1494,8 +1691,15 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         />
       )}
 
+      {isCinemaMode && (
+        <div 
+          className="fixed inset-0 bg-black/92 z-[49] transition-opacity duration-300 cursor-pointer"
+          onClick={() => setIsCinemaMode(false)}
+        />
+      )}
+
       {/* Player Section */}
-      <div className="relative glass-card bg-surface-card border border-glass-stroke rounded-2xl overflow-hidden shadow-2xl">
+      <div className={`relative transition-all duration-300 ${isCinemaMode ? 'z-50 xl:scale-[1.03] shadow-[0_0_80px_rgba(0,0,0,0.9)]' : 'z-10'} glass-card bg-surface-card border border-glass-stroke rounded-2xl overflow-hidden shadow-2xl`}>
         <div className="w-full aspect-video bg-black relative">
           {isHacked ? (
             <iframe 
@@ -1586,7 +1790,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 </p>
                 <div className="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl inline-block">
                   <p className="text-[10px] text-zinc-400 font-body-main">
-                    Gói hiện tại của bạn: <em className="not-italic font-bold text-zinc-200">{currentUserPackage}</em>
+                     Gói hiện tại của bạn: <em className="not-italic font-bold text-zinc-200">{currentUserPackage}</em>
                   </p>
                 </div>
                 <div className="pt-2">
@@ -1659,6 +1863,80 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             </>
           )}
         </div>
+      </div>
+
+      {/* Control bar under video player */}
+      <div className="glass-card bg-zinc-950/65 border border-glass-stroke rounded-2xl px-5 py-4 flex flex-wrap items-center justify-between gap-4 shadow-xl text-zinc-300 relative z-10">
+        <div className="flex flex-wrap items-center gap-6 text-xs font-semibold">
+          {/* Yêu thích */}
+          <button 
+            onClick={toggleFavorite} 
+            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
+          >
+            <span className={`material-symbols-outlined text-[18px] ${isFavorited ? 'text-rose-500 fill-rose-500' : ''}`} style={{ fontVariationSettings: isFavorited ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
+            <span>Yêu thích</span>
+          </button>
+
+          {/* Thêm vào */}
+          <button 
+            onClick={togglePlaylist} 
+            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
+          >
+            <span className={`material-symbols-outlined text-[18px] ${isInPlaylist ? 'text-primary fill-primary' : ''}`} style={{ fontVariationSettings: isInPlaylist ? "'FILL' 1" : "'FILL' 0" }}>{isInPlaylist ? 'bookmark_added' : 'bookmark_add'}</span>
+            <span>Thêm vào</span>
+          </button>
+
+          {/* Chuyển tập */}
+          <button 
+            onClick={toggleAutoNext}
+            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
+          >
+            <span>Chuyển tập</span>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors ${autoNext ? 'bg-primary/20 border-primary text-primary' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
+              {autoNext ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          {/* Bỏ qua giới thiệu */}
+          <button 
+            onClick={toggleAutoSkip}
+            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
+          >
+            <span>Bỏ qua giới thiệu</span>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors ${autoSkip ? 'bg-primary/20 border-primary text-primary' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
+              {autoSkip ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          {/* Rạp phim */}
+          <button 
+            onClick={toggleCinemaMode}
+            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
+          >
+            <span>Rạp phim</span>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors ${isCinemaMode ? 'bg-primary/20 border-primary text-primary' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
+              {isCinemaMode ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          {/* Chia sẻ */}
+          <button 
+            onClick={handleShare}
+            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
+          >
+            <span className="material-symbols-outlined text-[18px]">share</span>
+            <span>Chia sẻ</span>
+          </button>
+        </div>
+
+        {/* Báo lỗi */}
+        <button 
+          onClick={() => setIsReportModalOpen(true)}
+          className="flex items-center gap-1.5 hover:text-rose-400 transition-colors text-xs font-semibold cursor-pointer bg-transparent border-none p-0 text-zinc-400"
+        >
+          <span className="material-symbols-outlined text-[18px]">flag</span>
+          <span>Báo lỗi</span>
+        </button>
       </div>
 
       {/* Main 2-Column layout under player */}
