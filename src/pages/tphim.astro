@@ -1008,7 +1008,7 @@ const yeuThichMovies = [...allMoviesForServer]
       const bg1 = document.getElementById('hero-bg-1');
       const bg2 = document.getElementById('hero-bg-2');
 
-      let currentHeroSlug = firstHero ? firstHero.slug : 'bai-hoc-dang-doi';
+      let currentHeroSlug = (typeof heroMoviesForClient !== 'undefined' && heroMoviesForClient.length > 0) ? heroMoviesForClient[0].slug : 'bai-hoc-dang-doi';
 
       let userPlaylist = [];
       const username = (window.APP_USER ? window.APP_USER.username : null) || '';

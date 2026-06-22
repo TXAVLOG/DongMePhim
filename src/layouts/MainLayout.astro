@@ -299,12 +299,10 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
         }
 
         function checkUserBypassAds() {
-          const loggedIn = (window.APP_USER ? window.APP_USER.username : null);
-          if (!loggedIn) return false;
+          const user = window.APP_USER;
+          if (!user) return false;
           try {
-            const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-            const user = users.find(u => u.username === loggedIn || u.email === loggedIn);
-            const userPackage = user ? user.package : 'Free';
+            const userPackage = user.package || 'Free';
             const siteSettings = window.TXA_SITE_SETTINGS || {};
             const packages = siteSettings.packages || [];
             const userPkg = packages.find(p => p.title === userPackage);
@@ -441,16 +439,12 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
         document.documentElement.classList.remove('gate-passed', 'gate-decoy', 'gate-zalo');
 
         // Check if logged in as Admin first (always bypass decoy and zalo)
-        const username = (window.APP_USER ? window.APP_USER.username : null);
+        const user = window.APP_USER;
         let isAdmin = false;
-        if (username) {
-          try {
-            const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-            const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === username.toLowerCase());
-            if (user && (user.role === 'admin' || user.is_admin === true || user.is_admin === 'true')) {
-              isAdmin = true;
-            }
-          } catch(e) {}
+        if (user) {
+          if (user.role === 'admin' || user.is_admin === true || user.is_admin === 'true') {
+            isAdmin = true;
+          }
         }
 
         if (isAdmin) {
@@ -1011,9 +1005,9 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
 
                     
                     <!-- Guest View -->
-                    <div class="auth-guest flex gap-2 items-center">
-                      <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class="font-label-caps text-label-caps px-4 py-2 text-on-surface-variant hover:text-on-surface transition-all active:scale-95">Đăng nhập</button>
-                      <button onclick="window.dispatchEvent(new Event('open-register-modal'))" class="font-label-caps text-label-caps px-6 py-2 bg-gradient-to-br from-primary-container to-secondary-container text-white rounded-lg shadow-lg hover:brightness-110 transition-all active:scale-95 flex items-center">Đăng ký</button>
+                    <div class="auth-guest flex gap-2 items-center" id="desktop-guest-nav">
+                      <button id="desktop-login-btn" onclick="window.dispatchEvent(new Event('open-login-modal'))" class="font-label-caps text-label-caps px-4 py-2 text-on-surface-variant hover:text-on-surface transition-all active:scale-95 border-none bg-transparent cursor-pointer">Đăng nhập</button>
+                      <button id="desktop-register-btn" onclick="window.dispatchEvent(new Event('open-register-modal'))" class="font-label-caps text-label-caps px-6 py-2 bg-gradient-to-br from-primary-container to-secondary-container text-white rounded-lg shadow-lg hover:brightness-110 transition-all active:scale-95 flex items-center border-none cursor-pointer">Đăng ký</button>
                     </div>
 
                     <!-- Logged In View -->
@@ -1196,6 +1190,20 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
               </select>
             </div>
 
+            <!-- Location Select Field (Province & District/Ward) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1 auth-field">
+                <select id="reg-province" name="province" class="w-full bg-slate-900 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-zinc-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer" required>
+                  <option value="" disabled selected>Chọn Tỉnh/Thành...</option>
+                </select>
+              </div>
+              <div class="space-y-1 auth-field">
+                <select id="reg-ward" name="ward" class="w-full bg-slate-900 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-zinc-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer" disabled required>
+                  <option value="" disabled selected>Chọn Xã/Phường/Quận/Huyện...</option>
+                </select>
+              </div>
+            </div>
+
             <!-- Passwords Fields -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="space-y-1 auth-field relative">
@@ -1296,6 +1304,59 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
           </div>
         )}
 
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- GOOGLE OAUTH ADDITIONAL INFO MODAL                              -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="google-extra-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300 p-4" style="display:none;">
+      <div class="relative w-[92%] sm:w-full max-w-[460px] overflow-hidden rounded-[28px] border border-glass-stroke shadow-[0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#0f172a]/95 animate-[modalZoomIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)] p-8 sm:p-10 flex flex-col justify-center">
+        <!-- Close button -->
+        <button onclick="closeGoogleExtraModal()" class="absolute right-5 top-5 text-on-surface-variant hover:text-white hover:rotate-90 transition-all duration-300 z-50 p-2 cursor-pointer bg-transparent border-none">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+
+        <div class="space-y-5">
+          <div>
+            <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Thông tin bổ sung</h2>
+            <p class="text-xs text-on-surface-variant mt-2 font-semibold">
+              Hoàn tất thông tin để bắt đầu trải nghiệm cùng Google.
+            </p>
+          </div>
+
+          <form id="google-extra-form" class="space-y-4" novalidate>
+            <!-- Gender Selection Field -->
+            <div class="space-y-1 auth-field">
+              <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Giới tính</label>
+              <select id="google-extra-gender" class="w-full bg-slate-900 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-zinc-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer" required>
+                <option value="other" selected>Khác (∞)</option>
+                <option value="male">Nam (♂)</option>
+                <option value="female">Nữ (♀)</option>
+              </select>
+            </div>
+
+            <!-- Location Select Field (Province & District/Ward) -->
+            <div class="space-y-3">
+              <div class="space-y-1 auth-field">
+                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Tỉnh / Thành phố</label>
+                <select id="google-extra-province" class="w-full bg-slate-900 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-zinc-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer" required>
+                  <option value="" disabled selected>Chọn Tỉnh/Thành...</option>
+                </select>
+              </div>
+              <div class="space-y-1 auth-field">
+                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Xã / Phường / Quận / Huyện</label>
+                <select id="google-extra-ward" class="w-full bg-slate-900 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-zinc-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer" disabled required>
+                  <option value="" disabled selected>Chọn Xã/Phường/Quận/Huyện...</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" id="google-extra-submit" class="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-amber-400/10 transition-all flex items-center justify-center gap-2 mt-6 active:scale-95 cursor-pointer text-xs border-none">
+              <span>Hoàn tất đăng ký</span>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -1447,152 +1508,97 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
             }
           };
 
-          // Check VIP expiry
-          if (typeof localStorage !== 'undefined') {
-            const username = (window.APP_USER ? window.APP_USER.username : null);
-            if (username) {
-              let isVIP = false;
-              let userInDb = null;
-              
-              // 1. Look up user in tregistered_users
-              const usersStr = localStorage.getItem('tregistered_users');
-              if (usersStr) {
-                try {
-                  const users = JSON.parse(usersStr);
-                  userInDb = users.find(u => u.username === username || u.email === username);
-                } catch(e) {}
-              }
+          // Update user views from APP_USER
+          if (window.APP_USER) {
+            updateHeaderAvatar(window.APP_USER.avatar_url || window.APP_USER.avatar);
+            const username = window.APP_USER.username;
+            const userEl = document.getElementById('dropdown-username');
+            const badgeEl = document.getElementById('dropdown-badge');
+            if (userEl) userEl.textContent = username;
 
-              if (userInDb) {
-                updateHeaderAvatar(userInDb.avatar || userInDb.avatar_url);
-              }
+            const getPkgId = (title) => {
+              const siteSettings = window.TXA_SITE_SETTINGS || {};
+              const packagesList = siteSettings.packages || [];
+              const userPkg = packagesList.find(p => p.title === title);
+              return userPkg ? userPkg.id : 'free';
+            };
 
-              // 2. Check VIP package in registered database
-              if (userInDb && userInDb.package && userInDb.package.includes('VIP')) {
-                const expiryStr = userInDb.expiryDate;
-                if (expiryStr) {
-                  const expiry = new Date(expiryStr);
-                  const now = new Date();
-                  if (now > expiry) {
-                    // Expired in database
-                    userInDb.package = 'Free';
-                    userInDb.status = 'standard';
-                    localStorage.setItem('tregistered_users', JSON.stringify(JSON.parse(usersStr).map(u => (u.username === username || u.email === username) ? userInDb : u)));
-                    // userInDb already has the correct package info, no need to sync to localStorage
+            fetch(`/api/auth/me?username=${encodeURIComponent(username)}`)
+              .then(res => res.ok ? res.json() : null)
+              .then(userData => {
+                const userDb = userData?.data;
+                if (userDb) {
+                  updateHeaderAvatar(userDb.avatar || userDb.avatar_url);
+                  const userPackage = userDb.package || 'Free';
+                  const userPkgId = getPkgId(userPackage);
+
+                  if (badgeEl) {
+                    badgeEl.textContent = userPackage;
+                    badgeEl.className = `text-[9px] font-black px-1.5 py-0.5 rounded w-max select-none uppercase font-label-caps package-style-${userPkgId}`;
                   }
-                } else {
-                  isVIP = true; // No expiry means lifetime VIP
+
+                  const tooltipEl = document.getElementById('dropdown-badge-tooltip');
+                  const siteSettings = window.TXA_SITE_SETTINGS || {};
+                  const packagesList = siteSettings.packages || [];
+                  const pkgDef = packagesList.find(p => p.id === userPkgId) || {};
+                  const perms = pkgDef.permissions || {};
+
+                  if (tooltipEl && pkgDef.title) {
+                    const maxRes = perms.max_resolution || 'SD';
+                    const bypassAds = perms.bypass_ads ? 'Bỏ qua' : 'Có quảng cáo';
+                    const watchTogether = perms.watch_together ? 'Hỗ trợ' : 'Không hỗ trợ';
+                    const hideWatermark = perms.hide_watermark ? 'Bỏ logo' : 'Không ẩn';
+                    const vipBadge = perms.vip_badge ? 'Hiển thị' : 'Không có';
+                    const maxPlaylists = perms.max_playlists || 0;
+                    const allowedServersCount = perms.allowed_servers?.length || 0;
+
+                    tooltipEl.innerHTML = `
+                      <div class="text-[10px] font-black text-primary border-b border-glass-stroke/50 pb-1.5 uppercase tracking-wider font-label-caps">
+                        Đặc quyền: ${pkgDef.title}
+                      </div>
+                      <div class="flex flex-col gap-1 pt-1.5 font-sans">
+                        <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
+                          <span class="text-zinc-500">Chất lượng tối đa</span>
+                          <span class="font-bold text-white">${maxRes}</span>
+                        </div>
+                        <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
+                          <span class="text-zinc-500">Quảng cáo phát</span>
+                          <span class="font-bold text-white">${bypassAds}</span>
+                        </div>
+                        <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
+                          <span class="text-zinc-500">Phòng xem chung</span>
+                          <span class="font-bold text-white">${watchTogether}</span>
+                        </div>
+                        <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
+                          <span class="text-zinc-500">Watermark ẩn danh</span>
+                          <span class="font-bold text-white">${hideWatermark}</span>
+                        </div>
+                        <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
+                          <span class="text-zinc-500">Huy hiệu VIP</span>
+                          <span class="font-bold text-white">${vipBadge}</span>
+                        </div>
+                        <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
+                          <span class="text-zinc-500">Giới hạn Playlist</span>
+                          <span class="font-bold text-white">${maxPlaylists} phim</span>
+                        </div>
+                        <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
+                          <span class="text-zinc-500">Số lượng Server</span>
+                          <span class="font-bold text-white">${allowedServersCount}</span>
+                        </div>
+                      </div>
+                    `;
+                    tooltipEl.classList.remove('hidden');
+                  }
+
+                  const wtElements = document.querySelectorAll('.nav-watch-together');
+                  if (perms.watch_together) {
+                    wtElements.forEach(el => el.classList.remove('hidden'));
+                  } else {
+                    wtElements.forEach(el => el.classList.add('hidden'));
+                  }
                 }
-              }
-
-              // Update profile dropdown values
-              const userEl = document.getElementById('dropdown-username');
-              const badgeEl = document.getElementById('dropdown-badge');
-              if (userEl) userEl.textContent = username;
-
-              const getPkgId = (title) => {
-                const siteSettings = window.TXA_SITE_SETTINGS || {};
-                const packagesList = siteSettings.packages || [];
-                const userPkg = packagesList.find(p => p.title === title);
-                return userPkg ? userPkg.id : 'free';
-              };
-
-              fetch(`/api/auth/me?username=${encodeURIComponent(username)}`)
-                .then(res => res.ok ? res.json() : null)
-                .then(userData => {
-                  const userDb = userData?.data;
-                  if (userDb) {
-                    updateHeaderAvatar(userDb.avatar || userDb.avatar_url);
-                    const userPackage = userDb.package || 'Free';
-                    const userPkgId = getPkgId(userPackage);
-
-                    if (badgeEl) {
-                      badgeEl.textContent = userPackage;
-                      badgeEl.className = `text-[9px] font-black px-1.5 py-0.5 rounded w-max select-none uppercase font-label-caps package-style-${userPkgId}`;
-                    }
-
-                    // Dynamically render popover detailed hovers
-                    const tooltipEl = document.getElementById('dropdown-badge-tooltip');
-                    const siteSettings = window.TXA_SITE_SETTINGS || {};
-                    const packagesList = siteSettings.packages || [];
-                    const pkgDef = packagesList.find(p => p.id === userPkgId) || {};
-                    const perms = pkgDef.permissions || {};
-
-                    if (tooltipEl && pkgDef.title) {
-                      const maxRes = perms.max_resolution || 'SD';
-                      const bypassAds = perms.bypass_ads ? 'Bỏ qua' : 'Có quảng cáo';
-                      const watchTogether = perms.watch_together ? 'Hỗ trợ' : 'Không hỗ trợ';
-                      const hideWatermark = perms.hide_watermark ? 'Bỏ logo' : 'Không ẩn';
-                      const vipBadge = perms.vip_badge ? 'Hiển thị' : 'Không có';
-                      const maxPlaylists = perms.max_playlists || 0;
-                      const allowedServersCount = perms.allowed_servers?.length || 0;
-
-                      tooltipEl.innerHTML = `
-                        <div class="text-[10px] font-black text-primary border-b border-glass-stroke/50 pb-1.5 uppercase tracking-wider font-label-caps">
-                          Đặc quyền: ${pkgDef.title}
-                        </div>
-                        <div class="flex flex-col gap-1 pt-1.5 font-sans">
-                          <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
-                            <span class="text-zinc-500">Chất lượng tối đa</span>
-                            <span class="font-bold text-white">${maxRes}</span>
-                            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/row:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Độ phân giải hình ảnh video tối đa được xem</span>
-                          </div>
-                          <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
-                            <span class="text-zinc-500">Quảng cáo phát</span>
-                            <span class="font-bold text-white">${bypassAds}</span>
-                            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/row:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Có xuất hiện quảng cáo khi mở phim hay không</span>
-                          </div>
-                          <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
-                            <span class="text-zinc-500">Phòng xem chung</span>
-                            <span class="font-bold text-white">${watchTogether}</span>
-                            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/row:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Quyền tạo phòng ảo đồng bộ xem phim cùng bạn bè</span>
-                          </div>
-                          <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
-                            <span class="text-zinc-500">Watermark ẩn danh</span>
-                            <span class="font-bold text-white">${hideWatermark}</span>
-                            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/row:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Loại bỏ dấu watermark bản quyền mờ trên video</span>
-                          </div>
-                          <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
-                            <span class="text-zinc-500">Huy hiệu VIP</span>
-                            <span class="font-bold text-white">${vipBadge}</span>
-                            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/row:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Huy hiệu VIP cao cấp hiển thị cạnh tên tài khoản</span>
-                          </div>
-                          <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
-                            <span class="text-zinc-500">Giới hạn Playlist</span>
-                            <span class="font-bold text-white">${maxPlaylists} phim</span>
-                            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/row:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Số lượng phim tối đa được lưu vào Danh sách của tôi</span>
-                          </div>
-                          <div class="relative group/row flex justify-between items-center py-1 border-b border-white/5 last:border-none cursor-help">
-                            <span class="text-zinc-500">Số lượng Server</span>
-                            <span class="font-bold text-white">${allowedServersCount}</span>
-                            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/row:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Số lượng server/nguồn phát tốc độ cao khả dụng</span>
-                          </div>
-                        </div>
-                      `;
-                      tooltipEl.classList.remove('hidden');
-                    }
-
-                    // Toggle watch together links
-                    const wtElements = document.querySelectorAll('.nav-watch-together');
-                    if (perms.watch_together) {
-                      wtElements.forEach(el => el.classList.remove('hidden'));
-                    } else {
-                      wtElements.forEach(el => el.classList.add('hidden'));
-                    }
-
-                    // Sync to localStorage
-                    const usersStr = localStorage.getItem('tregistered_users');
-                    if (usersStr) {
-                      try {
-                        const users = JSON.parse(usersStr);
-                        const updatedUsers = users.map(u => (u.username === username || u.email === username) ? { ...u, ...userDb } : u);
-                        localStorage.setItem('tregistered_users', JSON.stringify(updatedUsers));
-                      } catch(e) {}
-                    }
-                  }
-                })
-                .catch(err => console.error('Error fetching dynamic user profile:', err));
-            }
+              })
+              .catch(err => console.error('Error fetching dynamic user profile:', err));
           }
         } else {
           guestViews.forEach(el => el.classList.remove('hidden'));
@@ -1807,6 +1813,29 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
       let googleGsiLoaded = false;
       let tokenClient = null;
 
+      function showDesktopNavLoading(show) {
+        const loginBtn = document.getElementById('desktop-login-btn');
+        const registerBtn = document.getElementById('desktop-register-btn');
+        if (!loginBtn || !registerBtn) return;
+        
+        if (show) {
+          if (!loginBtn.dataset.originalHtml) loginBtn.dataset.originalHtml = loginBtn.innerHTML;
+          if (!registerBtn.dataset.originalHtml) registerBtn.dataset.originalHtml = registerBtn.innerHTML;
+          
+          loginBtn.disabled = true;
+          registerBtn.disabled = true;
+          
+          loginBtn.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>`;
+          registerBtn.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>`;
+        } else {
+          loginBtn.disabled = false;
+          registerBtn.disabled = false;
+          
+          if (loginBtn.dataset.originalHtml) loginBtn.innerHTML = loginBtn.dataset.originalHtml;
+          if (registerBtn.dataset.originalHtml) registerBtn.innerHTML = registerBtn.dataset.originalHtml;
+        }
+      }
+
       function initGoogleClientLogin() {
         const btn = document.getElementById('google-client-login-btn');
         if (!btn) return;
@@ -1826,22 +1855,47 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
             scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
             callback: (tokenResponse) => {
               if (tokenResponse && tokenResponse.access_token) {
-                fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                showDesktopNavLoading(true);
+                fetch('/api/auth/google-login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ accessToken: tokenResponse.access_token })
                 })
                 .then(res => res.json())
-                .then(profile => {
-                  handleOAuthSuccess({
-                    id: profile.sub,
-                    name: profile.name,
-                    email: profile.email,
-                    avatar: profile.picture,
-                    provider: 'Google'
-                  });
+                .then(data => {
+                  showDesktopNavLoading(false);
+                  if (data.success) {
+                    if (data.exists) {
+                      if (window.showGlobalToast) {
+                        window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${data.user.name}`, 'success');
+                      }
+                      console.log("Logged in Google Account:", {
+                        avatar_url: data.user.avatar_url,
+                        name: data.user.name,
+                        email: data.user.email
+                      });
+                      setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                      if (window.showGlobalToast) {
+                        window.showGlobalToast('Vui lòng hoàn tất thông tin đăng ký', 'success');
+                      }
+                      window.TXA_TEMP_GOOGLE_AUTH = {
+                        accessToken: tokenResponse.access_token
+                      };
+                      openGoogleExtraModal();
+                    }
+                  } else {
+                    if (window.showGlobalToast) {
+                      window.showGlobalToast(data.message || 'Xác thực Google thất bại!', 'error');
+                    }
+                  }
                 })
                 .catch(err => {
+                  showDesktopNavLoading(false);
                   console.error(err);
-                  if (window.showGlobalToast) window.showGlobalToast('Không thể lấy thông tin profile Google', 'error');
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast('Có lỗi xảy ra khi kết nối máy chủ', 'error');
+                  }
                 });
               }
             }
@@ -1887,6 +1941,7 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
           google.accounts.id.initialize({
             client_id: clientId,
             callback: (response) => {
+              showDesktopNavLoading(true);
               fetch('/api/auth/google-login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1894,14 +1949,38 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
               })
               .then(res => res.json())
               .then(data => {
-                if (data.success && data.user) {
-                  handleOAuthSuccess({
-                    id: data.user.sub,
-                    name: data.user.name,
-                    email: data.user.email,
-                    avatar: data.user.picture,
-                    provider: 'Google'
-                  });
+                showDesktopNavLoading(false);
+                if (data.success) {
+                  if (data.exists) {
+                    if (window.showGlobalToast) {
+                      window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${data.user.name}`, 'success');
+                    }
+                    console.log("Logged in Google Account:", {
+                      avatar_url: data.user.avatar_url,
+                      name: data.user.name,
+                      email: data.user.email
+                    });
+                    setTimeout(() => window.location.reload(), 1000);
+                  } else {
+                    if (window.showGlobalToast) {
+                      window.showGlobalToast('Vui lòng hoàn tất thông tin đăng ký', 'success');
+                    }
+                    window.TXA_TEMP_GOOGLE_AUTH = {
+                      credential: response.credential
+                    };
+                    openGoogleExtraModal();
+                  }
+                } else {
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast(data.message || 'Xác thực Google thất bại!', 'error');
+                  }
+                }
+              })
+              .catch(err => {
+                showDesktopNavLoading(false);
+                console.error(err);
+                if (window.showGlobalToast) {
+                  window.showGlobalToast('Có lỗi xảy ra khi kết nối máy chủ', 'error');
                 }
               });
             }
@@ -1926,179 +2005,169 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
         if (event.data && event.data.type === 'txa-oauth-callback-response') {
           const { success, error, profile } = event.data;
           if (success && profile) {
-            handleOAuthSuccess(profile);
+            if (profile.provider === 'Google') {
+              showDesktopNavLoading(true);
+              fetch('/api/auth/google-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: profile.email })
+              })
+              .then(res => res.json())
+              .then(data => {
+                showDesktopNavLoading(false);
+                if (data.success && data.exists) {
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${data.user.name}`, 'success');
+                  }
+                  console.log("Logged in Google Account:", {
+                    avatar_url: data.user.avatar_url,
+                    name: data.user.name,
+                    email: data.user.email
+                  });
+                  setTimeout(() => window.location.reload(), 1000);
+                } else {
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast('Tài khoản Google chưa tồn tại. Vui lòng đăng nhập qua Google One Tap hoặc Google Sign-in!', 'error');
+                  }
+                }
+              })
+              .catch(() => showDesktopNavLoading(false));
+            }
           } else {
             if (window.showGlobalToast) window.showGlobalToast(error || 'Đăng nhập OAuth thất bại!', 'error');
           }
         }
       });
 
-      // ─── OAUTH SUCCESS & NEW USER ADDR PICKER ───
-      function handleOAuthSuccess(profile) {
-        const username = profile.email || profile.id;
-        const usersStr = localStorage.getItem('tregistered_users') || '[]';
-        let users = [];
-        try { users = JSON.parse(usersStr); } catch (e) {}
+      function openGoogleExtraModal() {
+        const modal = document.getElementById('google-extra-modal');
+        if (modal) {
+          modal.style.display = 'flex';
+          modal.classList.remove('hidden');
+        }
+      }
 
-        const userExists = users.some(u => u.username === username || u.email === username);
-        
-        const performLogin = (addressInfo = null) => {
-          if (!userExists) {
-            users.push({
-              username: username,
-              email: profile.email || '',
-              createdAt: new Date().toISOString(),
-              avatar: profile.avatar || '',
-              provider: profile.provider,
-              address: addressInfo,
-              package: 'Free',
-              status: 'active',
-              roles: 'users',
-              emailVerified: true
+      function closeGoogleExtraModal() {
+        const modal = document.getElementById('google-extra-modal');
+        if (modal) {
+          modal.style.display = 'none';
+          modal.classList.add('hidden');
+        }
+      }
+
+      document.addEventListener('submit', (e) => {
+        const form = e.target.closest('#google-extra-form');
+        if (form) {
+          e.preventDefault();
+          const gender = document.getElementById('google-extra-gender')?.value;
+          const province = document.getElementById('google-extra-province')?.value;
+          const ward = document.getElementById('google-extra-ward')?.value;
+
+          if (!gender || !province || !ward) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền đầy đủ thông tin giới tính và địa chỉ!', 'error');
+            return;
+          }
+
+          if (!window.TXA_TEMP_GOOGLE_AUTH) {
+            if (window.showGlobalToast) window.showGlobalToast('Thiếu thông tin xác thực Google. Vui lòng thử lại!', 'error');
+            return;
+          }
+
+          const submitBtn = document.getElementById('google-extra-submit');
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>';
+          }
+
+          fetch('/api/auth/google-register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...window.TXA_TEMP_GOOGLE_AUTH,
+              gender,
+              province,
+              ward
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              if (window.showGlobalToast) window.showGlobalToast('Đăng ký tài khoản Google thành công!', 'success');
+              console.log("Registered Google Account:", {
+                avatar_url: data.user.avatar_url,
+                name: data.user.name,
+                email: data.user.email
+              });
+              closeGoogleExtraModal();
+              setTimeout(() => window.location.reload(), 1000);
+            } else {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Hoàn tất đăng ký</span>';
+              }
+              if (window.showGlobalToast) window.showGlobalToast(data.message || 'Đăng ký thất bại!', 'error');
+            }
+          })
+          .catch(err => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<span>Hoàn tất đăng ký</span>';
+            }
+            console.error(err);
+            if (window.showGlobalToast) window.showGlobalToast('Có lỗi xảy ra khi kết nối máy chủ', 'error');
+          });
+        }
+      });
+
+      let cachedLocations = null;
+      async function initLocationsDropdowns() {
+        const regProv = document.getElementById('reg-province');
+        const regWard = document.getElementById('reg-ward');
+        const gExtraProv = document.getElementById('google-extra-province');
+        const gExtraWard = document.getElementById('google-extra-ward');
+
+        if (!regProv && !gExtraProv) return;
+
+        try {
+          if (!cachedLocations) {
+            const res = await fetch('/locations.json');
+            cachedLocations = await res.json();
+          }
+
+          const provinces = Object.keys(cachedLocations);
+
+          const setupDropdown = (provSelect, wardSelect) => {
+            if (!provSelect) return;
+            provSelect.innerHTML = '<option value="" disabled selected>Chọn Tỉnh/Thành...</option>';
+            provinces.forEach(p => {
+              const opt = document.createElement('option');
+              opt.value = p;
+              opt.textContent = p;
+              provSelect.appendChild(opt);
             });
-            localStorage.setItem('tregistered_users', JSON.stringify(users));
-          }
 
-          document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
-          
-
-          // Auto pass decoy if admin
-          try {
-            const usersList = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-            const user = usersList.find(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === username.toLowerCase());
-            if (user && (user.role === 'admin' || user.is_admin === true || user.is_admin === 'true')) {
-              localStorage.setItem('txa_referred_token', 'true');
-            }
-          } catch(e) {}
-
-          localStorage.removeItem('thistory');
-          
-          window.dispatchEvent(new Event('auth-changed'));
-          if (typeof window.checkTxaGate === 'function') {
-            window.checkTxaGate();
-          }
-
-          if (window.showGlobalToast) window.showGlobalToast(`Chào mừng ${profile.name}! Đăng nhập thành công.`, 'success');
-          
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        };
-
-        if (!userExists) {
-          const container = document.createElement('div');
-          container.className = 'space-y-4';
-          container.innerHTML = `
-            <p class="text-xs text-zinc-400">Chào mừng thành viên mới! Vui lòng bổ sung thông tin địa chỉ để hoàn tất:</p>
-            <div class="space-y-3">
-              <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">Tỉnh / Thành phố</label>
-                <select id="addr-province" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-primary">
-                  <option value="">-- Chọn Tỉnh / Thành phố --</option>
-                  <option value="Hà Nội">Hà Nội</option>
-                  <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
-                  <option value="Đà Nẵng">Đà Nẵng</option>
-                  <option value="Hải Phòng">Hải Phòng</option>
-                  <option value="Cần Thơ">Cần Thơ</option>
-                </select>
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">Quận / Huyện</label>
-                <select id="addr-district" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-primary" disabled>
-                  <option value="">-- Chọn Quận / Huyện --</option>
-                </select>
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">Xã / Phường / Thị trấn</label>
-                <select id="addr-ward" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-primary" disabled>
-                  <option value="">-- Chọn Xã / Phường --</option>
-                </select>
-              </div>
-            </div>
-          `;
-
-          const districts = {
-            'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Đống Đa', 'Cầu Giấy', 'Hai Bà Trưng'],
-            'Hồ Chí Minh': ['Quận 1', 'Quận 3', 'Quận 7', 'Bình Thạnh', 'Thủ Đức'],
-            'Đà Nẵng': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn'],
-            'Hải Phòng': ['Hồng Bàng', 'Lê Chân', 'Ngô Quyền', 'Hải An'],
-            'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng', 'Ô Môn']
-          };
-
-          const wards = {
-            'Ba Đình': ['Trúc Bạch', 'Vĩnh Phúc', 'Cống Vị', 'Liễu Giai'],
-            'Hoàn Kiếm': ['Hàng Bạc', 'Hàng Đào', 'Tràng Tiền', 'Lý Thái Tổ'],
-            'Quận 1': ['Bến Nghé', 'Bến Thành', 'Đa Kao', 'Tân Định'],
-            'Quận 3': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4'],
-            'Hải Châu': ['Hải Châu I', 'Hải Châu II', 'Thạch Thang', 'Thuận Phước']
-          };
-
-          setTimeout(() => {
-            const provSel = document.getElementById('addr-province');
-            const distSel = document.getElementById('addr-district');
-            const wardSel = document.getElementById('addr-ward');
-
-            if (provSel && distSel && wardSel) {
-              provSel.addEventListener('change', () => {
-                const prov = provSel.value;
-                distSel.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
-                wardSel.innerHTML = '<option value="">-- Chọn Xã / Phường --</option>';
-                wardSel.disabled = true;
-                
-                if (prov && districts[prov]) {
-                  districts[prov].forEach(d => {
-                    distSel.innerHTML += `<option value="${d}">${d}</option>`;
-                  });
-                  distSel.disabled = false;
-                } else {
-                  distSel.disabled = true;
-                }
-              });
-
-              distSel.addEventListener('change', () => {
-                const dist = distSel.value;
-                wardSel.innerHTML = '<option value="">-- Chọn Xã / Phường --</option>';
-                
-                if (dist && wards[dist]) {
-                  wards[dist].forEach(w => {
-                    wardSel.innerHTML += `<option value="${w}">${w}</option>`;
-                  });
-                  wardSel.disabled = false;
-                } else if (dist) {
-                  ['Phường A', 'Phường B', 'Xã C', 'Xã D'].forEach(w => {
-                    wardSel.innerHTML += `<option value="${w}">${w}</option>`;
-                  });
-                  wardSel.disabled = false;
-                } else {
-                  wardSel.disabled = true;
-                }
-              });
-            }
-          }, 50);
-
-          if (window.txamodal) {
-            window.txamodal.show({
-              title: 'Bổ sung địa chỉ đăng ký',
-              content: container,
-              confirmText: 'Hoàn tất',
-              cancelText: 'Bỏ qua',
-              onConfirm: () => {
-                const prov = document.getElementById('addr-province')?.value;
-                const dist = document.getElementById('addr-district')?.value;
-                const ward = document.getElementById('addr-ward')?.value;
-                
-                const addressInfo = (prov && dist && ward) ? { province: prov, district: dist, ward: ward } : null;
-                performLogin(addressInfo);
-              },
-              onCancel: () => {
-                performLogin(null);
+            provSelect.addEventListener('change', () => {
+              const selectedProv = provSelect.value;
+              wardSelect.innerHTML = '<option value="" disabled selected>Chọn Xã/Phường/Quận/Huyện...</option>';
+              if (selectedProv && cachedLocations[selectedProv]) {
+                cachedLocations[selectedProv].forEach(w => {
+                  const opt = document.createElement('option');
+                  opt.value = w.txa_name;
+                  opt.textContent = w.txa_name;
+                  wardSelect.appendChild(opt);
+                });
+                wardSelect.disabled = false;
+              } else {
+                wardSelect.disabled = true;
               }
             });
-          } else {
-            performLogin(null);
-          }
-        } else {
-          performLogin(null);
+          };
+
+          setupDropdown(regProv, regWard);
+          setupDropdown(gExtraProv, gExtraWard);
+
+        } catch (err) {
+          console.error("Lỗi khi tải locations.json:", err);
         }
       }
 
@@ -2107,10 +2176,12 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
       document.addEventListener('astro:after-swap', () => {
         updateAuthState();
         initGoogleOneTap();
+        initLocationsDropdowns();
       });
       document.addEventListener('astro:page-load', () => {
         updateAuthState();
         initGoogleOneTap();
+        initLocationsDropdowns();
       });
 
       window.logout = async function() {
@@ -2838,35 +2909,10 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                 document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
                 
                 
-                // Keep local tregistered_users synced
-                try {
-                  let registered = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-                  const idx = registered.findIndex(u => u.username.toLowerCase() === user.username.toLowerCase());
-                  const syncUser = {
-                    username: user.username,
-                    email: user.email,
-                    name: user.name,
-                    role: user.role,
-                    roles: user.role,
-                    avatar: user.avatar_url,
-                    gender: user.gender,
-                    province: user.province,
-                    ward: user.ward,
-                    package: user.role === 'admin' ? 'VIP' : 'Free',
-                    status: 'active',
-                    emailVerified: true
-                  };
-                  if (idx === -1) {
-                    registered.push(syncUser);
-                  } else {
-                    registered[idx] = { ...registered[idx], ...syncUser };
-                  }
-                  localStorage.setItem('tregistered_users', JSON.stringify(registered));
-                } catch(e) {}
-
-                if (user.role === 'admin') {
-                  localStorage.setItem('txa_referred_token', 'true');
-                }
+                 // Auto pass decoy if admin
+                 if (user.role === 'admin') {
+                   localStorage.setItem('txa_referred_token', 'true');
+                 }
                 localStorage.removeItem('thistory');
                 
                 resetTurnstileWidgets();
@@ -2983,15 +3029,7 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
           } else if (!/^[a-zA-Z0-9_]+$/.test(val)) {
             msg = 'Chỉ dùng chữ cái, số và dấu gạch dưới (_)';
           } else {
-            try {
-              const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-              const isTaken = users.some(u => u.username.toLowerCase() === val.toLowerCase());
-              if (isTaken) {
-                msg = 'Tên tài khoản đã được sử dụng';
-              } else {
-                isValid = true;
-              }
-            } catch(e) { isValid = true; }
+            isValid = true;
           }
 
           updateFieldUI(input, isValid, msg);
@@ -3024,15 +3062,7 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
             if (!isAllowed) {
               msg = 'Chỉ hỗ trợ Gmail, Outlook, Hotmail, iCloud';
             } else {
-              try {
-                const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-                const isTaken = users.some(u => u.email.toLowerCase() === val.toLowerCase());
-                if (isTaken) {
-                  msg = 'Địa chỉ email đã được đăng ký';
-                } else {
-                  isValid = true;
-                }
-              } catch(e) { isValid = true; }
+              isValid = true;
             }
           }
 
@@ -3234,13 +3264,15 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                 const email = document.getElementById('reg-email').value.trim();
                 const password = document.getElementById('reg-password').value;
                 const gender = document.getElementById('reg-gender').value;
+                const province = document.getElementById('reg-province').value;
+                const ward = document.getElementById('reg-ward').value;
 
                 const turnstileToken = window.txaTurnstileTokenRegister || '';
 
                 fetch('/api/auth/register', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ username, email, password, gender, turnstileToken })
+                  body: JSON.stringify({ username, email, password, gender, province, ward, turnstileToken })
                 })
                 .then(res => res.json())
                 .then(data => {
@@ -3318,20 +3350,11 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
             }
 
             try {
-              let userName = 'DongMePhim User';
-              try {
-                const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-                const matchedUser = users.find(u => u.email === emailVal || u.username === emailVal);
-                if (matchedUser) {
-                  userName = matchedUser.username;
-                }
-              } catch (e) {}
-
               const token = window.txaTurnstileTokenForgot || '';
               const res = await fetch('/api/auth/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: emailVal, name: userName, turnstileToken: token })
+                body: JSON.stringify({ email: emailVal, name: emailVal, turnstileToken: token })
               });
               const data = await res.json();
               if (res.ok) {
@@ -3943,11 +3966,9 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
 
         function getUserPackageFromStorage() {
           try {
-            const loggedIn = (window.APP_USER ? window.APP_USER.username : null);
-            if (!loggedIn) return 'Free';
-            const users = JSON.parse(localStorage.getItem('tregistered_users') || '[]');
-            const user = users.find(u => u.username === loggedIn || u.email === loggedIn);
-            return user ? (user.package || 'Free') : 'Free';
+            const user = window.APP_USER;
+            if (!user) return 'Free';
+            return user.package || 'Free';
           } catch (e) {
             return 'Free';
           }

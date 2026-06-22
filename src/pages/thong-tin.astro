@@ -1,0 +1,206 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { SettingService } from '../services/SettingService';
+
+const settings = await SettingService.getSettings();
+---
+
+<MainLayout title={`Thông tin tài khoản | ${settings.general.site_name}`}>
+  <main class="max-w-4xl mx-auto px-6 py-24 md:py-32">
+    <div class="glass-panel p-8 md:p-12 rounded-[32px] border border-glass-stroke relative overflow-hidden">
+      <div class="absolute inset-0 bg-primary/5 blur-[80px] pointer-events-none"></div>
+      
+      <div class="relative z-10 space-y-6">
+        <header class="border-b border-glass-stroke pb-6">
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Thông tin tài khoản</h1>
+          <p class="text-zinc-500 text-xs font-bold uppercase tracking-wider mt-2 font-label-caps">Quản lý và xem thông tin tài khoản của bạn</p>
+        </header>
+
+        <div id="user-info-content" class="space-y-6 text-zinc-300 text-sm">
+          <!-- Loading state -->
+          <div id="info-loading" class="py-12 flex flex-col items-center justify-center gap-3">
+            <div class="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+            <p class="text-zinc-500 text-xs uppercase font-bold tracking-wider">Đang tải thông tin...</p>
+          </div>
+
+          <!-- Logged in state -->
+          <div id="info-profile" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-center gap-6 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+              <div class="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary shadow-lg shadow-primary/20">
+                <img id="info-avatar" src="/logo-decoy.png" class="w-full h-full object-cover" onerror="this.src='/logo-decoy.png';" />
+              </div>
+              <div class="text-center sm:text-left space-y-2">
+                <h2 id="info-name" class="text-xl font-bold text-white"></h2>
+                <p id="info-email" class="text-xs text-zinc-400 font-mono"></p>
+                <div class="flex flex-wrap gap-2 justify-center sm:justify-start pt-1">
+                  <span id="info-package-badge" class="bg-primary/20 text-primary border border-primary/30 rounded-full px-3 py-1 text-[10px] font-bold uppercase"></span>
+                  <span id="info-status-badge" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full px-3 py-1 text-[10px] font-bold uppercase">Kích hoạt</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="p-6 bg-white/[0.01] border border-white/5 rounded-2xl space-y-4">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-3">
+                  <span class="material-symbols-outlined text-primary text-sm">assignment_ind</span> Thông tin cá nhân
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex justify-between py-1 border-b border-white/[0.02]">
+                    <span class="text-zinc-500 text-xs">Tên tài khoản:</span>
+                    <span id="info-username-val" class="font-bold text-xs text-white"></span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-white/[0.02]">
+                    <span class="text-zinc-500 text-xs">Email liên kết:</span>
+                    <span id="info-email-val" class="font-bold text-xs text-white font-mono"></span>
+                  </div>
+                  <div class="flex justify-between py-1">
+                    <span class="text-zinc-500 text-xs">Ngày đăng ký:</span>
+                    <span id="info-created-val" class="font-bold text-xs text-white"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-6 bg-white/[0.01] border border-white/5 rounded-2xl space-y-4">
+                <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-3">
+                  <span class="material-symbols-outlined text-primary text-sm">workspace_premium</span> Gói dịch vụ hiện tại
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex justify-between py-1 border-b border-white/[0.02]">
+                    <span class="text-zinc-500 text-xs">Tên gói:</span>
+                    <span id="info-package-val" class="font-bold text-xs text-primary"></span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-white/[0.02]">
+                    <span class="text-zinc-500 text-xs">Quyền hạn:</span>
+                    <span id="info-rights-val" class="font-bold text-xs text-white">Xem cơ bản</span>
+                  </div>
+                  <div class="flex justify-between py-1">
+                    <span class="text-zinc-500 text-xs">Hạn dùng:</span>
+                    <span id="info-expiry-val" class="font-bold text-xs text-zinc-400">Vô thời hạn</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Unauthenticated state -->
+          <div id="info-unauth" class="hidden py-12 flex flex-col items-center justify-center text-center gap-4">
+            <span class="material-symbols-outlined text-5xl text-zinc-600">no_accounts</span>
+            <div>
+              <h3 class="text-base font-bold text-white">Bạn chưa đăng nhập</h3>
+              <p class="text-xs text-zinc-500 mt-1 max-w-xs">Vui lòng đăng nhập tài khoản để xem thông tin chi tiết của bạn.</p>
+            </div>
+            <button onclick="window.showAuthModal ? window.showAuthModal('login') : alert('Vui lòng click đăng nhập ở góc phải màn hình!')" class="px-6 py-2.5 bg-primary text-slate-950 rounded-xl text-xs font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none flex items-center gap-1.5 shadow-lg shadow-primary/20">
+              <span class="material-symbols-outlined text-sm">login</span> Đăng nhập ngay
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</MainLayout>
+
+<script is:inline>
+  document.addEventListener('astro:page-load', () => {
+    const loading = document.getElementById('info-loading');
+    const profile = document.getElementById('info-profile');
+    const unauth = document.getElementById('info-unauth');
+
+    if (!loading || !profile || !unauth) return;
+
+    // Hide everything first
+    loading.classList.remove('hidden');
+    profile.classList.add('hidden');
+    unauth.classList.add('hidden');
+
+    const checkAuthAndRender = () => {
+      const currentUser = window.APP_USER;
+      if (!currentUser || !currentUser.username) {
+        const isLoggedInCookie = document.cookie.includes('txa_gate_passed=true');
+        if (!isLoggedInCookie) {
+          loading.classList.add('hidden');
+          unauth.classList.remove('hidden');
+          return;
+        }
+      }
+
+      const username = currentUser ? currentUser.username : '';
+      if (!username) {
+        loading.classList.add('hidden');
+        unauth.classList.remove('hidden');
+        return;
+      }
+
+      fetch(`/api/auth/me?username=${encodeURIComponent(username)}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(userData => {
+          const userDb = userData?.data;
+          if (userDb) {
+            renderProfile(userDb);
+          } else {
+            renderProfile({
+              username: username,
+              email: currentUser.email || username,
+              name: currentUser.name || username,
+              avatar: currentUser.avatar_url || currentUser.avatar || '',
+              package: currentUser.package || 'Free',
+              createdAt: currentUser.join_date || new Date().toISOString()
+            });
+          }
+        })
+        .catch(() => {
+          renderProfile({
+            username: username,
+            email: currentUser.email || username,
+            name: currentUser.name || username,
+            avatar: currentUser.avatar_url || currentUser.avatar || '',
+            package: currentUser.package || 'Free',
+            createdAt: currentUser.join_date || new Date().toISOString()
+          });
+        });
+    };
+
+    const renderProfile = (user) => {
+      document.getElementById('info-avatar').src = user.avatar_url || user.avatar || '/logo-decoy.png';
+      document.getElementById('info-name').textContent = user.name || user.username || 'Thành viên';
+      document.getElementById('info-email').textContent = user.email || 'Chưa liên kết';
+      
+      const pkgBadge = document.getElementById('info-package-badge');
+      const pkgVal = document.getElementById('info-package-val');
+      const pkgTitle = user.package || 'Free';
+      pkgBadge.textContent = pkgTitle;
+      pkgVal.textContent = pkgTitle;
+      
+      if (pkgTitle.toUpperCase().includes('VIP')) {
+        pkgBadge.className = "bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full px-3 py-1 text-[10px] font-bold uppercase animate-pulse";
+        pkgVal.className = "font-bold text-xs text-rose-400";
+        document.getElementById('info-rights-val').textContent = "Không quảng cáo, xem 4K";
+      } else {
+        pkgBadge.className = "bg-primary/20 text-primary border border-primary/30 rounded-full px-3 py-1 text-[10px] font-bold uppercase";
+        pkgVal.className = "font-bold text-xs text-primary";
+        document.getElementById('info-rights-val').textContent = "Xem cơ bản SD, có quảng cáo";
+      }
+
+      document.getElementById('info-username-val').textContent = user.username;
+      document.getElementById('info-email-val').textContent = user.email || 'N/A';
+      
+      const date = new Date(user.join_date || user.createdAt || new Date());
+      document.getElementById('info-created-val').textContent = date.toLocaleDateString('vi-VN');
+
+      if (user.expiry_date || user.expiryDate) {
+        const expiry = new Date(user.expiry_date || user.expiryDate);
+        document.getElementById('info-expiry-val').textContent = expiry.toLocaleDateString('vi-VN');
+      } else {
+        document.getElementById('info-expiry-val').textContent = 'Vô thời hạn';
+      }
+
+      loading.classList.add('hidden');
+      profile.classList.remove('hidden');
+    };
+
+    // Run auth check
+    checkAuthAndRender();
+    
+    // Listen for auth change
+    window.addEventListener('auth-changed', checkAuthAndRender);
+  });
+</script>

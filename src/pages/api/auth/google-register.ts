@@ -5,12 +5,18 @@ import { createSession } from '../../../lib/auth';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const body = await request.json() as any;
-    const credential = body?.credential;
-    const accessToken = body?.accessToken;
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch (e) {}
+
+    const { credential, accessToken, gender, province, ward } = body;
 
     if (!credential && !accessToken) {
       return apiResponse(null, 'error', 'Thiếu credential hoặc accessToken từ Google', 400, request);
+    }
+    if (!gender || !province || !ward) {
+      return apiResponse(null, 'error', 'Vui lòng điền đầy đủ thông tin giới tính và địa chỉ!', 400, request);
     }
 
     let email = '';
@@ -19,7 +25,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     let sub = '';
 
     if (credential) {
-      // Decode Google JWT
       const parts = credential.split('.');
       if (parts.length !== 3) {
         return apiResponse(null, 'error', 'Định dạng token không đúng', 400, request);
@@ -54,7 +59,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       picture = decodedUser.picture || '';
       sub = decodedUser.sub || '';
     } else if (accessToken) {
-      // Fetch profile using accessToken
       const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
@@ -72,52 +76,63 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse(null, 'error', 'Không tìm thấy địa chỉ email trong tài khoản Google', 400, request);
     }
 
-    // Check if user exists in database
-    const { data: user, error: dbError } = await supabase
+    // Check if user already exists
+    const { data: existingUser, error: checkError } = await supabase
       .from('users')
-      .select('*')
+      .select('id')
       .eq('email', email)
       .maybeSingle();
 
-    if (dbError) {
-      return apiResponse(null, 'error', 'Lỗi truy vấn cơ sở dữ liệu: ' + dbError.message, 500, request);
+    if (checkError) {
+      throw checkError;
     }
 
-    if (user) {
-      if (user.status === 'suspended') {
-        return apiResponse(null, 'error', 'Tài khoản của bạn đã bị khóa!', 400, request);
+    if (existingUser) {
+      return apiResponse(null, 'error', 'Tài khoản với địa chỉ email này đã tồn tại!', 400, request);
+    }
+
+    // Insert user into Supabase
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        username: email,
+        email: email,
+        password: Math.random().toString(36).substring(2, 10), // random password for OAuth user
+        role: 'user',
+        name: name,
+        avatar_url: picture,
+        gender: gender,
+        province: province,
+        ward: ward,
+        package: 'Free',
+        status: 'active',
+        email_verified: true,
+        join_date: new Date().toISOString()
+      })
+      .select('*')
+      .single();
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    // Create session
+    await createSession(newUser.id, request, cookies);
+
+    return apiResponse({
+      success: true,
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        avatar_url: newUser.avatar_url,
+        gender: newUser.gender,
+        province: newUser.province,
+        ward: newUser.ward
       }
-
-      // Create session
-      await createSession(user.id, request, cookies);
-
-      return apiResponse({
-        success: true,
-        exists: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          avatar_url: user.avatar_url,
-          gender: user.gender,
-          province: user.province,
-          ward: user.ward
-        }
-      }, 'success', '', 200, request);
-    } else {
-      return apiResponse({
-        success: true,
-        exists: false,
-        googleProfile: {
-          email: email,
-          name: name,
-          picture: picture,
-          sub: sub
-        }
-      }, 'success', '', 200, request);
-    }
+    }, 'success', 'Đăng ký tài khoản Google thành công', 200, request);
 
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);

@@ -133,8 +133,24 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
                     <span class="text-xs">Bật One-Tap popup đăng nhập nhanh (login_google_onetap_enable)</span>
                   </div>
                   <div class="md:col-span-2">
-                    <label class="text-[10px] text-zinc-500 font-bold uppercase block mb-1">Nút đăng nhập Google kiểm thử</label>
-                    <div id="google-test-btn" class="min-h-[40px] flex items-center justify-start mt-1"></div>
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase block mb-2">Đăng nhập Google kiểm thử (Demo)</label>
+                    <div class="flex flex-col gap-3">
+                      <!-- Custom Google Test Button -->
+                      <button type="button" id="google-custom-test-btn" class="w-full md:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer border-none shadow-md">
+                        <i class="fab fa-google"></i>
+                        <span>Đăng nhập thử nghiệm bằng Google</span>
+                      </button>
+
+                      <!-- Google Test Profile Result -->
+                      <div id="google-test-profile" class="hidden p-4 bg-zinc-950 border border-glass-stroke rounded-2xl flex items-center gap-3.5 transition-all">
+                        <img id="google-test-avatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-primary" onerror="this.src='/logo-decoy.png';" />
+                        <div>
+                          <div id="google-test-name" class="font-bold text-xs text-white"></div>
+                          <div id="google-test-email" class="text-[10px] text-zinc-400 font-mono mt-0.5"></div>
+                          <span class="inline-block bg-primary/20 text-primary border border-primary/30 rounded px-1.5 py-0.5 text-[8px] font-bold uppercase mt-1">Đã kết nối</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -553,16 +569,16 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
 
       // Google sign-in testing GSI functions
       let gsiLoaded = false;
+      let tokenClient = null;
       window.initGoogleGSIAndButton = () => {
         const clientId = document.getElementById('login-google-client-id')?.value.trim();
         if (!clientId) {
-          const container = document.getElementById('google-test-btn');
-          if (container) container.innerHTML = '';
+          tokenClient = null;
           return;
         }
 
         if (gsiLoaded) {
-          renderGoogleAdminButton(clientId);
+          initializeTokenClient(clientId);
           return;
         }
 
@@ -572,35 +588,115 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         script.defer = true;
         script.onload = () => {
           gsiLoaded = true;
-          renderGoogleAdminButton(clientId);
+          initializeTokenClient(clientId);
         };
         document.head.appendChild(script);
       };
 
-      function renderGoogleAdminButton(clientId) {
+      function initializeTokenClient(clientId) {
         if (typeof google === 'undefined') return;
         try {
-          google.accounts.id.initialize({
+          tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: clientId,
-            callback: (response) => {
-              if (window.showGlobalToast) window.showGlobalToast('Kiểm thử đăng nhập Google thành công!', 'success');
-              console.log('Google credential:', response.credential);
+            scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+            callback: (tokenResponse) => {
+              if (tokenResponse && tokenResponse.access_token) {
+                fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                })
+                .then(res => res.json())
+                .then(profile => {
+                  const name = profile.name;
+                  const email = profile.email;
+                  const avatar = profile.picture;
+
+                  console.log("=== GOOGLE LOGIN TEST DETAILS ===");
+                  console.log("Name:", name);
+                  console.log("Email:", email);
+                  console.log("Avatar URL:", avatar);
+                  console.log("================================");
+
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast(`Đăng nhập Google thành công! Tài khoản: ${name} (${email})`, 'success');
+                  } else {
+                    alert(`Đăng nhập Google thành công!\nTài khoản: ${name} (${email})`);
+                  }
+
+                  const profileDiv = document.getElementById('google-test-profile');
+                  const avatarImg = document.getElementById('google-test-avatar');
+                  const nameDiv = document.getElementById('google-test-name');
+                  const emailDiv = document.getElementById('google-test-email');
+                  
+                  if (profileDiv && avatarImg && nameDiv && emailDiv) {
+                    avatarImg.src = avatar || '/logo-decoy.png';
+                    nameDiv.textContent = name || 'N/A';
+                    emailDiv.textContent = email || 'N/A';
+                    profileDiv.classList.remove('hidden');
+                  }
+
+                  const username = email || profile.sub;
+                  const usersStr = localStorage.getItem('tregistered_users') || '[]';
+                  let users = [];
+                  try { users = JSON.parse(usersStr); } catch (e) {}
+
+                  let userIdx = users.findIndex(u => u.username === username || u.email === username);
+                  if (userIdx >= 0) {
+                    users[userIdx].name = name;
+                    users[userIdx].avatar = avatar || '';
+                    users[userIdx].emailVerified = true;
+                  } else {
+                    users.push({
+                      username: username,
+                      email: email || '',
+                      createdAt: new Date().toISOString(),
+                      avatar: avatar || '',
+                      provider: 'Google',
+                      package: 'Free',
+                      status: 'active',
+                      roles: 'users',
+                      emailVerified: true
+                    });
+                  }
+                  localStorage.setItem('tregistered_users', JSON.stringify(users));
+                })
+                .catch(err => {
+                  console.error("Google profile fetch error:", err);
+                  if (window.showGlobalToast) window.showGlobalToast('Không thể lấy thông tin profile Google', 'error');
+                });
+              }
             }
           });
-          const container = document.getElementById('google-test-btn');
-          if (container) {
-            container.innerHTML = '';
-            google.accounts.id.renderButton(container, {
-              theme: 'filled_blue',
-              size: 'large',
-              width: 250,
-              text: 'signin_with'
-            });
-          }
         } catch (err) {
-          console.error('Error rendering Google test button:', err);
+          console.error('Error initializing Google Token Client:', err);
         }
       }
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#google-custom-test-btn');
+        if (btn) {
+          if (tokenClient) {
+            tokenClient.requestAccessToken();
+          } else {
+            const clientId = document.getElementById('login-google-client-id')?.value.trim();
+            if (!clientId) {
+              if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền Client ID Google trước!', 'error');
+              return;
+            }
+            window.initGoogleGSIAndButton();
+            let checks = 0;
+            const interval = setInterval(() => {
+              checks++;
+              if (tokenClient) {
+                clearInterval(interval);
+                tokenClient.requestAccessToken();
+              } else if (checks > 20) {
+                clearInterval(interval);
+                if (window.showGlobalToast) window.showGlobalToast('Không thể khởi tạo Client đăng nhập Google', 'error');
+              }
+            }, 100);
+          }
+        }
+      });
 
       // Save handler
       document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
@@ -674,8 +770,8 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           if (cb && cb.checked) {
             window.initGoogleGSIAndButton();
           } else {
-            const container = document.getElementById('google-test-btn');
-            if (container) container.innerHTML = '';
+            const profileDiv = document.getElementById('google-test-profile');
+            if (profileDiv) profileDiv.classList.add('hidden');
           }
         }
       });
