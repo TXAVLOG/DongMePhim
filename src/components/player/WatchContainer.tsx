@@ -957,7 +957,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           try {
             const wlRes = await fetch(`/api/user/watchlist?username=${encodeURIComponent(username)}`);
             if (wlRes.ok) {
-              const wlData = await wlRes.json();
+              const wlData = (await wlRes.json()) as any;
               const favs = wlData.data?.favorites || [];
               const plist = wlData.data?.playlist || [];
               setIsFavorited(favs.includes(movie.slug));
@@ -1111,6 +1111,30 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const [isInPlaylist, setIsInPlaylist] = useState<boolean>(false);
   const [isCinemaMode, setIsCinemaMode] = useState<boolean>(false);
+  const [isCompact, setIsCompact] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
+    try {
+      const stored = localStorage.getItem('tsettings');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.isCompact !== false;
+      }
+    } catch (e) {}
+    return true;
+  });
+
+  const toggleCompact = () => {
+    const nextState = !isCompact;
+    setIsCompact(nextState);
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('tsettings');
+        const parsed = stored ? JSON.parse(stored) : {};
+        parsed.isCompact = nextState;
+        localStorage.setItem('tsettings', JSON.stringify(parsed));
+      } catch (e) {}
+    }
+  };
 
   const [autoNext, setAutoNext] = useState<boolean>(() => {
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
@@ -1177,7 +1201,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             (window as any).showGlobalToast('Đã thêm vào danh sách Yêu thích!', 'success');
           }
         } else {
-          const errData = await res.json();
+          const errData = (await res.json()) as any;
           throw new Error(errData.message || 'Lỗi thêm yêu thích');
         }
       }
@@ -1230,7 +1254,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             (window as any).showGlobalToast('Đã thêm vào Danh sách phát!', 'success');
           }
         } else {
-          const errData = await res.json();
+          const errData = (await res.json()) as any;
           throw new Error(errData.message || 'Lỗi thêm danh sách phát');
         }
       }
@@ -2008,74 +2032,61 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             </div>
           </div>
 
-          {/* Nguồn Phát (Servers selector) */}
-          {servers.length > 0 && (
-            <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm">
-                  <span className="material-symbols-outlined text-primary">dns</span>
-                  Nguồn Phát
-                </h3>
-                <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>swap_horiz</span>
-                  Giữ mốc thời gian khi đổi server
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                {servers.map((srv, idx) => {
-                  const isActive = idx === serverIndex;
-                  const isLocked = idx > 0 && currentUserPackage.toLowerCase() === 'free';
-                  return (
-                    <button 
-                      key={srv.serverName}
-                      type="button"
-                      onClick={() => selectServer(idx)}
-                      className={`group relative flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer border ${
-                        isActive
-                          ? 'bg-gradient-to-r from-primary/20 to-primary/5 border-primary/50 text-white shadow-[0_0_15px_rgba(124,58,237,0.15)]' 
-                          : isLocked
-                            ? 'bg-surface border-glass-stroke text-zinc-500 hover:border-amber-500/30'
-                            : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-primary/30 hover:bg-white/[0.02] hover:text-white'
-                      }`}
-                    >
-                      {isActive ? (
-                        <div className="flex items-end gap-[2px] h-3.5 shrink-0">
-                          <span className="w-[2.5px] bg-primary rounded-full animate-[eqBar1_0.6s_ease-in-out_infinite]" style={{ height: '60%' }} />
-                          <span className="w-[2.5px] bg-primary rounded-full animate-[eqBar2_0.7s_ease-in-out_infinite]" style={{ height: '100%' }} />
-                          <span className="w-[2.5px] bg-primary rounded-full animate-[eqBar3_0.5s_ease-in-out_infinite]" style={{ height: '40%' }} />
-                        </div>
-                      ) : isLocked ? (
-                        <span className="material-symbols-outlined text-[16px] text-amber-400 font-bold shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-                      ) : (
-                        <span className="material-symbols-outlined text-[16px] text-zinc-500 group-hover:text-primary transition-colors">play_circle</span>
-                      )}
-                      
-                      <span className="flex-1 text-left truncate">{srv.serverName}</span>
-                      {isLocked ? (
-                        <span className="ml-1 text-[8px] bg-amber-500/20 text-amber-400 px-1 py-0.5 rounded font-black uppercase tracking-wider shrink-0">VIP</span>
-                      ) : isActive ? (
-                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ping shrink-0" />
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Danh Sách Tập */}
           {currentServer && currentServer.serverData.length > 0 && (
             <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-4">
-              <div className="flex items-center justify-between border-b border-glass-stroke/40 pb-2">
-                <h3 className="text-white font-title-md flex items-center gap-2 font-bold text-sm">
-                  <span className="material-symbols-outlined text-secondary">list</span>
-                  Danh Sách Tập Phim
-                </h3>
-                <span className="text-[10px] text-zinc-400 font-semibold bg-white/5 px-2 py-0.5 rounded-full border border-glass-stroke">
-                  {totalEps} tập
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-glass-stroke/40 pb-3 gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h3 className="text-white font-headline font-black flex items-center gap-2 text-sm">
+                    <span className="material-symbols-outlined text-secondary text-base">list</span>
+                    {movie.seasons || 'Phần 1'}
+                  </h3>
+                  <div className="h-4 w-[1px] bg-zinc-700 hidden sm:block" />
+                  
+                  {/* Inline Server Selector (Phụ đề, Thuyết minh) */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto max-w-[320px] sm:max-w-md hide-scrollbar">
+                    {servers.map((srv, idx) => {
+                      const isActive = idx === serverIndex;
+                      const isLocked = idx > 0 && currentUserPackage.toLowerCase() === 'free';
+                      return (
+                        <button
+                          key={srv.serverName}
+                          type="button"
+                          onClick={() => selectServer(idx)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 shrink-0 ${
+                            isActive
+                              ? 'bg-primary/20 border border-primary/40 text-white shadow-sm'
+                              : 'bg-zinc-900 border border-glass-stroke text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          {isLocked && <span className="material-symbols-outlined text-[10px] text-amber-400">lock</span>}
+                          <span>{srv.serverName}</span>
+                          {isLocked && <span className="text-[7px] bg-amber-500/20 text-amber-400 px-0.5 rounded font-black">VIP</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Rút gọn Toggle Switch */}
+                <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-400 shrink-0 self-end sm:self-auto">
+                  <span>Rút gọn</span>
+                  <button
+                    type="button"
+                    onClick={toggleCompact}
+                    className={`relative w-8 h-4.5 rounded-full transition-colors duration-200 focus:outline-none ${
+                      isCompact ? 'bg-amber-400' : 'bg-zinc-800'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 bg-white w-3.5 h-3.5 rounded-full transition-transform duration-200 ${
+                        isCompact ? 'transform translate-x-3.5' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
-              
+
               {totalEps > episodesPerTab && (
                 <div className="flex gap-2 overflow-x-auto pb-3 hide-scrollbar">
                   {Array.from({ length: totalTabs }).map((_, i) => (
@@ -2083,7 +2094,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                       key={i}
                       type="button"
                       onClick={() => setActiveTab(i)}
-                      className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
+                      className={`shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer border ${
                         i === activeTab 
                           ? 'bg-secondary text-slate-950 border-secondary' 
                           : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-secondary hover:text-secondary'
@@ -2095,32 +2106,74 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 </div>
               )}
               
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                {currentServer.serverData
-                  .map((ep, idx) => ({ ep, idx }))
-                  .filter(({ idx }) => idx >= activeTab * episodesPerTab && idx < (activeTab + 1) * episodesPerTab)
-                  .map(({ ep, idx }) => {
-                    const isCurrent = idx === episodeIndex;
-                    return (
-                      <button 
-                        key={ep.slug}
-                        type="button"
-                        onClick={() => selectEpisode(idx)}
-                        title={ep.name}
-                        className={`relative w-full aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border ${
-                          isCurrent
-                            ? 'bg-primary/20 border-primary text-primary shadow-[0_0_12px_rgba(124,58,237,0.2)] scale-[1.02]' 
-                            : 'bg-surface border-glass-stroke text-on-surface hover:bg-white/5 hover:border-white/15 hover:scale-[1.03] active:scale-95'
-                        }`}
-                      >
-                        {isCurrent && (
-                          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                        )}
-                        {idx + 1}
-                      </button>
-                    );
-                  })}
-              </div>
+              {isCompact ? (
+                // Compact button view (Image 1)
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  {currentServer.serverData
+                    .map((ep, idx) => ({ ep, idx }))
+                    .filter(({ idx }) => idx >= activeTab * episodesPerTab && idx < (activeTab + 1) * episodesPerTab)
+                    .map(({ ep, idx }) => {
+                      const isCurrent = idx === episodeIndex;
+                      return (
+                        <button 
+                          key={ep.slug}
+                          type="button"
+                          onClick={() => selectEpisode(idx)}
+                          title={ep.name}
+                          className={`relative w-full py-3 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border flex items-center justify-center gap-1.5 ${
+                            isCurrent
+                              ? 'bg-primary/20 border-primary text-primary shadow-[0_0_12px_rgba(124,58,237,0.2)] scale-[1.01]' 
+                              : 'bg-zinc-900/60 border-glass-stroke text-on-surface hover:bg-white/5 hover:border-white/15'
+                          }`}
+                        >
+                          <span className={`material-symbols-outlined text-[14px] ${isCurrent ? 'text-primary' : 'text-zinc-500'}`} style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                          <span>{ep.name}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+              ) : (
+                // Video thumbnail view (Image 2 and 3)
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  {currentServer.serverData
+                    .map((ep, idx) => ({ ep, idx }))
+                    .filter(({ idx }) => idx >= activeTab * episodesPerTab && idx < (activeTab + 1) * episodesPerTab)
+                    .map(({ ep, idx }) => {
+                      const isCurrent = idx === episodeIndex;
+                      const thumb = (ep as any).thumbUrl || (ep as any).thumb || (ep as any).thumbnail || (ep as any).image || movie.bannerUrl || movie.posterUrl;
+                      return (
+                        <div 
+                          key={ep.slug}
+                          onClick={() => selectEpisode(idx)}
+                          className="flex flex-col gap-2 cursor-pointer group"
+                        >
+                          <div className={`relative aspect-[16/9] rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                            isCurrent ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.35)] scale-[1.01]' : 'border-glass-stroke group-hover:border-white/40'
+                          }`}>
+                            <img src={thumb} alt={ep.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                            
+                            {/* Hover Play Button Overlay */}
+                            <div className="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="bg-amber-400 text-slate-950 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-200">
+                                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                              </div>
+                            </div>
+
+                            {/* Currently playing badge */}
+                            {isCurrent && (
+                              <span className="absolute bottom-2 left-2 bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow">
+                                Đang chiếu
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-[11px] font-bold transition-colors ${isCurrent ? 'text-amber-400' : 'text-zinc-400 group-hover:text-white'}`}>
+                            {ep.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
           )}
 

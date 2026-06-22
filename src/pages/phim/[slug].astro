@@ -451,7 +451,24 @@ if (movie && movie.actors && movie.actors.length > 0) {
                       // Bố cục Phân trang & Đổi Server cho Phim Bộ
                       <div class="space-y-5">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-glass-stroke/40 pb-3">
-                          <h3 class="text-white font-title-md font-bold text-sm tracking-wider uppercase">Danh sách tập</h3>
+                          <div class="flex items-center gap-3">
+                            <h3 class="text-white font-title-md font-bold text-sm tracking-wider uppercase">Danh sách tập</h3>
+                            
+                            {/* Rút gọn Toggle Switch */}
+                            <div class="flex items-center gap-2 text-[11px] font-bold text-zinc-400 shrink-0">
+                              <span>Rút gọn</span>
+                              <button
+                                type="button"
+                                id="toggle-compact-detail"
+                                class="relative w-8 h-4.5 rounded-full bg-amber-400 transition-colors duration-200 focus:outline-none"
+                              >
+                                <span
+                                  id="toggle-compact-circle"
+                                  class="absolute top-0.5 left-0.5 bg-white w-3.5 h-3.5 rounded-full transition-transform duration-200 transform translate-x-3.5"
+                                />
+                              </button>
+                            </div>
+                          </div>
                           <div id="server-selector-container" class="flex flex-wrap gap-1.5">
                             {servers.map((srv: any, idx: number) => (
                               <button data-server-idx={idx} class={`server-btn px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${idx === 0 ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary hover:text-primary'}`}>
@@ -475,7 +492,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
                           </div>
                         )}
 
-                        <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar" id="episodes-container">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar" id="episodes-container">
                           {servers[0].serverData.map((ep: any, idx: number) => {
                             const tabIdx = Math.floor(idx / episodesPerTab);
                             return (
@@ -484,9 +501,10 @@ if (movie && movie.actors && movie.actors.length > 0) {
                                 data-ep-idx={idx}
                                 data-tab-owner={tabIdx}
                                 data-ep-slug={ep.slug}
-                                class={`episode-item w-full aspect-square flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer ${tabIdx === 0 ? 'flex' : 'hidden'} ${idx === 0 ? 'bg-primary/20 border border-primary text-primary hover:bg-primary/30' : 'bg-surface border border-glass-stroke text-on-surface hover:bg-white/5 hover:border-primary hover:text-primary'}`}
+                                class={`episode-item w-full py-3 rounded-xl text-xs font-bold transition-all cursor-pointer items-center justify-center gap-1.5 border ${tabIdx === 0 ? 'flex' : 'hidden'} ${idx === 0 ? 'bg-primary/20 border border-primary text-primary hover:bg-primary/30' : 'bg-zinc-900/60 border-glass-stroke text-on-surface hover:bg-white/5 hover:border-white/15'}`}
                               >
-                                {idx + 1}
+                                <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1">play_arrow</span>
+                                <span>{ep.name}</span>
                               </a>
                             );
                           })}
@@ -623,6 +641,8 @@ if (movie && movie.actors && movie.actors.length > 0) {
     <script id="servers-data" type="application/json" set:html={JSON.stringify(servers)}></script>
     <script id="movie-slug" type="application/json" set:html={JSON.stringify(movie.slug)}></script>
     <script id="movie-title" type="application/json" set:html={JSON.stringify(movie.title)}></script>
+    <script id="movie-banner" type="application/json" set:html={JSON.stringify(movie.bannerUrl)}></script>
+    <script id="movie-poster" type="application/json" set:html={JSON.stringify(movie.posterUrl)}></script>
   </MainLayout>
 ) : (
   <MainLayout title="Không tìm thấy trang">
@@ -786,6 +806,55 @@ if (movie && movie.actors && movie.actors.length > 0) {
     const episodesContainer = document.getElementById('episodes-container');
     const tabsContainer = document.getElementById('episode-tabs');
 
+    const movieBannerEl = document.getElementById('movie-banner');
+    const moviePosterEl = document.getElementById('movie-poster');
+    const movieBanner = movieBannerEl ? JSON.parse(movieBannerEl.textContent || '""') : '';
+    const moviePoster = moviePosterEl ? JSON.parse(moviePosterEl.textContent || '""') : '';
+
+    let isCompact = (() => {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
+      try {
+        const stored = localStorage.getItem('tsettings');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          return parsed.isCompact !== false;
+        }
+      } catch (e) {}
+      return true;
+    })();
+
+    const toggleBtn = document.getElementById('toggle-compact-detail');
+    const toggleCircle = document.getElementById('toggle-compact-circle');
+    
+    function updateToggleUI() {
+      if (!toggleBtn || !toggleCircle) return;
+      if (isCompact) {
+        toggleBtn.classList.remove('bg-zinc-800');
+        toggleBtn.classList.add('bg-amber-400');
+        toggleCircle.classList.add('translate-x-3.5');
+      } else {
+        toggleBtn.classList.remove('bg-amber-400');
+        toggleBtn.classList.add('bg-zinc-800');
+        toggleCircle.classList.remove('translate-x-3.5');
+      }
+    }
+    
+    updateToggleUI();
+    
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        isCompact = !isCompact;
+        try {
+          const stored = localStorage.getItem('tsettings');
+          const parsed = stored ? JSON.parse(stored) : {};
+          parsed.isCompact = isCompact;
+          localStorage.setItem('tsettings', JSON.stringify(parsed));
+        } catch (e) {}
+        updateToggleUI();
+        renderEpisodes(activeServerIdx, activeEpisodeSlug);
+      });
+    }
+
     // Helper: Bind events to episode list page tabs
     function bindTabEvents() {
       if (!tabsContainer || !episodesContainer) return;
@@ -838,6 +907,13 @@ if (movie && movie.actors && movie.actors.length > 0) {
       
       const activeTabIdx = Math.floor(targetIdx / epsPerTab);
 
+      // Adjust container classes for Compact vs Thumbnail view
+      if (isCompact) {
+        episodesContainer.className = "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar";
+      } else {
+        episodesContainer.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar";
+      }
+
       // Render Pagination Tabs
       if (totalEps > epsPerTab) {
         const totalTabs = Math.ceil(totalEps / epsPerTab);
@@ -871,23 +947,53 @@ if (movie && movie.actors && movie.actors.length > 0) {
         const isTarget = ep.slug === activeEpisodeSlug && serverIdx === activeServerIdx;
         const isHidden = tabOwner !== activeTabIdx;
 
-        epsHtml += `
-          <a 
-            href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}&ts=${encodeURIComponent(currentServer.serverName)}"
-            data-ep-idx="${idx}"
-            data-tab-owner="${tabOwner}"
-            data-ep-slug="${ep.slug}"
-            class="episode-item w-full aspect-square flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              isHidden ? 'hidden' : 'flex'
-            } ${
-              isTarget 
-                ? 'bg-primary/20 border border-primary text-primary hover:bg-primary/30' 
-                : 'bg-surface border border-glass-stroke text-on-surface hover:bg-white/5 hover:border-primary hover:text-primary'
-            }"
-          >
-            ${idx + 1}
-          </a>
-        `;
+        if (isCompact) {
+          epsHtml += `
+            <a 
+              href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}&ts=${encodeURIComponent(currentServer.serverName)}"
+              data-ep-idx="${idx}"
+              data-tab-owner="${tabOwner}"
+              data-ep-slug="${ep.slug}"
+              class="episode-item w-full py-3 rounded-xl text-xs font-bold transition-all cursor-pointer items-center justify-center gap-1.5 border ${
+                isHidden ? 'hidden' : 'flex'
+              } ${
+                isTarget 
+                  ? 'bg-primary/20 border border-primary text-primary hover:bg-primary/30' 
+                  : 'bg-zinc-900/60 border-glass-stroke text-on-surface hover:bg-white/5 hover:border-white/15'
+              }"
+            >
+              <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1">play_arrow</span>
+              <span>${ep.name}</span>
+            </a>
+          `;
+        } else {
+          const thumb = ep.thumbUrl || ep.thumb || ep.thumbnail || ep.image || movieBanner || moviePoster;
+          epsHtml += `
+            <a 
+              href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}&ts=${encodeURIComponent(currentServer.serverName)}"
+              data-ep-idx="${idx}"
+              data-tab-owner="${tabOwner}"
+              data-ep-slug="${ep.slug}"
+              class="episode-item flex-col gap-2 cursor-pointer group ${
+                isHidden ? 'hidden' : 'flex'
+              }"
+            >
+              <div class="relative aspect-[16/9] rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                isTarget ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.35)] scale-[1.01]' : 'border-glass-stroke group-hover:border-white/40'
+              }">
+                <img src="${thumb}" alt="${ep.name}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                
+                <!-- Hover Play Button Overlay -->
+                <div class="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div class="bg-amber-400 text-slate-950 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-200">
+                    <span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1">play_arrow</span>
+                  </div>
+                </div>
+              </div>
+              <span class="text-[11px] font-bold transition-colors ${isTarget ? 'text-amber-400' : 'text-zinc-400 group-hover:text-white'}">${ep.name}</span>
+            </a>
+          `;
+        }
       });
       episodesContainer.innerHTML = epsHtml;
 
