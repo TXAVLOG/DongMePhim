@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '../../../lib/api/response';
 import { supabase } from '../../../lib/supabase';
 import { MovieService } from '../../../services/MovieService';
+import { SettingService } from '../../../services/SettingService';
 
 // GET: Lấy chi tiết phim qua MovieService (tự động fallback DB/Seed/API)
 export const GET: APIRoute = async ({ request }) => {
@@ -42,6 +43,49 @@ const slugify = (text: string) => {
     .trim()
     .replace(/\s+/g, '-');
 };
+
+async function fetchActorFromTMDB(actorName: string) {
+  try {
+    const settings = await SettingService.getSettings();
+    const apiKey = (settings.general as any).tmdb_api_key || '211be8d45c0d31404f644ecdcf9caad5';
+    // 1. Search for person on TMDB
+    const searchUrl = `https://api.themoviedb.org/3/search/person?api_key=${apiKey}&query=${encodeURIComponent(actorName)}&language=vi-VN`;
+    const res = await fetch(searchUrl);
+    if (!res.ok) return null;
+    const searchData = await res.json() as any;
+    const bestMatch = searchData.results?.[0];
+    if (!bestMatch) return null;
+
+    // 2. Fetch detailed person info for bio
+    const detailUrl = `https://api.themoviedb.org/3/person/${bestMatch.id}?api_key=${apiKey}&language=vi-VN`;
+    const detailRes = await fetch(detailUrl);
+    if (!detailRes.ok) return null;
+    let detailData = await detailRes.json() as any;
+
+    // Fallback to English bio if Vietnamese bio is empty
+    if (!detailData.biography) {
+      const enDetailUrl = `https://api.themoviedb.org/3/person/${bestMatch.id}?api_key=${apiKey}&language=en-US`;
+      const enRes = await fetch(enDetailUrl);
+      if (enRes.ok) {
+        const enData = await enRes.json() as any;
+        if (enData.biography) {
+          detailData = enData;
+        }
+      }
+    }
+
+    const avatarUrl = bestMatch.profile_path ? `https://image.tmdb.org/t/p/h632${bestMatch.profile_path}` : '';
+    const bio = detailData.biography || '';
+
+    return {
+      avatarUrl,
+      bio
+    };
+  } catch (e) {
+    console.error(`Lỗi khi lấy thông tin diễn viên ${actorName} từ TMDB:`, e);
+    return null;
+  }
+}
 
 async function fetchActorFromWikipedia(actorName: string) {
   try {
@@ -164,10 +208,19 @@ export const POST: APIRoute = async ({ request }) => {
           let bio = existingActor?.bio;
 
           if (!existingActor) {
-            // Tải thông tin từ Wikipedia
-            const wikiData = await fetchActorFromWikipedia(actorName);
-            avatarUrl = wikiData?.avatarUrl || '';
-            bio = wikiData?.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.';
+            // Tải thông tin từ TMDB (fallback Wikipedia)
+            let actorInfo = await fetchActorFromTMDB(actorName);
+            if (!actorInfo || !actorInfo.avatarUrl) {
+              const wikiData = await fetchActorFromWikipedia(actorName);
+              if (wikiData) {
+                actorInfo = {
+                  avatarUrl: wikiData.avatarUrl || actorInfo?.avatarUrl || '',
+                  bio: wikiData.bio || actorInfo?.bio || ''
+                };
+              }
+            }
+            avatarUrl = actorInfo?.avatarUrl || '';
+            bio = actorInfo?.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.';
 
             // Lưu diễn viên mới
             const { data: newActor, error: actorInsertError } = await supabase
@@ -185,12 +238,21 @@ export const POST: APIRoute = async ({ request }) => {
               actorId = newActor.id;
             }
           } else if (!avatarUrl || !bio || bio.startsWith('Thông tin')) {
-            // Nếu đã tồn tại nhưng thiếu ảnh/bio, thử cập nhật từ Wikipedia
-            const wikiData = await fetchActorFromWikipedia(actorName);
-            if (wikiData) {
+            // Nếu đã tồn tại nhưng thiếu ảnh/bio, thử cập nhật từ TMDB/Wikipedia
+            let actorInfo = await fetchActorFromTMDB(actorName);
+            if (!actorInfo || !actorInfo.avatarUrl) {
+              const wikiData = await fetchActorFromWikipedia(actorName);
+              if (wikiData) {
+                actorInfo = {
+                  avatarUrl: wikiData.avatarUrl || actorInfo?.avatarUrl || '',
+                  bio: wikiData.bio || actorInfo?.bio || ''
+                };
+              }
+            }
+            if (actorInfo) {
               const updatePayload: any = {};
-              if (wikiData.avatarUrl && !avatarUrl) updatePayload.avatar_url = wikiData.avatarUrl;
-              if (wikiData.bio && (!bio || bio.startsWith('Thông tin'))) updatePayload.bio = wikiData.bio;
+              if (actorInfo.avatarUrl && !avatarUrl) updatePayload.avatar_url = actorInfo.avatarUrl;
+              if (actorInfo.bio && (!bio || bio.startsWith('Thông tin'))) updatePayload.bio = actorInfo.bio;
               
               if (Object.keys(updatePayload).length > 0) {
                 await supabase

@@ -1108,6 +1108,55 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const playerGetTimeRef = useRef<(() => number) | null>(null);
   const [resolvedSubtitles, setResolvedSubtitles] = useState<any[]>([]);
 
+  // DevTools detection with admin bypass
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Bypass for admin
+    const isAdmin = (window as any).APP_USER && (
+      (window as any).APP_USER.role === 'admin' || 
+      (window as any).APP_USER.roles === 'admin' || 
+      (window as any).APP_USER.username === 'admin'
+    );
+    if (isAdmin) return;
+
+    let devtoolsOpen = false;
+    const threshold = 160;
+
+    const emitEvent = (isOpen: boolean) => {
+      if (isOpen && !devtoolsOpen) {
+        setIsHacked(true);
+        devtoolsOpen = true;
+      }
+    };
+
+    const checkSize = () => {
+      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+      
+      if (widthThreshold || heightThreshold) {
+        emitEvent(true);
+      }
+    };
+
+    const checkDebugger = () => {
+      const startTime = performance.now();
+      debugger;
+      const endTime = performance.now();
+      if (endTime - startTime > 100) {
+        emitEvent(true);
+      }
+    };
+
+    const sizeInterval = setInterval(checkSize, 1000);
+    const debugInterval = setInterval(checkDebugger, 1000);
+
+    return () => {
+      clearInterval(sizeInterval);
+      clearInterval(debugInterval);
+    };
+  }, []);
+
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const [isInPlaylist, setIsInPlaylist] = useState<boolean>(false);
   const [isCinemaMode, setIsCinemaMode] = useState<boolean>(false);
@@ -1732,36 +1781,49 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               data-txatooltip="Cảnh báo can thiệp hệ thống"
             />
           ) : adBlockDetected && currentUserPackage.toLowerCase() === 'free' ? (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-950 p-8 text-center space-y-5 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 to-zinc-950 pointer-events-none" />
-              <div className="relative z-10 flex flex-col items-center gap-4 max-w-md">
-                <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center animate-pulse">
-                  <span className="material-symbols-outlined text-3xl text-amber-400">block</span>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-[#09090b] p-6 sm:p-10 text-center relative overflow-hidden">
+              {/* Backglow auras */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] sm:w-[500px] sm:h-[500px] bg-rose-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse" />
+              <div className="absolute top-1/3 left-1/3 w-[200px] h-[200px] bg-amber-500/5 rounded-full blur-[80px] pointer-events-none" />
+
+              <div className="relative z-10 glass-card bg-zinc-950/60 backdrop-blur-xl border border-rose-500/20 rounded-3xl p-6 sm:p-10 max-w-lg w-full flex flex-col items-center gap-5 sm:gap-6 shadow-[0_0_50px_rgba(239,68,68,0.15)] animate-fade-in duration-300">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-red-600/10 border border-rose-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                  <span className="material-symbols-outlined text-3xl sm:text-4xl text-rose-500 animate-bounce">gpp_maybe</span>
                 </div>
-                <h3 className="font-display-hero text-xl font-black text-white uppercase tracking-wide">
-                  AdBlock bị chặn
-                </h3>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Xin chào! Hệ thống phát hiện bạn đang sử dụng phần mềm chặn quảng cáo (AdBlock).
-                  Để có thể duy trì máy chủ tốc độ cao và mang đến những bộ phim mới nhất hoàn toàn <span className="text-white font-bold">miễn phí</span>, chúng tôi rất cần nguồn thu từ quảng cáo.
-                </p>
-                <p className="text-[10px] text-zinc-300 font-bold bg-white/5 px-3 py-1.5 rounded border border-white/10">
-                  Mong bạn thông cảm tắt AdBlock hoặc thêm web vào danh sách ngoại lệ. Nếu không muốn xem quảng cáo, bạn có thể nâng cấp VIP để ủng hộ team nhé!
-                </p>
-                <div className="flex items-center gap-3 flex-wrap justify-center pt-2">
+                
+                <div className="space-y-2">
+                  <h3 className="font-display-hero text-2xl sm:text-3xl font-black tracking-tight text-white uppercase bg-gradient-to-r from-rose-400 via-amber-400 to-rose-500 -webkit-background-clip-text -webkit-text-fill-color-transparent">
+                    PHÁT HIỆN CHẶN QUẢNG CÁO!
+                  </h3>
+                  <p className="text-sm sm:text-base text-zinc-300 font-semibold leading-relaxed">
+                    Bạn đang sử dụng trình chặn quảng cáo (AdBlock).
+                  </p>
+                </div>
+
+                <div className="text-xs sm:text-sm text-zinc-400 leading-relaxed space-y-3">
+                  <p>
+                    Để duy trì máy chủ tốc độ cao và phát phim chất lượng tốt hoàn toàn <span className="text-rose-400 font-extrabold uppercase">miễn phí</span>, chúng tôi rất cần doanh thu quảng cáo để chi trả chi phí hệ thống.
+                  </p>
+                  <p className="bg-rose-500/5 border border-rose-500/10 rounded-2xl p-4 text-[11px] sm:text-xs text-amber-300/90 font-medium">
+                    💡 Hãy tắt trình chặn quảng cáo (hoặc thêm trang web này vào danh sách ngoại lệ), sau đó tải lại trang để bắt đầu xem phim. Hoặc nâng cấp lên gói <span className="text-white font-black underline decoration-amber-400">VIP Premium</span> để loại bỏ hoàn toàn quảng cáo!
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full pt-3">
                   <button
                     type="button"
                     onClick={() => window.location.reload()}
-                    className="px-5 py-2.5 bg-white/10 border border-white/15 text-white rounded-xl text-xs font-bold hover:bg-white/20 transition-all cursor-pointer"
+                    className="flex-1 px-6 py-3.5 bg-zinc-900 border border-zinc-800 text-white rounded-2xl text-xs sm:text-sm font-bold hover:bg-zinc-800 hover:border-zinc-700 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
+                    <span className="material-symbols-outlined text-base">refresh</span>
                     Đã tắt — Tải lại trang
                   </button>
                   <a
                     href="/nang-cap"
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#d2bbff] to-[#00daf3] text-slate-950 font-black rounded-xl text-xs hover:brightness-110 transition-all shadow-lg no-underline"
+                    className="flex-1 px-6 py-3.5 bg-gradient-to-r from-rose-500 to-amber-500 hover:brightness-110 text-white rounded-2xl text-xs sm:text-sm font-black active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-[0_4px_25px_rgba(239,68,68,0.3)]"
                   >
-                    <span className="material-symbols-outlined text-sm font-black">workspace_premium</span>
                     Nâng cấp VIP
+                    <span className="material-symbols-outlined text-base font-bold">workspace_premium</span>
                   </a>
                 </div>
               </div>
