@@ -289,12 +289,40 @@ if (movie && movie.actors && movie.actors.length > 0) {
             <!-- Bảng thông tin chi tiết -->
             <div class="border-t border-glass-stroke pt-4 space-y-2">
               <div class="flex justify-between text-xs py-1">
+                <span class="text-on-surface-variant font-medium">Loại:</span>
+                <span id="movie-type-display" class="text-white font-semibold">
+                  {movie.type === 'movie' ? 'Phim Lẻ' : movie.type === 'hoathinh' ? 'Hoạt Hình' : movie.type === 'tvshows' ? 'TV Show' : 'Phim Bộ'}
+                </span>
+              </div>
+              <div class="flex justify-between text-xs py-1">
+                <span class="text-on-surface-variant font-medium">Trạng thái:</span>
+                <span id="movie-status-display" class="text-white font-semibold">
+                  {movie.status === 'completed' ? 'Hoàn tất' : 'Đang chiếu'}
+                </span>
+              </div>
+              {movie.episodeTotal && (
+                <div class="flex justify-between text-xs py-1">
+                  <span class="text-on-surface-variant font-medium">Số tập:</span>
+                  <span id="movie-total-eps-display" class="text-white font-semibold">{movie.episodeTotal} tập</span>
+                </div>
+              )}
+              {movie.episodeCurrent && (
+                <div class="flex justify-between text-xs py-1">
+                  <span class="text-on-surface-variant font-medium">Đã cập nhật:</span>
+                  <span id="movie-current-ep-display" class="text-white font-semibold">{movie.episodeCurrent}</span>
+                </div>
+              )}
+              <div class="flex justify-between text-xs py-1">
                 <span class="text-on-surface-variant font-medium">Thời lượng:</span>
                 <span id="movie-duration-display" class="text-white font-semibold">{movie.durationMinutes}</span>
               </div>
               <div class="flex justify-between text-xs py-1">
-                <span class="text-on-surface-variant font-medium">Danh mục:</span>
-                <span id="movie-type-display" class="text-white font-semibold">{movie.type === 'movie' ? 'Phim Lẻ' : 'Phim Bộ'}</span>
+                <span class="text-on-surface-variant font-medium">Chất lượng:</span>
+                <span id="movie-quality-display" class="text-white font-semibold">{movie.quality}</span>
+              </div>
+              <div class="flex justify-between text-xs py-1">
+                <span class="text-on-surface-variant font-medium">Ngôn ngữ:</span>
+                <span id="movie-lang-display" class="text-white font-semibold">{movie.lang}</span>
               </div>
               <div class="flex justify-between text-xs py-1">
                 <span class="text-on-surface-variant font-medium">Quốc gia:</span>
