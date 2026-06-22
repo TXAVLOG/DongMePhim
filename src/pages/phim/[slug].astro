@@ -435,7 +435,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
                                   </div>
                                   <h4 class="text-white font-title-md font-semibold truncate text-sm">{movie.title}</h4>
                                 </div>
-                                <a data-server-idx={idx} href={`/xem/${movie.slug}?sv=${idx}&ts=${encodeURIComponent(srv.serverName)}`} class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
+                                <a data-server-idx={idx} href={`/xem/${movie.slug}?sv=${idx}`} class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
                                   Xem bản này
                                 </a>
                               </div>
@@ -950,7 +950,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
         if (isCompact) {
           epsHtml += `
             <a 
-              href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}&ts=${encodeURIComponent(currentServer.serverName)}"
+              href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}"
               data-ep-idx="${idx}"
               data-tab-owner="${tabOwner}"
               data-ep-slug="${ep.slug}"
@@ -970,7 +970,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
           const thumb = ep.thumbUrl || ep.thumb || ep.thumbnail || ep.image || movieBanner || moviePoster;
           epsHtml += `
             <a 
-              href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}&ts=${encodeURIComponent(currentServer.serverName)}"
+              href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}"
               data-ep-idx="${idx}"
               data-tab-owner="${tabOwner}"
               data-ep-slug="${ep.slug}"
@@ -1027,7 +1027,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       renderEpisodes(serverIdx, epSlug);
 
       // Setup "Xem Ngay" button to link to the watched position
-      const watchUrl = `/xem/${movieSlug}?ep=${epSlug}&sv=${serverIdx}&ts=${encodeURIComponent(serverName)}`;
+      const watchUrl = `/xem/${movieSlug}?ep=${epSlug}&sv=${serverIdx}`;
       const watchBtn = document.getElementById('btn-watch-now');
       if (watchBtn) {
         watchBtn.setAttribute('href', watchUrl);

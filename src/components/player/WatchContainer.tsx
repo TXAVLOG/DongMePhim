@@ -1608,7 +1608,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     setEpisodeIndex(idx);
     if (currentServer) {
       const ep = currentServer.serverData[idx];
-      const newUrl = `${window.location.pathname}?ep=${ep.slug}&sv=${serverIndex}&ts=${encodeURIComponent(currentServer.serverName)}`;
+      const newUrl = `${window.location.pathname}?ep=${ep.slug}&sv=${serverIndex}`;
       window.history.pushState({ path: newUrl }, '', newUrl);
     }
   };
@@ -1677,7 +1677,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     playerGetTimeRef.current = null;
     
     const ep = servers[idx].serverData[validEpIdx];
-    const newUrl = `${window.location.pathname}?ep=${ep?.slug || 'tap-1'}&sv=${idx}&ts=${encodeURIComponent(servers[idx].serverName)}`;
+    const newUrl = `${window.location.pathname}?ep=${ep?.slug || 'tap-1'}&sv=${idx}`;
     window.history.pushState({ path: newUrl }, '', newUrl);
   };
 
