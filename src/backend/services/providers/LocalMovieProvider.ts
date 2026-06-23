@@ -1,4 +1,4 @@
-import type { IMovieProvider, Movie, MovieDetail } from '@types/movie';
+import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
 
 export const seedMovies: Movie[] = [
   {

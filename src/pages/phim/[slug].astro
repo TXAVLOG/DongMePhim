@@ -1,7 +1,7 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro';
 import { MovieService } from '@services/MovieService';
-import type { Movie } from '@types/movie';
+import type { Movie } from '@apptypes/movie';
 import { Button } from '@components/ui/Button';
 import NotFound from '@components/ui/NotFound.astro';
 import { supabase } from '@lib/supabase';
@@ -76,6 +76,63 @@ if (movie && rawServers.length > 0) {
 
 const totalEps = servers.length > 0 ? (servers[0].serverData.length) : 0;
 const episodesPerTab = totalEps >= 100 ? 100 : 25;
+
+// Xác định phim lẻ linh hoạt
+const isSingleMovie = movie ? (
+  movie.type === 'movie' ||
+  (movie as any).type === 'single' ||
+  movie.episodeTotal === '1' ||
+  movie.episodeCurrent === 'Full' ||
+  (servers.length > 0 && servers[0].serverData.length === 1 && movie.status === 'completed')
+) : false;
+
+// Làm sạch tên server cho Phim Lẻ "Các bản chiếu"
+let subCount = 0, tmCount = 0, ltCount = 0, fallbackCount = 0;
+const cleanedServers = servers.map((srv: any) => {
+  const nl = srv.serverName.toLowerCase();
+  let cleanName = '';
+  if (nl.includes('vietsub') || nl.includes('phụ đề') || nl.includes('sub')) {
+    subCount++; cleanName = `Phụ đề #${subCount}`;
+  } else if (nl.includes('thuyết minh') || nl.includes('thuyet minh')) {
+    tmCount++; cleanName = `Thuyết minh #${tmCount}`;
+  } else if (nl.includes('lồng tiếng') || nl.includes('long tieng')) {
+    ltCount++; cleanName = `Lồng tiếng #${ltCount}`;
+  } else {
+    fallbackCount++; cleanName = `${srv.serverName} #${fallbackCount}`;
+  }
+  return { ...srv, cleanServerName: cleanName };
+});
+
+// Tải ảnh hậu trường từ TMDB qua proxy nội bộ
+let backdrops: string[] = [];
+if (movie) {
+  try {
+    const kkRes = await fetch(`https://phimapi.com/phim/${slug}`);
+    if (kkRes.ok) {
+      const kkData = await kkRes.json() as any;
+      const tmdbId = kkData?.movie?.tmdb?.id;
+      const tmdbType = kkData?.movie?.tmdb?.type || 'movie';
+      if (tmdbId) {
+        const proxyUrl = `${Astro.url.origin}/api/tmdb-proxy?path=/3/${tmdbType}/${tmdbId}/images`;
+        const tmdbRes = await fetch(proxyUrl);
+        if (tmdbRes.ok) {
+          const tmdbImages = await tmdbRes.json() as any;
+          if (tmdbImages && Array.isArray(tmdbImages.backdrops)) {
+            backdrops = tmdbImages.backdrops
+              .slice(0, 9)
+              .map((img: any) => `https://image.tmdb.org/t/p/w780${img.file_path}`);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Không thể tải ảnh hậu trường từ TMDB:', e);
+  }
+}
+// Fallback nếu không lấy được ảnh từ TMDB
+if (backdrops.length === 0 && movie) {
+  backdrops = [movie.bannerUrl, movie.posterUrl, movie.bannerUrl].filter(Boolean) as string[];
+}
 
 // Fetch all movies to group seasons/parts of the same series
 const allMovies = await MovieService.getMovies();
@@ -439,7 +496,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
             <div class="border-b border-glass-stroke">
               <div class="flex gap-6 md:gap-8 overflow-x-auto pb-px hide-scrollbar" id="detail-tabs">
                 <button data-tab="tab-episodes" class="detail-tab-btn pb-3 text-sm font-bold transition-all border-b-2 border-primary text-primary cursor-pointer shrink-0">
-                  Tập phim
+                  {isSingleMovie ? 'Các bản chiếu' : 'Tập phim'}
                 </button>
                 <button data-tab="tab-gallery" class="detail-tab-btn pb-3 text-sm font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer shrink-0">
                   Bộ sưu tập
@@ -461,18 +518,18 @@ if (movie && movie.actors && movie.actors.length > 0) {
                 
                 {servers.length > 0 && servers[0].serverData.length > 0 && (
                   <div>
-                    {movie.type === 'movie' ? (
+                    {isSingleMovie ? (
                       // Bố cục card server cho Phim Lẻ
                       <div class="space-y-4">
                         <h3 class="text-white font-title-md font-bold text-sm tracking-wider uppercase mb-3">Các bản chiếu</h3>
                         <div id="movie-servers-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {servers.map((srv: any, idx: number) => (
+                          {cleanedServers.map((srv: any, idx: number) => (
                             <div class="glass-card bg-surface-container-high/40 border border-glass-stroke rounded-2xl overflow-hidden flex transition-all duration-350 hover:border-primary/30 hover:scale-[1.01]">
                               <div class="flex-1 p-4 flex flex-col justify-between min-w-0 bg-gradient-to-r from-black/30 to-transparent">
                                 <div class="space-y-1">
                                   <div class="flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-[14px] text-secondary">dns</span>
-                                    <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{srv.serverName}</span>
+                                    <span class="material-symbols-outlined text-[14px] text-secondary">subtitles</span>
+                                    <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{srv.cleanServerName}</span>
                                   </div>
                                   <h4 class="text-white font-title-md font-semibold truncate text-sm">{movie.title}</h4>
                                 </div>
@@ -481,7 +538,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
                                 </a>
                               </div>
                               <div class="w-1/3 aspect-[4/3] relative shrink-0">
-                                <img src={movie.bannerUrl || movie.posterUrl} alt={srv.serverName} class="w-full h-full object-cover" />
+                                <img src={movie.bannerUrl || movie.posterUrl} alt={srv.cleanServerName} class="w-full h-full object-cover" />
                                 <div class="absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-transparent to-transparent"></div>
                               </div>
                             </div>
@@ -563,15 +620,11 @@ if (movie && movie.actors && movie.actors.length > 0) {
 
               <!-- Tab 2: Bộ Sưu Tập -->
               <div id="tab-gallery" class="detail-tab-panel hidden grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div class="aspect-video rounded-xl overflow-hidden glass-card">
-                  <img src={movie.bannerUrl || movie.posterUrl} alt="Phân cảnh 1" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-                </div>
-                <div class="aspect-video rounded-xl overflow-hidden glass-card">
-                  <img src={movie.posterUrl} alt="Phân cảnh 2" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-                </div>
-                <div class="aspect-video rounded-xl overflow-hidden glass-card">
-                  <img src={movie.bannerUrl || movie.posterUrl} alt="Phân cảnh 3" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-                </div>
+                {backdrops.map((imgUrl: string, idx: number) => (
+                  <div class="aspect-video rounded-xl overflow-hidden glass-card">
+                    <img src={imgUrl} alt={`Phân cảnh ${idx + 1}`} class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+                  </div>
+                ))}
               </div>
 
               <!-- Tab 3: Diễn Viên -->

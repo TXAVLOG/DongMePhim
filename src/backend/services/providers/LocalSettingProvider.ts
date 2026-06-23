@@ -1,4 +1,4 @@
-import type { ISettingProvider, SiteSettings } from '@types/settings';
+import type { ISettingProvider, SiteSettings } from '@apptypes/settings';
 
 export const seedSettings: SiteSettings = {
   general: {

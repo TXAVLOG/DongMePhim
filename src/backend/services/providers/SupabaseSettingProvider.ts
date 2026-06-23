@@ -1,5 +1,5 @@
 import { supabase } from '@lib/supabase';
-import type { ISettingProvider, SiteSettings } from '@types/settings';
+import type { ISettingProvider, SiteSettings } from '@apptypes/settings';
 import { seedSettings } from './LocalSettingProvider';
 
 export class SupabaseSettingProvider implements ISettingProvider {

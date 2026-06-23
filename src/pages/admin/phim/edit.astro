@@ -247,6 +247,20 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
       };
 
       let editSlug = "";
+      let systemServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+
+      async function loadSystemServers() {
+        try {
+          const res = await fetch("/api/admin/servers");
+          if (res.ok) {
+            const json = await res.json();
+            const data = json.data || json;
+            if (Array.isArray(data) && data.length > 0) systemServers = data;
+          }
+        } catch (e) {
+          console.warn("Lỗi tải danh sách server:", e);
+        }
+      }
 
       const pageTitle = document.getElementById("pageTitle");
       const pageSubtitle = document.getElementById("pageSubtitle");
@@ -547,7 +561,10 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               <div class="flex justify-between items-center gap-2">
                 <div class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-zinc-500">dns</span>
-                  <input type="text" class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-sm font-bold text-white w-48 focus:outline-none" value="${server.server_name}" oninput="movieData.episodes[${serverIdx}].server_name = this.value"/>
+                  <select class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-sm font-bold text-white w-48 focus:outline-none" onchange="movieData.episodes[${serverIdx}].server_name = this.value">
+                    ${systemServers.map(s => `<option value="${s}" ${server.server_name === s ? 'selected' : ''}>${s}</option>`).join('')}
+                    ${!systemServers.includes(server.server_name) ? `<option value="${server.server_name}" selected>${server.server_name}</option>` : ''}
+                  </select>
                 </div>
                 <button type="button" onclick="deleteServer(${serverIdx})" class="text-red-400 hover:text-red-500 font-bold p-1 cursor-pointer flex items-center gap-1 text-xs bg-transparent border-none">
                   <span class="material-symbols-outlined text-sm">close</span> Xóa Server
@@ -561,8 +578,34 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
       }
 
       addServerBtn.onclick = () => {
-        movieData.episodes.push({ server_name: `Server VIP ${movieData.episodes.length + 1}`, server_data: [] });
-        renderServers();
+        const modalHtml = `
+          <div class="space-y-4">
+            <label class="block text-xs font-bold text-zinc-400 uppercase">Chọn Server cần thêm</label>
+            <select id="modalSelectServer" class="w-full bg-zinc-900 border border-glass-stroke rounded-xl py-3 px-4 focus:outline-none text-white text-sm">
+              ${systemServers.map(s => `<option value="${s}">${s}</option>`).join('')}
+            </select>
+          </div>
+        `;
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: "Thêm Server phát mới",
+            message: modalHtml,
+            confirmText: "Thêm",
+            cancelText: "Hủy",
+            onConfirm: () => {
+              const selectedSrv = document.getElementById("modalSelectServer").value;
+              if (movieData.episodes.some(s => s.server_name === selectedSrv)) {
+                if (window.showGlobalToast) window.showGlobalToast("Server này đã được cấu hình!", "warning");
+                return;
+              }
+              movieData.episodes.push({ server_name: selectedSrv, server_data: [] });
+              renderServers();
+            }
+          });
+        } else {
+          const srv = prompt("Nhập tên server:", systemServers[0]);
+          if (srv) { movieData.episodes.push({ server_name: srv, server_data: [] }); renderServers(); }
+        }
       };
 
       window.deleteServer = (idx) => {
@@ -728,7 +771,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
 
       // Bootstrap Page
       renderCountriesDatalist();
-      checkURLMode();
+      loadSystemServers().then(() => checkURLMode());
     })();
   </script>
 </AdminLayout>

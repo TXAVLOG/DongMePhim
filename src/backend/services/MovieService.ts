@@ -1,6 +1,6 @@
 import { LocalMovieProvider } from './providers/LocalMovieProvider';
 import { SupabaseMovieProvider } from './providers/SupabaseMovieProvider';
-import type { IMovieProvider, Movie, MovieDetail } from '@types/movie';
+import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
 
 // Lựa chọn provider dựa trên biến môi trường ENV. 
 const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';

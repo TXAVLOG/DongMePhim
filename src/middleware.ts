@@ -4,7 +4,7 @@ import { verifySession } from '@lib/auth';
 export const onRequest = defineMiddleware(async (context, next) => {
   const pathname = context.url.pathname;
 
-  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+  if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && pathname !== '/api/admin/movie-action' && pathname !== '/admin/phim/edit') {
     const currentUser = await verifySession(context.request, context.cookies) as any;
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.roles === 'admin');
 
@@ -19,7 +19,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
               return next();
             }
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (pathname.startsWith('/api/')) {

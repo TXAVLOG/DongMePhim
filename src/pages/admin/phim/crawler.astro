@@ -1392,9 +1392,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             if (detailData.movie.tmdb && detailData.movie.tmdb.id) {
               const tmdbId = detailData.movie.tmdb.id;
               const tmdbType = detailData.movie.tmdb.type === 'tv' ? 'tv' : 'movie';
-              const apiKey = '211be8d45c0d31404f644ecdcf9caad5';
               try {
-                const tmdbRes = await fetch(`https://api.themoviedb.org/3/${tmdbType}/${tmdbId}?api_key=${apiKey}&language=vi-VN`);
+                const tmdbRes = await fetch(`/api/tmdb-proxy?path=/3/${tmdbType}/${tmdbId}&language=vi-VN`);
                 if (tmdbRes.ok) {
                   const tmdbData = await tmdbRes.json();
                   if (tmdbData.poster_path) {
@@ -1421,11 +1420,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                     }
 
                     try {
-                      let seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?api_key=${apiKey}&language=vi-VN`);
+                      let seasonRes = await fetch(`/api/tmdb-proxy?path=/3/tv/${tmdbId}/season/${seasonNumber}&language=vi-VN`);
                       if (!seasonRes.ok && seasonNumber !== 1) {
                         addLog(`⚠️ Không thể lấy thông tin Season ${seasonNumber} từ TMDB. Thử lại với Season 1...`, 'warning');
                         seasonNumber = 1;
-                        seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/1?api_key=${apiKey}&language=vi-VN`);
+                        seasonRes = await fetch(`/api/tmdb-proxy?path=/3/tv/${tmdbId}/season/1&language=vi-VN`);
                       }
                       
                       if (seasonRes.ok) {

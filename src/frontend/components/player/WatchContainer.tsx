@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArtPlayer } from './ArtPlayer';
-import type { MovieDetail, Episode } from '@types/movie';
+import type { MovieDetail, Episode } from '@apptypes/movie';
 import { TxaModal } from '../ui/txamodal';
 import { supabase } from '@lib/supabase';
 

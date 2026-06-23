@@ -1,5 +1,5 @@
 import { supabase } from '@lib/supabase';
-import type { IMovieProvider, Movie, MovieDetail } from '@types/movie';
+import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
 import { seedMovies, mapKKPhimToMovieDetail, mapKKPhimSearchItemToMovie } from './LocalMovieProvider';
 
 export class SupabaseMovieProvider implements IMovieProvider {
@@ -7,7 +7,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
     try {
       const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
       let query = supabase.from('movies').select(selectFields);
-      
+
       if (params?.type) {
         query = query.eq('type', params.type);
       }
@@ -15,10 +15,10 @@ export class SupabaseMovieProvider implements IMovieProvider {
       if (params?.slugs && Array.isArray(params.slugs)) {
         query = query.in('slug', params.slugs);
       }
-      
+
       const { data: dbMovies, error } = await query;
       if (error) throw error;
-      
+
       let moviesList: Movie[] = [];
       if (dbMovies && dbMovies.length > 0) {
         moviesList = dbMovies.map((m: any) => ({
@@ -69,8 +69,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
         if (cat === 'Lồng Tiếng') {
           result = result.filter(m => m.lang === 'Lồng Tiếng' || m.lang === 'Thuyết Minh');
         } else {
-          result = result.filter(m => 
-            m.category === cat || 
+          result = result.filter(m =>
+            m.category === cat ||
             (Array.isArray(m.genres) && m.genres.includes(cat))
           );
         }
@@ -119,35 +119,51 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
       if (error) throw error;
 
-      if (dbMovie) {
+      // Fallback: nếu không tìm thấy, thử slug đã được chuẩn hóa
+      let finalDbMovie = dbMovie;
+      if (!finalDbMovie) {
+        const fallbackSlug = slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        if (fallbackSlug !== slug) {
+          const { data: dbMovieFallback, error: errFallback } = await supabase
+            .from('movies')
+            .select('*')
+            .eq('slug', fallbackSlug)
+            .maybeSingle();
+          if (!errFallback && dbMovieFallback) {
+            finalDbMovie = dbMovieFallback;
+          }
+        }
+      }
+
+      if (finalDbMovie) {
         return {
-          id: dbMovie.id,
-          title: dbMovie.title,
-          originalTitle: dbMovie.original_title,
-          slug: dbMovie.slug,
-          description: dbMovie.description || '',
-          posterUrl: dbMovie.poster_url || '',
-          bannerUrl: dbMovie.banner_url || dbMovie.poster_url || '',
-          releaseYear: dbMovie.release_year || 2024,
-          durationMinutes: dbMovie.duration_minutes || '45 phút/tập',
-          type: dbMovie.type as 'movie' | 'series' | 'hoathinh' | 'tvshows',
-          status: dbMovie.status as 'completed' | 'ongoing',
-          episodeCurrent: dbMovie.episode_current || '1',
-          episodeTotal: dbMovie.episode_total || '1',
-          quality: dbMovie.quality || 'FHD',
-          lang: dbMovie.lang || 'Vietsub',
-          imdbScore: Number(dbMovie.imdb_score) || 8.0,
-          views: Number(dbMovie.views) || 0,
+          id: finalDbMovie.id,
+          title: finalDbMovie.title,
+          originalTitle: finalDbMovie.original_title,
+          slug: finalDbMovie.slug,
+          description: finalDbMovie.description || '',
+          posterUrl: finalDbMovie.poster_url || '',
+          bannerUrl: finalDbMovie.banner_url || finalDbMovie.poster_url || '',
+          releaseYear: finalDbMovie.release_year || 2024,
+          durationMinutes: finalDbMovie.duration_minutes || '45 phút/tập',
+          type: finalDbMovie.type as 'movie' | 'series' | 'hoathinh' | 'tvshows',
+          status: finalDbMovie.status as 'completed' | 'ongoing',
+          episodeCurrent: finalDbMovie.episode_current || '1',
+          episodeTotal: finalDbMovie.episode_total || '1',
+          quality: finalDbMovie.quality || 'FHD',
+          lang: finalDbMovie.lang || 'Vietsub',
+          imdbScore: Number(finalDbMovie.imdb_score) || 8.0,
+          views: Number(finalDbMovie.views) || 0,
           commentCount: 0,
-          category: dbMovie.broadcast_at || 'Khác',
-          genres: Array.isArray(dbMovie.genres) ? dbMovie.genres : [],
-          seasons: dbMovie.seasons || (dbMovie.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1'),
-          actors: Array.isArray(dbMovie.actors) ? dbMovie.actors : [],
-          directors: Array.isArray(dbMovie.directors) ? dbMovie.directors : [],
-          trailerUrl: dbMovie.trailer_url || '',
-          episodes: Array.isArray(dbMovie.episodes) ? dbMovie.episodes : [],
+          category: finalDbMovie.broadcast_at || 'Khác',
+          genres: Array.isArray(finalDbMovie.genres) ? finalDbMovie.genres : [],
+          seasons: finalDbMovie.seasons || (finalDbMovie.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1'),
+          actors: Array.isArray(finalDbMovie.actors) ? finalDbMovie.actors : [],
+          directors: Array.isArray(finalDbMovie.directors) ? finalDbMovie.directors : [],
+          trailerUrl: finalDbMovie.trailer_url || '',
+          episodes: Array.isArray(finalDbMovie.episodes) ? finalDbMovie.episodes : [],
           isStatic: false,
-          broadcastSchedule: dbMovie.broadcast_schedule || undefined
+          broadcastSchedule: finalDbMovie.broadcast_schedule || undefined
         };
       }
 
@@ -189,10 +205,10 @@ export class SupabaseMovieProvider implements IMovieProvider {
             serverData: episodesData
           }
         ];
-        
+
         let type: 'movie' | 'series' | 'hoathinh' | 'tvshows' = 'series';
         if (movie.type === 'movie') type = 'movie';
-        
+
         return {
           ...movie,
           type,
@@ -287,7 +303,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
     } catch (e) {
       console.warn('Lỗi khi lấy phim liên quan từ Supabase:', e);
     }
-    
+
     try {
       const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
       const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
