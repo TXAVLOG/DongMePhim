@@ -97,7 +97,7 @@ const getEpisodeProgress = () => {
   }
 };
 
-const progress = getEpisodeProgress();
+const progress = getEpisodeProgress() as any;
 ---
 
 <div class={`relative group w-full ${className || ''}`}>

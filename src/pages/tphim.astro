@@ -353,20 +353,25 @@ const firstHero = heroMovies[0] || null;
           <span class="material-symbols-outlined text-amber-400">forum</span>
           <span class="uppercase tracking-wider">Top Bình Luận</span>
         </h3>
-        <!-- Carousel navigation arrows -->
-        <div class="flex items-center gap-2">
-          <button id="slide-left" class="w-8 h-8 rounded-full border border-glass-stroke flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors cursor-pointer bg-black/20" data-txatooltip="Slide Trái">
-            <span class="material-symbols-outlined text-sm font-bold">chevron_left</span>
-          </button>
-          <button id="slide-right" class="w-8 h-8 rounded-full border border-glass-stroke flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors cursor-pointer bg-black/20" data-txatooltip="Slide Phải">
-            <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
-          </button>
-        </div>
       </div>
 
-      <!-- TOP BÌNH LUẬN Horizontal Carousel -->
-      <div id="comments-carousel" class="flex gap-4 overflow-x-auto pb-4 scroll-smooth scrollbar-none snap-x relative z-10">
-         <p class="text-xs text-zinc-500 py-8 text-center w-full font-outfit">Đang tải bình luận...</p>
+      <!-- TOP BÌNH LUẬN Swiper Carousel -->
+      <div class="top-discuss-wrapper relative z-10 group/nav">
+        <!-- Navigation Buttons -->
+        <div class="absolute top-1/2 -translate-y-1/2 left-[-16px] right-[-16px] flex justify-between pointer-events-none z-30 opacity-0 group-hover/nav:opacity-100 transition-opacity duration-300">
+          <button id="top-discuss-prev" class="w-9 h-9 rounded-full border border-glass-stroke bg-black/60 backdrop-blur-md flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 hover:bg-black/80 transition-all pointer-events-auto cursor-pointer shadow-lg" data-txatooltip="Slide Trái">
+            <span class="material-symbols-outlined text-base font-bold">chevron_left</span>
+          </button>
+          <button id="top-discuss-next" class="w-9 h-9 rounded-full border border-glass-stroke bg-black/60 backdrop-blur-md flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 hover:bg-black/80 transition-all pointer-events-auto cursor-pointer shadow-lg" data-txatooltip="Slide Phải">
+            <span class="material-symbols-outlined text-base font-bold">chevron_right</span>
+          </button>
+        </div>
+
+        <div class="swiper top-discuss-swiper overflow-hidden">
+          <div id="comments-carousel" class="swiper-wrapper">
+             <p class="text-xs text-zinc-500 py-8 text-center w-full font-outfit">Đang tải bình luận...</p>
+          </div>
+        </div>
       </div>
 
       <!-- Bottom Grid: SÔI NỔI NHẤT, YÊU THÍCH NHẤT, THỂ LOẠI HOT, BÌNH LUẬN MỚI -->
@@ -702,15 +707,16 @@ const firstHero = heroMovies[0] || null;
   </main>
 </MainLayout>
 
-<!-- Script blocks -->
 <script define:vars={{ heroMoviesForClient: heroMovies }}>
+  window.heroMoviesForClient = heroMoviesForClient;
+
   // Helper function to create movie list items with Netflix-style popover cards
   function createMovieListItemHTML(movieData, index, type) {
     const trendColor = index < 3 ? 'emerald' : 'zinc';
     const trendIcon = index === 0 ? 'trending_up' : index === 2 ? 'trending_up' : index === 3 ? 'trending_down' : 'remove';
     
     const originalTitle = movieData.originalTitle || '';
-    const imdbScore = movieData.imdbScore ? movieData.imdbScore.toFixed(1) : '8.0';
+    const imdbScore = movieData.imdbScore ? Number(movieData.imdbScore).toFixed(1) : '8.0';
     const ageRating = movieData.ageRating || 'T13';
     const releaseYear = movieData.releaseYear || 2024;
     const seasons = movieData.seasons || 'Phần 1';
@@ -765,6 +771,7 @@ const firstHero = heroMovies[0] || null;
       </a>
     `;
   }
+  window.createMovieListItemHTML = createMovieListItemHTML;
 
   const getPlanByPackageNameOrId = (pkgNameOrId) => {
     const settings = window.TXA_SITE_SETTINGS || {};
@@ -779,74 +786,91 @@ const firstHero = heroMovies[0] || null;
     }
     return { id: 'free', title: pkgNameOrId || 'Gói Free' };
   };
+  window.getPlanByPackageNameOrId = getPlanByPackageNameOrId;
 
-  // Helper function to create carousel comment cards
+  // Helper function to create carousel comment cards (styled like cobephim)
   function createCarouselCommentCardHTML(comment) {
-    const initial = (comment.author || 'T').substring(0, 2).toUpperCase();
-    let roleBadge = 'Thành viên';
-    let badgeColor = 'emerald-500';
-    let adminTag = '';
+    const initial = (comment.author || 'T').substring(0, 1).toUpperCase();
+    let badgeColor = 'zinc-700';
+    let grClass = 'gr-free';
+    let tagHtml = '<span class="gr-tag gr-tag-free">Free</span>';
     
     const lowerAuthor = (comment.author || '').toLowerCase();
     const isMod = lowerAuthor.includes('cô 3 rổ') || lowerAuthor.includes('admin') || lowerAuthor.includes('hoài lê') || lowerAuthor.includes('mod') || lowerAuthor.includes('ad');
+    
     if (isMod) {
-      roleBadge = 'Người kiểm duyệt';
+      grClass = 'gr-admin';
+      tagHtml = '<span class="gr-tag">Admin</span>';
       badgeColor = 'pink-500';
-      adminTag = `<span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold tracking-widest uppercase mr-1">Admin</span>`;
-    } else if (lowerAuthor.includes('nam') || lowerAuthor.includes('thư') || lowerAuthor.includes('linh') || lowerAuthor.includes('tiểu')) {
-      badgeColor = 'amber-500';
-    } else if (lowerAuthor.charCodeAt(0) % 2 === 0) {
-      badgeColor = 'indigo-500';
     } else {
-      badgeColor = 'teal-500';
+      const plan = getPlanByPackageNameOrId(comment.package);
+      const pkgId = plan.id;
+      const pkgTitle = plan.title;
+      grClass = `gr-${pkgId}`;
+      tagHtml = `<span class="gr-tag gr-tag-${pkgId}">${pkgTitle}</span>`;
+      
+      if (lowerAuthor.includes('nam') || lowerAuthor.includes('thư') || lowerAuthor.includes('linh') || lowerAuthor.includes('tiểu')) {
+        badgeColor = 'amber-500';
+      } else if (lowerAuthor.charCodeAt(0) % 2 === 0) {
+        badgeColor = 'indigo-500';
+      } else {
+        badgeColor = 'teal-500';
+      }
     }
 
-    const plan = getPlanByPackageNameOrId(comment.package);
-    const pkgId = plan.id;
-    const pkgTitle = plan.title;
-
-    const views = comment.views !== undefined ? comment.views : Math.floor(Math.random() * 150) + 10;
-
-    let authorTag = '';
-    const userGender = comment.gender || 'other';
-    if (userGender === 'male') {
-      authorTag = `<span class="text-blue-400 font-bold ml-1 text-[10px]" title="Nam">♂</span>`;
-    } else if (userGender === 'female') {
-      authorTag = `<span class="text-rose-400 font-bold ml-1 text-[10px]" title="Nữ">♀</span>`;
-    } else {
-      authorTag = `<span class="text-primary font-bold ml-1 text-xs" title="Khác">∞</span>`;
-    }
+    const likes = comment.likes || 0;
+    const repliesCount = comment.replies ? comment.replies.length : 0;
+    const authorAvatar = comment.gender === 'female' 
+      ? `/images/avatars/pack2/11.jpg` 
+      : comment.gender === 'male' 
+        ? `/images/avatars/pack1/15.jpg` 
+        : `/images/avatars/default.png`;
 
     return `
-      <div class="flex-shrink-0 w-[280px] bg-zinc-950/40 border border-glass-stroke/60 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 hover:bg-zinc-950/60 transition-all duration-300 snap-center">
-        <div class="flex justify-between items-start gap-3">
-          <div class="flex items-center gap-2">
-            <div class="w-9 h-9 rounded-full bg-${badgeColor} flex items-center justify-center text-white font-bold text-xs">
-              ${initial}
+      <div class="swiper-slide w-[320px] shrink-0">
+        <div class="d-item td-d-item bg-[#141416]/50 border border-glass-stroke/60 rounded-2xl relative overflow-hidden p-4 flex gap-4 h-[180px] hover:border-primary/30 transition-all duration-300">
+          <!-- 1. Blurred Background Poster -->
+          <div class="di-poster absolute inset-0 opacity-20 pointer-events-none z-0">
+            <img src="${comment.moviePoster || '/favicon.png'}" class="w-full h-full object-cover blur-[10px] scale-110" onerror="this.src='/favicon.png'" />
+            <div class="absolute inset-0 bg-gradient-to-b from-black/60 to-black/20"></div>
+          </div>
+          
+          <!-- 2. Main Content Flex Container -->
+          <div class="di-v flex gap-3 relative z-10 w-full min-w-0">
+            <div class="user-avatar w-10 h-10 rounded-full border border-glass-stroke overflow-hidden shrink-0 transition-colors">
+              <img src="${authorAvatar}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
             </div>
-            <div>
-              <div class="flex items-center gap-1.5 flex-wrap">
-                ${adminTag}
-                <span class="text-xs font-bold ${isMod ? 'text-white' : `package-style-${pkgId}`}">${comment.author}</span>
-                ${!isMod ? `<span class="text-[8px] font-bold px-1.5 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-${pkgId}">${pkgTitle}</span>` : ''}
-                ${authorTag}
+            
+            <div class="info flex flex-col justify-between flex-1 min-w-0">
+              <div class="comment-header">
+                <div class="user-name flex items-center gap-1.5 flex-wrap font-outfit text-white text-xs font-bold leading-none ${grClass}">
+                  <span class="truncate max-w-[120px]">${comment.author}</span>
+                  ${tagHtml}
+                </div>
               </div>
-              <span class="text-[9px] text-zinc-500">${roleBadge}</span>
+              
+              <div class="text lim-2 text-zinc-300 text-xs italic font-body-main line-clamp-2 my-2 break-words whitespace-normal select-text">
+                "${comment.content}"
+              </div>
+              
+              <div class="comment-bottom flex items-center gap-3 text-[10px] text-zinc-500 font-outfit mt-auto">
+                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">thumb_up</span> ${likes}</span>
+                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">chat_bubble</span> ${repliesCount}</span>
+              </div>
             </div>
           </div>
-          <a href="/phim/${comment.movieSlug}" class="w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke shrink-0 block hover:scale-105 transition-transform bg-zinc-900 shadow-md">
-            <img src="${comment.moviePoster || '/favicon.png'}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-          </a>
-        </div>
-        <p class="text-xs text-zinc-300 italic line-clamp-3 mt-3 font-body-main">"${comment.content}"</p>
-        <div class="flex items-center gap-4 mt-4 pt-3 border-t border-glass-stroke/30 text-[10px] text-zinc-500 font-outfit">
-          <span class="flex items-center gap-1 cursor-pointer hover:text-white transition-colors"><span class="material-symbols-outlined text-[14px]">thumb_up</span> ${comment.likes || 0}</span>
-          <span class="flex items-center gap-1 cursor-pointer hover:text-white transition-colors"><span class="material-symbols-outlined text-[14px]">thumb_down</span> 0</span>
-          <span class="flex items-center gap-1 cursor-pointer hover:text-white transition-colors"><span class="material-symbols-outlined text-[14px]">chat_bubble</span> ${comment.replies ? comment.replies.length : 0}</span>
+          
+          <!-- 3. Original Movie Poster Thumbnail on the Right -->
+          <div class="d-thumb absolute top-4 right-4 z-20 shrink-0">
+            <a class="v-thumbnail block w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke hover:scale-105 transition-transform bg-zinc-900 shadow-md" title="${comment.movieTitle}" href="/phim/${comment.movieSlug}">
+              <img src="${comment.moviePoster || '/favicon.png'}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+            </a>
+          </div>
         </div>
       </div>
     `;
   }
+  window.createCarouselCommentCardHTML = createCarouselCommentCardHTML;
 
   // Helper function to create sidebar comment rows
   function createSidebarCommentRowHTML(comment) {
@@ -1047,7 +1071,7 @@ const firstHero = heroMovies[0] || null;
             <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
             <div class="absolute top-3 left-3 flex gap-1">
               <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
-              <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">${getLangBadge(lang)}</span>
+              <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md flex gap-1">${getProgressBadgesHTML()}</span>
             </div>
           </div>
           <div class="p-4 space-y-3.5 text-left whitespace-normal">
@@ -1068,7 +1092,7 @@ const firstHero = heroMovies[0] || null;
               </a>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
-              <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${(movie.imdbScore || 8.0).toFixed(1)}</span>
+              <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${(Number(movie.imdbScore) || 8.0).toFixed(1)}</span>
               <span>${year || 2024}</span>
               <span>${status}</span>
             </div>
@@ -1144,6 +1168,9 @@ const firstHero = heroMovies[0] || null;
       </div>
     `;
   }
+  window.createSidebarCommentRowHTML = createSidebarCommentRowHTML;
+  window.createMovieCardHTML = createMovieCardHTML;
+  window.createMovieSliderCardHTML = createMovieSliderCardHTML;
 
   // Bind all initialization to 'astro:page-load'
   document.addEventListener('astro:page-load', async () => {
@@ -1195,6 +1222,29 @@ const firstHero = heroMovies[0] || null;
             },
           },
         });
+      });
+
+      new Swiper('.top-discuss-swiper', {
+        slidesPerView: 1,
+        spaceBetween: 16,
+        navigation: {
+          nextEl: '#top-discuss-next',
+          prevEl: '#top-discuss-prev',
+        },
+        breakpoints: {
+          640: {
+            slidesPerView: 2,
+            spaceBetween: 16,
+          },
+          1024: {
+            slidesPerView: 3,
+            spaceBetween: 16,
+          },
+          1280: {
+            slidesPerView: 4,
+            spaceBetween: 16,
+          }
+        }
       });
     }
     initSwipers();
@@ -1331,23 +1381,10 @@ const firstHero = heroMovies[0] || null;
       }
     });
 
-    // 2. Comments carousel sliding
-    const carousel = document.getElementById('comments-carousel');
-    const slideLeft = document.getElementById('slide-left');
-    const slideRight = document.getElementById('slide-right');
-    
-    slideLeft?.addEventListener('click', () => {
-      carousel?.scrollBy({ left: -296, behavior: 'smooth' });
-    });
-    
-    slideRight?.addEventListener('click', () => {
-      carousel?.scrollBy({ left: 296, behavior: 'smooth' });
-    });
-
     // 3. Hydration logic
     let combinedMovies = [];
     try {
-      combinedMovies = heroMoviesForClient || [];
+      combinedMovies = window.heroMoviesForClient || [];
       const hasMovies = combinedMovies.length > 0;
 
       // Helper to map movie slug to details
@@ -1440,7 +1477,7 @@ const firstHero = heroMovies[0] || null;
       const bg1 = document.getElementById('hero-bg-1');
       const bg2 = document.getElementById('hero-bg-2');
 
-      let currentHeroSlug = (typeof heroMoviesForClient !== 'undefined' && heroMoviesForClient.length > 0) ? heroMoviesForClient[0].slug : 'bai-hoc-dang-doi';
+      let currentHeroSlug = (typeof window.heroMoviesForClient !== 'undefined' && window.heroMoviesForClient.length > 0) ? window.heroMoviesForClient[0].slug : 'bai-hoc-dang-doi';
 
       let userPlaylist = [];
       const username = (window.APP_USER ? window.APP_USER.username : null) || '';
@@ -1643,7 +1680,7 @@ const firstHero = heroMovies[0] || null;
 
           setTimeout(() => {
             if (heroImdb) {
-              const score = movie.imdbScore ? movie.imdbScore.toFixed(1) : '8.0';
+              const score = movie.imdbScore ? Number(movie.imdbScore).toFixed(1) : '8.0';
               heroImdb.textContent = `${score} IMDb`;
             }
             if (heroYear) heroYear.textContent = movie.releaseYear || '2024';
@@ -1956,5 +1993,50 @@ const firstHero = heroMovies[0] || null;
     .top10-info .info-line {
       display: none !important;
     }
+  }
+
+  /* Top Discuss Comment Cards styled like cobephim */
+  .td-d-item {
+    position: relative;
+    overflow: hidden;
+  }
+  .td-d-item:hover .di-poster {
+    opacity: 0.35;
+  }
+  .td-d-item:hover .user-avatar {
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  .lim-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal !important;
+  }
+  .gr-admin span {
+    background: linear-gradient(65deg, #ffd875, #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .gr-tag {
+    font-size: 8px;
+    text-transform: uppercase;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gr-tag-free {
+    color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  .gr-admin .gr-tag {
+    border-color: rgba(236, 72, 153, 0.3);
+    color: rgb(244, 114, 182);
+    background-color: rgba(236, 72, 153, 0.1);
   }
 </style>
