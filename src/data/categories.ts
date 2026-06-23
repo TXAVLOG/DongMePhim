@@ -9,13 +9,28 @@ export interface CategoryDefinition {
 export const HOMEPAGE_CATEGORIES: CategoryDefinition[] = [
   {
     slug: 'top-anime-he',
-    title: 'Top Anime đáng xem mùa hè này',
-    description: 'Danh sách các bộ anime hot nhất mùa hè này không thể bỏ lỡ.'
+    title: 'Top Anime Đáng Xem Mùa Hè',
+    description: 'Loạt anime gây sốt với đồ họa mãn nhãn, cốt truyện bùng nổ và dàn nhân vật khiến fan phát cuồng.'
   },
   {
     slug: 'top-10-phim-le',
     title: 'Top 10 Phim Lẻ Hay Nhức Nách',
-    description: 'Bảng xếp hạng 10 phim lẻ được xem nhiều và đánh giá cao.'
+    description: 'Bảng vàng những bộ phim lẻ xuất sắc nhất, xem một lần là nhớ mãi.'
+  },
+  {
+    slug: 'top-10-phim-bo',
+    title: 'Top 10 Phim Bộ Hay Nhất',
+    description: 'Những series đình đám đủ sức khiến bạn thức trắng chỉ để xem thêm một tập nữa.'
+  },
+  {
+    slug: 'phim-dien-anh-moi',
+    title: 'Phim Điện Ảnh Mới Ra Mắt',
+    description: 'Bom tấn vừa cập nhật, những tác phẩm đang làm nóng phòng vé và mạng xã hội.'
+  },
+  {
+    slug: 'dahk-o-cho-nay-nay',
+    title: 'Điện Ảnh Hồng Kông Ở Chỗ Này Này',
+    description: 'Từ xã hội đen, võ thuật đến tâm lý hình sự, tinh hoa điện ảnh Hồng Kông hội tụ tại đây.'
   }
 ];
 

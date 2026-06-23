@@ -187,18 +187,15 @@ let activeTab = "quang-cao";
             body: JSON.stringify(updatedSettings)
           });
           
-          
-
           if (window.showGlobalToast) {
             window.showGlobalToast("Lưu cấu hình quảng cáo vào Database thành công!", "success");
           } else {
             alert("Lưu cấu hình quảng cáo thành công!");
           }
-
-          
         } catch (error) {
           console.error("Save error:", error);
           if (window.showGlobalToast) window.showGlobalToast("Lỗi khi lưu Database!", "error");
+        } finally {
           btn.innerHTML = originalText;
           btn.disabled = false;
         }

@@ -25,7 +25,7 @@ const currentMappings = await getHomepageCategories();
       <div class="glass-panel p-4 rounded-2xl border border-glass-stroke">
         <h4 class="text-xs font-bold text-primary uppercase tracking-widest mb-4">Danh mục đặc biệt</h4>
         <div class="flex flex-col gap-2" id="categoryTabContainer">
-          {HOMEPAGE_CATEGORIES.map((cat, idx) => (
+          {HOMEPAGE_CATEGORIES.filter(cat => cat.slug !== 'dahk-o-cho-nay-nay').map((cat, idx) => (
             <button
               data-slug={cat.slug}
               class={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer border-none bg-transparent flex flex-col gap-1 ${
@@ -133,6 +133,7 @@ const currentMappings = await getHomepageCategories();
         renderActiveCategory();
         setupSearch();
         setupSaveButton();
+        setupDragAndDrop();
       }
 
       function setupTabs() {
@@ -244,18 +245,58 @@ const currentMappings = await getHomepageCategories();
         if (window.showGlobalToast) window.showGlobalToast("Đã gỡ phim khỏi danh mục", "info");
       };
 
-      window.addMovie = (slug) => {
-        const list = mappings[activeCategorySlug] || [];
+      window.addMovieToCategory = (slug, categorySlug) => {
+        const list = mappings[categorySlug] || [];
         if (list.includes(slug)) {
           if (window.showGlobalToast) window.showGlobalToast("Phim này đã có trong danh mục!", "error");
           return;
         }
 
         list.push(slug);
-        mappings[activeCategorySlug] = list;
+        mappings[categorySlug] = list;
         renderActiveCategory();
-        if (window.showGlobalToast) window.showGlobalToast("Đã thêm phim vào danh mục", "success");
+        
+        const cat = categories.find(c => c.slug === categorySlug);
+        const catTitle = cat ? cat.title : 'danh mục';
+        if (window.showGlobalToast) window.showGlobalToast(`Đã thêm phim vào "${catTitle}" thành công!`, "success");
       };
+
+      window.addMovie = (slug) => {
+        window.addMovieToCategory(slug, activeCategorySlug);
+      };
+
+      function setupDragAndDrop() {
+        const container = document.getElementById('categoryTabContainer');
+        if (!container) return;
+
+        const buttons = container.querySelectorAll('button');
+        buttons.forEach(btn => {
+          const categorySlug = btn.getAttribute('data-slug');
+
+          btn.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          });
+
+          btn.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            btn.classList.add('drag-over');
+          });
+
+          btn.addEventListener('dragleave', () => {
+            btn.classList.remove('drag-over');
+          });
+
+          btn.addEventListener('drop', (e) => {
+            e.preventDefault();
+            btn.classList.remove('drag-over');
+            const slug = e.dataTransfer.getData('text/plain');
+            if (slug) {
+              window.addMovieToCategory(slug, categorySlug);
+            }
+          });
+        });
+      }
 
       let searchKeyword = "";
       function setupSearch() {
@@ -296,13 +337,14 @@ const currentMappings = await getHomepageCategories();
         tbody.innerHTML = filtered.map(m => {
           const isAdded = assignedSlugs.includes(m.slug);
           return `
-            <tr class="hover:bg-white/[0.02] text-xs">
+            <tr class="hover:bg-white/[0.02] text-xs cursor-grab active:cursor-grabbing select-none" draggable="true" ondragstart="event.dataTransfer.setData('text/plain', '${m.slug}'); event.dataTransfer.effectAllowed = 'copy';">
               <td class="px-4 py-3 min-w-0">
                 <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-zinc-600 text-sm select-none">drag_indicator</span>
                   <img src="${m.posterUrl}" class="w-6 h-8 object-cover rounded" />
                   <div class="min-w-0">
-                    <p class="font-bold text-white truncate max-w-[200px]">${m.title}</p>
-                    <p class="text-[10px] text-zinc-500 font-mono truncate max-w-[200px]">${m.slug}</p>
+                    <p class="font-bold text-white truncate max-w-[180px]">${m.title}</p>
+                    <p class="text-[10px] text-zinc-500 font-mono truncate max-w-[180px]">${m.slug}</p>
                   </div>
                 </div>
               </td>
@@ -371,5 +413,18 @@ const currentMappings = await getHomepageCategories();
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Drag and drop styles */
+  #categoryTabContainer button {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drag-over {
+    transform: scale(1.05) translateY(-2px);
+    border-color: #8b5cf6 !important;
+    background-color: rgba(139, 92, 246, 0.18) !important;
+    color: #a78bfa !important;
+    box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4), 0 0 15px rgba(139, 92, 246, 0.2) !important;
+    z-index: 10;
   }
 </style>

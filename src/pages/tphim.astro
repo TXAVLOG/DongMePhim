@@ -39,6 +39,29 @@ const topSeries = allMoviesForServer
   .sort((a: any, b: any) => ((b.views || 0) + (b.commentCount || 0)) - ((a.views || 0) + (a.commentCount || 0)))
   .slice(0, 10);
 
+// Top 10 Phim Bộ
+const top10PhimBoSlugs = homepageMappings['top-10-phim-bo'] || [];
+const topBoMoviesManual = allMoviesForServer.filter((m: any) => top10PhimBoSlugs.includes(m.slug));
+const fallbackTop10Bo = [...allMoviesForServer]
+  .filter((m: any) => m.type === 'series')
+  .sort((a: any, b: any) => {
+    const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10;
+    const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;
+    return scoreB - scoreA;
+  })
+  .slice(0, 10);
+const topBoMoviesManualSorted = [...topBoMoviesManual].sort((a, b) => top10PhimBoSlugs.indexOf(a.slug) - top10PhimBoSlugs.indexOf(b.slug));
+const top10PhimBoList = topBoMoviesManual.length > 0 ? topBoMoviesManualSorted : fallbackTop10Bo;
+
+// Phim điện ảnh mới coóng
+const phimDienAnhSlugs = homepageMappings['phim-dien-anh-moi'] || [];
+const phimDienAnhMoviesManual = allMoviesForServer.filter((m: any) => phimDienAnhSlugs.includes(m.slug));
+const fallbackPhimDienAnh = [...allMoviesForServer]
+  .filter((m: any) => m.type === 'movie' && (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'))))
+  .slice(0, 4);
+const phimDienAnhMoviesManualSorted = [...phimDienAnhMoviesManual].sort((a, b) => phimDienAnhSlugs.indexOf(a.slug) - phimDienAnhSlugs.indexOf(b.slug));
+const phimDienAnhList = phimDienAnhMoviesManual.length > 0 ? phimDienAnhMoviesManualSorted : fallbackPhimDienAnh;
+
 // Filter lists for Sidebar ranking (server-side)
 const soiNoiMovies = [...allMoviesForServer]
   .sort((a: any, b: any) => (b.views || 0) - (a.views || 0))
@@ -264,20 +287,74 @@ const firstHero = heroMovies[0] || null;
       </div>
     </section>
 
+    <!-- Top 10 Phim Bộ Hay Nhất (Same Swiper skewed cards style) -->
+    <section class="space-y-6">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+            Top 10 Phim Bộ Hay Nhất
+            <span class="material-symbols-outlined text-amber-400" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+          </h2>
+          <p class="text-on-surface-variant font-body-main mt-1 text-sm">Bảng xếp hạng phim bộ hot nhất hệ thống</p>
+        </div>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-10-phim-bo">
+          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+        </a>
+      </div>
+
+      <!-- Swiper Slider for Skewed Cards -->
+      <div class="swiper top10-swiper">
+        <div class="swiper-wrapper">
+          {top10PhimBoList.map((movie: any, index: number) => (
+            <div class="swiper-slide">
+              <div class="top10-item group">
+                <a class="top10-thumbnail block" href={`/phim/${movie.slug}`}>
+                  <div class="absolute inset-0 bg-black/10 group-hover:bg-primary/10 transition-colors z-10 rounded-2xl"></div>
+                  {movie.episodeCurrent && (
+                    <div class="absolute top-2.5 left-2.5 z-25 bg-black/75 backdrop-blur-sm border border-white/5 px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider font-outfit">
+                      {movie.episodeCurrent}
+                    </div>
+                  )}
+                  <img src={movie.posterUrl} alt={movie.title} />
+                </a>
+                
+                <div class="top10-info">
+                  <div class="top10-number font-display-hero">
+                    {index + 1}
+                  </div>
+                  <h4 class="font-bold text-white text-xs md:text-sm line-clamp-1 group-hover:text-primary transition-colors font-outfit">
+                    <a href={`/phim/${movie.slug}`}>{movie.title}</a>
+                  </h4>
+                  <p class="text-[10px] text-zinc-500 line-clamp-1 font-outfit mt-0.5">{movie.originalTitle || movie.title}</p>
+                  
+                  <div class="info-line flex gap-1.5 mt-1.5 md:flex flex-wrap">
+                    <span class="text-[8px] bg-white/5 border border-white/10 px-1 py-0.2 rounded font-black text-zinc-400 font-outfit uppercase">{movie.quality}</span>
+                    <span class="text-[8px] text-zinc-500 font-bold font-outfit">{movie.releaseYear}</span>
+                    <span class="text-[8px] text-zinc-500 font-bold font-outfit">{movie.episodeCurrent || 'Phần 1'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
     <!-- Phim Hàn Quốc Mới -->
     <section class="lazy-section" data-endpoint="/api/movies?category=Hàn Quốc&limit=10" data-grid-id="korean-grid" data-layout="slider" data-more-url="/quoc-gia/han-quoc">
       <div class="flex flex-col md:flex-row gap-6 items-stretch">
-        <!-- Mobile Section Header (visible on mobile only) -->
+        <!-- Mobile Section Header -->
         <div class="flex md:hidden justify-between items-center w-full mb-1">
           <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
-            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Hàn Quốc</span> mới
+            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hàn Quốc</span> mới
           </h2>
           <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/han-quoc">
             <span class="material-symbols-outlined text-lg">chevron_right</span>
           </a>
         </div>
         
-        <!-- Desktop Left Header Column (hidden on mobile) -->
+        <!-- Desktop Left Header Column -->
         <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
           <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
             Phim <br/>
@@ -298,7 +375,6 @@ const firstHero = heroMovies[0] || null;
             <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
             <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
           </div>
-          <!-- Arrow Control -->
           <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
             <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
           </button>
@@ -306,76 +382,20 @@ const firstHero = heroMovies[0] || null;
       </div>
     </section>
 
-    <!-- Top 10 phim bộ hôm nay -->
-    <section>
-      <div class="flex justify-between items-end mb-6">
-        <div>
-          <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
-            Top 10 Phim Bộ Hôm Nay
-            <span class="material-symbols-outlined text-transparent bg-clip-text bg-gradient-to-tr from-primary to-secondary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
-          </h2>
-          <p class="text-on-surface-variant font-body-main mt-1 text-sm">Các bộ phim bộ đang được thảo luận và xem nhiều nhất</p>
-        </div>
-      </div>
-      
-      <!-- Horizontal Scroll Container with clipping protection -->
-      <div id="top-series-scroll" class="flex gap-6 overflow-x-auto pb-20 pt-20 -my-16 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
-        {topSeries.map((movie: any, index: number) => (
-          <div class="flex-shrink-0 w-44 md:w-52 relative pl-10 snap-center group">
-            <!-- Large Rank Number -->
-            <div class="absolute bottom-0 left-0 text-[120px] md:text-[140px] font-black leading-none select-none pointer-events-none text-transparent bg-clip-text bg-gradient-to-tr from-primary/80 via-primary/20 to-transparent z-0 font-display-hero transform translate-y-6">
-              {index + 1}
-            </div>
-            
-            <Card 
-              title={movie.title}
-              slug={movie.slug}
-              poster={movie.posterUrl}
-              year={movie.releaseYear}
-              quality={movie.quality}
-              status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}
-              aspect="aspect-[3/4]"
-              class="z-10 relative"
-              movie={movie}
-            />
-          </div>
-        ))}
-      </div>
-    </section>
-
-    <!-- Phim Bộ Mới -->
-    <section class="lazy-section" data-endpoint="/api/movies?type=series&limit=4" data-grid-id="series-grid" data-aspect="aspect-[2/3]">
-      <div class="flex items-center gap-3 mb-6">
-        <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
-          Phim Bộ Mới
-        </h2>
-        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/phim-bo">
-          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
-          <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
-        </a>
-      </div>
-      <div id="series-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter min-h-[280px]">
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-      </div>
-    </section>
-
     <!-- Phim Trung Quốc Mới -->
     <section class="lazy-section" data-endpoint="/api/movies?category=Trung Quốc&limit=10" data-grid-id="chinese-grid" data-layout="slider" data-more-url="/quoc-gia/trung-quoc">
       <div class="flex flex-col md:flex-row gap-6 items-stretch">
-        <!-- Mobile Section Header (visible on mobile only) -->
+        <!-- Mobile Section Header -->
         <div class="flex md:hidden justify-between items-center w-full mb-1">
           <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
-            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Trung Quốc</span> mới
+            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Trung Quốc</span> mới
           </h2>
           <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/trung-quoc">
             <span class="material-symbols-outlined text-lg">chevron_right</span>
           </a>
         </div>
         
-        <!-- Desktop Left Header Column (hidden on mobile) -->
+        <!-- Desktop Left Header Column -->
         <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
           <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
             Phim <br/>
@@ -396,11 +416,111 @@ const firstHero = heroMovies[0] || null;
             <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
             <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
           </div>
-          <!-- Arrow Control -->
           <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
             <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
           </button>
         </div>
+      </div>
+    </section>
+
+    <!-- Phim US-UK Mới -->
+    <section class="lazy-section" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my">
+      <div class="flex flex-col md:flex-row gap-6 items-stretch">
+        <!-- Mobile Section Header -->
+        <div class="flex md:hidden justify-between items-center w-full mb-1">
+          <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">US-UK</span> mới
+          </h2>
+          <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/au-my">
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+          </a>
+        </div>
+        
+        <!-- Desktop Left Header Column -->
+        <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+          <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+            Phim <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">US-UK</span> <br/>
+            mới
+          </h2>
+          <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/au-my">
+            <span>Xem toàn bộ</span>
+            <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+          </a>
+        </div>
+
+        <!-- Right Slider Content -->
+        <div class="relative flex-1 min-w-0">
+          <div id="western-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+          </div>
+          <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+            <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Điện Ảnh Hồng Kông ở Chỗ Này Này -->
+    <section class="lazy-section" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay">
+      <div class="flex flex-col md:flex-row gap-6 items-stretch">
+        <!-- Mobile Section Header -->
+        <div class="flex md:hidden justify-between items-center w-full mb-1">
+          <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+            Điện ảnh <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> ở chỗ này này
+          </h2>
+          <a class="text-zinc-400 hover:text-white flex items-center" href="/c/dahk-o-cho-nay-nay">
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+          </a>
+        </div>
+        
+        <!-- Desktop Left Header Column -->
+        <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+          <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+            Điện ảnh <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> <br/>
+            ở chỗ này này
+          </h2>
+          <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/c/dahk-o-cho-nay-nay">
+            <span>Xem toàn bộ</span>
+            <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+          </a>
+        </div>
+
+        <!-- Right Slider Content -->
+        <div class="relative flex-1 min-w-0">
+          <div id="hongkong-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+          </div>
+          <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+            <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phim Bộ Mới -->
+    <section class="lazy-section" data-endpoint="/api/movies?type=series&limit=4" data-grid-id="series-grid" data-aspect="aspect-[2/3]">
+      <div class="flex items-center gap-3 mb-6">
+        <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+          Phim Bộ Mới
+        </h2>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/phim-bo">
+          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+        </a>
+      </div>
+      <div id="series-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter min-h-[280px]">
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
       </div>
     </section>
 
@@ -544,64 +664,22 @@ const firstHero = heroMovies[0] || null;
       </div>
     </section>
 
-    <!-- Phim Âu Mỹ Mới -->
-    <section class="lazy-section" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my">
-      <div class="flex flex-col md:flex-row gap-6 items-stretch">
-        <!-- Mobile Section Header (visible on mobile only) -->
-        <div class="flex md:hidden justify-between items-center w-full mb-1">
-          <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
-            Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">US-UK</span> mới
-          </h2>
-          <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/au-my">
-            <span class="material-symbols-outlined text-lg">chevron_right</span>
-          </a>
-        </div>
-        
-        <!-- Desktop Left Header Column (hidden on mobile) -->
-        <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
-          <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
-            Phim <br/>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">US-UK</span> <br/>
-            mới
-          </h2>
-          <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/au-my">
-            <span>Xem toàn bộ</span>
-            <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
-          </a>
-        </div>
-
-        <!-- Right Slider Content -->
-        <div class="relative flex-1 min-w-0">
-          <div id="western-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
-            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-            <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-          </div>
-          <!-- Arrow Control -->
-          <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
-            <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Phim Chiếu Rạp Mới -->
-    <section class="lazy-section" data-endpoint="/api/movies?category=Chiếu Rạp&limit=4" data-grid-id="cinema-grid" data-aspect="aspect-[2/3]">
+    <!-- Phim Điện Ảnh Mới Coóng -->
+    <section class="space-y-6">
       <div class="flex items-center gap-3 mb-6">
         <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
-          Phim Chiếu Rạp Mới
+          Phim Điện Ảnh Mới Coóng
+          <span class="material-symbols-outlined text-transparent bg-clip-text bg-gradient-to-tr from-primary to-secondary" style="font-variation-settings: 'FILL' 1;">movie</span>
         </h2>
-        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/the-loai/chieu-rap">
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/phim-dien-anh-moi">
           <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
           <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
         </a>
       </div>
-      <div id="cinema-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter min-h-[280px]">
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
+        {phimDienAnhList.map((movie: any) => (
+          <Card movie={movie} title={movie.title} slug={movie.slug} poster={movie.posterUrl} year={movie.releaseYear} quality={movie.quality} status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'} />
+        ))}
       </div>
     </section>
   </main>
@@ -1006,23 +1084,25 @@ const firstHero = heroMovies[0] || null;
         },
       });
 
-      new Swiper('.top10-swiper', {
-        slidesPerView: 2,
-        spaceBetween: 16,
-        breakpoints: {
-          640: {
-            slidesPerView: 3,
-            spaceBetween: 20,
+      document.querySelectorAll('.top10-swiper').forEach(el => {
+        new Swiper(el, {
+          slidesPerView: 2,
+          spaceBetween: 16,
+          breakpoints: {
+            640: {
+              slidesPerView: 3,
+              spaceBetween: 20,
+            },
+            768: {
+              slidesPerView: 4,
+              spaceBetween: 20,
+            },
+            1024: {
+              slidesPerView: 5,
+              spaceBetween: 24,
+            },
           },
-          768: {
-            slidesPerView: 4,
-            spaceBetween: 20,
-          },
-          1024: {
-            slidesPerView: 5,
-            spaceBetween: 24,
-          },
-        },
+        });
       });
     }
     initSwipers();
@@ -1124,8 +1204,9 @@ const firstHero = heroMovies[0] || null;
     });
 
     // 3. Hydration logic
+    let combinedMovies = [];
     try {
-      const combinedMovies = heroMoviesForClient || [];
+      combinedMovies = heroMoviesForClient || [];
       const hasMovies = combinedMovies.length > 0;
 
       // Helper to map movie slug to details

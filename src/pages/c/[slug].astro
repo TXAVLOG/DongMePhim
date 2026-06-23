@@ -16,22 +16,29 @@ if (category) {
   const homepageMappings = await getHomepageCategories();
   const assignedSlugs = homepageMappings[category.slug] || [];
   
-  // Get and sort assigned movies
-  const assignedMovies = allMovies.filter((m: any) => assignedSlugs.includes(m.slug));
-  movies = [...assignedMovies].sort((a, b) => assignedSlugs.indexOf(a.slug) - assignedSlugs.indexOf(b.slug));
+  if (category.slug === 'dahk-o-cho-nay-nay') {
+    movies = allMovies.filter((m: any) => 
+      m.type === 'movie' && 
+      (m.category === 'Hồng Kông' || m.category === 'TVB' || (Array.isArray(m.genres) && (m.genres.includes('Hồng Kông') || m.genres.includes('TVB'))))
+    );
+  } else {
+    // Get and sort assigned movies
+    const assignedMovies = allMovies.filter((m: any) => assignedSlugs.includes(m.slug));
+    movies = [...assignedMovies].sort((a, b) => assignedSlugs.indexOf(a.slug) - assignedSlugs.indexOf(b.slug));
 
-  // Fallback to default lists if no movies are manually assigned
-  if (movies.length === 0) {
-    if (category.slug === 'top-anime-he') {
-      movies = allMovies.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
-    } else if (category.slug === 'top-10-phim-le') {
-      movies = [...allMovies]
-        .filter((m: any) => m.type === 'movie')
-        .sort((a: any, b: any) => {
-          const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10;
-          const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;
-          return scoreB - scoreA;
-        });
+    // Fallback to default lists if no movies are manually assigned
+    if (movies.length === 0) {
+      if (category.slug === 'top-anime-he') {
+        movies = allMovies.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
+      } else if (category.slug === 'top-10-phim-le') {
+        movies = [...allMovies]
+          .filter((m: any) => m.type === 'movie')
+          .sort((a: any, b: any) => {
+            const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10;
+            const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;
+            return scoreB - scoreA;
+          });
+      }
     }
   }
 }

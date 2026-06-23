@@ -700,6 +700,12 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
 
       // Save handler
       document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('save-settings-btn');
+        if (!btn) return;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+        btn.disabled = true;
+
         const current = serverSettings;
 
         // Token Expiry Validation (180s to 3000s)
@@ -752,15 +758,25 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           }
         };
 
-        await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
-
-        if (window.showGlobalToast) {
-          window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
-        } else {
-          alert('Lưu cấu hình hệ thống thành công!');
+        try {
+          const res = await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
+          if (!res.ok) throw new Error('API request failed');
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Lưu cấu hình hệ thống thành công!', 'success');
+          } else {
+            alert('Lưu cấu hình hệ thống thành công!');
+          }
+        } catch (e) {
+          console.error(e);
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Lỗi lưu cấu hình hệ thống!', 'error');
+          } else {
+            alert('Lỗi lưu cấu hình hệ thống!');
+          }
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
         }
-
-        
       });
 
       // Google GSI auto-reinit listeners
