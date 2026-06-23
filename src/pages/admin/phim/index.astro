@@ -12,6 +12,10 @@ const staticMovies = await MovieService.getMovies();
       <p class="text-text-dim text-body-main mt-1">Quản lý kho phim của bạn bao gồm phim hệ thống và phim đã thu thập (crawled).</p>
     </div>
     <div class="flex items-center gap-3">
+      <a href="/admin/phim/danh-muc" class="px-4 py-2.5 glass-panel hover:bg-surface-variant text-on-surface rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer border border-glass-stroke">
+        <span class="material-symbols-outlined text-sm">view_carousel</span>
+        <span>Danh mục trang chủ</span>
+      </a>
       <a href="/admin/phim/crawler" class="px-4 py-2.5 glass-panel hover:bg-surface-variant text-on-surface rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer border border-glass-stroke">
         <span class="material-symbols-outlined text-sm">cloud_download</span>
         <span>Thu thập phim</span>

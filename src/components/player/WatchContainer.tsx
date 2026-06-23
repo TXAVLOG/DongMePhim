@@ -509,6 +509,9 @@ interface ReplyItem {
   author: string;
   content: string;
   createdAt: string;
+  package?: string;
+  gender?: string;
+  role?: string;
 }
 
 interface CommentItem {
@@ -519,14 +522,56 @@ interface CommentItem {
   dislikes: number;
   replies: ReplyItem[];
   createdAt: string;
+  gender?: string;
+  package?: string;
+  role?: string;
+  avatar?: string;
+  episodeName?: string;
+  serverName?: string;
+  isSpoiler?: boolean;
 }
 
-const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
+const formatDate = (isoStr: string) => {
+  try {
+    const d = new Date(isoStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Hôm qua';
+    if (diffDays < 30) return `${diffDays} ngày trước`;
+    
+    return d.toLocaleDateString('vi-VN', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+  } catch (e) {
+    return 'Vừa xong';
+  }
+};
+
+const CommentSystem: React.FC<{ 
+  movieSlug: string; 
+  currentEpisode?: any; 
+  currentServerName?: string;
+  hideEpisodeLabel?: boolean;
+}> = ({ movieSlug, currentEpisode, currentServerName, hideEpisodeLabel = false }) => {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [newComment, setNewComment] = useState<string>('');
   const [authorName, setAuthorName] = useState<string>('');
   const [replyTarget, setReplyTarget] = useState<any | null>(null);
   const [replyContent, setReplyContent] = useState<string>('');
+  
+  const [isSpoilerInput, setIsSpoilerInput] = useState<boolean>(false);
+  const [activeDropdown, setActiveDropdown] = useState<any | null>(null);
+  const [revealedSpoilers, setRevealedSpoilers] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchComments = async () => {
@@ -544,13 +589,6 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
     };
 
     fetchComments();
-
-    if (typeof window !== 'undefined') {
-      const loggedIn = (window.APP_USER ? window.APP_USER.username : null);
-      if (loggedIn) {
-        setAuthorName(loggedIn);
-      }
-    }
   }, [movieSlug]);
 
   const handlePostComment = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -568,7 +606,10 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
         body: JSON.stringify({
           slug: movieSlug,
           author: name,
-          content: newComment.trim()
+          content: newComment.trim(),
+          episodeName: currentEpisode ? currentEpisode.name : undefined,
+          serverName: currentServerName,
+          isSpoiler: isSpoilerInput
         })
       });
 
@@ -577,6 +618,7 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
         if (result && result.status === 'success' && result.data) {
           setComments(prev => [result.data, ...prev]);
           setNewComment('');
+          setIsSpoilerInput(false);
           if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
             (window as any).showGlobalToast('Đăng bình luận thành công!', 'success');
           }
@@ -643,6 +685,65 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
     }
   };
 
+  const handleDeleteComment = async (commentId: any) => {
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          commentId: commentId
+        })
+      });
+
+      if (res.ok) {
+        const json: any = await res.json();
+        if (json.status === 'success') {
+          setComments(prev => prev.filter(c => c.id !== commentId));
+          if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+            (window as any).showGlobalToast('Đã xóa bình luận thành công!', 'success');
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleToggleSpoiler = async (commentId: any) => {
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'toggle_spoiler',
+          commentId: commentId
+        })
+      });
+
+      if (res.ok) {
+        const json: any = await res.json();
+        if (json.status === 'success') {
+          setComments(prev => prev.map(c => {
+            if (c.id === commentId) {
+              return { ...c, isSpoiler: json.data.isSpoiler };
+            }
+            return c;
+          }));
+          if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+            (window as any).showGlobalToast('Đã cập nhật tình tiết tiết lộ nội dung!', 'success');
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleLike = async (commentId: any, isDislike: boolean = false) => {
     if (isDislike) {
       setComments(prev => prev.map(c => {
@@ -683,20 +784,6 @@ const CommentSystem: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
     }
   };
 
-  const formatDate = (isoStr: string) => {
-    try {
-      const d = new Date(isoStr);
-      return d.toLocaleDateString('vi-VN', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric' 
-      });
-    } catch (e) {
-      return 'Vừa xong';
-    }
-  };
 
   return (
     <div className="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-6">
