@@ -367,9 +367,17 @@ const getMovieProgressBadgesSSR = (movie: any) => {
               <div class="top10-item group">
                 <a class="top10-thumbnail block" href={`/phim/${movie.slug}`}>
                   <div class="absolute inset-0 bg-black/10 group-hover:bg-primary/10 transition-colors z-10 rounded-2xl"></div>
-                  <div class="absolute top-2.5 left-2.5 z-25 flex gap-1 items-center flex-wrap select-none pointer-events-none">
-                    <Fragment set:html={getMovieProgressBadgesSSR(movie)} />
-                  </div>
+                  {(() => {
+                    const html = getMovieProgressBadgesSSR(movie);
+                    if (!html || !html.trim()) return null;
+                    return (
+                      <div class="absolute top-2.5 left-2.5 z-25 flex items-center select-none pointer-events-none">
+                        <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
+                          <Fragment set:html={html} />
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <img src={movie.posterUrl} alt={movie.title} />
                 </a>
                 
@@ -394,9 +402,17 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                   <div class="relative w-full aspect-video bg-black/40">
                     <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                     <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
-                    <div class="absolute top-3 left-3 flex gap-1 items-center flex-wrap">
+                    <div class="absolute top-3 left-3 flex gap-1 items-center select-none pointer-events-none">
                       <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">{movie.quality || 'FHD'}</span>
-                      <Fragment set:html={getMovieProgressBadgesSSR(movie)} />
+                      {(() => {
+                        const html = getMovieProgressBadgesSSR(movie);
+                        if (!html || !html.trim()) return null;
+                        return (
+                          <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
+                            <Fragment set:html={html} />
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div class="p-4 space-y-3.5 text-left whitespace-normal">
@@ -464,9 +480,17 @@ const getMovieProgressBadgesSSR = (movie: any) => {
               <div class="top10-item group">
                 <a class="top10-thumbnail block" href={`/phim/${movie.slug}`}>
                   <div class="absolute inset-0 bg-black/10 group-hover:bg-primary/10 transition-colors z-10 rounded-2xl"></div>
-                  <div class="absolute top-2.5 left-2.5 z-25 flex gap-1 items-center flex-wrap select-none pointer-events-none">
-                    <Fragment set:html={getMovieProgressBadgesSSR(movie)} />
-                  </div>
+                  {(() => {
+                    const html = getMovieProgressBadgesSSR(movie);
+                    if (!html || !html.trim()) return null;
+                    return (
+                      <div class="absolute top-2.5 left-2.5 z-25 flex items-center select-none pointer-events-none">
+                        <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
+                          <Fragment set:html={html} />
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <img src={movie.posterUrl} alt={movie.title} />
                 </a>
                 
@@ -491,9 +515,17 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                   <div class="relative w-full aspect-video bg-black/40">
                     <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                     <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
-                    <div class="absolute top-3 left-3 flex gap-1 items-center flex-wrap">
+                    <div class="absolute top-3 left-3 flex gap-1 items-center select-none pointer-events-none">
                       <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">{movie.quality || 'FHD'}</span>
-                      <Fragment set:html={getMovieProgressBadgesSSR(movie)} />
+                      {(() => {
+                        const html = getMovieProgressBadgesSSR(movie);
+                        if (!html || !html.trim()) return null;
+                        return (
+                          <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
+                            <Fragment set:html={html} />
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div class="p-4 space-y-3.5 text-left whitespace-normal">
@@ -664,7 +696,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     </section>
 
       <!-- Điện Ảnh Hồng Kông ở Chỗ Này Này -->
-      <section class="lazy-section" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay">
+      <section class="lazy-section glass-card bg-[#141416]/40 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay">
         <div class="flex flex-col md:flex-row gap-6 items-stretch">
           <!-- Mobile Section Header -->
           <div class="flex md:hidden justify-between items-center w-full mb-1">
@@ -710,7 +742,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     <!-- Group 1: 3 sections (Korean, Chinese, US-UK) -->
     <div class="scroll-load-group hidden opacity-0 transition-all duration-700 space-y-section-gap" id="scroll-group-1">
       <!-- Phim Hàn Quốc Mới -->
-      <section class="lazy-section" data-endpoint="/api/movies?category=Hàn Quốc&limit=10" data-grid-id="korean-grid" data-layout="slider" data-more-url="/quoc-gia/han-quoc">
+      <section class="lazy-section glass-card bg-[#141416]/40 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden" data-endpoint="/api/movies?category=Hàn Quốc&limit=10" data-grid-id="korean-grid" data-layout="slider" data-more-url="/quoc-gia/han-quoc">
         <div class="flex flex-col md:flex-row gap-6 items-stretch">
           <!-- Mobile Section Header -->
           <div class="flex md:hidden justify-between items-center w-full mb-1">
@@ -751,7 +783,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       </section>
 
       <!-- Phim Trung Quốc Mới -->
-      <section class="lazy-section" data-endpoint="/api/movies?category=Trung Quốc&limit=10" data-grid-id="chinese-grid" data-layout="slider" data-more-url="/quoc-gia/trung-quoc">
+      <section class="lazy-section glass-card bg-[#141416]/40 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden" data-endpoint="/api/movies?category=Trung Quốc&limit=10" data-grid-id="chinese-grid" data-layout="slider" data-more-url="/quoc-gia/trung-quoc">
         <div class="flex flex-col md:flex-row gap-6 items-stretch">
           <!-- Mobile Section Header -->
           <div class="flex md:hidden justify-between items-center w-full mb-1">
@@ -792,7 +824,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       </section>
 
       <!-- Phim US-UK Mới -->
-      <section class="lazy-section" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my">
+      <section class="lazy-section glass-card bg-[#141416]/40 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my">
         <div class="flex flex-col md:flex-row gap-6 items-stretch">
           <!-- Mobile Section Header -->
           <div class="flex md:hidden justify-between items-center w-full mb-1">
@@ -1248,9 +1280,13 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             </div>
           </div>
           
-          <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1 items-center justify-center">
-            ${badgesHTML}
-          </div>
+          ${badgesHTML ? `
+            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none select-none">
+              <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
+                ${badgesHTML}
+              </div>
+            </div>
+          ` : ''}
         </a>
 
         <div class="mt-2.5 px-1 space-y-0.5 text-center">
@@ -1327,9 +1363,13 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             </div>
           </div>
           
-          <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1 items-center justify-center">
-            ${badgesHTML}
-          </div>
+          ${badgesHTML ? `
+            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none select-none">
+              <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
+                ${badgesHTML}
+              </div>
+            </div>
+          ` : ''}
         </a>
 
         <div class="mt-2.5 px-1 space-y-0.5">
