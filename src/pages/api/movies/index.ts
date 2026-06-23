@@ -32,7 +32,8 @@ export const GET: APIRoute = async ({ request }) => {
       lang: m.lang || 'Vietsub',
       imdbScore: m.imdbScore || m.imdb_score || 8.0,
       category: m.category || '',
-      genres: m.genres || []
+      genres: m.genres || [],
+      episodes: m.episodes || []
     }));
 
     return apiResponse(mapped, 'success', 'Lấy danh sách phim thành công!', 200, request);

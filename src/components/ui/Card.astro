@@ -19,14 +19,85 @@ const { title, slug, poster, year, quality, status, class: className, aspect = "
 // Fetch full movie details server-side for rich hover popup only if not provided as a prop
 const movie = propMovie || await MovieService.getMovieBySlug(slug);
 
-const getLangBadge = (lang?: string) => {
-  if (!lang) return 'P.Đề';
-  const lower = lang.toLowerCase();
-  if (lower.includes('thuyết minh') && (lower.includes('vietsub') || lower.includes('phụ đề'))) return 'P.Đề + T.Minh';
-  if (lower.includes('thuyết minh') || lower.includes('t.minh') || lower.includes('tm')) return 'T.Minh';
-  if (lower.includes('lồng tiếng') || lower.includes('lt')) return 'L.Tiếng';
-  return 'P.Đề';
+const getEpisodeProgress = () => {
+  if (!movie) return null;
+
+  if (movie.status === 'completed') {
+    return { type: 'completed', text: 'Hoàn tất' };
+  }
+
+  const episodes = movie.episodes || [];
+  
+  if (movie.type === 'series' || movie.type === 'hoathinh' || movie.type === 'tvshows') {
+    let pdEpisodes = 0;
+    let tmEpisodes = 0;
+
+    episodes.forEach((server: any) => {
+      const name = (server.serverName || '').toLowerCase();
+      const epCount = Array.isArray(server.serverData) ? server.serverData.length : 0;
+      
+      const isTm = name.includes('thuyết minh') || name.includes('thuyetminh') || name.includes('t.minh') || name.includes('tm') || name.includes('lồng tiếng') || name.includes('longtieng') || name.includes('l.tiếng') || name.includes('lt');
+      
+      if (isTm) {
+        tmEpisodes = Math.max(tmEpisodes, epCount);
+      } else {
+        pdEpisodes = Math.max(pdEpisodes, epCount);
+      }
+    });
+
+    if (pdEpisodes === 0 && tmEpisodes === 0) {
+      const cur = (movie.episodeCurrent || '').trim().replace(/^[tT]ập\s+/, '');
+      const curNum = parseInt(cur);
+      if (!isNaN(curNum)) {
+        const langLower = (movie.lang || '').toLowerCase();
+        if (langLower.includes('thuyết minh') || langLower.includes('lồng tiếng')) {
+          tmEpisodes = curNum;
+        } else {
+          pdEpisodes = curNum;
+        }
+      }
+    }
+
+    return {
+      type: 'series',
+      pd: pdEpisodes,
+      tm: tmEpisodes
+    };
+  } else {
+    let hasPd = false;
+    let hasTm = false;
+
+    episodes.forEach((server: any) => {
+      const name = (server.serverName || '').toLowerCase();
+      const isTm = name.includes('thuyết minh') || name.includes('thuyetminh') || name.includes('t.minh') || name.includes('tm') || name.includes('lồng tiếng') || name.includes('longtieng') || name.includes('l.tiếng') || name.includes('lt');
+      if (isTm) {
+        hasTm = true;
+      } else {
+        hasPd = true;
+      }
+    });
+
+    if (!hasPd && !hasTm) {
+      const langLower = (movie.lang || '').toLowerCase();
+      if (langLower.includes('thuyết minh') && (langLower.includes('vietsub') || langLower.includes('phụ đề'))) {
+        hasPd = true;
+        hasTm = true;
+      } else if (langLower.includes('thuyết minh') || langLower.includes('lồng tiếng')) {
+        hasTm = true;
+      } else {
+        hasPd = true;
+      }
+    }
+
+    return {
+      type: 'movie',
+      pd: hasPd,
+      tm: hasTm
+    };
+  }
 };
+
+const progress = getEpisodeProgress();
 ---
 
 <div class={`relative group w-full ${className || ''}`}>
@@ -48,36 +119,58 @@ const getLangBadge = (lang?: string) => {
       </div>
     )}
 
-    <!-- Episode Progress Badge -->
-    {movie?.type === 'series' && movie?.episodeCurrent && (
-      <div class="absolute top-2 left-2 z-20">
-        <span class="bg-black/60 text-white text-[11px] px-2 py-0.5 rounded backdrop-blur-sm border border-white/10 font-semibold shadow-sm">
-          {(() => {
-            let cur = movie.episodeCurrent.trim().replace(/^[tT]ập\s+/, '');
-            if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
-              return 'Full';
-            }
-            if (movie.episodeTotal) {
-              let tot = movie.episodeTotal.trim().replace(/^[tT]ập\s+/, '');
-              return `Tập ${cur}/${tot}`;
-            }
-            return `Tập ${cur}`;
-          })()}
-        </span>
-      </div>
-    )}
-    
     <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
       <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
         <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
       </div>
     </div>
-    
-    <!-- Centered Language/Subtitle Badge inside the bottom of poster -->
-    <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
-      <span class="bg-[#141416]/80 text-zinc-300 text-[10px] font-bold px-3 py-1 rounded border border-white/10 shadow-sm backdrop-blur-sm whitespace-nowrap">
-        {getLangBadge(movie?.lang || quality)}
-      </span>
+
+    <!-- Centered Language/Subtitle/Progress Badges inside the bottom of poster -->
+    <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1 items-center justify-center">
+      {progress && (
+        <>
+          {progress.type === 'completed' && (
+            <span class="bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 text-[10px] font-black px-3 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide">
+              Hoàn tất
+            </span>
+          )}
+          
+          {progress.type === 'series' && (
+            <>
+              {progress.pd > 0 && (
+                <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[10px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+                  PĐ {progress.pd}
+                </span>
+              )}
+              {progress.tm > 0 && (
+                <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[10px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+                  TM {progress.tm}
+                </span>
+              )}
+              {progress.pd === 0 && progress.tm === 0 && (
+                <span class="bg-zinc-950/90 text-zinc-400 border border-zinc-500/30 text-[10px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+                  Đang chiếu
+                </span>
+              )}
+            </>
+          )}
+
+          {progress.type === 'movie' && (
+            <>
+              {progress.pd && (
+                <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[10px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+                  Vietsub
+                </span>
+              )}
+              {progress.tm && (
+                <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[10px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+                  TM
+                </span>
+              )}
+            </>
+          )}
+        </>
+      )}
     </div>
   </a>
 
