@@ -6,9 +6,9 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const requests = await ZaloService.getAllZaloAccessRequests();
     const pendingCount = requests.filter((r: any) => r.status === 'pending').length;
-    return apiResponse({ count: pendingCount }, 'success', '', 200, request);
+    return apiResponse({ requests, count: pendingCount }, 'success', '', 200, request);
   } catch (err: any) {
-    return apiResponse({ count: 0 }, 'error', err.message || 'Lỗi hệ thống', 500, request);
+    return apiResponse({ requests: [], count: 0 }, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
 

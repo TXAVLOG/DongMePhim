@@ -74,6 +74,50 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
       )}
     </div>
 
+    <!-- Real-time Statistics Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <div class="glass-panel p-4 rounded-2xl border border-zinc-800 bg-zinc-950/20 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300">
+        <div class="absolute -right-6 -top-6 w-16 h-16 bg-yellow-500/5 rounded-full blur-xl"></div>
+        <span class="text-[10px] text-zinc-500 font-black uppercase tracking-wider block text-left">Đang chờ duyệt</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span class="text-2xl font-black text-yellow-400" id="stat-pending">0</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-ping"></span>
+        </div>
+      </div>
+      
+      <div class="glass-panel p-4 rounded-2xl border border-zinc-800 bg-zinc-950/20 relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+        <div class="absolute -right-6 -top-6 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl"></div>
+        <span class="text-[10px] text-zinc-500 font-black uppercase tracking-wider block text-left">Đã phê duyệt</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span class="text-2xl font-black text-emerald-400" id="stat-approved">0</span>
+        </div>
+      </div>
+      
+      <div class="glass-panel p-4 rounded-2xl border border-zinc-800 bg-zinc-950/20 relative overflow-hidden group hover:border-rose-500/30 transition-all duration-300">
+        <div class="absolute -right-6 -top-6 w-16 h-16 bg-rose-500/5 rounded-full blur-xl"></div>
+        <span class="text-[10px] text-zinc-500 font-black uppercase tracking-wider block text-left">Bị từ chối</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span class="text-2xl font-black text-rose-400" id="stat-rejected">0</span>
+        </div>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl border border-zinc-800 bg-zinc-950/20 relative overflow-hidden group hover:border-primary/30 transition-all duration-300">
+        <div class="absolute -right-6 -top-6 w-16 h-16 bg-primary/5 rounded-full blur-xl"></div>
+        <span class="text-[10px] text-zinc-500 font-black uppercase tracking-wider block text-left">Tổng yêu cầu</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span class="text-2xl font-black text-white" id="stat-total">0</span>
+        </div>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl border border-zinc-800 bg-zinc-950/20 relative overflow-hidden group col-span-2 md:col-span-1 hover:border-purple-500/30 transition-all duration-300">
+        <div class="absolute -right-6 -top-6 w-16 h-16 bg-purple-500/5 rounded-full blur-xl"></div>
+        <span class="text-[10px] text-zinc-500 font-black uppercase tracking-wider block text-left">Whitelist Bypass</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span class="text-2xl font-black text-purple-400" id="stat-whitelist">0</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Content Panels -->
     <div class="w-full">
       <!-- 1. PANEL: REQUESTS -->
@@ -1203,9 +1247,84 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
       });
     }
 
+    // Statistics and real-time polling logic
+    let refreshIntervalId = null;
+
+    function updateStatsUI() {
+      const pending = requestsData.filter(r => r.status === 'pending').length;
+      const approved = requestsData.filter(r => r.status === 'approved').length;
+      const rejected = requestsData.filter(r => r.status === 'rejected').length;
+      const total = requestsData.length;
+      const whitelist = whitelistData.length;
+
+      const elPending = document.getElementById('stat-pending');
+      const elApproved = document.getElementById('stat-approved');
+      const elRejected = document.getElementById('stat-rejected');
+      const elTotal = document.getElementById('stat-total');
+      const elWhitelist = document.getElementById('stat-whitelist');
+
+      if (elPending) elPending.textContent = pending;
+      if (elApproved) elApproved.textContent = approved;
+      if (elRejected) elRejected.textContent = rejected;
+      if (elTotal) elTotal.textContent = total;
+      if (elWhitelist) elWhitelist.textContent = whitelist;
+    }
+
+    async function refreshZaloData() {
+      const tbody = document.getElementById('request-table-body');
+      if (!tbody) {
+        if (refreshIntervalId) {
+          clearInterval(refreshIntervalId);
+          refreshIntervalId = null;
+        }
+        return;
+      }
+
+      if (providerType === 'supabase') {
+        try {
+          const res = await fetch('/api/admin/zalo-action');
+          if (res.ok) {
+            const result = await res.json();
+            if (result.status === 'success' && result.data && Array.isArray(result.data.requests)) {
+              requestsData = result.data.requests;
+            }
+          }
+          
+          const resBypass = await fetch('/api/admin/zalo-bypass');
+          if (resBypass.ok) {
+            const resultBypass = await resBypass.json();
+            if (resultBypass.status === 'success' && resultBypass.data && Array.isArray(resultBypass.data.bypasses)) {
+              whitelistData = resultBypass.data.bypasses;
+            }
+          }
+        } catch (e) {
+          console.error("Loi khi tai du lieu Zalo:", e);
+        }
+      } else {
+        requestsData = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
+        whitelistData = JSON.parse(localStorage.getItem('txa_zalo_bypass') || '[]');
+      }
+      
+      updateStatsUI();
+
+      const searchInput = document.getElementById('request-search');
+      renderRequests(searchInput ? searchInput.value : '');
+
+      const whitelistSearchInput = document.getElementById('whitelist-search');
+      renderWhitelist(whitelistSearchInput ? whitelistSearchInput.value : '');
+    }
+
+    function startRealTimePolling() {
+      if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+      }
+      refreshIntervalId = setInterval(refreshZaloData, 5000);
+    }
+
     // Khởi chạy
     function init() {
       loadData();
+      updateStatsUI();
       renderRequests();
       renderWhitelist();
       initTokenDecryptor();
@@ -1215,6 +1334,8 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
       if (navItem) {
         navItem.className = 'flex items-center gap-3 px-4 py-2.5 bg-primary/10 text-primary rounded-lg transition-all duration-200';
       }
+
+      startRealTimePolling();
     }
 
     init();

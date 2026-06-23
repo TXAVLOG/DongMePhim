@@ -2,6 +2,15 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { ZaloService } from '@services/ZaloService';
 
+export const GET: APIRoute = async ({ request }) => {
+  try {
+    const bypasses = await ZaloService.getZaloBypasses();
+    return apiResponse({ bypasses }, 'success', '', 200, request);
+  } catch (err: any) {
+    return apiResponse({ bypasses: [] }, 'error', err.message || 'Lỗi hệ thống', 500, request);
+  }
+};
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     let body: any = {};
