@@ -57,38 +57,28 @@ const staticMovies = await MovieService.getMovies();
       let displayedCount = 10;
       const itemsPerLoad = 10;
 
-      const defaultActors = [
-        { name: 'Tom Hardy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvFm3KqGpeiNWq9sKeEohjYu0kdGzCpfhWQ6J_i5PHfZGmAqHG7apHA4u8n8oQ6uAFSBr34oO_C4g-mXKXDLQU_QIoMk2URo_iL1SD-9z02lX5Is5pCCNnglK8Son9F4H3BINnMA16LHlXELPhjAxYvKtGG1W6yvA0peIdzeloexXxWXJ59eRjQEqECoNtN1wfMqBlLH2RUwCqPTsRzzUB7sOiYD_07NaszMh1BODDprxeGsZMja____3yGr3TVqQC9gwUbNOk4sTK' },
-        { name: 'Zendaya', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCgBr1cxTWREpn2t2SQ5DSU5nqybFKUMvYIka53XMLQS_JcE9qF8YOIDOg-riw2vczxj9QbmtoYkSarz97EwSyV-tW3M8KpbV-0RPP22y2YPj0QC0dtzBEZ2HCZBTmRw5lrlE8h1p8S3N2OL-oZB-09Ro61dd2zoYhNNY4xBIkA9ORNR4It5iVVDMfAKegFTTrxjpKPu-FecRQI9c1j27_DFrw78XehBU2ZAAGntGIPctjrIM5xnH8X9YL1DphO591GtBKvmSi9l0dm' },
-        { name: 'Cillian Murphy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAylybFf7FDCscOUGIWcc_uyMNxczxKY2mKDVnFcxBCTbWT_9Q1ZmU5xIT0qgGoFrybtnD0puVY40Ii75ZhIOQJRfWFd4tHDn-pHvdzanasfqPOXfFZs3m7mUzSZ6p35sw-GyG3a9Kxz81tO9lxmzEMCSJ1atg4xYlmu662174KtD6Oj_M2MtME2y8aFLLkVx0Hjt_6kaaYfTyXxHITA2HOayiSBz_8BlMduXKMAD_wc--JVmNWaPWRGqprmM6suLZkumoDDdddbowM' },
-        { name: 'Florence Pugh', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAPW_rHHDOPZUv_TfbV0n8fi4JCRTHpz-055hd2mobrUFKauMvCd43wCQV5KnBbIUbkpevYOLPniD5CxCu713SHoY7x7aR9jqpotlUQe_Tn0Urw7Sj1wRU2XcnWZt9N__lzJZkXWVGqzwCIdFB7VT6ULZPyBgFpqmu1cjaxnMz7JBXopwc3Xo9Hf__6uWgQwXshmrvNZHkYPYDoQGCFKi_I_hiyfUM6y3T_bagH6KagoQPkHYklO8G367TCO4y2kangVhCq--pqE3FH' },
-        { name: 'Timothée Chalamet', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCy_dXunSjsLQFtaQYajW0j_76FQY3o2hH2XmMe91Gjkg8b3l3E1nCMu-d-vj-q9uEqEgYyeNyeo9sE6Q0YaspL5_4WzpS_0dGH8NyugY3HET0jtAihZwR5AVqRRzkBZ8FEt0EKF3LTExXCM_Uedd5nDxVIp02Evn6wzJsZzrMamocXg4ujImfnojCwjkZTT1BeE8nkhR2iRu953_eF9NParNQQ7yFKRHQ2bbPWjTRd0hzaByJgmU832WiIXiD2QfRoAAAdqeRUFRCo' },
-        { name: 'Meryl Streep', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAFEQ6pSSePi7o4is-04Q6jg_ee1YKw5x8jLFth3yalEOvHWd9gD16isfRWQxtid_focuSk1WXtJ_nzV-TPic-uvfQ_mvk8bFf-YoB2-g4pljdAeCuCTRtpfwcESFk9FHtti1yynAIlOpS72VDxWPrE0PzWSox2DIeAD4Q0ZTxurDDNv80Q6HWunQTnaaHSnhDRK9FXX1jnIUJzD36JgJHAc6gbZPO3v8BI8gsebb8WVh-UuLvJXHS2YWosAVKPF5uO8CgE85YtDn-E' },
-        { name: 'Pedro Pascal', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQAXdxBMxqcKiD5ITbY1kLdxruhPs-11EN5oNWk1zmdegefiGiF4aSuzr6flzHj3PAMj1C3GQuCMEuZF1BmwW3eI2QYHQkosiofqxGaL6-jjlkWB9OB9pW2HjTdD6E1NQ3AOtICTueySlO86gunwQnhWdcJrWc_1FhPGKsm3XaEwOPcaG7Q5VE5t_GdvKqZJWSz5WIBAgHB9Bzu66u1FHOWndncrdSJetbcF-wWbM8rATvj34yDOtHRm45dqLAt-Vj17CWpd8bimm9' },
-        { name: 'Anya Taylor-Joy', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBt8V-kXAffv-6ZMaUxMzMlW5UP72W9Twm8eBbta-grN6DyYFhnEQ_4EeU7QD7wbmzmyIVfZP6m_PMXHnmAaPS_GGpb4CD-Cb2tgZa9PFOs6fmn_on4FK6F-7JwtJPB6prZwk4HWQR_PBgPplnLso9qX6rFjNzPHcChYB3OqqfleARO_xirRZ2uENQR6oAX7PEhdTR32YldgC5Byb-EWoZehMP-m9SPzSqhYk-ul_TQU5UTTU9Q47eNLOODI9Bb9qZxqnlYFgO4bZRf' },
-        { name: 'John Boyega', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAC_rl0e_KxJH0YORL9Q6XN223-WLjgCvM3ZTdgRn6fleM5uY25TEHnje7e43oDmTvF5g7VjR3x9kKKPyVATDMZxTj3NfDWwX3g2QTeRH6I2jxjF_qCIF5cK7rQV477-_SkegOT7eCWkQFN0LQDM2xOtIKg22Iw9JE9OFJWOeivDYCtUCFmrOImBNKMMxkI2Tw13M7jWj7Tt0g-31tZSj_ecwhk1Z7WRVZPuJT_tW-t2wfFZwYldvA0aVhemw4qdbltX390AA3xzIsR' },
-        { name: 'Willem Dafoe', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA-H5uJwFEvdM3R6obx7wikXPfR5JXdf1OnTBc5o1Vid336S2uvHJMUCDMZZOyx4voEze32H1tfCPa1d4pw5OgfC-2Y1DKer2ewUad-ByGoGD4Bc36R4pYWxwFdLZmyBtA4jTh_JFnL1u3FQk38ZPY1P1iUOmE9se7n7HorlvvdeLQGUkJL6R39sR1H0GZwsljEFnBXS9TgGxoCB-M0O8xgMQqr7Tk7FncbQvrwawiyGnxyQoepTWeu7jxB3ahiz8fWFcyiEkjPR1Yu' }
-      ];
+      async function loadActors() {
+        try {
+          const res = await fetch('/api/admin/actors');
+          const json = await res.json();
+          if (json.status === 'success') {
+            actorsState = json.data || [];
+          }
+        } catch (e) {
+          console.error("Error loading actors:", e);
+        }
+        return actorsState;
+      }
 
-      function initActors() {
+      async function initActors() {
         const grid = document.getElementById('actors-grid');
         if (!grid) return; // Exit if not on the page
 
         // Load all movies to count roles
         allMovies = staticMovies || [];
 
-        // Load actors
-        try {
-          const stored = localStorage.getItem('txa_actors');
-          if (stored) {
-            actorsState = JSON.parse(stored);
-          } else {
-            actorsState = [...defaultActors];
-            localStorage.setItem('txa_actors', JSON.stringify(actorsState));
-          }
-        } catch (e) {
-          actorsState = [...defaultActors];
-        }
+        // Load actors from database API
+        await loadActors();
 
         currentFiltered = [...actorsState];
         displayedCount = 10;
@@ -135,7 +125,7 @@ const staticMovies = await MovieService.getMovies();
                 message: html,
                 confirmText: 'Thêm mới',
                 cancelText: 'Hủy bỏ',
-                onConfirm: () => {
+                onConfirm: async () => {
                   const name = document.getElementById('actor-modal-name')?.value.trim();
                   let image = document.getElementById('actor-modal-image')?.value.trim();
                   if (!name) {
@@ -150,14 +140,29 @@ const staticMovies = await MovieService.getMovies();
                     image = '/logo-decoy.png'; // default avatar
                   }
                   
-                  actorsState.unshift({ name, image });
-                  localStorage.setItem('txa_actors', JSON.stringify(actorsState));
-                  
-                  // Reload search and render
-                  const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-                  currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
-                  filterAndRender();
-                  if (window.showGlobalToast) window.showGlobalToast(`Đã thêm diễn viên ${name} thành công!`, 'success');
+                  try {
+                    const res = await fetch('/api/admin/actors', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        action: 'create',
+                        actor: { name, image }
+                      })
+                    });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                      await loadActors();
+                      // Reload search and render
+                      const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+                      currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+                      filterAndRender();
+                      if (window.showGlobalToast) window.showGlobalToast(`Đã thêm diễn viên ${name} thành công!`, 'success');
+                    } else {
+                      throw new Error(json.message);
+                    }
+                  } catch (err) {
+                    if (window.showGlobalToast) window.showGlobalToast('Lỗi khi thêm diễn viên!', 'error');
+                  }
                 }
               });
             }
@@ -168,7 +173,6 @@ const staticMovies = await MovieService.getMovies();
       function countActorMovies(actorName) {
         const term = actorName.toLowerCase().trim();
         return allMovies.filter(m => {
-          // Supports both actors (array) and actor (array) schema
           const list = m.actors || m.actor || [];
           return list.some(act => String(act).toLowerCase().trim() === term);
         }).length;
@@ -252,7 +256,7 @@ const staticMovies = await MovieService.getMovies();
             message: html,
             confirmText: 'Lưu thay đổi',
             cancelText: 'Hủy bỏ',
-            onConfirm: () => {
+            onConfirm: async () => {
               const name = document.getElementById('actor-modal-name')?.value.trim();
               const image = document.getElementById('actor-modal-image')?.value.trim();
               if (!name) {
@@ -260,14 +264,29 @@ const staticMovies = await MovieService.getMovies();
                 return;
               }
               
-              actorsState[index] = { name, image: image || '/favicon.png' };
-              localStorage.setItem('txa_actors', JSON.stringify(actorsState));
-              
-              // Reload search and render
-              const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-              currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
-              filterAndRender();
-              if (window.showGlobalToast) window.showGlobalToast('Cập nhật thông tin diễn viên thành công!', 'success');
+              try {
+                const res = await fetch('/api/admin/actors', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'update',
+                    actor: { id: actor.id, name, image: image || '/favicon.png' }
+                  })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                  await loadActors();
+                  // Reload search and render
+                  const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+                  currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+                  filterAndRender();
+                  if (window.showGlobalToast) window.showGlobalToast('Cập nhật thông tin diễn viên thành công!', 'success');
+                } else {
+                  throw new Error(json.message);
+                }
+              } catch (err) {
+                if (window.showGlobalToast) window.showGlobalToast('Lỗi khi cập nhật diễn viên!', 'error');
+              }
             }
           });
         }
@@ -276,15 +295,30 @@ const staticMovies = await MovieService.getMovies();
       window.deleteActor = function(index) {
         const actor = actorsState[index];
         if (!actor) return;
-        const doDelete = () => {
-          actorsState.splice(index, 1);
-          localStorage.setItem('txa_actors', JSON.stringify(actorsState));
-          
-          // Reload search and render
-          const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-          currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
-          filterAndRender();
-          if (window.showGlobalToast) window.showGlobalToast('Đã xóa diễn viên thành công!', 'success');
+        const doDelete = async () => {
+          try {
+            const res = await fetch('/api/admin/actors', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'delete',
+                actor: { id: actor.id }
+              })
+            });
+            const json = await res.json();
+            if (json.status === 'success') {
+              await loadActors();
+              // Reload search and render
+              const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+              currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+              filterAndRender();
+              if (window.showGlobalToast) window.showGlobalToast('Đã xóa diễn viên thành công!', 'success');
+            } else {
+              throw new Error(json.message);
+            }
+          } catch (err) {
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi khi xóa diễn viên!', 'error');
+          }
         };
 
         if (window.txamodal) {

@@ -221,207 +221,18 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     let emailLogs = [];
     let selectedLogId = null;
 
-    // ─── INITIAL SEED MOCK DATA ───
-    function getSeedLogs() {
-      return [
-        {
-          id: "mail_91823712",
-          time: new Date(Date.now() - 5 * 60000).toISOString(), // 5 mins ago
-          recipient: "hiep.nguyen@example.com",
-          sender: "DongMePhim Admin <admin@dongmephim.online>",
-          subject: "Khôi phục mật khẩu tài khoản DongMePhim",
-          category: "Auth Reset",
-          status: "success",
-          responseCode: "250 2.0.0 OK Message accepted",
-          parameters: {
-            name: "Huy Hiệp",
-            email: "hiep.nguyen@example.com",
-            reset_link:
-              "https://DongMePhim.dongmephim.online/auth/reset-password?token=mock_token_718293712",
-          },
-          smtpConfig: {
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: "TLS",
-            user: "admin@dongmephim.online",
-          },
-          html: `<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:sans-serif;">
-  <table width="100%" style="background-color:#09090b;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
-              <h2 style="margin:0;color:#f59e0b;text-transform:uppercase;">DongMePhim</h2>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px 40px 30px;">
-              <h3 style="margin:0 0 16px;color:#ffffff;">Xin chào Huy Hiệp,</h3>
-              <p style="margin:0 0 24px;color:#a1a1aa;line-height:1.6;">Chúng tôi nhận được yêu cầu thiết lập lại mật khẩu cho tài khoản liên kết với email <span style="color:#60a5fa;font-weight:600;">hiep.nguyen@example.com</span>.</p>
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
-                <tr>
-                  <td align="center">
-                    <a href="https://DongMePhim.dongmephim.online/auth/reset-password?token=mock_token_718293712" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #f59e0b, #d97706);color:#09090b;text-decoration:none;font-weight:800;border-radius:12px;">Đặt lại mật khẩu</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`,
-        },
-        {
-          id: "mail_88291029",
-          time: new Date(Date.now() - 30 * 60000).toISOString(), // 30 mins ago
-          recipient: "admin.test@gmail.com",
-          sender: "DongMePhim System <noreply@dongmephim.online>",
-          subject: "Kiểm tra cấu hình SMTP Mail thành công",
-          category: "SMTP Test",
-          status: "success",
-          responseCode: "250 2.0.0 OK Handshake Completed",
-          parameters: {
-            smtp_host: "smtp.gmail.com",
-            smtp_port: "587",
-            smtp_secure: "TLS",
-            smtp_user: "noreply@dongmephim.online",
-          },
-          smtpConfig: {
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: "TLS",
-            user: "noreply@dongmephim.online",
-          },
-          html: `<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:sans-serif;">
-  <table width="100%" style="background-color:#09090b;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
-              <h2 style="margin:0;color:#8b5cf6;text-transform:uppercase;">DongMePhim SMTP Test</h2>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px 40px 30px;">
-              <h3 style="margin:0;color:#ffffff;">Xin chào Admin,</h3>
-              <p style="margin:0 0 20px;color:#a1a1aa;line-height:1.6;">Đây là email kiểm tra kết nối từ hệ thống cấu hình SMTP của DongMePhim.</p>
-              <div style="background-color:#18181b;border:1px solid #27272a;border-radius:16px;padding:20px;margin:24px 0;">
-                <p style="margin:0 0 12px;font-weight:bold;color:#8b5cf6;">Thông số SMTP:</p>
-                <div style="font-size:13px;color:#a1a1aa;">
-                  <div>Host: smtp.gmail.com</div>
-                  <div>Port: 587</div>
-                  <div>Secure: TLS</div>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`,
-        },
-        {
-          id: "mail_39182371",
-          time: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
-          recipient: "vip-member@gmail.com",
-          sender: "DongMePhim VIP <billing@dongmephim.online>",
-          subject: "Kích hoạt gói dịch vụ VIP MEMBER thành công!",
-          category: "VIP Welcome",
-          status: "success",
-          responseCode: "250 2.0.0 OK Message received",
-          parameters: {
-            name: "Linh Trần",
-            email: "vip-member@gmail.com",
-          },
-          smtpConfig: {
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: "TLS",
-            user: "billing@dongmephim.online",
-          },
-          html: `<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:sans-serif;">
-  <table width="100%" style="background-color:#09090b;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
-              <h2 style="margin:0;color:#a855f7;text-transform:uppercase;">VIP Activated</h2>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px 40px 30px;">
-              <h3 style="margin:0;color:#ffffff;">Xin chào Linh Trần,</h3>
-              <p style="margin:0 0 20px;color:#a1a1aa;line-height:1.6;">Chúc mừng bạn đã kích hoạt thành công quyền VIP MEMBER trên hệ thống DongMePhim. Tận hưởng kho phim chất lượng cao không quảng cáo ngay lập tức!</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`,
-        },
-        {
-          id: "mail_51827382",
-          time: new Date(Date.now() - 5 * 3600000).toISOString(), // 5 hours ago
-          recipient: "not-exist-email@bad-domain.xyz",
-          sender: "DongMePhim Admin <admin@dongmephim.online>",
-          subject: "Khôi phục mật khẩu tài khoản DongMePhim",
-          category: "Auth Reset",
-          status: "failed",
-          responseCode: "550 5.1.1 User Unknown / Invalid Recipient Address",
-          parameters: {
-            name: "Stranger",
-            email: "not-exist-email@bad-domain.xyz",
-            reset_link:
-              "https://DongMePhim.dongmephim.online/auth/reset-password?token=mock_failed",
-          },
-          smtpConfig: {
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: "TLS",
-            user: "admin@dongmephim.online",
-          },
-          html: `<!DOCTYPE html>
-<html>
-<body>
-  <h2>Khôi phục mật khẩu</h2>
-  <p>Thư này gửi thất bại.</p>
-</body>
-</html>`,
-        },
-      ];
-    }
-
-    // Load and seed logs
-    function loadLogs() {
-      let logs = [];
-      const stored = localStorage.getItem("txa_email_logs");
-      if (stored) {
-        try {
-          logs = JSON.parse(stored);
-        } catch (e) {}
+    // Load logs from database via API
+    async function loadLogs() {
+      try {
+        const res = await fetch("/api/admin/email-logs");
+        const json = await res.json();
+        if (json.status === "success") {
+          emailLogs = json.data || [];
+        }
+      } catch (e) {
+        console.error("Error loading email logs:", e);
       }
-      if (!logs || logs.length === 0) {
-        logs = getSeedLogs();
-        localStorage.setItem("txa_email_logs", JSON.stringify(logs));
-      }
-      emailLogs = logs;
-      return logs;
+      return emailLogs;
     }
 
     // Formatted time ago
@@ -554,9 +365,9 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
       // SMTP Config
       document.getElementById("detail-smtp-host").textContent =
-        log.smtpConfig.host;
+        log.smtpConfig?.host || "";
       document.getElementById("detail-smtp-port").textContent =
-        log.smtpConfig.port + ` (${log.smtpConfig.secure})`;
+        (log.smtpConfig?.port || "") + (log.smtpConfig?.secure ? ` (${log.smtpConfig.secure})` : "");
 
       const codeEl = document.getElementById("detail-response-code");
       if (codeEl) {
@@ -626,35 +437,53 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     // Refresh button
     document
       .getElementById("btn-refresh-logs")
-      ?.addEventListener("click", () => {
-        loadLogs();
+      ?.addEventListener("click", async () => {
+        const btn = document.getElementById("btn-refresh-logs");
+        btn.disabled = true;
+        await loadLogs();
         renderList(document.getElementById("log-search-input")?.value || "");
         if (selectedLogId) {
           selectLog(selectedLogId);
         }
+        btn.disabled = false;
         if (window.showGlobalToast)
           window.showGlobalToast("Cập nhật danh sách thư gửi đi!", "success");
       });
 
     // Clear logs button
     document.getElementById("btn-clear-logs")?.addEventListener("click", () => {
-      const doClear = () => {
-        emailLogs = [];
-        localStorage.setItem("txa_email_logs", "[]");
-        selectedLogId = null;
-        renderList();
+      const doClear = async () => {
+        try {
+          const res = await fetch("/api/admin/email-logs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "clear" }),
+          });
+          const json = await res.json();
+          if (json.status === "success") {
+            emailLogs = [];
+            selectedLogId = null;
+            renderList();
 
-        const detailContainer = document.getElementById(
-          "email-detail-container",
-        );
-        const detailPlaceholder = document.getElementById(
-          "email-detail-placeholder",
-        );
-        if (detailContainer) detailContainer.classList.add("hidden");
-        if (detailPlaceholder) detailPlaceholder.classList.remove("hidden");
+            const detailContainer = document.getElementById(
+              "email-detail-container",
+            );
+            const detailPlaceholder = document.getElementById(
+              "email-detail-placeholder",
+            );
+            if (detailContainer) detailContainer.classList.add("hidden");
+            if (detailPlaceholder) detailPlaceholder.classList.remove("hidden");
 
-        if (window.showGlobalToast)
-          window.showGlobalToast("Đã xóa sạch nhật ký email gửi đi!", "info");
+            if (window.showGlobalToast)
+              window.showGlobalToast("Đã xóa sạch nhật ký email gửi đi!", "info");
+          } else {
+            throw new Error(json.message);
+          }
+        } catch (e) {
+          console.error(e);
+          if (window.showGlobalToast)
+            window.showGlobalToast("Lỗi khi xóa nhật ký!", "error");
+        }
       };
       if (window.txamodal) {
         window.txamodal.show({
@@ -687,8 +516,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     });
 
     // Initialize layout load
-    function init() {
-      loadLogs();
+    async function init() {
+      await loadLogs();
       renderList();
 
       // Auto-select first item if exists
