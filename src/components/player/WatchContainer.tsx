@@ -1127,6 +1127,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             
             // Tự động convert link youtube thường sang link embed nếu đang chọn mã nhúng
             if (adType === 'embed') {
+              if (randomUrl.includes('<iframe') || randomUrl.includes('src=')) {
+                const srcMatch = randomUrl.match(/src=["']([^"']+)["']/i);
+                if (srcMatch && srcMatch[1]) {
+                  randomUrl = srcMatch[1];
+                }
+              }
               if (randomUrl.includes('youtube.com/watch?v=')) {
                 const videoId = new URL(randomUrl).searchParams.get('v');
                 if (videoId) randomUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;

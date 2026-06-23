@@ -709,9 +709,14 @@ if (movie && movie.actors && movie.actors.length > 0) {
     const movieSlug = JSON.parse(movieSlugEl.textContent || '""');
     const movieTitle = JSON.parse(movieTitleEl.textContent || '""');
 
-    // Helper: Parse YouTube embed URL
     function getYouTubeEmbedUrl(url: string) {
       if (!url) return '';
+      if (url.includes('<iframe') || url.includes('src=')) {
+        const srcMatch = url.match(/src=["']([^"']+)["']/i);
+        if (srcMatch && srcMatch[1]) {
+          url = srcMatch[1];
+        }
+      }
       let videoId = '';
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
       const match = url.match(regExp);
