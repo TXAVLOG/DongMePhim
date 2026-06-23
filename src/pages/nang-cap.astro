@@ -1,7 +1,7 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { SettingService } from '../services/SettingService';
-import { getPackageIdByTitle } from '../lib/utils';
+import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
+import { getPackageIdByTitle } from '@lib/utils';
 
 const settings = await SettingService.getSettings();
 const packages = settings.packages || [];

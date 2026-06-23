@@ -1,0 +1,44 @@
+---
+import { getPackageIdByTitle } from '@lib/utils';
+interface Props {
+  title?: string;
+  message?: string;
+  currentPackage?: string;
+}
+
+const { 
+  title = "Yêu cầu nâng cấp gói", 
+  message = "Tính năng này chỉ dành cho tài khoản sử dụng các gói cước nâng cao. Vui lòng nâng cấp gói để tiếp tục trải nghiệm.", 
+  currentPackage = "Free"
+} = Astro.props;
+
+const pkgId = getPackageIdByTitle(currentPackage);
+---
+
+<div class="flex flex-col items-center justify-center p-8 md:p-12 text-center glass-panel rounded-3xl border border-glass-stroke max-w-xl mx-auto my-8 relative overflow-hidden shadow-[0_0_50px_rgba(139,92,246,0.1)]">
+  <div class="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none"></div>
+  
+  <!-- Glowing Lock Icon -->
+  <div class="relative w-20 h-20 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(124,58,237,0.2)] animate-pulse">
+    <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">lock</span>
+  </div>
+
+  <h3 class="text-2xl font-black text-white tracking-tight mb-3">{title}</h3>
+  
+  <p class="text-sm text-zinc-400 font-body-main leading-relaxed max-w-md mb-6">
+    {message}
+  </p>
+
+  <!-- Current package in italics -->
+  <div class="mb-8 px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl inline-block">
+    <p class="text-xs text-zinc-400 font-body-main">
+      Gói hiện tại của bạn: <span class={`package-style-${pkgId} not-italic font-bold`}>{currentPackage}</span>
+    </p>
+  </div>
+
+  <!-- Upgrade package button -->
+  <a href="/nang-cap" class="px-8 py-3.5 bg-gradient-to-r from-primary to-secondary text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 cursor-pointer border-none uppercase tracking-wider">
+    <span class="material-symbols-outlined text-sm font-black">workspace_premium</span>
+    Nâng cấp gói ngay
+  </a>
+</div>

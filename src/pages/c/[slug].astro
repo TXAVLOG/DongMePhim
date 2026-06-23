@@ -1,9 +1,9 @@
 ---
-import MainLayout from '../../layouts/MainLayout.astro';
-import Card from '../../components/ui/Card.astro';
-import { MovieService } from '../../services/MovieService';
-import { HOMEPAGE_CATEGORIES, getHomepageCategories } from '../../data/categories';
-import NotFound from '../../components/ui/NotFound.astro';
+import MainLayout from '@layouts/MainLayout.astro';
+import Card from '@components/ui/Card.astro';
+import { MovieService } from '@services/MovieService';
+import { HOMEPAGE_CATEGORIES, getHomepageCategories } from '@data/categories';
+import NotFound from '@components/ui/NotFound.astro';
 
 const { slug } = Astro.params;
 
@@ -12,27 +12,54 @@ const category = HOMEPAGE_CATEGORIES.find(c => c.slug === slug);
 
 let movies: any[] = [];
 if (category) {
-  const allMovies = await MovieService.getMovies();
   const homepageMappings = await getHomepageCategories();
   const assignedSlugs = homepageMappings[category.slug] || [];
   
-  if (category.slug === 'dahk-o-cho-nay-nay') {
+  if (category.slug === 'phim-dien-anh-moi') {
+    // Tự động phân loại phim điện ảnh mới nhất (lấy từ top 100 phim mới nhất để lọc)
+    const latestMovies = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
+    movies = latestMovies
+      .filter((m: any) => m.type === 'movie')
+      .sort((a: any, b: any) => {
+        const aIsChieuRap = a.genres && a.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'));
+        const bIsChieuRap = b.genres && b.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'));
+        if (aIsChieuRap && !bIsChieuRap) return -1;
+        if (!aIsChieuRap && bIsChieuRap) return 1;
+        
+        const yearDiff = (b.releaseYear || 0) - (a.releaseYear || 0);
+        if (yearDiff !== 0) return yearDiff;
+        
+        return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      });
+  } else if (category.slug === 'dahk-o-cho-nay-nay') {
+    const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
     movies = allMovies.filter((m: any) => 
       m.type === 'movie' && 
       (m.category === 'Hồng Kông' || m.category === 'TVB' || (Array.isArray(m.genres) && (m.genres.includes('Hồng Kông') || m.genres.includes('TVB'))))
     );
   } else {
-    // Get and sort assigned movies
-    const assignedMovies = allMovies.filter((m: any) => assignedSlugs.includes(m.slug));
+    // Chỉ truy vấn các slugs được chỉ định
+    const assignedMovies = assignedSlugs.length > 0 ? await MovieService.getMovies({ slugs: assignedSlugs }) : [];
     movies = [...assignedMovies].sort((a, b) => assignedSlugs.indexOf(a.slug) - assignedSlugs.indexOf(b.slug));
 
-    // Fallback to default lists if no movies are manually assigned
+    // Fallback nếu không có phim gán thủ công
     if (movies.length === 0) {
       if (category.slug === 'top-anime-he') {
-        movies = allMovies.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
+        const animeAll = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
+        movies = animeAll.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
       } else if (category.slug === 'top-10-phim-le') {
-        movies = [...allMovies]
+        const leAll = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
+        movies = [...leAll]
           .filter((m: any) => m.type === 'movie')
+          .sort((a: any, b: any) => {
+            const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10;
+            const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;
+            return scoreB - scoreA;
+          });
+      } else if (category.slug === 'top-10-phim-bo') {
+        const boAll = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
+        movies = [...boAll]
+          .filter((m: any) => m.type === 'series')
           .sort((a: any, b: any) => {
             const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10;
             const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;

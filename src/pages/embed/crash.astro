@@ -1,5 +1,5 @@
 ---
-import { SettingService } from '../../services/SettingService';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 const siteUrl = settings.general.site_url || '';

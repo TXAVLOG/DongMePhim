@@ -1,6 +1,6 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { SettingService } from '../../../services/SettingService';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 const packages = settings.packages || [];

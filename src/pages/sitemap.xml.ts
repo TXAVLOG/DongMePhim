@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { MovieService } from '../services/MovieService';
-import { SettingService } from '../services/SettingService';
+import { MovieService } from '@services/MovieService';
+import { SettingService } from '@services/SettingService';
 
 export const GET: APIRoute = async () => {
   // Fetch dynamic URL from settings

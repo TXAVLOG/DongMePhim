@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { supabase } from '../../../lib/supabase';
-import { MovieService } from '../../../services/MovieService';
-import { SettingService } from '../../../services/SettingService';
+import { apiResponse } from '@lib/api/response';
+import { supabase } from '@lib/supabase';
+import { MovieService } from '@services/MovieService';
+import { SettingService } from '@services/SettingService';
 
 // GET: Lấy chi tiết phim qua MovieService (tự động fallback DB/Seed/API)
 export const GET: APIRoute = async ({ request }) => {

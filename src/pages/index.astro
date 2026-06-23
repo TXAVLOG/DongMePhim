@@ -1,9 +1,9 @@
 ---
 // src/pages/index.astro
 // Standalone Cinematic Splash & Landing Portal Page
-import '../styles/index.css';
+import '@styles/index.css';
 import { ClientRouter } from 'astro:transitions';
-import { SettingService } from '../services/SettingService';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 const decoyEnable = settings.general?.decoy_enable ?? true;

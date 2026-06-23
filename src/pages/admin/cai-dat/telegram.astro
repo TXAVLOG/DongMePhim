@@ -1,10 +1,10 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { SettingService } from '../../../services/SettingService';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 let activeTab = 'telegram';
-import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - Telegram">
@@ -194,32 +194,33 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         const btn = document.getElementById('save-settings-btn');
         if (!btn) return;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
-        btn.disabled = true;
-
-        const current = serverSettings;
-
-        const telegramVerifiedBadge = document.getElementById('telegram-verified-badge');
-        const isTelegramVerified = telegramVerifiedBadge && !telegramVerifiedBadge.classList.contains('hidden');
-        const telegramBotUsername = isTelegramVerified ? (document.getElementById('telegram-bot-name')?.textContent?.replace('Bot: @', '') || '') : '';
-
-        const updatedSettings = {
-          ...current,
-          telegram: {
-            ...current.telegram,
-            telegram_bot_token: document.getElementById('telegram-bot-token')?.value || '',
-            telegram_chat_id: document.getElementById('telegram-chat-id')?.value || '',
-            telegram_channel_id: document.getElementById('telegram-channel-id')?.value || '',
-            telegram_bot_username: telegramBotUsername,
-            telegram_verified: isTelegramVerified,
-            telegram_notify_report: document.getElementById('telegram-notify-report')?.checked ?? true,
-            telegram_notify_zalo: document.getElementById('telegram-notify-zalo')?.checked ?? true,
-            telegram_notify_user: document.getElementById('telegram-notify-user')?.checked ?? true,
-            telegram_notify_luckydraw: document.getElementById('telegram-notify-luckydraw')?.checked ?? true,
-          }
-        };
 
         try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+
+          const telegramVerifiedBadge = document.getElementById('telegram-verified-badge');
+          const isTelegramVerified = telegramVerifiedBadge && !telegramVerifiedBadge.classList.contains('hidden');
+          const telegramBotUsername = isTelegramVerified ? (document.getElementById('telegram-bot-name')?.textContent?.replace('Bot: @', '') || '') : '';
+
+          const updatedSettings = {
+            ...current,
+            telegram: {
+              ...current.telegram,
+              telegram_bot_token: document.getElementById('telegram-bot-token')?.value || '',
+              telegram_chat_id: document.getElementById('telegram-chat-id')?.value || '',
+              telegram_channel_id: document.getElementById('telegram-channel-id')?.value || '',
+              telegram_bot_username: telegramBotUsername,
+              telegram_verified: isTelegramVerified,
+              telegram_notify_report: document.getElementById('telegram-notify-report')?.checked ?? true,
+              telegram_notify_zalo: document.getElementById('telegram-notify-zalo')?.checked ?? true,
+              telegram_notify_user: document.getElementById('telegram-notify-user')?.checked ?? true,
+              telegram_notify_luckydraw: document.getElementById('telegram-notify-luckydraw')?.checked ?? true,
+            }
+          };
+
           const res = await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
           if (!res.ok) throw new Error('API request failed');
           if (window.showGlobalToast) {

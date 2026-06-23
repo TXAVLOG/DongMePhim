@@ -1,6 +1,6 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { SettingService } from '../services/SettingService';
+import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 ---

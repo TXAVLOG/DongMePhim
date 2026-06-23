@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { SettingService } from '../../../services/SettingService';
-import { supabase } from '../../../lib/supabase';
+import { apiResponse } from '@lib/api/response';
+import { SettingService } from '@services/SettingService';
+import { supabase } from '@lib/supabase';
 
 export const POST: APIRoute = async ({ request }) => {
   try {

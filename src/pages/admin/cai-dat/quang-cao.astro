@@ -1,7 +1,7 @@
 ---
-import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { SettingService } from "../../../services/SettingService";
-import SettingsSidebar from "../../../components/admin/SettingsSidebar.astro";
+import AdminLayout from "@layouts/AdminLayout.astro";
+import { SettingService } from "@services/SettingService";
+import SettingsSidebar from "@components/admin/SettingsSidebar.astro";
 
 const settings = await SettingService.getSettings();
 let activeTab = "quang-cao";
@@ -158,28 +158,30 @@ let activeTab = "quang-cao";
       // Save handler
       document.getElementById("save-settings-btn")?.addEventListener("click", async () => {
         const btn = document.getElementById("save-settings-btn");
+        if (!btn) return;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
-        btn.disabled = true;
-
-        const current = serverSettings;
-
-        const updatedSettings = {
-          ...current,
-          ads: {
-            pre_roll_enable: document.getElementById("pre-roll-enable")?.value === "true",
-            pre_roll_type: document.getElementById("pre-roll-type")?.value || "video",
-            pre_roll_url: document.getElementById("pre-roll-url")?.value || "",
-            pre_roll_skip_seconds: parseInt(document.getElementById("pre-roll-skip-seconds")?.value) || 0,
-            click_ad_enable: document.getElementById("click-ad-enable")?.value === "true",
-            click_ad_threshold: parseInt(document.getElementById("click-ad-threshold")?.value) || 5,
-            click_ad_code: document.getElementById("click-ad-code")?.value || "",
-            google_ads_enable: document.getElementById("google-ads-enable")?.value === "true",
-            google_ads_client_id: document.getElementById("google-ads-client-id")?.value || ""
-          }
-        };
 
         try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+
+          const updatedSettings = {
+            ...current,
+            ads: {
+              pre_roll_enable: document.getElementById("pre-roll-enable")?.value === "true",
+              pre_roll_type: document.getElementById("pre-roll-type")?.value || "video",
+              pre_roll_url: document.getElementById("pre-roll-url")?.value || "",
+              pre_roll_skip_seconds: parseInt(document.getElementById("pre-roll-skip-seconds")?.value) || 0,
+              click_ad_enable: document.getElementById("click-ad-enable")?.value === "true",
+              click_ad_threshold: parseInt(document.getElementById("click-ad-threshold")?.value) || 5,
+              click_ad_code: document.getElementById("click-ad-code")?.value || "",
+              google_ads_enable: document.getElementById("google-ads-enable")?.value === "true",
+              google_ads_client_id: document.getElementById("google-ads-client-id")?.value || ""
+            }
+          };
+
           // Lưu trực tiếp vào Database
           await fetch('/api/admin/settings', {
             method: 'POST',

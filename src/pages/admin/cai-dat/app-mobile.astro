@@ -1,10 +1,10 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { SettingService } from '../../../services/SettingService';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 let activeTab = 'app-mobile';
-import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - App Mobile">
@@ -313,41 +313,42 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         const btn = document.getElementById('save-settings-btn');
         if (!btn) return;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
-        btn.disabled = true;
-
-        const current = serverSettings;
-
-        let appVersion = document.getElementById('app-version')?.value || '';
-        let appReleaseNotes = '';
-        if (changelogsState.length > 0) {
-          appVersion = changelogsState[0].version || appVersion;
-          appReleaseNotes = changelogsState[0].content || '';
-        }
-
-        const updatedSettings = {
-          ...current,
-          app: {
-            ...current.app,
-            app_version: appVersion,
-            app_release_notes: appReleaseNotes,
-            app_changelogs: changelogsState,
-            app_android_download_enable: document.getElementById('app-android-enable')?.checked || false,
-            app_android_download_url: document.getElementById('app-android-url')?.value || '',
-            app_apk_size: document.getElementById('app-apk-size')?.value || '',
-            app_apk_sha256: document.getElementById('app-apk-sha')?.value || '',
-            app_ios_direct_install_enable: document.getElementById('app-ios-ota-enable')?.checked || false,
-            app_ios_download_url: document.getElementById('app-ios-download-url')?.value || '',
-            app_ios_ipa_download_enable: document.getElementById('app-ios-ipa-enable')?.checked || false,
-            app_ios_ipa_url: document.getElementById('app-ios-ipa-url')?.value || '',
-            app_google_play_enable: document.getElementById('app-gplay-enable')?.checked || false,
-            app_google_play_url: document.getElementById('app-gplay-url')?.value || '',
-            app_app_store_enable: document.getElementById('app-appstore-enable')?.checked || false,
-            app_app_store_url: document.getElementById('app-appstore-url')?.value || '',
-          }
-        };
 
         try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+
+          let appVersion = document.getElementById('app-version')?.value || '';
+          let appReleaseNotes = '';
+          if (changelogsState.length > 0) {
+            appVersion = changelogsState[0].version || appVersion;
+            appReleaseNotes = changelogsState[0].content || '';
+          }
+
+          const updatedSettings = {
+            ...current,
+            app: {
+              ...current.app,
+              app_version: appVersion,
+              app_release_notes: appReleaseNotes,
+              app_changelogs: changelogsState,
+              app_android_download_enable: document.getElementById('app-android-enable')?.checked || false,
+              app_android_download_url: document.getElementById('app-android-url')?.value || '',
+              app_apk_size: document.getElementById('app-apk-size')?.value || '',
+              app_apk_sha256: document.getElementById('app-apk-sha')?.value || '',
+              app_ios_direct_install_enable: document.getElementById('app-ios-ota-enable')?.checked || false,
+              app_ios_download_url: document.getElementById('app-ios-download-url')?.value || '',
+              app_ios_ipa_download_enable: document.getElementById('app-ios-ipa-enable')?.checked || false,
+              app_ios_ipa_url: document.getElementById('app-ios-ipa-url')?.value || '',
+              app_google_play_enable: document.getElementById('app-gplay-enable')?.checked || false,
+              app_google_play_url: document.getElementById('app-gplay-url')?.value || '',
+              app_app_store_enable: document.getElementById('app-appstore-enable')?.checked || false,
+              app_app_store_url: document.getElementById('app-appstore-url')?.value || '',
+            }
+          };
+
           const res = await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
           if (!res.ok) throw new Error('API request failed');
           if (window.showGlobalToast) {

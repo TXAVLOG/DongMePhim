@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { supabase } from '../../../lib/supabase';
-import { createSession } from '../../../lib/auth';
+import { apiResponse } from '@lib/api/response';
+import { supabase } from '@lib/supabase';
+import { createSession } from '@lib/auth';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {

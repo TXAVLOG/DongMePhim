@@ -1,0 +1,57 @@
+---
+import '@styles/index.css';
+
+import { SettingService } from '@services/SettingService';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+}
+
+const settings = await SettingService.getSettings();
+const { 
+  title, 
+  description = `${settings.general.site_name} - Xem phim trực tuyến chất lượng cao`, 
+  image = "/favicon.svg" 
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Hls.js for m3u8 streaming -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js" is:inline></script>
+  </head>
+  <body class="bg-black text-white antialiased overflow-x-hidden">
+    <!-- Minimal Header for Watch Page -->
+    <header class="absolute top-0 left-0 w-full z-50 p-4 bg-gradient-to-b from-black/80 to-transparent">
+      <div class="flex items-center justify-between">
+        <a href="/tphim" class="text-xl font-outfit font-bold text-white tracking-tight hover:scale-105 transition-transform">
+          {settings.general.site_name}
+        </a>
+        <a href="/tphim" class="flex items-center gap-2 text-zinc-300 hover:text-white transition-colors text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          Quay lại
+        </a>
+      </div>
+    </header>
+
+    <main class="w-full h-screen flex flex-col">
+      <slot />
+    </main>
+  </body>
+</html>

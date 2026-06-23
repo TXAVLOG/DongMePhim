@@ -1,5 +1,5 @@
 ---
-import { SettingService } from '../services/SettingService';
+import { SettingService } from '@services/SettingService';
 const settings = await SettingService.getSettings();
 
 // If maintenance is NOT enabled, redirect to home
@@ -10,7 +10,7 @@ if (!settings.general.maintenance_enable) {
 const telegramUrl = settings.social.social_telegram_url || "https://t.me/dongphim_updates";
 const maintenanceMessage = settings.general.maintenance_message || "Hệ thống đang được nâng cấp để mang lại trải nghiệm điện ảnh đỉnh cao hơn";
 const maintenanceEndTime = settings.general.maintenance_end_time || new Date(Date.now() + 2 * 3600 * 1000).toISOString();
-import '../styles/index.css';
+import '@styles/index.css';
 ---
 
 <!DOCTYPE html>

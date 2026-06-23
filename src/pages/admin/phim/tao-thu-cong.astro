@@ -1,6 +1,6 @@
 ---
-import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { MovieService } from "../../../services/MovieService";
+import AdminLayout from "@layouts/AdminLayout.astro";
+import { MovieService } from "@services/MovieService";
 
 const { genres, countries } = await MovieService.getGenresAndCountries();
 ---

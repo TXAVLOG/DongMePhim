@@ -1,7 +1,7 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import Card from '../components/ui/Card.astro';
-import { MovieService } from '../services/MovieService';
+import MainLayout from '@layouts/MainLayout.astro';
+import Card from '@components/ui/Card.astro';
+import { MovieService } from '@services/MovieService';
 
 const query = Astro.url.searchParams.get('q') || '';
 const staticMovies = await MovieService.getMovies();

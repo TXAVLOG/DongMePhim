@@ -1,10 +1,10 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { SettingService } from '../../../services/SettingService';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 let activeTab = 'payment';
-import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - Cấu hình Thanh toán">
@@ -377,44 +377,45 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         const btn = document.getElementById('save-settings-btn');
         if (!btn) return;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
-        btn.disabled = true;
-
-        const current = serverSettings;
-
-        const updatedSettings = {
-          ...current,
-          payments: {
-            sandbox_mode: document.getElementById('payment-sandbox-enable')?.checked || false,
-            payos_enable: document.getElementById('payment-payos-enable')?.checked || false,
-            payos_client_id: document.getElementById('payment-payos-client')?.value || '',
-            payos_api_key: document.getElementById('payment-payos-key')?.value || '',
-            payos_checksum_key: document.getElementById('payment-payos-checksum')?.value || '',
-            paypal_enable: document.getElementById('payment-paypal-enable')?.checked || false,
-            paypal_client_id: document.getElementById('payment-paypal-client')?.value || '',
-            sepay_enable: document.getElementById('payment-sepay-enable')?.checked || false,
-            sepay_api_key: document.getElementById('payment-sepay-key')?.value || '',
-            sepay_integration_type: document.getElementById('payment-sepay-integration-type')?.value || 'vietqr',
-            sepay_sandbox_mode: document.getElementById('payment-sepay-sandbox-enable')?.checked || false,
-            sepay_sandbox_api_key: document.getElementById('payment-sepay-sandbox-key')?.value || '',
-            sepay_bank_account_id: document.getElementById('payment-sepay-bank-id')?.value || '',
-            sepay_bank_name: document.getElementById('payment-sepay-bank')?.value || '',
-            sepay_account_no: document.getElementById('payment-sepay-no')?.value || '',
-            sepay_account_name: document.getElementById('payment-sepay-name')?.value || '',
-            vnpay_enable: document.getElementById('payment-vnpay-enable')?.checked || false,
-            vnpay_tmn_code: document.getElementById('payment-vnpay-code')?.value || '',
-            vnpay_hash_secret: document.getElementById('payment-vnpay-secret')?.value || '',
-            stripe_enable: document.getElementById('payment-stripe-enable')?.checked || false,
-            stripe_publishable_key: document.getElementById('payment-stripe-pub')?.value || '',
-            stripe_secret_key: document.getElementById('payment-stripe-sec')?.value || '',
-            manual_enable: document.getElementById('payment-manual-enable')?.checked || false,
-            manual_bank_name: document.getElementById('payment-manual-bank')?.value || '',
-            manual_account_no: document.getElementById('payment-manual-no')?.value || '',
-            manual_account_name: document.getElementById('payment-manual-name')?.value || '',
-          }
-        };
 
         try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+
+          const updatedSettings = {
+            ...current,
+            payments: {
+              sandbox_mode: document.getElementById('payment-sandbox-enable')?.checked || false,
+              payos_enable: document.getElementById('payment-payos-enable')?.checked || false,
+              payos_client_id: document.getElementById('payment-payos-client')?.value || '',
+              payos_api_key: document.getElementById('payment-payos-key')?.value || '',
+              payos_checksum_key: document.getElementById('payment-payos-checksum')?.value || '',
+              paypal_enable: document.getElementById('payment-paypal-enable')?.checked || false,
+              paypal_client_id: document.getElementById('payment-paypal-client')?.value || '',
+              sepay_enable: document.getElementById('payment-sepay-enable')?.checked || false,
+              sepay_api_key: document.getElementById('payment-sepay-key')?.value || '',
+              sepay_integration_type: document.getElementById('payment-sepay-integration-type')?.value || 'vietqr',
+              sepay_sandbox_mode: document.getElementById('payment-sepay-sandbox-enable')?.checked || false,
+              sepay_sandbox_api_key: document.getElementById('payment-sepay-sandbox-key')?.value || '',
+              sepay_bank_account_id: document.getElementById('payment-sepay-bank-id')?.value || '',
+              sepay_bank_name: document.getElementById('payment-sepay-bank')?.value || '',
+              sepay_account_no: document.getElementById('payment-sepay-no')?.value || '',
+              sepay_account_name: document.getElementById('payment-sepay-name')?.value || '',
+              vnpay_enable: document.getElementById('payment-vnpay-enable')?.checked || false,
+              vnpay_tmn_code: document.getElementById('payment-vnpay-code')?.value || '',
+              vnpay_hash_secret: document.getElementById('payment-vnpay-secret')?.value || '',
+              stripe_enable: document.getElementById('payment-stripe-enable')?.checked || false,
+              stripe_publishable_key: document.getElementById('payment-stripe-pub')?.value || '',
+              stripe_secret_key: document.getElementById('payment-stripe-sec')?.value || '',
+              manual_enable: document.getElementById('payment-manual-enable')?.checked || false,
+              manual_bank_name: document.getElementById('payment-manual-bank')?.value || '',
+              manual_account_no: document.getElementById('payment-manual-no')?.value || '',
+              manual_account_name: document.getElementById('payment-manual-name')?.value || '',
+            }
+          };
+
           const res = await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
           if (!res.ok) throw new Error('API request failed');
           if (window.showGlobalToast) {

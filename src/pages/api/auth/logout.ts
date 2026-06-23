@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { destroySession } from '../../../lib/auth';
+import { apiResponse } from '@lib/api/response';
+import { destroySession } from '@lib/auth';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {

@@ -1,6 +1,6 @@
 ---
-import MainLayout from '../../layouts/MainLayout.astro';
-import { MovieService } from '../../services/MovieService';
+import MainLayout from '@layouts/MainLayout.astro';
+import { MovieService } from '@services/MovieService';
 
 const movies = await MovieService.getMovies();
 // Extract unique categories (countries)

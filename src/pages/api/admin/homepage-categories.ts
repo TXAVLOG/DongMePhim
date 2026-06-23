@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { getHomepageCategories, saveHomepageCategories } from '../../../data/categories';
+import { apiResponse } from '@lib/api/response';
+import { getHomepageCategories, saveHomepageCategories } from '@data/categories';
 
 // GET: Lấy ánh xạ danh mục trang chủ
 export const GET: APIRoute = async ({ request }) => {

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
+import { apiResponse } from '@lib/api/response';
 
 // Simple HMAC-SHA256 signature generator using Web Crypto API
 async function generateHmacSha256(key: string, data: string): Promise<string> {

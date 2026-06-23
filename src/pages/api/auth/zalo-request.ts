@@ -1,10 +1,10 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { ZaloService } from '../../../services/ZaloService';
-import { SettingService } from '../../../services/SettingService';
-import { getEmailTemplate } from '../../../templates/emails/emailReader';
-import { SmtpClient } from '../../../lib/api/smtpClient';
-import { supabase } from '../../../lib/supabase';
+import { apiResponse } from '@lib/api/response';
+import { ZaloService } from '@services/ZaloService';
+import { SettingService } from '@services/SettingService';
+import { getEmailTemplate } from '@templates/emails/emailReader';
+import { SmtpClient } from '@lib/api/smtpClient';
+import { supabase } from '@lib/supabase';
 
 // Sử dụng SMTP để gửi thông báo cho Admin nếu SMTP được cấu hình
 async function notifyAdminNewRequest(nickname: string, token: string, userEmail: string | null) {

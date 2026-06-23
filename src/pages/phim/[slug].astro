@@ -1,10 +1,10 @@
 ---
-import MainLayout from '../../layouts/MainLayout.astro';
-import { MovieService } from '../../services/MovieService';
-import type { Movie } from '../../types/movie';
-import { Button } from '../../components/ui/Button';
-import NotFound from '../../components/ui/NotFound.astro';
-import { supabase } from '../../lib/supabase';
+import MainLayout from '@layouts/MainLayout.astro';
+import { MovieService } from '@services/MovieService';
+import type { Movie } from '@types/movie';
+import { Button } from '@components/ui/Button';
+import NotFound from '@components/ui/NotFound.astro';
+import { supabase } from '@lib/supabase';
 
 const { slug } = Astro.params;
 
@@ -117,19 +117,53 @@ if (movie && movie.actors && movie.actors.length > 0) {
   const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
   if (isSupabase) {
     try {
-      const { data: dbActors } = await supabase
+      // 1. Query actors by movie relation
+      const { data: movieActorRefs } = await supabase
+        .from('movie_actors')
+        .select('actor_id')
+        .eq('movie_id', movie.id);
+      
+      let dbActors = [];
+      if (movieActorRefs && movieActorRefs.length > 0) {
+        const actorIds = movieActorRefs.map(ref => ref.actor_id);
+        const { data } = await supabase
+          .from('actors')
+          .select('*')
+          .in('id', actorIds);
+        dbActors = data || [];
+      }
+
+      // 2. Also try fetching actors whose slug matches the slugified names in movie.actors, in case relations are missing
+      const slugsToFetch = movie.actors.map((actorName: string) => slugify(actorName));
+      const { data: dbActorsBySlug } = await supabase
         .from('actors')
         .select('*')
-        .in('name', movie.actors);
+        .in('slug', slugsToFetch);
       
-      const dbActorMap = new Map((dbActors || []).map(a => [a.name.toLowerCase().trim(), a]));
+      // Combine them
+      const allDbActors = [...dbActors];
+      if (dbActorsBySlug) {
+        dbActorsBySlug.forEach(a => {
+          if (!allDbActors.some(x => x.id === a.id)) {
+            allDbActors.push(a);
+          }
+        });
+      }
+
+      // Create maps for lookup: by name and by slug
+      const dbActorBySlugMap = new Map(allDbActors.map(a => [a.slug.toLowerCase().trim(), a]));
+      const dbActorByNameMap = new Map(allDbActors.map(a => [a.name.toLowerCase().trim(), a]));
       
       castActors = movie.actors.map((actorName: string) => {
-        const dbActor = dbActorMap.get(actorName.toLowerCase().trim());
+        const nameKey = actorName.toLowerCase().trim();
+        const slugKey = slugify(actorName).toLowerCase().trim();
+        
+        const dbActor = dbActorByNameMap.get(nameKey) || dbActorBySlugMap.get(slugKey);
+        
         return {
-          name: actorName,
-          slug: dbActor?.slug || slugify(actorName),
-          avatarUrl: dbActor?.avatar_url || ''
+          name: dbActor ? dbActor.name : actorName,
+          slug: dbActor ? dbActor.slug : slugify(actorName),
+          avatarUrl: dbActor ? dbActor.avatar_url : '/logo-decoy.png'
         };
       });
     } catch (e) {
@@ -137,14 +171,14 @@ if (movie && movie.actors && movie.actors.length > 0) {
       castActors = movie.actors.map((actorName: string) => ({
         name: actorName,
         slug: slugify(actorName),
-        avatarUrl: ''
+        avatarUrl: '/logo-decoy.png'
       }));
     }
   } else {
     castActors = movie.actors.map((actorName: string) => ({
       name: actorName,
       slug: slugify(actorName),
-      avatarUrl: ''
+      avatarUrl: '/logo-decoy.png'
     }));
   }
 }

@@ -58,14 +58,6 @@ self.addEventListener('fetch', (event) => {
   
   // Skip external APIs, analytics, or ad network beacons
   if (url.origin !== self.location.origin) {
-    // If it's a cross-origin request, we don't handle caching unless it's static/critical
-    // But we still catch failures to avoid uncaught promise rejections
-    event.respondWith(
-      fetch(event.request).catch((err) => {
-        console.warn('[SW] Cross-origin fetch failed:', url.href, err);
-        return new Response('Network error', { status: 408 });
-      })
-    );
     return;
   }
 

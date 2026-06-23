@@ -1,10 +1,10 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { SettingService } from '../../../services/SettingService';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 let activeTab = 'social';
-import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - Mạng xã hội">
@@ -159,37 +159,38 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         const btn = document.getElementById('save-settings-btn');
         if (!btn) return;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
-        btn.disabled = true;
-
-        const current = serverSettings;
-
-        const updatedSettings = {
-          ...current,
-          general: {
-            ...current.general,
-            decoy_enable: document.getElementById('general-decoy-enable')?.checked,
-            decoy_passcode: document.getElementById('general-decoy-passcode')?.value || 'phimtxadinhvai',
-            zalo_lock_enable: document.getElementById('general-zalo-lock-enable')?.checked,
-          },
-          social: {
-            ...current.social,
-            social_fb_enable: document.getElementById('social-fb-enable')?.checked || false,
-            social_fb_url: document.getElementById('social-fb-url')?.value || '',
-            social_fb_group_enable: document.getElementById('social-fb-group-enable')?.checked || false,
-            social_fb_group_url: document.getElementById('social-fb-group-url')?.value || '',
-            social_telegram_enable: document.getElementById('social-telegram-enable')?.checked || false,
-            social_telegram_url: document.getElementById('social-telegram-url')?.value || '',
-            social_tiktok_enable: document.getElementById('social-tiktok-enable')?.checked || false,
-            social_tiktok_url: document.getElementById('social-tiktok-url')?.value || '',
-            social_zalo_group_enable: document.getElementById('social-zalo-group-enable')?.checked || false,
-            social_zalo_group_url: document.getElementById('social-zalo-group-url')?.value || '',
-            social_discord_enable: document.getElementById('social-discord-enable')?.checked || false,
-            social_discord_url: document.getElementById('social-discord-url')?.value || '',
-          }
-        };
 
         try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+
+          const updatedSettings = {
+            ...current,
+            general: {
+              ...current.general,
+              decoy_enable: document.getElementById('general-decoy-enable')?.checked,
+              decoy_passcode: document.getElementById('general-decoy-passcode')?.value || 'phimtxadinhvai',
+              zalo_lock_enable: document.getElementById('general-zalo-lock-enable')?.checked,
+            },
+            social: {
+              ...current.social,
+              social_fb_enable: document.getElementById('social-fb-enable')?.checked || false,
+              social_fb_url: document.getElementById('social-fb-url')?.value || '',
+              social_fb_group_enable: document.getElementById('social-fb-group-enable')?.checked || false,
+              social_fb_group_url: document.getElementById('social-fb-group-url')?.value || '',
+              social_telegram_enable: document.getElementById('social-telegram-enable')?.checked || false,
+              social_telegram_url: document.getElementById('social-telegram-url')?.value || '',
+              social_tiktok_enable: document.getElementById('social-tiktok-enable')?.checked || false,
+              social_tiktok_url: document.getElementById('social-tiktok-url')?.value || '',
+              social_zalo_group_enable: document.getElementById('social-zalo-group-enable')?.checked || false,
+              social_zalo_group_url: document.getElementById('social-zalo-group-url')?.value || '',
+              social_discord_enable: document.getElementById('social-discord-enable')?.checked || false,
+              social_discord_url: document.getElementById('social-discord-url')?.value || '',
+            }
+          };
+
           const res = await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
           if (!res.ok) throw new Error('API request failed');
           if (window.showGlobalToast) {

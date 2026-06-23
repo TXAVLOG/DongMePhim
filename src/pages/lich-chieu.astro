@@ -1,7 +1,7 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { MovieService } from '../services/MovieService';
-import { Button } from '../components/ui/Button';
+import MainLayout from '@layouts/MainLayout.astro';
+import { MovieService } from '@services/MovieService';
+import { Button } from '@components/ui/Button';
 
 // Dummy list of upcoming movies for schedule
 const upcomingMovies = await MovieService.getMovies({ type: 'movie', limit: 10 });

@@ -1,5 +1,5 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AdminLayout from '@layouts/AdminLayout.astro';
 ---
 
 <AdminLayout title="Thu thập phim (Crawler) - Nâng cao">
@@ -169,9 +169,12 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         </div>
         <p class="text-xs text-zinc-400">Chọn các phim từ kết quả tìm kiếm trực tuyến ở bên phải để đưa vào giỏ hàng cào hàng loạt.</p>
         
-        <div class="p-4 rounded-xl bg-zinc-950 border border-glass-stroke text-center">
+        <div class="p-4 rounded-xl bg-zinc-950 border border-glass-stroke text-center flex flex-col items-center justify-center">
           <p class="text-[10px] text-zinc-500 font-bold uppercase mb-1">ĐÃ CHỌN TRONG GIỎ</p>
           <p class="text-3xl font-black text-primary" id="cartCount">0 phim</p>
+          <button id="viewCartBtn" type="button" class="hidden md:inline-flex mt-2 px-3 py-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary text-[10px] font-bold rounded-lg cursor-pointer transition-all items-center gap-1">
+            <span class="material-symbols-outlined text-sm">list_alt</span> Xem chi tiết
+          </button>
         </div>
 
         <div class="flex gap-2">
@@ -218,12 +221,27 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           </div>
           <span class="text-2xl font-black text-primary" id="progressPercent">0%</span>
         </div>
-        <div class="w-full bg-zinc-950 h-3 rounded-full overflow-hidden border border-glass-stroke/50">
-          <div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(210,187,255,0.4)]" id="mainProgressBar" style="width: 0%;"></div>
+        <div class="w-full bg-zinc-950 h-3 rounded-full overflow-hidden border border-glass-stroke/50 relative">
+          <div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(210,187,255,0.4)] relative overflow-hidden" id="mainProgressBar" style="width: 0%;">
+            <!-- Progress Shimmer Effect -->
+            <div class="absolute inset-0 bg-[linear-gradient(90deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]"></div>
+          </div>
         </div>
         <div class="flex justify-between mt-2 text-[10px] text-zinc-500 font-bold">
           <span id="progressTimeEstimate">Ước tính: Đang tính...</span>
           <span class="animate-pulse flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span> ĐANG CÀO PHIM</span>
+        </div>
+        <!-- Pause/Resume/Cancel Control Buttons -->
+        <div class="flex items-center gap-3 mt-4 border-t border-glass-stroke/50 pt-3">
+          <button id="btnPauseCrawl" type="button" class="px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-lg text-xs font-bold hover:bg-yellow-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">pause</span> Tạm dừng
+          </button>
+          <button id="btnResumeCrawl" type="button" class="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-1 hidden">
+            <span class="material-symbols-outlined text-[16px]">play_arrow</span> Tiếp tục
+          </button>
+          <button id="btnCancelCrawl" type="button" class="px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">stop</span> Dừng hẳn
+          </button>
         </div>
       </div>
 
@@ -233,10 +251,14 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           <h3 class="font-bold text-white text-base shrink-0 flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">search</span> Tìm kiếm phim trực tuyến
           </h3>
-          <div class="flex-1 flex gap-2">
-            <input type="text" id="searchKeyword" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập tên phim cần tìm (ví dụ: Batman)..."/>
-            <button id="searchOnlineBtn" class="bg-primary text-on-primary font-bold px-4 rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer">
-              Tìm phim
+          <div class="flex-grow flex flex-wrap sm:flex-nowrap gap-2 w-full">
+            <select id="searchMode" class="bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
+              <option value="movie">Tìm theo tên phim</option>
+              <option value="actor">Tìm theo diễn viên</option>
+            </select>
+            <input type="text" id="searchKeyword" class="flex-grow bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập tên phim hoặc tên diễn viên..."/>
+            <button id="searchOnlineBtn" class="bg-primary text-on-primary font-bold px-4 rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer whitespace-nowrap">
+              Tìm kiếm
             </button>
           </div>
         </div>
@@ -336,14 +358,19 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     document.addEventListener('astro:page-load', () => {
       // State
       let activeTab = 'standard'; // 'standard' | 'advanced'
-    let standardSubTab = 'url'; // 'url' | 'batch' | 'filter'
-    let filterType = 'country'; // 'country' | 'genre'
-    let isRunning = false;
-    let shouldStop = false;
-    let cartSlugs = new Map(); // slug -> name
-    let existingMoviesMap = {};
-    let crawledCurrentPage = 1;
-    const crawledLimit = 10;
+      let standardSubTab = 'url'; // 'url' | 'batch' | 'filter'
+      let filterType = 'country'; // 'country' | 'genre'
+      let isRunning = false;
+      let shouldStop = false;
+      let isPaused = false;
+      let remainingTimeSeconds = 0;
+      let countdownTimerId = null;
+      let cartPage = 1;
+      let cartPageSize = 10;
+      let cartSlugs = new Map(); // slug -> { name, type, episodeCurrent }
+      let existingMoviesMap = {};
+      let crawledCurrentPage = 1;
+      const crawledLimit = 10;
 
     // Elements
     const tabStandardBtn = document.getElementById('tabStandardBtn');
@@ -756,11 +783,26 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       searchOnlineBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">autorenew</span>';
       
       try {
-        const res = await fetch(`https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`);
+        const searchMode = document.getElementById('searchMode')?.value || 'movie';
+        let searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`;
+        if (searchMode === 'actor') {
+          searchUrl = `/api/admin/actor-search?keyword=${encodeURIComponent(keyword)}`;
+        }
+
+        const res = await fetch(searchUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const responseData = await res.json();
         
-        const items = responseData.data?.items || [];
+        // Handle standard vs custom endpoint response structures
+        let items = [];
+        let cdnDomain = 'https://phimimg.com';
+        if (searchMode === 'actor') {
+          items = responseData.data?.items || [];
+          cdnDomain = responseData.data?.pathImage || 'https://phimimg.com';
+        } else {
+          items = responseData.data?.items || [];
+          cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://phimimg.com';
+        }
         
         if (items.length === 0) {
           searchResultTable.classList.add('hidden');
@@ -780,7 +822,6 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           const isSelected = cartSlugs.has(item.slug);
           const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
 
-          const cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://phimimg.com';
           let posterUrl = item.poster_url || item.thumb_url || '';
           if (posterUrl) {
             if (!posterUrl.startsWith('http')) {
@@ -790,10 +831,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
             posterUrl = '/logo.png';
           }
 
+          const safeName = item.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+          const episodeCurrent = item.episode_current || '';
+
           return `
             <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
               <td class="px-5 py-3 text-center">
-                <input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${item.name.replace(/'/g, "\\'")}')" 
+                <input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}')" 
                        ${isSelected ? 'checked' : ''} class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer item-checkbox"/>
               </td>
               <td class="px-5 py-3">
@@ -830,7 +874,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy phim trực tuyến: ' + e.message, 'error');
       } finally {
         searchOnlineBtn.disabled = false;
-        searchOnlineBtn.innerHTML = 'Tìm phim';
+        searchOnlineBtn.innerHTML = 'Tìm kiếm';
       }
     });
 
@@ -845,9 +889,9 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
     });
 
     // Cart management
-    window.toggleCartItem = function(checkbox, slug, name) {
+    window.toggleCartItem = function(checkbox, slug, name, type = 'single', episodeCurrent = '') {
       if (checkbox.checked) {
-        cartSlugs.set(slug, name);
+        cartSlugs.set(slug, { name, type, episodeCurrent });
       } else {
         cartSlugs.delete(slug);
       }
@@ -866,6 +910,144 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       selectAllSearch.checked = false;
       if (window.showGlobalToast) window.showGlobalToast('Đã dọn dẹp giỏ hàng!', 'info');
     });
+
+    // Detailed Cart Modal and operations
+    const viewCartBtn = document.getElementById('viewCartBtn');
+    if (viewCartBtn) {
+      viewCartBtn.addEventListener('click', () => {
+        renderCartModal();
+      });
+    }
+
+    function renderCartModal() {
+      if (cartSlugs.size === 0) {
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Chi tiết giỏ hàng cào phim',
+            message: '<div class="text-center py-8 text-zinc-500 text-xs font-bold uppercase tracking-wider">Giỏ hàng của bạn đang trống.</div>',
+            cancelText: 'Đóng'
+          });
+        } else {
+          alert('Giỏ hàng đang trống!');
+        }
+        return;
+      }
+
+      const items = Array.from(cartSlugs.entries()).map(([slug, val]) => ({
+        slug,
+        name: val.name,
+        type: val.type,
+        episodeCurrent: val.episodeCurrent
+      }));
+
+      const totalPages = Math.ceil(items.length / cartPageSize);
+      cartPage = Math.min(cartPage, totalPages);
+      if (cartPage < 1) cartPage = 1;
+      const startIdx = (cartPage - 1) * cartPageSize;
+      const paginatedItems = items.slice(startIdx, startIdx + cartPageSize);
+
+      const tableRows = paginatedItems.map((item, idx) => {
+        const globalIdx = startIdx + idx + 1;
+        const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
+        const crawlType = item.type === 'single' ? 'Cào phim full' : `Cào phim bộ (${item.episodeCurrent || 'Đang cập nhật'})`;
+
+        return `
+          <tr class="border-b border-glass-stroke/30 text-xs">
+            <td class="px-4 py-2.5 font-mono text-[10px] text-zinc-500">${globalIdx}</td>
+            <td class="px-4 py-2.5 font-bold text-white">
+              <div>${item.name}</div>
+              <div class="text-[9px] text-zinc-500 font-mono">${item.slug}</div>
+            </td>
+            <td class="px-4 py-2.5 text-zinc-400 font-sans">${typeLabel}</td>
+            <td class="px-4 py-2.5 text-zinc-400 font-sans">${crawlType}</td>
+            <td class="px-4 py-2.5 text-right">
+              <button onclick="removeCartItemAndRefresh('${item.slug}')" class="text-rose-400 hover:text-rose-300 font-bold p-1 bg-transparent border-none cursor-pointer">
+                <span class="material-symbols-outlined text-[16px]">delete</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const html = `
+        <div class="space-y-4 min-w-[500px]" style="font-family: system-ui, -apple-system, sans-serif;">
+          <div class="max-h-[300px] overflow-y-auto border border-glass-stroke rounded-xl bg-black/40 custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-zinc-950/80 border-b border-glass-stroke text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                  <th class="px-4 py-2.5 w-8">#</th>
+                  <th class="px-4 py-2.5">Phim</th>
+                  <th class="px-4 py-2.5">Loại</th>
+                  <th class="px-4 py-2.5">Phân loại cào</th>
+                  <th class="px-4 py-2.5 text-right w-12">Hành động</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-glass-stroke/20">
+                ${tableRows}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="flex items-center justify-between gap-4 text-xs pt-2">
+            <div class="flex items-center gap-2">
+              <span class="text-zinc-500 font-bold">Hiển thị:</span>
+              <select id="cartPageSizeSelect" onchange="changeCartPageSize(this.value)" class="bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-white font-bold cursor-pointer focus:outline-none">
+                <option value="5" ${cartPageSize === 5 ? 'selected' : ''}>5 phim</option>
+                <option value="10" ${cartPageSize === 10 ? 'selected' : ''}>10 phim</option>
+                <option value="20" ${cartPageSize === 20 ? 'selected' : ''}>20 phim</option>
+                <option value="50" ${cartPageSize === 50 ? 'selected' : ''}>50 phim</option>
+              </select>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <button onclick="changeCartPage(-1)" ${cartPage === 1 ? 'disabled class="opacity-30 cursor-not-allowed px-3 py-1 bg-white/5 border border-white/10 text-white rounded-lg font-bold"' : 'class="cursor-pointer px-3 py-1 bg-white/5 border border-white/10 hover:border-primary/50 text-white rounded-lg font-bold"'}>
+                Trước
+              </button>
+              <span class="text-zinc-400 font-mono">Trang ${cartPage} / ${totalPages}</span>
+              <button onclick="changeCartPage(1)" ${cartPage === totalPages ? 'disabled class="opacity-30 cursor-not-allowed px-3 py-1 bg-white/5 border border-white/10 text-white rounded-lg font-bold"' : 'class="cursor-pointer px-3 py-1 bg-white/5 border border-white/10 hover:border-primary/50 text-white rounded-lg font-bold"'}>
+                Sau
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: `Chi tiết Giỏ hàng (${items.length} phim)`,
+          message: html,
+          cancelText: 'Đóng'
+        });
+      }
+    }
+
+    window.removeCartItemAndRefresh = function(slug) {
+      cartSlugs.delete(slug);
+      updateCartUI();
+      
+      // Uncheck corresponding checkbox in search table if visible
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      checkboxes.forEach(cb => {
+        const onchangeAttr = cb.getAttribute('onchange') || '';
+        if (onchangeAttr.includes(`'${slug}'`) || onchangeAttr.includes(`"${slug}"`)) {
+          cb.checked = false;
+        }
+      });
+      
+      renderCartModal();
+    };
+
+    window.changeCartPage = function(dir) {
+      cartPage += dir;
+      renderCartModal();
+    };
+
+    window.changeCartPageSize = function(size) {
+      cartPageSize = parseInt(size) || 10;
+      cartPage = 1;
+      renderCartModal();
+    };
 
     // MAP KKPHIM DATA HELPER
     function mapKKPhimToMovieDetail(data) {
@@ -949,27 +1131,163 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       };
     }
 
-    // CORE SEQUENTIAL CRAWLER PROCESS
-    async function runCrawlProcess(slugsList) {
-      if (isRunning) return;
-      isRunning = true;
-      shouldStop = false;
+    function saveCrawlSession(slugsList, currentIndex, success, skipped, failed) {
+      const session = {
+        slugsList,
+        currentIndex,
+        success,
+        skipped,
+        failed,
+        overwrite: document.getElementById('overwrite')?.checked ?? true,
+        logsHTML: document.getElementById('logTerminalBody')?.innerHTML || '',
+        activeTab,
+        standardSubTab,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('webfilm_crawl_session', JSON.stringify(session));
+    }
+
+    function clearCrawlSession() {
+      localStorage.removeItem('webfilm_crawl_session');
+    }
+
+    function startCountdownTimer() {
+      if (countdownTimerId) clearInterval(countdownTimerId);
+      countdownTimerId = setInterval(() => {
+        if (remainingTimeSeconds > 0) {
+          remainingTimeSeconds = Math.max(0, remainingTimeSeconds - 1);
+          const progressTimeEstimate = document.getElementById('progressTimeEstimate');
+          if (progressTimeEstimate && isRunning && !isPaused) {
+            progressTimeEstimate.textContent = `Thời gian còn lại: ~${remainingTimeSeconds} giây`;
+          }
+        }
+      }, 1000);
+    }
+
+    function stopCountdownTimer() {
+      if (countdownTimerId) {
+        clearInterval(countdownTimerId);
+        countdownTimerId = null;
+      }
+    }
+
+    function restoreSession(session) {
+      // Restore settings
+      const overwriteEl = document.getElementById('overwrite');
+      if (overwriteEl) overwriteEl.checked = session.overwrite;
+
+      // Restore logs
+      const logBody = document.getElementById('logTerminalBody');
+      if (logBody) {
+        logBody.innerHTML = session.logsHTML;
+        logBody.scrollTop = logBody.scrollHeight;
+      }
+
+      // Switch Tab
+      if (session.activeTab === 'advanced') {
+        tabAdvancedBtn.click();
+      } else {
+        tabStandardBtn.click();
+        if (session.standardSubTab === 'batch') {
+          subTabBatchBtn.click();
+        } else if (session.standardSubTab === 'filter') {
+          subTabFilterBtn.click();
+        } else {
+          subTabUrlBtn.click();
+        }
+      }
 
       // Hide search container during crawl if on advanced tab
       if (activeTab === 'advanced') {
         containerSearchTab.classList.add('hidden');
       }
 
-      // Reset statistics
-      let success = 0;
-      let skipped = 0;
-      let failed = 0;
+      // Trigger crawl resume
+      runCrawlProcess(session.slugsList, session.currentIndex, session.success, session.skipped, session.failed);
+    }
+
+    function checkAndRestoreCrawlSession() {
+      const saved = localStorage.getItem('webfilm_crawl_session');
+      if (saved) {
+        try {
+          const session = JSON.parse(saved);
+          const age = Date.now() - session.timestamp;
+          // Valid within 24 hours and not yet finished
+          if (age < 24 * 60 * 60 * 1000 && session.slugsList && session.slugsList.length > 0 && session.currentIndex < session.slugsList.length) {
+            setTimeout(() => {
+              if (window.txamodal) {
+                window.txamodal.show({
+                  title: 'Khôi phục phiên cào dở dang',
+                  message: `Phát hiện phiên cào phim trước đó chưa hoàn thành (${session.currentIndex}/${session.slugsList.length} phim). Bạn có muốn tiếp tục cào tiếp từ phim thứ ${session.currentIndex + 1} không?`,
+                  confirmText: 'Khôi phục và Cào tiếp',
+                  cancelText: 'Hủy bỏ / Bắt đầu mới',
+                  onConfirm: () => {
+                    restoreSession(session);
+                  },
+                  onCancel: () => {
+                    clearCrawlSession();
+                  }
+                });
+              }
+            }, 1000);
+          }
+        } catch (e) {
+          console.error('Error restoring session:', e);
+        }
+      }
+    }
+
+    document.getElementById('btnPauseCrawl')?.addEventListener('click', () => {
+      isPaused = true;
+      document.getElementById('btnPauseCrawl')?.classList.add('hidden');
+      document.getElementById('btnResumeCrawl')?.classList.remove('hidden');
+      addLog(`⏸️ Đã tạm dừng tiến trình cào phim.`, 'warning');
+    });
+
+    document.getElementById('btnResumeCrawl')?.addEventListener('click', () => {
+      isPaused = false;
+      document.getElementById('btnPauseCrawl')?.classList.remove('hidden');
+      document.getElementById('btnResumeCrawl')?.classList.add('hidden');
+      addLog(`▶️ Tiếp tục tiến trình cào phim...`, 'system');
+    });
+
+    document.getElementById('btnCancelCrawl')?.addEventListener('click', () => {
+      shouldStop = true;
+      isPaused = false;
+      isRunning = false;
+      document.getElementById('btnPauseCrawl')?.classList.add('hidden');
+      document.getElementById('btnResumeCrawl')?.classList.add('hidden');
+      document.getElementById('btnCancelCrawl')?.classList.add('hidden');
+      clearCrawlSession();
+    });
+
+    // CORE SEQUENTIAL CRAWLER PROCESS
+    async function runCrawlProcess(slugsList, startIndex = 0, initialSuccess = 0, initialSkipped = 0, initialFailed = 0) {
+      if (isRunning && startIndex === 0) return;
+      isRunning = true;
+      shouldStop = false;
+      isPaused = false;
+
+      // Update control buttons state
+      document.getElementById('btnPauseCrawl')?.classList.remove('hidden');
+      document.getElementById('btnResumeCrawl')?.classList.add('hidden');
+      document.getElementById('btnCancelCrawl')?.classList.remove('hidden');
+
+      // Hide search container during crawl if on advanced tab
+      if (activeTab === 'advanced') {
+        containerSearchTab.classList.add('hidden');
+      }
+
+      // Reset statistics or load initial state if resuming
+      let success = initialSuccess;
+      let skipped = initialSkipped;
+      let failed = initialFailed;
       
       const overwrite = document.getElementById('overwrite').checked;
       
-      document.getElementById('statSuccess').textContent = '0';
-      document.getElementById('statSkipped').textContent = '0';
-      document.getElementById('statFailed').textContent = '0';
+      document.getElementById('statSuccess').textContent = success;
+      document.getElementById('statSkipped').textContent = skipped;
+      document.getElementById('statFailed').textContent = failed;
 
       const progressSection = document.getElementById('progressSection');
       const currentMovieName = document.getElementById('currentMovieName');
@@ -985,13 +1303,36 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       startStandardBtn.classList.add('pointer-events-none', 'opacity-40');
       stopStandardBtn.classList.remove('hidden');
 
-      addLog(`🚀 Khởi động tiến trình cào ${slugsList.length} phim trong hàng đợi...`, 'system');
+      if (startIndex === 0) {
+        addLog(`🚀 Khởi động tiến trình cào ${slugsList.length} phim trong hàng đợi...`, 'system');
+      } else {
+        addLog(`🔄 Khôi phục tiến trình cào, tiếp tục từ phim ${startIndex + 1}/${slugsList.length}...`, 'system');
+      }
 
-      for (let i = 0; i < slugsList.length; i++) {
+      // Set initial countdown time estimate and start active countdown
+      remainingTimeSeconds = Math.ceil((slugsList.length - startIndex) * 1.2);
+      startCountdownTimer();
+
+      for (let i = startIndex; i < slugsList.length; i++) {
         if (shouldStop) {
           addLog(`⚠️ Đã dừng tiến trình thu thập phim do Admin dừng!`, 'warning');
           break;
         }
+
+        while (isPaused) {
+          if (shouldStop) break;
+          // Save session state to localStorage while paused
+          saveCrawlSession(slugsList, i, success, skipped, failed);
+          await new Promise(r => setTimeout(r, 500));
+        }
+
+        if (shouldStop) {
+          addLog(`⚠️ Đã dừng tiến trình thu thập phim do Admin dừng!`, 'warning');
+          break;
+        }
+
+        // Save session state at start of each item
+        saveCrawlSession(slugsList, i, success, skipped, failed);
 
         const slug = slugsList[i];
         currentMovieName.textContent = `[${i+1}/${slugsList.length}] Đang xử lý: ${slug}`;
@@ -1000,7 +1341,6 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         const pct = Math.round(((i + 1) / slugsList.length) * 100);
         progressPercent.textContent = `${pct}%`;
         mainProgressBar.style.width = `${pct}%`;
-        progressTimeEstimate.textContent = `Thời gian còn lại: ~${(slugsList.length - i - 1) * 2} giây`;
 
         // Check if exists in database
         const dup = existingMoviesMap[slug] !== undefined;
@@ -1016,9 +1356,35 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
         try {
           const detailRes = await fetch(`https://phimapi.com/phim/${slug}`);
           if (!detailRes.ok) throw new Error(`HTTP ${detailRes.status}`);
-          const detailData = await detailRes.json();
+          
+          let detailData;
+          const detailText = await detailRes.text();
+          try {
+            detailData = JSON.parse(detailText);
+          } catch (jsonErr) {
+            if (detailText.trim().startsWith('<')) {
+              const matchTitle = detailText.match(/<title>([^<]*)<\/title>/i);
+              const htmlTitle = matchTitle ? matchTitle[1].trim() : '';
+              if (htmlTitle.includes('Cloudflare') || htmlTitle.includes('Ray ID') || htmlTitle.includes('502') || htmlTitle.includes('503') || htmlTitle.includes('504')) {
+                throw new Error(`Lỗi Cloudflare/Mạng từ API Phim: ${htmlTitle || 'Gateway Error'}`);
+              }
+              throw new Error(`API Phim trả về trang HTML thay vì JSON: ${htmlTitle || 'Lỗi hệ thống'}`);
+            }
+            throw new Error(`Không thể phân giải JSON từ API Phim: ${jsonErr.message}`);
+          }
 
           if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
+            // Compare episodes count to see if update exists
+            const apiEpisodeCount = Math.max(...(detailData.episodes || []).map((server) => (server.server_data || server.serverData || []).length), 0);
+            const currentEpisodeCount = existingMoviesMap[slug] || 0;
+
+            if (currentEpisodeCount > 0 && apiEpisodeCount <= currentEpisodeCount) {
+              skipped++;
+              document.getElementById('statSkipped').textContent = skipped;
+              addLog(`→ Bỏ qua vì đã đầy đủ tập phim (${currentEpisodeCount}/${apiEpisodeCount} tập): "${detailData.movie.name}"`, 'warning');
+              continue;
+            }
+
             const movieDetailObj = mapKKPhimToMovieDetail(detailData);
             movieDetailObj.updatedAt = new Date().toISOString();
             
@@ -1125,13 +1491,31 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
               })
             });
             if (!saveRes.ok) {
-              const errData = await saveRes.json();
-              throw new Error(errData.message || 'Lỗi khi lưu phim vào database');
+              let errMsg = 'Lỗi khi lưu phim vào database';
+              try {
+                const saveText = await saveRes.text();
+                if (saveText.trim().startsWith('<')) {
+                  const matchTitle = saveText.match(/<title>([^<]*)<\/title>/i);
+                  errMsg = matchTitle ? `Lỗi hệ thống lưu DB (HTML): ${matchTitle[1].trim()}` : 'Lỗi hệ thống lưu DB (trả về trang HTML)';
+                } else {
+                  const errData = JSON.parse(saveText);
+                  errMsg = errData.message || errMsg;
+                }
+              } catch (jsonErr) {}
+              throw new Error(errMsg);
             }
 
             success++;
             document.getElementById('statSuccess').textContent = success;
-            addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (${movieDetailObj.episodeCurrent})`, 'success');
+            
+            // Format log message depending on whether movie is new or updated
+            if (currentEpisodeCount > 0) {
+              const addedCount = apiEpisodeCount - currentEpisodeCount;
+              addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (Cập nhật +${addedCount} tập)`, 'success');
+            } else {
+              const episodeText = movieDetailObj.type === 'movie' ? 'Hoàn Tất (Full)' : movieDetailObj.episodeCurrent;
+              addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (${episodeText})`, 'success');
+            }
             
             // Live update inventory list
             await loadExistingMoviesDict();
@@ -1145,12 +1529,23 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
           addLog(`✗ Lỗi khi cào slug "${slug}": ${e.message}`, 'error');
         }
 
-        // Sequential delay
-        await new Promise(r => setTimeout(r, 800));
+        // Update countdown time estimate for subsequent items
+        remainingTimeSeconds = Math.ceil((slugsList.length - i - 1) * 1.2);
+
+        // Sequential delay (fast 150ms)
+        await new Promise(r => setTimeout(r, 150));
       }
 
       // Finish crawl task
       isRunning = false;
+      isPaused = false;
+      stopCountdownTimer();
+      clearCrawlSession();
+
+      document.getElementById('btnPauseCrawl')?.classList.add('hidden');
+      document.getElementById('btnResumeCrawl')?.classList.add('hidden');
+      document.getElementById('btnCancelCrawl')?.classList.add('hidden');
+
       startStandardBtn.classList.remove('pointer-events-none', 'opacity-40');
       stopStandardBtn.classList.add('hidden');
       statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
@@ -1391,6 +1786,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
       (async () => {
         await loadExistingMoviesDict();
         renderCrawledList();
+        checkAndRestoreCrawlSession();
       })();
     });
   </script>

@@ -1,7 +1,7 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { MovieService } from '../../../services/MovieService';
-import { ErrorReportService } from '../../../services/ErrorReportService';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { MovieService } from '@services/MovieService';
+import { ErrorReportService } from '@services/ErrorReportService';
 
 const staticMovies = await MovieService.getMovies();
 const serverReports = await ErrorReportService.getAllReports();

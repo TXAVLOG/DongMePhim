@@ -12,6 +12,17 @@
     "types": [
       "./worker-configuration.d.ts",
       "node"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@components/*": ["src/frontend/components/*"],
+      "@layouts/*": ["src/frontend/layouts/*"],
+      "@styles/*": ["src/frontend/styles/*"],
+      "@templates/*": ["src/frontend/templates/*"],
+      "@services/*": ["src/backend/services/*"],
+      "@types/*": ["src/backend/types/*"],
+      "@lib/*": ["src/backend/lib/*"],
+      "@data/*": ["src/backend/data/*"]
+    }
   }
 }

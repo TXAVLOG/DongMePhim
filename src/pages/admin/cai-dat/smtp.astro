@@ -1,10 +1,10 @@
 ---
-import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { SettingService } from "../../../services/SettingService";
+import AdminLayout from "@layouts/AdminLayout.astro";
+import { SettingService } from "@services/SettingService";
 
 const settings = await SettingService.getSettings();
 let activeTab = "smtp";
-import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - SMTP Mail">
@@ -184,29 +184,30 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
           const btn = document.getElementById("save-settings-btn");
           if (!btn) return;
           const originalText = btn.innerHTML;
-          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
-          btn.disabled = true;
-
-          const current = serverSettings;
-
-          const updatedSettings = {
-            ...current,
-            smtp: {
-              smtp_host: document.getElementById("smtp-host")?.value || "",
-              smtp_port:
-                parseInt(document.getElementById("smtp-port")?.value) || 465,
-              smtp_secure:
-                document.getElementById("smtp-secure")?.value || "SSL",
-              smtp_user: document.getElementById("smtp-user")?.value || "",
-              smtp_pass: document.getElementById("smtp-pass")?.value || "",
-              smtp_from_email:
-                document.getElementById("smtp-from-email")?.value || "",
-              smtp_from_name:
-                document.getElementById("smtp-from-name")?.value || "",
-            },
-          };
 
           try {
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+            btn.disabled = true;
+
+            const current = serverSettings;
+
+            const updatedSettings = {
+              ...current,
+              smtp: {
+                smtp_host: document.getElementById("smtp-host")?.value || "",
+                smtp_port:
+                  parseInt(document.getElementById("smtp-port")?.value) || 465,
+                smtp_secure:
+                  document.getElementById("smtp-secure")?.value || "SSL",
+                smtp_user: document.getElementById("smtp-user")?.value || "",
+                smtp_pass: document.getElementById("smtp-pass")?.value || "",
+                smtp_from_email:
+                  document.getElementById("smtp-from-email")?.value || "",
+                smtp_from_name:
+                  document.getElementById("smtp-from-name")?.value || "",
+              },
+            };
+
             const res = await fetch('/api/admin/settings', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

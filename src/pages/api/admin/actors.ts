@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { supabase } from '../../../lib/supabase';
+import { apiResponse } from '@lib/api/response';
+import { supabase } from '@lib/supabase';
 
 const slugify = (text: string) => {
   return text
@@ -76,13 +76,23 @@ export const POST: APIRoute = async ({ request }) => {
       if (!actor || !actor.id || !actor.name) {
         return apiResponse(null, 'error', 'Thiếu thông tin cập nhật diễn viên!', 400, request);
       }
-      const slug = slugify(actor.name);
 
+      // 1. Get the old name of the actor first
+      const { data: oldActor, error: fetchError } = await supabase
+        .from('actors')
+        .select('name')
+        .eq('id', actor.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      const oldName = oldActor?.name;
+      const newName = actor.name;
+
+      // 2. Update actors table (DO NOT change the slug)
       const { data, error } = await supabase
         .from('actors')
         .update({
-          name: actor.name,
-          slug: slug,
+          name: newName,
           avatar_url: actor.image || '',
           bio: actor.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.',
           updated_at: new Date().toISOString()
@@ -92,6 +102,26 @@ export const POST: APIRoute = async ({ request }) => {
         .single();
 
       if (error) throw error;
+
+      // 3. If name is modified, update it in movies table
+      if (oldName && oldName !== newName) {
+        // Query movies that might contain the old actor name
+        const { data: moviesToUpdate } = await supabase
+          .from('movies')
+          .select('id, actors');
+
+        if (moviesToUpdate && moviesToUpdate.length > 0) {
+          for (const m of moviesToUpdate) {
+            if (Array.isArray(m.actors) && m.actors.includes(oldName)) {
+              const updatedActors = m.actors.map((a: string) => a === oldName ? newName : a);
+              await supabase
+                .from('movies')
+                .update({ actors: updatedActors })
+                .eq('id', m.id);
+            }
+          }
+        }
+      }
 
       return apiResponse(data, 'success', 'Cập nhật diễn viên thành công!', 200, request);
     }

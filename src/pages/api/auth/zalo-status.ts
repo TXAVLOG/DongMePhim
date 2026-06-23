@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { ZaloService } from '../../../services/ZaloService';
-import { verifySession } from '../../../lib/auth';
+import { apiResponse } from '@lib/api/response';
+import { ZaloService } from '@services/ZaloService';
+import { verifySession } from '@lib/auth';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {

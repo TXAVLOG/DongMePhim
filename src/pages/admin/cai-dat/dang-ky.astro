@@ -1,10 +1,10 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { SettingService } from '../../../services/SettingService';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
 let activeTab = 'dang-ky';
-import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 ---
 
 <AdminLayout title="Cài đặt hệ thống - Đăng nhập & Đăng ký">
@@ -703,62 +703,63 @@ import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
         const btn = document.getElementById('save-settings-btn');
         if (!btn) return;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
-        btn.disabled = true;
-
-        const current = serverSettings;
-
-        // Token Expiry Validation (180s to 3000s)
-        const expiryInput = document.getElementById('user-verification-expiry');
-        let expiryVal = parseInt(expiryInput?.value) || 1800;
-        if (expiryVal < 180) {
-          expiryVal = 180;
-          if (window.showGlobalToast) window.showGlobalToast('Thời gian hết hạn tối thiểu là 180s (3 phút). Đã tự động đổi về 180s.', 'info');
-        } else if (expiryVal > 3000) {
-          expiryVal = 3000;
-          if (window.showGlobalToast) window.showGlobalToast('Thời gian hết hạn tối đa là 3000s (50 phút). Đã tự động đổi về 3000s.', 'info');
-        }
-        if (expiryInput) expiryInput.value = expiryVal;
-
-        const updatedSettings = {
-          ...current,
-          user: {
-            ...current.user,
-            allow_registration: document.getElementById('user-allow-registration')?.checked || false,
-            require_email_verification: document.getElementById('user-require-verification')?.checked || false,
-            verification_method: document.getElementById('user-verification-method')?.value || 'link',
-            verification_token_expiry: expiryVal,
-          },
-          login: {
-            ...current.login,
-            login_standard_enable: document.getElementById('login-standard-enable')?.checked || false,
-            login_google_enable: document.getElementById('login-google-enable')?.checked || false,
-            login_google_client_id: document.getElementById('login-google-client-id')?.value || '',
-            login_google_client_secret: document.getElementById('login-google-client-secret')?.value || '',
-            login_google_onetap_enable: document.getElementById('login-google-onetap')?.checked || false,
-            login_fb_enable: document.getElementById('login-fb-enable')?.checked || false,
-            login_fb_app_id: document.getElementById('login-fb-app-id')?.value || '',
-            login_fb_app_secret: document.getElementById('login-fb-app-secret')?.value || '',
-            login_apple_enable: document.getElementById('login-apple-enable')?.checked || false,
-            login_apple_client_id: document.getElementById('login-apple-client-id')?.value || '',
-            login_apple_team_id: document.getElementById('login-apple-team-id')?.value || '',
-            login_apple_key_id: document.getElementById('login-apple-key-id')?.value || '',
-            login_zalo_enable: document.getElementById('login-zalo-enable')?.checked || false,
-            login_zalo_app_id: document.getElementById('login-zalo-app-id')?.value || '',
-            login_zalo_secret_key: document.getElementById('login-zalo-secret-key')?.value || '',
-            login_discord_enable: document.getElementById('login-discord-enable')?.checked || false,
-            login_discord_client_id: document.getElementById('login-discord-client-id')?.value || '',
-            login_discord_client_secret: document.getElementById('login-discord-client-secret')?.value || '',
-            login_github_enable: document.getElementById('login-github-enable')?.checked || false,
-            login_github_client_id: document.getElementById('login-github-client-id')?.value || '',
-            login_github_client_secret: document.getElementById('login-github-client-secret')?.value || '',
-            login_x_enable: document.getElementById('login-x-enable')?.checked || false,
-            login_x_client_id: document.getElementById('login-x-client-id')?.value || '',
-            login_x_client_secret: document.getElementById('login-x-client-secret')?.value || '',
-          }
-        };
 
         try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+
+          // Token Expiry Validation (180s to 3000s)
+          const expiryInput = document.getElementById('user-verification-expiry');
+          let expiryVal = parseInt(expiryInput?.value) || 1800;
+          if (expiryVal < 180) {
+            expiryVal = 180;
+            if (window.showGlobalToast) window.showGlobalToast('Thời gian hết hạn tối thiểu là 180s (3 phút). Đã tự động đổi về 180s.', 'info');
+          } else if (expiryVal > 3000) {
+            expiryVal = 3000;
+            if (window.showGlobalToast) window.showGlobalToast('Thời gian hết hạn tối đa là 3000s (50 phút). Đã tự động đổi về 3000s.', 'info');
+          }
+          if (expiryInput) expiryInput.value = expiryVal;
+
+          const updatedSettings = {
+            ...current,
+            user: {
+              ...current.user,
+              allow_registration: document.getElementById('user-allow-registration')?.checked || false,
+              require_email_verification: document.getElementById('user-require-verification')?.checked || false,
+              verification_method: document.getElementById('user-verification-method')?.value || 'link',
+              verification_token_expiry: expiryVal,
+            },
+            login: {
+              ...current.login,
+              login_standard_enable: document.getElementById('login-standard-enable')?.checked || false,
+              login_google_enable: document.getElementById('login-google-enable')?.checked || false,
+              login_google_client_id: document.getElementById('login-google-client-id')?.value || '',
+              login_google_client_secret: document.getElementById('login-google-client-secret')?.value || '',
+              login_google_onetap_enable: document.getElementById('login-google-onetap')?.checked || false,
+              login_fb_enable: document.getElementById('login-fb-enable')?.checked || false,
+              login_fb_app_id: document.getElementById('login-fb-app-id')?.value || '',
+              login_fb_app_secret: document.getElementById('login-fb-app-secret')?.value || '',
+              login_apple_enable: document.getElementById('login-apple-enable')?.checked || false,
+              login_apple_client_id: document.getElementById('login-apple-client-id')?.value || '',
+              login_apple_team_id: document.getElementById('login-apple-team-id')?.value || '',
+              login_apple_key_id: document.getElementById('login-apple-key-id')?.value || '',
+              login_zalo_enable: document.getElementById('login-zalo-enable')?.checked || false,
+              login_zalo_app_id: document.getElementById('login-zalo-app-id')?.value || '',
+              login_zalo_secret_key: document.getElementById('login-zalo-secret-key')?.value || '',
+              login_discord_enable: document.getElementById('login-discord-enable')?.checked || false,
+              login_discord_client_id: document.getElementById('login-discord-client-id')?.value || '',
+              login_discord_client_secret: document.getElementById('login-discord-client-secret')?.value || '',
+              login_github_enable: document.getElementById('login-github-enable')?.checked || false,
+              login_github_client_id: document.getElementById('login-github-client-id')?.value || '',
+              login_github_client_secret: document.getElementById('login-github-client-secret')?.value || '',
+              login_x_enable: document.getElementById('login-x-enable')?.checked || false,
+              login_x_client_id: document.getElementById('login-x-client-id')?.value || '',
+              login_x_client_secret: document.getElementById('login-x-client-secret')?.value || '',
+            }
+          };
+
           const res = await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
           if (!res.ok) throw new Error('API request failed');
           if (window.showGlobalToast) {

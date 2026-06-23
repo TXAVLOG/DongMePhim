@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { MovieService } from '../../../services/MovieService';
-import { apiResponse } from '../../../lib/api/response';
+import { MovieService } from '@services/MovieService';
+import { apiResponse } from '@lib/api/response';
 
 export const GET: APIRoute = async ({ request }) => {
   try {

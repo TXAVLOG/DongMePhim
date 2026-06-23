@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { ErrorReportService } from '../../../services/ErrorReportService';
+import { apiResponse } from '@lib/api/response';
+import { ErrorReportService } from '@services/ErrorReportService';
 
 export const POST: APIRoute = async ({ request }) => {
   try {

@@ -1,7 +1,7 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { SettingService } from '../../../services/SettingService';
-import SettingsSidebar from '../../../components/admin/SettingsSidebar.astro';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 
 const settings = await SettingService.getSettings();
 let activeTab = 'general';
@@ -87,25 +87,26 @@ let activeTab = 'general';
         const btn = document.getElementById('save-settings-btn');
         if (!btn) return;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
-        btn.disabled = true;
-
-        const current = serverSettings;
-
-        const updatedSettings = {
-          ...current,
-          general: {
-            ...current.general,
-            site_name: document.getElementById('general-site-name')?.value || '',
-            site_url: document.getElementById('general-site-url')?.value || '',
-            site_description: document.getElementById('general-site-desc')?.value || '',
-            site_keywords: document.getElementById('general-site-keywords')?.value || '',
-            maintenance_message: document.getElementById('general-maintenance-msg')?.value || '',
-            maintenance_enable: document.getElementById('general-maintenance-enable')?.checked || false,
-          }
-        };
 
         try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+
+          const updatedSettings = {
+            ...current,
+            general: {
+              ...current.general,
+              site_name: document.getElementById('general-site-name')?.value || '',
+              site_url: document.getElementById('general-site-url')?.value || '',
+              site_description: document.getElementById('general-site-desc')?.value || '',
+              site_keywords: document.getElementById('general-site-keywords')?.value || '',
+              maintenance_message: document.getElementById('general-maintenance-msg')?.value || '',
+              maintenance_enable: document.getElementById('general-maintenance-enable')?.checked || false,
+            }
+          };
+
           const res = await fetch('/api/admin/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedSettings) });
           if (!res.ok) throw new Error('API request failed');
           if (window.showGlobalToast) {

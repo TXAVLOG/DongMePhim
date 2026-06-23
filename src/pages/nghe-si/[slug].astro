@@ -1,10 +1,10 @@
 ---
-import MainLayout from '../../layouts/MainLayout.astro';
-import Card from '../../components/ui/Card.astro';
-import { MovieService } from '../../services/MovieService';
-import { SettingService } from '../../services/SettingService';
-import { supabase } from '../../lib/supabase';
-import type { Movie } from '../../types/movie';
+import MainLayout from '@layouts/MainLayout.astro';
+import Card from '@components/ui/Card.astro';
+import { MovieService } from '@services/MovieService';
+import { SettingService } from '@services/SettingService';
+import { supabase } from '@lib/supabase';
+import type { Movie } from '@types/movie';
 
 const { slug } = Astro.params;
 
@@ -36,7 +36,7 @@ if (isSupabase) {
         const movieIds = movieRelations.map(r => r.movie_id);
         const { data: dbMovies } = await supabase
           .from('movies')
-          .select('*')
+          .select('id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url')
           .in('id', movieIds);
 
         if (dbMovies) {

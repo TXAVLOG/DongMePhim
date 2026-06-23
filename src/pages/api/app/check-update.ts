@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { SettingService } from '../../../services/SettingService';
+import { apiResponse } from '@lib/api/response';
+import { SettingService } from '@services/SettingService';
 
 export const GET: APIRoute = async () => {
   const settings = await SettingService.getSettings();

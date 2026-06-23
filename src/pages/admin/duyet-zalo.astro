@@ -1,6 +1,6 @@
 ---
-import AdminLayout from "../../layouts/AdminLayout.astro";
-import { ZaloService } from "../../services/ZaloService";
+import AdminLayout from "@layouts/AdminLayout.astro";
+import { ZaloService } from "@services/ZaloService";
 
 // Fetch data server-side if database provider is supabase
 const serverRequests = await ZaloService.getAllZaloAccessRequests();
@@ -413,7 +413,13 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
       else if (ua.includes('Opera')) browser = 'Opera';
       else if (ua.includes('Zalo')) browser = 'Zalo App';
       
-      return `${browser} (${os})`;
+      let suffix = '';
+      const match = ua.match(/\[Screen:\s*([^\s\]]+)\s*\|\s*Lang:\s*([^\s\]]+)\]/);
+      if (match) {
+        suffix = ` [Màn: ${match[1]} | ${match[2]}]`;
+      }
+      
+      return `${browser} (${os})${suffix}`;
     }
 
     // Nạp dữ liệu (Supabase vs LocalStorage)
@@ -472,16 +478,33 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
           const parts = decryptedInfo.split(' - IP: ');
           if (parts.length >= 2) {
             displayDevice = friendlyUserAgent(parts[0]);
-            let ipRaw = parts[1];
-            // Format IP location (e.g. "IP - - - VN" -> "IP (VN)")
-            ipRaw = ipRaw.replace(/\s*-\s*/g, ' ').replace(/\s+/g, ' ').trim();
-            const ipParts = ipRaw.split(' ');
-            const ip = ipParts[0];
-            const country = ipParts[ipParts.length - 1];
-            if (country && country !== ip && country.length === 2) {
-              displayLocation = `IP: ${ip} (${country})`;
+            const locInfo = parts[1];
+            if (locInfo.includes(' | ')) {
+              const locParts = locInfo.split(' | ');
+              const ip = locParts[0];
+              const city = locParts.find(p => p.startsWith('City:'))?.replace('City:', '').trim() || '';
+              const country = locParts.find(p => p.startsWith('Country:'))?.replace('Country:', '').trim() || '';
+              const org = locParts.find(p => p.startsWith('Org:'))?.replace('Org:', '').trim() || '';
+              
+              let locText = `IP: ${ip}`;
+              if (city || country) {
+                locText += ` - ${city || ''} (${country || ''})`;
+              }
+              if (org) {
+                locText += ` | 🏢 ${org}`;
+              }
+              displayLocation = locText;
             } else {
-              displayLocation = `IP: ${ipRaw}`;
+              let ipRaw = locInfo;
+              ipRaw = ipRaw.replace(/\s*-\s*/g, ' ').replace(/\s+/g, ' ').trim();
+              const ipParts = ipRaw.split(' ');
+              const ip = ipParts[0];
+              const country = ipParts[ipParts.length - 1];
+              if (country && country !== ip && country.length === 2) {
+                displayLocation = `IP: ${ip} (${country})`;
+              } else {
+                displayLocation = `IP: ${ipRaw}`;
+              }
             }
           } else {
             displayDevice = friendlyUserAgent(decryptedInfo);
@@ -1143,7 +1166,29 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
           const parts = decrypted.split(' - IP: ');
           if (parts.length >= 2) {
             resultDevice.textContent = friendlyUserAgent(parts[0]);
-            resultIpLoc.textContent = `IP: ${parts[1]}`;
+            const locInfo = parts[1];
+            if (locInfo.includes(' | ')) {
+              const locParts = locInfo.split(' | ');
+              const ip = locParts[0];
+              const city = locParts.find(p => p.startsWith('City:'))?.replace('City:', '').trim() || '';
+              const region = locParts.find(p => p.startsWith('Region:'))?.replace('Region:', '').trim() || '';
+              const country = locParts.find(p => p.startsWith('Country:'))?.replace('Country:', '').trim() || '';
+              const loc = locParts.find(p => p.startsWith('Loc:'))?.replace('Loc:', '').trim() || '';
+              const org = locParts.find(p => p.startsWith('Org:'))?.replace('Org:', '').trim() || '';
+              const timezone = locParts.find(p => p.startsWith('Timezone:'))?.replace('Timezone:', '').trim() || '';
+              
+              resultIpLoc.innerHTML = `
+                <div class="space-y-1 text-xs">
+                  <div><strong>IP:</strong> <span class="text-emerald-400 font-mono font-bold">${ip}</span></div>
+                  <div><strong>Vị trí:</strong> <span class="text-zinc-200 font-bold">${city ? city + ', ' : ''}${region ? region + ', ' : ''}${country}</span></div>
+                  ${loc ? `<div><strong>Tọa độ 🗺️:</strong> <a href="https://www.google.com/maps?q=${loc}" target="_blank" class="text-primary hover:underline font-mono">${loc}</a></div>` : ''}
+                  ${org ? `<div><strong>Nhà mạng 🏢:</strong> <span class="text-zinc-300">${org}</span></div>` : ''}
+                  ${timezone ? `<div><strong>Múi giờ ⏰:</strong> <span class="text-zinc-300">${timezone}</span></div>` : ''}
+                </div>
+              `;
+            } else {
+              resultIpLoc.textContent = `IP: ${locInfo}`;
+            }
           } else {
             resultDevice.textContent = friendlyUserAgent(decrypted);
             resultIpLoc.textContent = 'Không trích xuất được địa chỉ IP và vị trí.';

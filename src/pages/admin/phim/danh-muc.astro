@@ -1,7 +1,7 @@
 ---
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { MovieService } from '../../../services/MovieService';
-import { HOMEPAGE_CATEGORIES, getHomepageCategories } from '../../../data/categories';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { MovieService } from '@services/MovieService';
+import { HOMEPAGE_CATEGORIES, getHomepageCategories } from '@data/categories';
 
 const staticMovies = await MovieService.getMovies();
 const currentMappings = await getHomepageCategories();
@@ -25,7 +25,7 @@ const currentMappings = await getHomepageCategories();
       <div class="glass-panel p-4 rounded-2xl border border-glass-stroke">
         <h4 class="text-xs font-bold text-primary uppercase tracking-widest mb-4">Danh mục đặc biệt</h4>
         <div class="flex flex-col gap-2" id="categoryTabContainer">
-          {HOMEPAGE_CATEGORIES.filter(cat => cat.slug !== 'dahk-o-cho-nay-nay').map((cat, idx) => (
+          {HOMEPAGE_CATEGORIES.filter(cat => cat.slug !== 'dahk-o-cho-nay-nay' && cat.slug !== 'phim-dien-anh-moi').map((cat, idx) => (
             <button
               data-slug={cat.slug}
               class={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer border-none bg-transparent flex flex-col gap-1 ${
@@ -46,6 +46,7 @@ const currentMappings = await getHomepageCategories();
         <ul class="text-[11px] text-zinc-400 space-y-1.5 pl-4 list-disc font-sans">
           <li><strong>Top Anime mùa hè:</strong> Ưu tiên chọn các phim hoạt hình dài tập/lẻ hot mùa này.</li>
           <li><strong>Top 10 Phim Lẻ:</strong> Chọn đúng 10 phim lẻ chất lượng cao nhất để hiển thị theo thứ tự hạng.</li>
+          <li><strong>Top 10 Phim Bộ:</strong> Chọn đúng 10 phim bộ chất lượng cao nhất để hiển thị theo thứ tự hạng.</li>
         </ul>
       </div>
     </div>
@@ -76,14 +77,31 @@ const currentMappings = await getHomepageCategories();
       <div class="border-t border-glass-stroke/50 pt-6 space-y-4">
         <!-- Tìm kiếm phim để thêm -->
         <span class="text-xs font-bold text-zinc-400 block uppercase tracking-wider">Tìm kiếm phim từ hệ thống</span>
-        <div class="relative max-w-md">
-          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">search</span>
-          <input
-            type="text"
-            id="movieSearchInput"
-            placeholder="Tìm theo tên phim, slug..."
-            class="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold placeholder:font-normal placeholder:text-zinc-600"
-          />
+        <div class="flex flex-wrap gap-3 items-center">
+          <div class="relative flex-1 min-w-[200px]">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">search</span>
+            <input
+              type="text"
+              id="movieSearchInput"
+              placeholder="Tìm theo tên phim, slug..."
+              class="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold placeholder:font-normal placeholder:text-zinc-600"
+            />
+          </div>
+          
+          <select id="filterType" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
+            <option value="">Tất cả loại</option>
+            <option value="movie">Phim Lẻ</option>
+            <option value="series">Phim Bộ</option>
+            <option value="hoathinh">Hoạt Hình</option>
+          </select>
+
+          <select id="filterGenre" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer max-w-[150px]">
+            <option value="">Tất cả thể loại</option>
+          </select>
+
+          <select id="filterYear" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
+            <option value="">Tất cả năm</option>
+          </select>
         </div>
 
         <div class="max-h-[300px] overflow-y-auto border border-glass-stroke rounded-xl bg-black/20 custom-scrollbar p-1">
@@ -130,6 +148,7 @@ const currentMappings = await getHomepageCategories();
 
       function init() {
         setupTabs();
+        populateFilters();
         renderActiveCategory();
         setupSearch();
         setupSaveButton();
@@ -309,18 +328,67 @@ const currentMappings = await getHomepageCategories();
         });
       }
 
+      function populateFilters() {
+        const typeSelect = document.getElementById('filterType');
+        const genreSelect = document.getElementById('filterGenre');
+        const yearSelect = document.getElementById('filterYear');
+
+        if (!genreSelect || !yearSelect) return;
+
+        // Pop genres
+        const genres = Array.from(new Set(movies.flatMap(m => m.genres || [])))
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'vi'));
+        
+        // Clear existing dynamic ones
+        while (genreSelect.options.length > 1) genreSelect.remove(1);
+        genres.forEach(g => {
+          const opt = document.createElement('option');
+          opt.value = g;
+          opt.textContent = g;
+          genreSelect.appendChild(opt);
+        });
+
+        // Pop years
+        const years = Array.from(new Set(movies.map(m => m.releaseYear)))
+          .filter(Boolean)
+          .sort((a, b) => b - a);
+
+        while (yearSelect.options.length > 1) yearSelect.remove(1);
+        years.forEach(y => {
+          const opt = document.createElement('option');
+          opt.value = y;
+          opt.textContent = y;
+          yearSelect.appendChild(opt);
+        });
+
+        // Event listeners
+        typeSelect.addEventListener('change', renderSearchResults);
+        genreSelect.addEventListener('change', renderSearchResults);
+        yearSelect.addEventListener('change', renderSearchResults);
+      }
+
       function renderSearchResults() {
         const tbody = document.getElementById('searchResultTableBody');
         if (!tbody) return;
 
         const assignedSlugs = mappings[activeCategorySlug] || [];
         
-        // Filter movies based on keyword
+        const typeVal = document.getElementById('filterType')?.value || "";
+        const genreVal = document.getElementById('filterGenre')?.value || "";
+        const yearVal = document.getElementById('filterYear')?.value || "";
+
+        // Filter movies based on keyword & dropdowns
         const filtered = movies.filter(m => {
           const matchKeyword = m.title.toLowerCase().includes(searchKeyword) ||
                                m.slug.toLowerCase().includes(searchKeyword) ||
                                (m.originalTitle && m.originalTitle.toLowerCase().includes(searchKeyword));
-          return matchKeyword;
+          
+          const matchType = !typeVal || m.type === typeVal;
+          const matchGenre = !genreVal || (m.genres && m.genres.includes(genreVal));
+          const matchYear = !yearVal || String(m.releaseYear) === yearVal;
+
+          return matchKeyword && matchType && matchGenre && matchYear;
         }).slice(0, 50); // Limit to 50 results
 
         if (filtered.length === 0) {

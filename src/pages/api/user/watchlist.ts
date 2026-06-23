@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { apiResponse } from '../../../lib/api/response';
-import { supabase } from '../../../lib/supabase';
-import { SettingService } from '../../../services/SettingService';
+import { apiResponse } from '@lib/api/response';
+import { supabase } from '@lib/supabase';
+import { SettingService } from '@services/SettingService';
 
 // GET: Lấy danh sách phim yêu thích và danh sách phát từ Supabase
 export const GET: APIRoute = async ({ request, url }) => {

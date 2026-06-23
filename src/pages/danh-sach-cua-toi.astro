@@ -1,7 +1,7 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { MovieService } from '../services/MovieService';
-import { Button } from '../components/ui/Button';
+import MainLayout from '@layouts/MainLayout.astro';
+import { MovieService } from '@services/MovieService';
+import { Button } from '@components/ui/Button';
 
 // Mock Auth check (in real app this uses cookies or session)
 const isLoggedIn = Astro.cookies.has('txa_gate_passed');

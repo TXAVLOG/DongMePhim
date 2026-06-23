@@ -1,26 +1,45 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import { Button } from '../components/ui/Button';
-import Card from '../components/ui/Card.astro';
-import TopicCard from '../components/ui/TopicCard.astro';
-import { topics } from '../data/topics';
-import { MovieService } from '../services/MovieService';
-import Txaicon from '../components/ui/txaicon.astro';
-import { getHomepageCategories } from '../data/categories';
+import MainLayout from '@layouts/MainLayout.astro';
+import { Button } from '@components/ui/Button';
+import Card from '@components/ui/Card.astro';
+import TopicCard from '@components/ui/TopicCard.astro';
+import { topics } from '@data/topics';
+import { MovieService } from '@services/MovieService';
+import Txaicon from '@components/ui/txaicon.astro';
+import { getHomepageCategories } from '@data/categories';
 
-// Single database query for optimal SSR performance
-const allMoviesForServer = await MovieService.getMovies();
 const homepageMappings = await getHomepageCategories();
 
-// Top Anime
+// Lấy tất cả các slugs được gán thủ công trên trang chủ
 const animeSlugs = homepageMappings['top-anime-he'] || [];
+const top10Slugs = homepageMappings['top-10-phim-le'] || [];
+const top10PhimBoSlugs = homepageMappings['top-10-phim-bo'] || [];
+
+const assignedSlugs = [
+  ...animeSlugs,
+  ...top10Slugs,
+  ...top10PhimBoSlugs
+];
+
+// Lấy phim theo các slugs được gán và 100 phim mới nhất để làm fallback/sidebar
+const [assignedMovies, latestMovies] = await Promise.all([
+  assignedSlugs.length > 0 ? MovieService.getMovies({ slugs: assignedSlugs }) : Promise.resolve([]),
+  MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' })
+]);
+
+// Gộp và loại bỏ trùng lặp
+const movieMap = new Map();
+latestMovies.forEach((m: any) => movieMap.set(m.slug, m));
+assignedMovies.forEach((m: any) => movieMap.set(m.slug, m));
+const allMoviesForServer = Array.from(movieMap.values());
+
+// Top Anime
 const animeMovies = allMoviesForServer.filter((m: any) => animeSlugs.includes(m.slug));
 const fallbackAnime = allMoviesForServer.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình')))).slice(0, 6);
 const animeMoviesSorted = [...animeMovies].sort((a, b) => animeSlugs.indexOf(a.slug) - animeSlugs.indexOf(b.slug));
 const topAnimeList = animeMovies.length > 0 ? animeMoviesSorted : fallbackAnime;
 
 // Top 10 Phim Lẻ
-const top10Slugs = homepageMappings['top-10-phim-le'] || [];
 const top10MoviesManual = allMoviesForServer.filter((m: any) => top10Slugs.includes(m.slug));
 const fallbackTop10Le = [...allMoviesForServer]
   .filter((m: any) => m.type === 'movie')
@@ -40,7 +59,6 @@ const topSeries = allMoviesForServer
   .slice(0, 10);
 
 // Top 10 Phim Bộ
-const top10PhimBoSlugs = homepageMappings['top-10-phim-bo'] || [];
 const topBoMoviesManual = allMoviesForServer.filter((m: any) => top10PhimBoSlugs.includes(m.slug));
 const fallbackTop10Bo = [...allMoviesForServer]
   .filter((m: any) => m.type === 'series')
@@ -53,14 +71,21 @@ const fallbackTop10Bo = [...allMoviesForServer]
 const topBoMoviesManualSorted = [...topBoMoviesManual].sort((a, b) => top10PhimBoSlugs.indexOf(a.slug) - top10PhimBoSlugs.indexOf(b.slug));
 const top10PhimBoList = topBoMoviesManual.length > 0 ? topBoMoviesManualSorted : fallbackTop10Bo;
 
-// Phim điện ảnh mới coóng
-const phimDienAnhSlugs = homepageMappings['phim-dien-anh-moi'] || [];
-const phimDienAnhMoviesManual = allMoviesForServer.filter((m: any) => phimDienAnhSlugs.includes(m.slug));
-const fallbackPhimDienAnh = [...allMoviesForServer]
-  .filter((m: any) => m.type === 'movie' && (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'))))
+// Phim điện ảnh mới coóng - Tự động phân loại (Lọc phim lẻ, ưu tiên chiếu rạp, sắp xếp mới nhất)
+const phimDienAnhList = [...allMoviesForServer]
+  .filter((m: any) => m.type === 'movie')
+  .sort((a: any, b: any) => {
+    const aIsChieuRap = a.genres && a.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'));
+    const bIsChieuRap = b.genres && b.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'));
+    if (aIsChieuRap && !bIsChieuRap) return -1;
+    if (!aIsChieuRap && bIsChieuRap) return 1;
+    
+    const yearDiff = (b.releaseYear || 0) - (a.releaseYear || 0);
+    if (yearDiff !== 0) return yearDiff;
+    
+    return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+  })
   .slice(0, 4);
-const phimDienAnhMoviesManualSorted = [...phimDienAnhMoviesManual].sort((a, b) => phimDienAnhSlugs.indexOf(a.slug) - phimDienAnhSlugs.indexOf(b.slug));
-const phimDienAnhList = phimDienAnhMoviesManual.length > 0 ? phimDienAnhMoviesManualSorted : fallbackPhimDienAnh;
 
 // Filter lists for Sidebar ranking (server-side)
 const soiNoiMovies = [...allMoviesForServer]
