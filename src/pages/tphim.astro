@@ -75,6 +75,116 @@ const yeuThichMovies = [...allMoviesForServer]
 const pinnedMovies = allMoviesForServer.filter((m: any) => m.pinned === true || m.pinned === 'true');
 const heroMovies = pinnedMovies.length > 0 ? pinnedMovies : allMoviesForServer.slice(0, 5);
 const firstHero = heroMovies[0] || null;
+
+const getMovieProgressBadgesSSR = (movie: any) => {
+  if (!movie) return '';
+
+  const isSeries = movie.type === 'series' || movie.type === 'hoathinh' || movie.type === 'tvshows';
+  if (isSeries && movie.status === 'completed') {
+    return `
+      <span class="bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide">
+        Hoàn tất
+      </span>
+    `;
+  }
+
+  const episodes = movie.episodes || [];
+
+  if (isSeries) {
+    let pdEpisodes = 0;
+    let tmEpisodes = 0;
+
+    episodes.forEach((server: any) => {
+      const name = (server.serverName || '').toLowerCase();
+      const epCount = Array.isArray(server.serverData) ? server.serverData.length : 0;
+      const isTm = name.includes('thuyết minh') || name.includes('thuyetminh') || name.includes('t.minh') || name.includes('tm') || name.includes('lồng tiếng') || name.includes('longtieng') || name.includes('l.tiếng') || name.includes('lt');
+      if (isTm) {
+        tmEpisodes = Math.max(tmEpisodes, epCount);
+      } else {
+        pdEpisodes = Math.max(pdEpisodes, epCount);
+      }
+    });
+
+    if (pdEpisodes === 0 && tmEpisodes === 0) {
+      const cur = (movie.episodeCurrent || '').trim().replace(/^[tT]ập\s+/, '');
+      const curNum = parseInt(cur);
+      if (!isNaN(curNum)) {
+        const langLower = (movie.lang || '').toLowerCase();
+        if (langLower.includes('thuyết minh') || langLower.includes('lồng tiếng')) {
+          tmEpisodes = curNum;
+        } else {
+          pdEpisodes = curNum;
+        }
+      }
+    }
+
+    let html = '';
+    if (pdEpisodes > 0) {
+      html += `
+        <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          PĐ ${pdEpisodes}
+        </span>
+      `;
+    }
+    if (tmEpisodes > 0) {
+      html += `
+        <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          TM ${tmEpisodes}
+        </span>
+      `;
+    }
+    if (pdEpisodes === 0 && tmEpisodes === 0) {
+      html += `
+        <span class="bg-zinc-950/90 text-zinc-400 border border-zinc-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          Đang chiếu
+        </span>
+      `;
+    }
+    return html;
+  } else {
+    let hasPd = false;
+    let hasTm = false;
+
+    episodes.forEach((server: any) => {
+      const name = (server.serverName || '').toLowerCase();
+      const isTm = name.includes('thuyết minh') || name.includes('thuyetminh') || name.includes('t.minh') || name.includes('tm') || name.includes('lồng tiếng') || name.includes('longtieng') || name.includes('l.tiếng') || name.includes('lt');
+      if (isTm) {
+        hasTm = true;
+      } else {
+        hasPd = true;
+      }
+    });
+
+    if (!hasPd && !hasTm) {
+      const langLower = (movie.lang || '').toLowerCase();
+      if (langLower.includes('thuyết minh') && (langLower.includes('vietsub') || langLower.includes('phụ đề'))) {
+        hasPd = true;
+        hasTm = true;
+      } else if (langLower.includes('thuyết minh') || langLower.includes('lồng tiếng')) {
+        hasTm = true;
+      } else {
+        hasPd = true;
+      }
+    }
+
+    let html = '';
+    if (hasPd) {
+      html += `
+        <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          Vietsub
+        </span>
+      `;
+    }
+    if (hasTm) {
+      html += `
+        <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          TM
+        </span>
+      `;
+    }
+    return html;
+  }
+};
 ---
 
 <MainLayout isHome={true}>
@@ -257,11 +367,9 @@ const firstHero = heroMovies[0] || null;
               <div class="top10-item group">
                 <a class="top10-thumbnail block" href={`/phim/${movie.slug}`}>
                   <div class="absolute inset-0 bg-black/10 group-hover:bg-primary/10 transition-colors z-10 rounded-2xl"></div>
-                  {movie.episodeCurrent && (
-                    <div class="absolute top-2.5 left-2.5 z-25 bg-black/75 backdrop-blur-sm border border-white/5 px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider font-outfit">
-                      {movie.episodeCurrent}
-                    </div>
-                  )}
+                  <div class="absolute top-2.5 left-2.5 z-25 flex gap-1 items-center flex-wrap select-none pointer-events-none">
+                    <Fragment set:html={getMovieProgressBadgesSSR(movie)} />
+                  </div>
                   <img src={movie.posterUrl} alt={movie.title} />
                 </a>
                 
@@ -286,9 +394,9 @@ const firstHero = heroMovies[0] || null;
                   <div class="relative w-full aspect-video bg-black/40">
                     <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                     <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
-                    <div class="absolute top-3 left-3 flex gap-1">
+                    <div class="absolute top-3 left-3 flex gap-1 items-center flex-wrap">
                       <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">{movie.quality || 'FHD'}</span>
-                      <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">{movie.lang || 'Vietsub'}</span>
+                      <Fragment set:html={getMovieProgressBadgesSSR(movie)} />
                     </div>
                   </div>
                   <div class="p-4 space-y-3.5 text-left whitespace-normal">
@@ -356,11 +464,9 @@ const firstHero = heroMovies[0] || null;
               <div class="top10-item group">
                 <a class="top10-thumbnail block" href={`/phim/${movie.slug}`}>
                   <div class="absolute inset-0 bg-black/10 group-hover:bg-primary/10 transition-colors z-10 rounded-2xl"></div>
-                  {movie.episodeCurrent && (
-                    <div class="absolute top-2.5 left-2.5 z-25 bg-black/75 backdrop-blur-sm border border-white/5 px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider font-outfit">
-                      {movie.episodeCurrent}
-                    </div>
-                  )}
+                  <div class="absolute top-2.5 left-2.5 z-25 flex gap-1 items-center flex-wrap select-none pointer-events-none">
+                    <Fragment set:html={getMovieProgressBadgesSSR(movie)} />
+                  </div>
                   <img src={movie.posterUrl} alt={movie.title} />
                 </a>
                 
@@ -385,9 +491,9 @@ const firstHero = heroMovies[0] || null;
                   <div class="relative w-full aspect-video bg-black/40">
                     <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                     <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
-                    <div class="absolute top-3 left-3 flex gap-1">
+                    <div class="absolute top-3 left-3 flex gap-1 items-center flex-wrap">
                       <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">{movie.quality || 'FHD'}</span>
-                      <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">{movie.lang || 'Vietsub'}</span>
+                      <Fragment set:html={getMovieProgressBadgesSSR(movie)} />
                     </div>
                   </div>
                   <div class="p-4 space-y-3.5 text-left whitespace-normal">
@@ -557,6 +663,47 @@ const firstHero = heroMovies[0] || null;
       </div>
     </section>
 
+      <!-- Điện Ảnh Hồng Kông ở Chỗ Này Này -->
+      <section class="lazy-section" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay">
+        <div class="flex flex-col md:flex-row gap-6 items-stretch">
+          <!-- Mobile Section Header -->
+          <div class="flex md:hidden justify-between items-center w-full mb-1">
+            <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+              Điện ảnh <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> ở chỗ này này
+            </h2>
+            <a class="text-zinc-400 hover:text-white flex items-center" href="/c/dahk-o-cho-nay-nay">
+              <span class="material-symbols-outlined text-lg">chevron_right</span>
+            </a>
+          </div>
+          
+          <!-- Desktop Left Header Column -->
+          <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+            <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+              Điện ảnh <br/>
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> <br/>
+              ở chỗ này này
+            </h2>
+            <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/c/dahk-o-cho-nay-nay">
+              <span>Xem toàn bộ</span>
+              <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+            </a>
+          </div>
+
+          <!-- Right Slider Content -->
+          <div class="relative flex-1 min-w-0">
+            <div id="hongkong-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            </div>
+            <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+              <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
     <!-- Sentinel 1 to trigger loading Group 1 -->
     <div id="sentinel-1" class="h-2 w-full"></div>
 
@@ -689,48 +836,7 @@ const firstHero = heroMovies[0] || null;
     <!-- Sentinel 2 to trigger loading Group 2 -->
     <div id="sentinel-2" class="h-2 w-full"></div>
 
-    <!-- Group 2: 3 sections (Hong Kong, Phim Bộ Mới, Phim Hoạt Hình Mới) -->
     <div class="scroll-load-group hidden opacity-0 transition-all duration-700 space-y-section-gap" id="scroll-group-2">
-      <!-- Điện Ảnh Hồng Kông ở Chỗ Này Này -->
-      <section class="lazy-section" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay">
-        <div class="flex flex-col md:flex-row gap-6 items-stretch">
-          <!-- Mobile Section Header -->
-          <div class="flex md:hidden justify-between items-center w-full mb-1">
-            <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
-              Điện ảnh <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> ở chỗ này này
-            </h2>
-            <a class="text-zinc-400 hover:text-white flex items-center" href="/c/dahk-o-cho-nay-nay">
-              <span class="material-symbols-outlined text-lg">chevron_right</span>
-            </a>
-          </div>
-          
-          <!-- Desktop Left Header Column -->
-          <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
-            <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
-              Điện ảnh <br/>
-              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> <br/>
-              ở chỗ này này
-            </h2>
-            <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/c/dahk-o-cho-nay-nay">
-              <span>Xem toàn bộ</span>
-              <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
-            </a>
-          </div>
-
-          <!-- Right Slider Content -->
-          <div class="relative flex-1 min-w-0">
-            <div id="hongkong-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-            </div>
-            <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
-              <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
-            </button>
-          </div>
-        </div>
-      </section>
 
       <!-- Phim Bộ Mới -->
       <section class="lazy-section" data-endpoint="/api/movies?type=series&limit=4" data-grid-id="series-grid" data-aspect="aspect-[2/3]">
@@ -1001,6 +1107,115 @@ const firstHero = heroMovies[0] || null;
     `;
   }
 
+  // Helper to get progress badges for movies/series client-side
+  function getProgressBadgesHTML(movie) {
+    const isSeries = movie.type === 'series' || movie.type === 'hoathinh' || movie.type === 'tvshows';
+    if (isSeries && movie.status === 'completed') {
+      return `
+        <span class="bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide">
+          Hoàn tất
+        </span>
+      `;
+    }
+
+    const episodes = movie.episodes || [];
+
+    if (isSeries) {
+      let pdEpisodes = 0;
+      let tmEpisodes = 0;
+
+      episodes.forEach((server) => {
+        const name = (server.serverName || '').toLowerCase();
+        const epCount = Array.isArray(server.serverData) ? server.serverData.length : 0;
+        const isTm = name.includes('thuyết minh') || name.includes('thuyetminh') || name.includes('t.minh') || name.includes('tm') || name.includes('lồng tiếng') || name.includes('longtieng') || name.includes('l.tiếng') || name.includes('lt');
+        if (isTm) {
+          tmEpisodes = Math.max(tmEpisodes, epCount);
+        } else {
+          pdEpisodes = Math.max(pdEpisodes, epCount);
+        }
+      });
+
+      if (pdEpisodes === 0 && tmEpisodes === 0) {
+        const cur = (movie.episodeCurrent || '').trim().replace(/^[tT]ập\s+/, '');
+        const curNum = parseInt(cur);
+        if (!isNaN(curNum)) {
+          const langLower = (movie.lang || '').toLowerCase();
+          if (langLower.includes('thuyết minh') || langLower.includes('lồng tiếng')) {
+            tmEpisodes = curNum;
+          } else {
+            pdEpisodes = curNum;
+          }
+        }
+      }
+
+      let html = '';
+      if (pdEpisodes > 0) {
+        html += `
+          <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+            PĐ ${pdEpisodes}
+          </span>
+        `;
+      }
+      if (tmEpisodes > 0) {
+        html += `
+          <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+            TM ${tmEpisodes}
+          </span>
+        `;
+      }
+      if (pdEpisodes === 0 && tmEpisodes === 0) {
+        html += `
+          <span class="bg-zinc-950/90 text-zinc-400 border border-zinc-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+            Đang chiếu
+          </span>
+        `;
+      }
+      return html;
+    } else {
+      let hasPd = false;
+      let hasTm = false;
+
+      episodes.forEach((server) => {
+        const name = (server.serverName || '').toLowerCase();
+        const isTm = name.includes('thuyết minh') || name.includes('thuyetminh') || name.includes('t.minh') || name.includes('tm') || name.includes('lồng tiếng') || name.includes('longtieng') || name.includes('l.tiếng') || name.includes('lt');
+        if (isTm) {
+          hasTm = true;
+        } else {
+          hasPd = true;
+        }
+      });
+
+      if (!hasPd && !hasTm) {
+        const langLower = (movie.lang || '').toLowerCase();
+        if (langLower.includes('thuyết minh') && (langLower.includes('vietsub') || langLower.includes('phụ đề'))) {
+          hasPd = true;
+          hasTm = true;
+        } else if (langLower.includes('thuyết minh') || langLower.includes('lồng tiếng')) {
+          hasTm = true;
+        } else {
+          hasPd = true;
+        }
+      }
+
+      let html = '';
+      if (hasPd) {
+        html += `
+          <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+            Vietsub
+          </span>
+        `;
+      }
+      if (hasTm) {
+        html += `
+          <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+            TM
+          </span>
+        `;
+      }
+      return html;
+    }
+  }
+
   // Helper function to create movie cards dynamically
   function createMovieCardHTML(movie, aspect = "aspect-[2/3]") {
     const title = movie.title || '';
@@ -1012,114 +1227,7 @@ const firstHero = heroMovies[0] || null;
     const year = movie.releaseYear || '';
     const status = movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu';
     
-    const getProgressBadgesHTML = () => {
-      const isSeries = movie.type === 'series' || movie.type === 'hoathinh' || movie.type === 'tvshows';
-      if (isSeries && movie.status === 'completed') {
-        return `
-          <span class="bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide">
-            Hoàn tất
-          </span>
-        `;
-      }
-
-      const episodes = movie.episodes || [];
-
-      if (isSeries) {
-        let pdEpisodes = 0;
-        let tmEpisodes = 0;
-
-        episodes.forEach((server) => {
-          const name = (server.serverName || '').toLowerCase();
-          const epCount = Array.isArray(server.serverData) ? server.serverData.length : 0;
-          const isTm = name.includes('thuyết minh') || name.includes('thuyetminh') || name.includes('t.minh') || name.includes('tm') || name.includes('lồng tiếng') || name.includes('longtieng') || name.includes('l.tiếng') || name.includes('lt');
-          if (isTm) {
-            tmEpisodes = Math.max(tmEpisodes, epCount);
-          } else {
-            pdEpisodes = Math.max(pdEpisodes, epCount);
-          }
-        });
-
-        if (pdEpisodes === 0 && tmEpisodes === 0) {
-          const cur = (movie.episodeCurrent || '').trim().replace(/^[tT]ập\s+/, '');
-          const curNum = parseInt(cur);
-          if (!isNaN(curNum)) {
-            const langLower = (movie.lang || '').toLowerCase();
-            if (langLower.includes('thuyết minh') || langLower.includes('lồng tiếng')) {
-              tmEpisodes = curNum;
-            } else {
-              pdEpisodes = curNum;
-            }
-          }
-        }
-
-        let html = '';
-        if (pdEpisodes > 0) {
-          html += `
-            <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
-              PĐ ${pdEpisodes}
-            </span>
-          `;
-        }
-        if (tmEpisodes > 0) {
-          html += `
-            <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
-              TM ${tmEpisodes}
-            </span>
-          `;
-        }
-        if (pdEpisodes === 0 && tmEpisodes === 0) {
-          html += `
-            <span class="bg-zinc-950/90 text-zinc-400 border border-zinc-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
-              Đang chiếu
-            </span>
-          `;
-        }
-        return html;
-      } else {
-        let hasPd = false;
-        let hasTm = false;
-
-        episodes.forEach((server) => {
-          const name = (server.serverName || '').toLowerCase();
-          const isTm = name.includes('thuyết minh') || name.includes('thuyetminh') || name.includes('t.minh') || name.includes('tm') || name.includes('lồng tiếng') || name.includes('longtieng') || name.includes('l.tiếng') || name.includes('lt');
-          if (isTm) {
-            hasTm = true;
-          } else {
-            hasPd = true;
-          }
-        });
-
-        if (!hasPd && !hasTm) {
-          const langLower = (movie.lang || '').toLowerCase();
-          if (langLower.includes('thuyết minh') && (langLower.includes('vietsub') || langLower.includes('phụ đề'))) {
-            hasPd = true;
-            hasTm = true;
-          } else if (langLower.includes('thuyết minh') || langLower.includes('lồng tiếng')) {
-            hasTm = true;
-          } else {
-            hasPd = true;
-          }
-        }
-
-        let html = '';
-        if (hasPd) {
-          html += `
-            <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
-              Vietsub
-            </span>
-          `;
-        }
-        if (hasTm) {
-          html += `
-            <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
-              TM
-            </span>
-          `;
-        }
-        return html;
-      }
-    };
-
+    const badgesHTML = getProgressBadgesHTML(movie);
     const genresHTML = Array.isArray(movie.genres) ? movie.genres.map(g => `<span>${g}</span>`).join('<span class="text-zinc-600">•</span>') : '';
 
     return `
@@ -1141,7 +1249,7 @@ const firstHero = heroMovies[0] || null;
           </div>
           
           <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1 items-center justify-center">
-            ${getProgressBadgesHTML()}
+            ${badgesHTML}
           </div>
         </a>
 
@@ -1161,7 +1269,7 @@ const firstHero = heroMovies[0] || null;
             <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
             <div class="absolute top-3 left-3 flex gap-1">
               <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
-              <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md flex gap-1">${getProgressBadgesHTML()}</span>
+              <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md flex gap-1">${badgesHTML}</span>
             </div>
           </div>
           <div class="p-4 space-y-3.5 text-left whitespace-normal">
@@ -1201,49 +1309,26 @@ const firstHero = heroMovies[0] || null;
     const quality = movie.quality || 'FHD';
     const lang = movie.lang || 'Vietsub';
     const originalTitle = movie.originalTitle || movie.origin_name || '';
+    const year = movie.releaseYear || '';
+    const status = movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu';
     
-    // Format label badges
-    let badgesHTML = '';
-    const cleanLang = lang.toLowerCase();
-    let label = 'PĐ';
-    let labelClass = 'bg-zinc-800/80 border border-white/10';
-    if (cleanLang.includes('thuyết minh') || cleanLang.includes('tm')) {
-      label = 'TM';
-      labelClass = 'bg-blue-600/80 border border-blue-500/20';
-    } else if (cleanLang.includes('lồng tiếng') || cleanLang.includes('lt')) {
-      label = 'LT';
-      labelClass = 'bg-pink-600/80 border border-pink-500/20';
-    }
-    
-    let epLabel = '';
-    if (movie.episodeCurrent) {
-      let cur = (movie.episodeCurrent || '1').trim().replace(/^[tT]ập\s+/, '');
-      if (cur.toLowerCase() === 'full' || cur.toLowerCase() === 'hoàn thành') {
-        epLabel = 'Full';
-      } else {
-        epLabel = `Tập ${cur}`;
-      }
-    }
-    
-    badgesHTML = `
-      <div class="absolute bottom-2 left-2 z-20 flex gap-1 font-outfit select-none pointer-events-none">
-        <span class="${labelClass} text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm">${label}</span>
-        ${epLabel ? `<span class="bg-black/60 text-white text-[8px] font-semibold px-1.5 py-0.5 rounded border border-white/5 backdrop-blur-sm shadow-sm">${epLabel}</span>` : ''}
-      </div>
-    `;
+    const badgesHTML = getProgressBadgesHTML(movie);
+    const genresHTML = Array.isArray(movie.genres) ? movie.genres.map(g => `<span>${g}</span>`).join('<span class="text-zinc-600">•</span>') : '';
 
     return `
-      <div class="flex-shrink-0 w-[240px] md:w-[280px] snap-center group">
+      <div class="flex-shrink-0 w-[240px] md:w-[280px] snap-center group relative">
         <a href="/phim/${slug}" class="relative block w-full aspect-[16/9] rounded-2xl overflow-hidden glass-card border border-glass-stroke movie-card-hover transition-all duration-300 cursor-pointer">
           <img src="${poster}" alt="${title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='/favicon.png'" />
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity"></div>
-          
-          ${badgesHTML}
           
           <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
               <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
             </div>
+          </div>
+          
+          <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1 items-center justify-center">
+            ${badgesHTML}
           </div>
         </a>
 
@@ -1254,6 +1339,42 @@ const firstHero = heroMovies[0] || null;
           <p class="text-[9px] text-zinc-500 truncate font-medium font-outfit" data-txatooltip="${originalTitle}">
             ${originalTitle || title}
           </p>
+        </div>
+
+        <!-- Hover Popover details card (Netflix style, desktop only) -->
+        <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden font-outfit">
+          <div class="relative w-full aspect-video bg-black/40">
+            <img src="${movie.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+            <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+            <div class="absolute top-3 left-3 flex gap-1">
+              <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">${quality}</span>
+              <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md flex gap-1">${badgesHTML}</span>
+            </div>
+          </div>
+          <div class="p-4 space-y-3.5 text-left whitespace-normal">
+            <div>
+              <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">${title}</h4>
+              ${originalTitle ? `<p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">${originalTitle}</p>` : ''}
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="/xem/${slug}?ep=tap-1" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                Xem ngay
+              </a>
+              <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
+                <span class="material-symbols-outlined text-sm">favorite</span>
+              </button>
+              <a href="/phim/${slug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                <span class="material-symbols-outlined text-sm">info</span>
+              </a>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+              <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${(Number(movie.imdbScore) || 8.0).toFixed(1)}</span>
+              <span>${year || 2024}</span>
+              <span>${status}</span>
+            </div>
+            ${genresHTML ? `<div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">${genresHTML}</div>` : ''}
+          </div>
         </div>
       </div>
     `;
