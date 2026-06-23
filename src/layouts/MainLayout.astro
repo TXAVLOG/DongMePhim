@@ -1876,6 +1876,7 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                   const resData = data.data || data;
                   if (isSuccess && resData) {
                     if (resData.exists) {
+                      document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
                       if (window.showGlobalToast) {
                         window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${resData.user?.name || ''}`, 'success');
                       }
@@ -1968,6 +1969,7 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                 const resData = data.data || data;
                 if (isSuccess && resData) {
                   if (resData.exists) {
+                    document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
                     if (window.showGlobalToast) {
                       window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${resData.user?.name || ''}`, 'success');
                     }
@@ -2057,6 +2059,7 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                 const isSuccess = data.status === 'success' || data.success;
                 const resData = data.data || data;
                 if (isSuccess && resData && resData.exists) {
+                  document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
                   if (window.showGlobalToast) {
                     window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${resData.user?.name || ''}`, 'success');
                   }
@@ -2135,6 +2138,7 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
             const isSuccess = data.status === 'success' || data.success;
             const resData = data.data || data;
             if (isSuccess && resData) {
+              document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
               if (window.showGlobalToast) window.showGlobalToast('Đăng ký tài khoản Google thành công!', 'success');
               console.log("Registered Google Account:", {
                 avatar_url: resData.user?.avatar_url,
