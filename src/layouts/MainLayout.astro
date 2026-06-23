@@ -147,6 +147,8 @@ const isActive = (path: string) => {
 
 // Fetch current user session
 const currentUser = await verifySession(Astro.request, Astro.cookies);
+const userObj = currentUser as any;
+const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin');
 ---
 
 <!DOCTYPE html>
@@ -987,7 +989,9 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                         </button>
                         <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-48 bg-zinc-950/95 border border-glass-stroke rounded-2xl shadow-2xl p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col gap-1 backdrop-blur-xl z-50">
                             <a href="/lich-chieu" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">calendar_month</span> Lịch chiếu</a>
-                            <a href="/admin/dien-vien" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">group</span> Diễn viên</a>
+                            {isAdmin && (
+                              <a href="/admin/dien-vien" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">group</span> Diễn viên</a>
+                            )}
                             <a href="/chu-de" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">grid_view</span> Chủ đề</a>
                         </div>
                     </div>
@@ -1038,7 +1042,9 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                           <a href="/thong-tin" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">account_circle</span> Tài khoản</a>
                           <a href="/goi-dich-vu" class="px-4 py-3 text-sm text-primary hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2 font-bold"><span class="material-symbols-outlined text-[18px]">card_membership</span> Gói dịch vụ</a>
                           <a href="/lich-su-xem" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">history</span> Lịch sử xem</a>
-                          <a href="/admin" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span> Quản trị</a>
+                          {isAdmin && (
+                            <a href="/admin" class="px-4 py-3 text-sm text-on-surface hover:bg-white/5 transition-colors border-b border-glass-stroke flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span> Quản trị</a>
+                          )}
                           <button onclick="logout()" class="px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 text-left w-full"><span class="material-symbols-outlined text-[18px]">logout</span> Đăng xuất</button>
                         </div>
                       </div>
@@ -1079,10 +1085,12 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
           <span class="material-symbols-outlined text-xl">history</span>
           <span class="text-[10px] font-medium">Lịch sử</span>
         </a>
-        <a href="/admin" class={`auth-user hidden flex flex-col items-center gap-1 ${isActive('/admin') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
-          <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
-          <span class="text-[10px] font-medium">Quản trị</span>
-        </a>
+        {isAdmin && (
+          <a href="/admin" class={`auth-user hidden flex flex-col items-center gap-1 ${isActive('/admin') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+            <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+            <span class="text-[10px] font-medium">Quản trị</span>
+          </a>
+        )}
         <a href="/xem-chung" class={`auth-user nav-watch-together hidden flex flex-col items-center gap-1 ${isActive('/xem-chung') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
           <span class="material-symbols-outlined text-xl">groups</span>
           <span class="text-[10px] font-medium">Xem chung</span>

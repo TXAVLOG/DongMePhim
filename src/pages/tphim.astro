@@ -56,7 +56,7 @@ const firstHero = heroMovies[0] || null;
 
 <MainLayout isHome={true}>
   <!-- Hero Banner -->
-  <section id="hero-banner" class="relative h-[85vh] w-full overflow-hidden">
+  <section id="hero-banner" class="relative h-[55vh] md:h-[85vh] w-full overflow-hidden">
     <!-- Image layers for cross-fade transition -->
     <div id="hero-bg-1" class="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-100" style={`background-image: url('${firstHero ? (firstHero.bannerUrl || firstHero.posterUrl) : "/logo-icon.gif"}')`}></div>
     <div id="hero-bg-2" class="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0"></div>
@@ -84,23 +84,29 @@ const firstHero = heroMovies[0] || null;
         <p id="hero-desc" class="text-on-surface-variant text-lg md:text-xl line-clamp-3 leading-relaxed">
             {firstHero?.description || 'Trải nghiệm điện ảnh đỉnh cao tại DongMePhim.'}
         </p>
-        <div class="flex flex-wrap gap-4 pt-4">
-          <a id="hero-play-link" href={firstHero ? `/phim/${firstHero.slug}` : "#"} class="cursor-pointer" style={firstHero ? "" : "display: none;"}>
-            <Button variant="premium" size="lg" className="rounded-xl px-8 py-4 gap-2 text-white font-title-md">
-              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-              Xem Phim
-            </Button>
+        <div class="flex items-center gap-4 pt-4">
+          <!-- Play Button (Circle) -->
+          <a id="hero-play-link" href={firstHero ? `/xem/${firstHero.slug}` : "#"} class="w-14 h-14 rounded-full bg-primary hover:bg-primary/95 text-slate-950 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shrink-0" style={firstHero ? "" : "display: none;"} data-txatooltip="Xem Phim">
+            <span class="material-symbols-outlined text-3xl ml-0.5" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
           </a>
-          <Button id="hero-playlist-btn" variant="secondary" size="lg" className="rounded-xl px-8 py-4 gap-2 font-title-md cursor-pointer relative group" style={firstHero ? {} : { display: 'none' }}>
-            <span id="hero-playlist-icon-add" class="flex items-center justify-center">
-              <Txaicon name="playlist-add" class="w-5 h-5" />
-            </span>
-            <span id="hero-playlist-icon-added" class="flex items-center justify-center hidden">
-              <Txaicon name="playlist-added" class="w-5 h-5" />
-            </span>
-            <span id="hero-playlist-text">Danh sách</span>
-            <div class="txatooltip absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none text-[10px]">Thêm vào DS phát</div>
-          </Button>
+
+          <!-- Capsule container for Playlist and Info buttons -->
+          <div class="flex items-center rounded-full bg-[#141416]/60 border border-glass-stroke backdrop-blur-md overflow-hidden h-12 shadow-lg" style={firstHero ? "" : "display: none;"}>
+            <!-- Playlist Button -->
+            <button id="hero-playlist-btn" class="relative w-12 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer border-r border-glass-stroke/50" data-txatooltip="Thêm vào DS phát">
+              <span id="hero-playlist-icon-add" class="flex items-center justify-center">
+                <Txaicon name="playlist-add" class="w-5 h-5" />
+              </span>
+              <span id="hero-playlist-icon-added" class="flex items-center justify-center hidden">
+                <Txaicon name="playlist-added" class="w-5 h-5" />
+              </span>
+            </button>
+            
+            <!-- Info/Details Button -->
+            <a id="hero-info-link" href={firstHero ? `/phim/${firstHero.slug}` : "#"} class="relative w-12 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer" data-txatooltip="Chi tiết phim">
+              <span class="material-symbols-outlined text-xl">info</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -1234,28 +1240,38 @@ const firstHero = heroMovies[0] || null;
         updateHeroPlaylistBtn();
       }
 
+      let dbHistory = [];
+      async function loadDbHistory() {
+        if (username) {
+          try {
+            const res = await fetch(`/api/user/history?username=${encodeURIComponent(username)}`);
+            if (res.ok) {
+              dbHistory = await res.json() || [];
+            }
+          } catch(e) {
+            console.error('Error loading DB history:', e);
+          }
+        }
+      }
+
       const updateHeroPlaylistBtn = () => {
         const playlistBtn = document.getElementById('hero-playlist-btn');
         const iconAdd = document.getElementById('hero-playlist-icon-add');
         const iconAdded = document.getElementById('hero-playlist-icon-added');
-        const playlistText = document.getElementById('hero-playlist-text');
-        const tooltip = playlistBtn?.querySelector('.txatooltip');
-        if (!playlistBtn || !iconAdd || !iconAdded || !playlistText) return;
+        if (!playlistBtn || !iconAdd || !iconAdded) return;
 
         const isInPlaylist = userPlaylist.includes(currentHeroSlug);
 
         if (isInPlaylist) {
           iconAdd.classList.add('hidden');
           iconAdded.classList.remove('hidden');
-          playlistText.textContent = 'Đã lưu';
           playlistBtn.classList.add('bg-primary/20', 'border-primary');
-          if (tooltip) tooltip.textContent = 'Xóa khỏi DS phát';
+          playlistBtn.setAttribute('data-txatooltip', 'Xóa khỏi DS phát');
         } else {
           iconAdd.classList.remove('hidden');
           iconAdded.classList.add('hidden');
-          playlistText.textContent = 'Danh sách';
           playlistBtn.classList.remove('bg-primary/20', 'border-primary');
-          if (tooltip) tooltip.textContent = 'Thêm vào DS phát';
+          playlistBtn.setAttribute('data-txatooltip', 'Thêm vào DS phát');
         }
       };
       window.updateHeroPlaylistBtn = updateHeroPlaylistBtn;
@@ -1317,6 +1333,7 @@ const firstHero = heroMovies[0] || null;
 
       // Initial load
       loadWatchlist();
+      loadDbHistory();
 
       if (combinedMovies.length > 0 && heroBanner && heroContent && heroTitle && heroDesc && heroPlayLink && bg1 && bg2) {
         let apiRegistry = {};
@@ -1415,7 +1432,26 @@ const firstHero = heroMovies[0] || null;
 
             heroTitle.textContent = movie.title;
             heroDesc.textContent = movie.description || 'Không có mô tả cho phim này.';
-            heroPlayLink.href = `/phim/${movie.slug}`;
+            
+            let watchUrl = `/xem/${movie.slug}`;
+            const dbItem = dbHistory.find(h => h.slug === movie.slug);
+            if (dbItem) {
+              watchUrl = `/xem/${movie.slug}?ep=${dbItem.episodeSlug}&sv=${dbItem.serverIndex || 0}`;
+            } else {
+              try {
+                const thistory = JSON.parse(localStorage.getItem('thistory') || '[]');
+                const historyItem = thistory.find(h => h.slug === movie.slug);
+                if (historyItem) {
+                  watchUrl = `/xem/${movie.slug}?ep=${historyItem.episodeSlug}&sv=${historyItem.serverIndex || 0}`;
+                }
+              } catch(e) {}
+            }
+            heroPlayLink.href = watchUrl;
+
+            const heroInfoLink = document.getElementById('hero-info-link');
+            if (heroInfoLink) {
+              heroInfoLink.href = `/phim/${movie.slug}`;
+            }
 
             heroContent.style.opacity = '1';
             heroContent.style.transform = 'translateY(0)';

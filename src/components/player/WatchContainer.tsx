@@ -1048,9 +1048,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const username = (window.APP_USER ? window.APP_USER.username : null) || '';
     
-    const fetchUserAndAds = async () => {
+    const fetchUserAndAds = async (username: string) => {
       try {
         const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
         let pkgName = 'Free';
@@ -1133,12 +1132,27 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   randomUrl = srcMatch[1];
                 }
               }
-              if (randomUrl.includes('youtube.com/watch?v=')) {
-                const videoId = new URL(randomUrl).searchParams.get('v');
-                if (videoId) randomUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-              } else if (randomUrl.includes('youtu.be/')) {
-                const videoId = randomUrl.split('youtu.be/')[1]?.split('?')[0];
-                if (videoId) randomUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+              
+              let videoId = '';
+              const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+              const match = randomUrl.match(regExp);
+              if (match && match[2].length === 11) {
+                videoId = match[2];
+              } else if (randomUrl.includes('/embed/')) {
+                const parts = randomUrl.split('/embed/');
+                if (parts[1]) {
+                  videoId = parts[1].split('?')[0];
+                }
+              }
+
+              if (videoId) {
+                let originParam = '';
+                if (typeof window !== 'undefined') {
+                  originParam = `&origin=${encodeURIComponent(window.location.origin)}`;
+                }
+                randomUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&enablejsapi=1${originParam}`;
+              } else if (randomUrl.includes('youtube.com') || randomUrl.includes('youtu.be')) {
+                randomUrl = randomUrl.replace('youtube.com', 'youtube-nocookie.com').replace('youtu.be', 'youtube-nocookie.com');
               }
             }
 
@@ -1154,7 +1168,33 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         console.error("Error fetching user details in player:", e);
       }
     };
-    fetchUserAndAds();
+
+    let attempts = 0;
+    let intervalId: any = null;
+
+    const checkAndFetch = () => {
+      const user = window.APP_USER;
+      if (user) {
+        fetchUserAndAds(user.username || '');
+        if (intervalId) clearInterval(intervalId);
+        return true;
+      }
+      attempts++;
+      if (attempts > 12) { // Stop polling after 6 seconds, fallback to anonymous
+        fetchUserAndAds('');
+        if (intervalId) clearInterval(intervalId);
+        return true;
+      }
+      return false;
+    };
+
+    if (!checkAndFetch()) {
+      intervalId = setInterval(checkAndFetch, 500);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [movie.slug]);
 
   useEffect(() => {
@@ -1323,18 +1363,48 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return false;
   });
 
-  const toggleFavorite = async () => {
+  const showLoginRequired = (actionName: string) => {
     if (typeof window === 'undefined') return;
-    const username = (window.APP_USER ? window.APP_USER.username : null);
-    if (!username) {
+    if ((window as any).txamodal) {
+      (window as any).txamodal.show({
+        title: 'Yêu cầu đăng nhập',
+        content: `
+          <div class="flex flex-col items-center justify-center p-6 text-center space-y-4">
+            <div class="bg-primary/20 w-14 h-14 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_20px_rgba(124,58,237,0.25)]">
+              <span class="material-symbols-outlined text-2xl text-primary" style="font-variation-settings: 'FILL' 1">account_circle</span>
+            </div>
+            <h3 class="font-display-hero text-lg font-black text-white tracking-wide uppercase">Tính năng yêu cầu đăng nhập</h3>
+            <p class="text-xs text-zinc-400 leading-relaxed font-body-main max-w-sm">
+              Bạn cần đăng nhập tài khoản để có thể ${actionName}.
+            </p>
+            <div class="pt-2">
+              <button onclick="if(window.openLoginModal){window.openLoginModal();}; if(window.txamodal){window.txamodal.close();}" class="px-6 py-2.5 bg-primary text-slate-950 font-black rounded-xl text-[10px] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 border-none uppercase tracking-wider">
+                Đăng nhập ngay
+              </button>
+            </div>
+          </div>
+        `,
+        type: 'info',
+        confirmText: '',
+        cancelText: 'Đóng'
+      });
+    } else {
       if ((window as any).showGlobalToast) {
-        (window as any).showGlobalToast('Vui lòng đăng nhập để sử dụng tính năng này!', 'error');
+        (window as any).showGlobalToast(`Vui lòng đăng nhập để ${actionName}!`, 'error');
       }
       setTimeout(() => {
         if ((window as any).openLoginModal) {
           (window as any).openLoginModal();
         }
       }, 800);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (typeof window === 'undefined') return;
+    const username = (window.APP_USER ? window.APP_USER.username : null);
+    if (!username) {
+      showLoginRequired('yêu thích bộ phim này');
       return;
     }
 
@@ -1380,14 +1450,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     if (typeof window === 'undefined') return;
     const username = (window.APP_USER ? window.APP_USER.username : null);
     if (!username) {
-      if ((window as any).showGlobalToast) {
-        (window as any).showGlobalToast('Vui lòng đăng nhập để sử dụng tính năng này!', 'error');
-      }
-      setTimeout(() => {
-        if ((window as any).openLoginModal) {
-          (window as any).openLoginModal();
-        }
-      }, 800);
+      showLoginRequired('thêm phim vào danh sách phát');
       return;
     }
 
@@ -2130,15 +2193,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             <span>Chia sẻ</span>
           </button>
         </div>
-
-        {/* Báo lỗi */}
-        <button 
-          onClick={() => setIsReportModalOpen(true)}
-          className="flex items-center gap-1.5 hover:text-rose-400 transition-colors text-xs font-semibold cursor-pointer bg-transparent border-none p-0 text-zinc-400"
-        >
-          <span className="material-symbols-outlined text-[18px]">flag</span>
-          <span>Báo lỗi</span>
-        </button>
       </div>
 
       {/* Main 2-Column layout under player */}
