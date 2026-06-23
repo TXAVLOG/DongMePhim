@@ -280,6 +280,51 @@ const firstHero = heroMovies[0] || null;
                     <span class="text-[8px] text-zinc-500 font-bold font-outfit">{movie.durationMinutes || '120 phút'}</span>
                   </div>
                 </div>
+
+                <!-- Hover Popover details card (Netflix style, desktop only) -->
+                <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+                  <div class="relative w-full aspect-video bg-black/40">
+                    <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+                    <div class="absolute top-3 left-3 flex gap-1">
+                      <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">{movie.quality || 'FHD'}</span>
+                      <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">{movie.lang || 'Vietsub'}</span>
+                    </div>
+                  </div>
+                  <div class="p-4 space-y-3.5 text-left whitespace-normal">
+                    <div>
+                      <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">{movie.title}</h4>
+                      {movie.originalTitle && <p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">{movie.originalTitle}</p>}
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <a href={`/xem/${movie.slug}?ep=tap-1`} class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                        <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        Xem ngay
+                      </a>
+                      <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
+                        <span class="material-symbols-outlined text-sm">favorite</span>
+                      </button>
+                      <a href={`/phim/${movie.slug}`} class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                        <span class="material-symbols-outlined text-sm">info</span>
+                      </a>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+                      <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb {(Number(movie.imdbScore) || 8.0).toFixed(1)}</span>
+                      <span>{movie.releaseYear || 2024}</span>
+                      <span>{movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}</span>
+                    </div>
+                    {movie.genres && movie.genres.length > 0 && (
+                      <div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">
+                        {movie.genres.map((g: string, idx: number) => (
+                          <>
+                            {idx > 0 && <span class="text-zinc-600">•</span>}
+                            <span>{g}</span>
+                          </>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -332,6 +377,51 @@ const firstHero = heroMovies[0] || null;
                     <span class="text-[8px] bg-white/5 border border-white/10 px-1 py-0.2 rounded font-black text-zinc-400 font-outfit uppercase">{movie.quality}</span>
                     <span class="text-[8px] text-zinc-500 font-bold font-outfit">{movie.releaseYear}</span>
                     <span class="text-[8px] text-zinc-500 font-bold font-outfit">{movie.episodeCurrent || 'Phần 1'}</span>
+                  </div>
+                </div>
+
+                <!-- Hover Popover details card (Netflix style, desktop only) -->
+                <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+                  <div class="relative w-full aspect-video bg-black/40">
+                    <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+                    <div class="absolute top-3 left-3 flex gap-1">
+                      <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">{movie.quality || 'FHD'}</span>
+                      <span class="bg-white/10 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm backdrop-blur-md">{movie.lang || 'Vietsub'}</span>
+                    </div>
+                  </div>
+                  <div class="p-4 space-y-3.5 text-left whitespace-normal">
+                    <div>
+                      <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">{movie.title}</h4>
+                      {movie.originalTitle && <p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">{movie.originalTitle}</p>}
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <a href={`/xem/${movie.slug}?ep=tap-1`} class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                        <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        Xem ngay
+                      </a>
+                      <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
+                        <span class="material-symbols-outlined text-sm">favorite</span>
+                      </button>
+                      <a href={`/phim/${movie.slug}`} class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                        <span class="material-symbols-outlined text-sm">info</span>
+                      </a>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+                      <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb {(Number(movie.imdbScore) || 8.0).toFixed(1)}</span>
+                      <span>{movie.releaseYear || 2024}</span>
+                      <span>{movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}</span>
+                    </div>
+                    {movie.genres && movie.genres.length > 0 && (
+                      <div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">
+                        {movie.genres.map((g: string, idx: number) => (
+                          <>
+                            {idx > 0 && <span class="text-zinc-600">•</span>}
+                            <span>{g}</span>
+                          </>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
