@@ -201,8 +201,9 @@ packages.forEach((pkg: any) => {
             const clone = res.clone();
             const json = await clone.json();
             const config = window.TXA_API_CONFIG || { encryptEnable: false, encryptPass: 'tphimx' };
-            if (json && json.d && json.v === 1 && config.encryptEnable && config.encryptPass) {
-              const decryptedText = await clientTxaDecrypt(json.d, config.encryptPass);
+            if (json && json.d && json.v === 1) {
+              const passphrase = config.encryptPass || 'tphimx';
+              const decryptedText = await clientTxaDecrypt(json.d, passphrase);
               const decryptedJson = JSON.parse(decryptedText);
               return new Response(JSON.stringify(decryptedJson), {
                 status: res.status,

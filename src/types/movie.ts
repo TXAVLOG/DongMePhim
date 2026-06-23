@@ -55,6 +55,7 @@ export interface Episode {
   timeOutroEnd?: number;
   airDate?: string;
   airTime?: string;
+  thumbUrl?: string;
 }
 
 export interface MovieDetail extends Movie {

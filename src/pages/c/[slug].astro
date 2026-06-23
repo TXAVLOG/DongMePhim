@@ -1,107 +1,73 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import { topics } from '../../data/topics';
-import { MovieService } from '../../services/MovieService';
 import Card from '../../components/ui/Card.astro';
+import { MovieService } from '../../services/MovieService';
+import { HOMEPAGE_CATEGORIES, getHomepageCategories } from '../../data/categories';
+import NotFound from '../../components/ui/NotFound.astro';
 
 const { slug } = Astro.params;
-const topic = topics.find((t) => t.slug === slug);
 
-if (!topic) {
-  return Astro.redirect('/404');
-}
+// Find the category definition
+const category = HOMEPAGE_CATEGORIES.find(c => c.slug === slug);
 
-// Fetch all movies and filter based on topic rules
-const allMovies = await MovieService.getMovies({ limit: 100 });
-let movies = [...allMovies];
-
-if (topic.slug === 'top-imdb') {
-  movies = movies.filter((m) => (m.imdbScore || 0) >= 8.0);
-  movies.sort((a, b) => (b.imdbScore || 0) - (a.imdbScore || 0));
-} else if (topic.slug === 'thuyet-minh') {
-  movies = movies.filter((m) => m.lang === 'Thuyết Minh' || m.lang === 'Lồng Tiếng');
-} else if (topic.slug === 'phim-4k') {
-  movies = movies.filter((m) => m.quality === '4K');
-} else if (topic.slug === 'phim-long-tieng') {
-  movies = movies.filter((m) => m.lang === 'Lồng Tiếng');
-} else if (topic.slug === 'netflix') {
-  movies = movies.filter((m) => 
-    m.title.toLowerCase().includes('netflix') || 
-    m.description.toLowerCase().includes('netflix')
-  );
-} else if (topic.slug === 'phim-tvb') {
-  movies = movies.filter((m) => m.category === 'TVB');
-} else if (topic.slug === 'co-trang') {
-  movies = movies.filter((m) => m.genres?.includes('Cổ Trang'));
-} else if (topic.slug === 'chua-lanh') {
-  movies = movies.filter((m) => 
-    m.genres?.includes('Đời Thường') || 
-    m.genres?.includes('Tâm Lý') || 
-    m.description.toLowerCase().includes('chữa lành')
-  );
-} else if (topic.slug === 'marvel') {
-  movies = movies.filter((m) => 
-    m.title.toLowerCase().includes('marvel') || 
-    m.description.toLowerCase().includes('marvel')
-  );
+let movies: any[] = [];
+if (category) {
+  const allMovies = await MovieService.getMovies();
+  const homepageMappings = await getHomepageCategories();
+  const assignedSlugs = homepageMappings[category.slug] || [];
+  
+  // Get and sort assigned movies
+  const assignedMovies = allMovies.filter((m: any) => assignedSlugs.includes(m.slug));
+  movies = [...assignedMovies].sort((a, b) => assignedSlugs.indexOf(a.slug) - assignedSlugs.indexOf(b.slug));
 }
 ---
 
-<MainLayout title={topic.name}>
-  <!-- Dynamic Gradient Banner -->
-  <div class="relative w-full min-h-screen">
-    <!-- Theme-aware gradient background block -->
-    <div class={`absolute inset-0 bg-gradient-to-b ${topic.gradient} opacity-20 via-surface-deep to-surface-deep pointer-events-none`}></div>
-
-    <main class="relative z-10 max-w-container-max mx-auto px-gutter py-section-gap pt-28 space-y-8">
-      <!-- Breadcrumb & Header Info -->
-      <div class="space-y-4">
-        <div class="flex items-center gap-2 text-xs text-on-surface-variant font-label-caps">
+{category ? (
+  <MainLayout title={category.title}>
+    <main class="max-w-container-max mx-auto px-gutter pt-24 md:pt-32 pb-16 space-y-8 min-h-[70vh]">
+      <!-- Header -->
+      <div class="space-y-2 border-b border-glass-stroke/50 pb-6 text-left">
+        <div class="flex items-center gap-2 text-zinc-500 text-xs">
           <a href="/tphim" class="hover:text-primary transition-colors">Trang chủ</a>
-          <span>/</span>
-          <a href="/chu-de" class="hover:text-primary transition-colors">Chủ đề</a>
-          <span>/</span>
-          <span class="text-on-surface">{topic.name}</span>
+          <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+          <span class="text-zinc-300 font-bold">{category.title}</span>
         </div>
-
-        <div class="flex items-center gap-4">
-          <div class={`w-12 h-12 rounded-2xl bg-gradient-to-br ${topic.gradient} flex items-center justify-center text-white shadow-xl`}>
-            <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">{topic.icon}</span>
-          </div>
-          <div>
-            <h1 class="font-display-hero text-4xl text-white font-black tracking-tight">{topic.name}</h1>
-            <p class="text-on-surface-variant mt-1 text-sm font-body-main">{topic.description}</p>
-          </div>
-        </div>
+        <h1 class="text-2xl md:text-4xl font-extrabold text-white leading-tight font-outfit uppercase">
+          {category.title}
+        </h1>
+        {category.description && (
+          <p class="text-xs md:text-sm text-on-surface-variant font-medium font-sans">
+            {category.description}
+          </p>
+        )}
       </div>
 
-      <!-- Movie list grid -->
-      <section class="space-y-6">
-        <div class="flex justify-between items-center border-b border-glass-stroke pb-3">
-          <h2 class="font-title-md text-lg text-white font-bold">Danh sách phim ({movies.length})</h2>
+      <!-- Grid list -->
+      {movies.length > 0 ? (
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-gutter">
+          {movies.map(movie => (
+            <Card
+              title={movie.title}
+              slug={movie.slug}
+              poster={movie.posterUrl}
+              year={movie.releaseYear}
+              quality={movie.quality}
+              status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}
+              aspect="aspect-[2/3]"
+              movie={movie}
+            />
+          ))}
         </div>
-        
-        {movies.length > 0 ? (
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-gutter">
-            {movies.map((movie) => (
-              <Card 
-                title={movie.title}
-                slug={movie.slug}
-                poster={movie.posterUrl}
-                quality={movie.quality}
-                year={movie.releaseYear}
-                status={movie.episodeCurrent}
-                movie={movie}
-              />
-            ))}
-          </div>
-        ) : (
-          <div class="glass-card bg-surface-card border-glass-stroke p-12 text-center rounded-2xl">
-            <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-3">movie_filter</span>
-            <p class="text-on-surface-variant font-body-main">Chưa có phim nào thuộc chủ đề này.</p>
-          </div>
-        )}
-      </section>
+      ) : (
+        <div class="py-16 text-center space-y-4 bg-white/[0.02] border border-dashed border-white/5 rounded-3xl">
+          <span class="material-symbols-outlined text-4xl text-zinc-600 animate-pulse">movie</span>
+          <p class="text-xs text-zinc-500 font-outfit">Danh mục này hiện tại chưa có phim nào.</p>
+        </div>
+      )}
     </main>
-  </div>
-</MainLayout>
+  </MainLayout>
+) : (
+  <MainLayout title="Không tìm thấy danh mục">
+    <NotFound />
+  </MainLayout>
+)}

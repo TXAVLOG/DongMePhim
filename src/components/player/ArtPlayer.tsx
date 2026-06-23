@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Artplayer from 'artplayer';
 
 // Override HTMLVideoElement.prototype.requestPictureInPicture to prevent InvalidStateError before metadata is loaded
@@ -107,8 +107,36 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 }) => {
   const artRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<Artplayer | null>(null);
+  const [isOffline, setIsOffline] = useState(typeof window !== 'undefined' ? !navigator.onLine : false);
+  const [connectionRestored, setConnectionRestored] = useState(false);
 
   useEffect(() => {
+    const handleOffline = () => {
+      setIsOffline(true);
+      setConnectionRestored(false);
+      if (playerInstanceRef.current) {
+        try {
+          if (playerInstanceRef.current.fullscreen) {
+            playerInstanceRef.current.fullscreen = false;
+          }
+        } catch (e) {}
+      }
+    };
+    const handleOnline = () => {
+      setIsOffline(false);
+      setConnectionRestored(true);
+    };
+
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isOffline || connectionRestored) return;
     if (!artRef.current) return;
 
     const getRealStreamUrl = (rawUrl: string): string => {
@@ -135,6 +163,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       if (playerInstanceRef.current) {
         playerInstanceRef.current.destroy(false);
       }
+      artRef.current.innerHTML = '';
 
       let isAutoSkipEnabled = getAutoSkipSetting();
       const handleAutoSkipEvent = (e: any) => {
@@ -197,6 +226,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         playsInline: true,
         autoPlayback: false,
         airplay: true,
+        hotkey: true,
         // JWPlayer style settings
         theme: '#1e88e5',
         lang: 'vi',
@@ -689,6 +719,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       if (playerInstanceRef.current) {
         playerInstanceRef.current.destroy(false);
       }
+      if (artRef.current) {
+        artRef.current.innerHTML = '';
+      }
     };
   }, [url, title]);
 
@@ -720,11 +753,43 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           padding: 6px 14px !important;
         }
       `}</style>
-      <div 
-        ref={artRef} 
-        className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke" 
-        style={{ minHeight: '350px' }}
-      />
+      {isOffline && (
+        <div 
+          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-red-500/30 bg-[#0B0A0C]/95 flex flex-col items-center justify-center text-center p-6"
+          style={{ minHeight: '350px' }}
+        >
+          <span className="material-symbols-outlined text-red-500 text-5xl mb-4 animate-pulse">wifi_off</span>
+          <h3 className="text-white text-lg font-black font-outfit mb-2 uppercase tracking-wide">Mất kết nối mạng</h3>
+          <p className="text-zinc-400 text-xs max-w-sm leading-relaxed mb-6 font-sans">
+            Đang xem giữa chừng thì mất mạng rồi! Vui lòng kiểm tra lại kết nối internet để tiếp tục xem phim.
+          </p>
+        </div>
+      )}
+      {connectionRestored && (
+        <div 
+          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-emerald-500/30 bg-[#0B0A0C]/95 flex flex-col items-center justify-center text-center p-6"
+          style={{ minHeight: '350px' }}
+        >
+          <span className="material-symbols-outlined text-emerald-400 text-5xl mb-4 animate-bounce">wifi</span>
+          <h3 className="text-white text-lg font-black font-outfit mb-2 uppercase tracking-wide">Đã có mạng trở lại</h3>
+          <p className="text-zinc-400 text-xs max-w-sm leading-relaxed mb-6 font-sans">
+            Kết nối internet đã được khôi phục. Vui lòng tải lại trình phát để tiếp tục xem phim.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-[10px] font-black uppercase tracking-widest text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 border-none cursor-pointer"
+          >
+            Tải lại trình phát
+          </button>
+        </div>
+      )}
+      {!isOffline && !connectionRestored && (
+        <div 
+          ref={artRef} 
+          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke" 
+          style={{ minHeight: '350px' }}
+        />
+      )}
     </>
   );
 };

@@ -6,14 +6,32 @@ import TopicCard from '../components/ui/TopicCard.astro';
 import { topics } from '../data/topics';
 import { MovieService } from '../services/MovieService';
 import Txaicon from '../components/ui/txaicon.astro';
+import { getHomepageCategories } from '../data/categories';
 
 // Single database query for optimal SSR performance
 const allMoviesForServer = await MovieService.getMovies();
+const homepageMappings = await getHomepageCategories();
 
-// Get pinned or fallback latest movies for hero banner
-const pinnedMovies = allMoviesForServer.filter((m: any) => m.pinned === true || m.pinned === 'true');
-const heroMovies = pinnedMovies.length > 0 ? pinnedMovies : allMoviesForServer.slice(0, 5);
-const firstHero = heroMovies[0] || null;
+// Top Anime
+const animeSlugs = homepageMappings['top-anime-he'] || [];
+const animeMovies = allMoviesForServer.filter((m: any) => animeSlugs.includes(m.slug));
+const fallbackAnime = allMoviesForServer.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình')))).slice(0, 6);
+const animeMoviesSorted = [...animeMovies].sort((a, b) => animeSlugs.indexOf(a.slug) - animeSlugs.indexOf(b.slug));
+const topAnimeList = animeMovies.length > 0 ? animeMoviesSorted : fallbackAnime;
+
+// Top 10 Phim Lẻ
+const top10Slugs = homepageMappings['top-10-phim-le'] || [];
+const top10MoviesManual = allMoviesForServer.filter((m: any) => top10Slugs.includes(m.slug));
+const fallbackTop10Le = [...allMoviesForServer]
+  .filter((m: any) => m.type === 'movie')
+  .sort((a: any, b: any) => {
+    const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10;
+    const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;
+    return scoreB - scoreA;
+  })
+  .slice(0, 10);
+const top10MoviesManualSorted = [...top10MoviesManual].sort((a, b) => top10Slugs.indexOf(a.slug) - top10Slugs.indexOf(b.slug));
+const top10PhimLeList = top10MoviesManual.length > 0 ? top10MoviesManualSorted : fallbackTop10Le;
 
 // Filter Top Series for Rank slider (server-side)
 const topSeries = allMoviesForServer
@@ -29,6 +47,11 @@ const soiNoiMovies = [...allMoviesForServer]
 const yeuThichMovies = [...allMoviesForServer]
   .sort((a: any, b: any) => (b.imdbScore || 0) - (a.imdbScore || 0))
   .slice(0, 5);
+
+// Get pinned or fallback latest movies for hero banner
+const pinnedMovies = allMoviesForServer.filter((m: any) => m.pinned === true || m.pinned === 'true');
+const heroMovies = pinnedMovies.length > 0 ? pinnedMovies : allMoviesForServer.slice(0, 5);
+const firstHero = heroMovies[0] || null;
 ---
 
 <MainLayout isHome={true}>
@@ -112,22 +135,126 @@ const yeuThichMovies = [...allMoviesForServer]
   </section>
 
   <main class="max-w-container-max mx-auto px-gutter py-section-gap space-y-section-gap">
-    <!-- Phim Lẻ Mới -->
-    <section class="lazy-section" data-endpoint="/api/movies?type=movie&limit=4" data-grid-id="movies-grid" data-aspect="aspect-[2/3]">
-      <div class="flex items-center gap-3 mb-6">
-        <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
-          Phim Lẻ Mới
-        </h2>
-        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/phim-le">
+    <!-- Swiper CDN assets -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <script is:inline src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <!-- Top Anime đáng xem mùa hè này (Image 1 Style) -->
+    {topAnimeList.length > 0 && (
+      <section class="space-y-6">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+              Top Anime Đáng Xem Mùa Hè Này
+              <span class="material-symbols-outlined text-transparent bg-clip-text bg-gradient-to-tr from-primary to-secondary" style="font-variation-settings: 'FILL' 1;">star</span>
+            </h2>
+            <p class="text-on-surface-variant font-body-main mt-1 text-sm">Những tác phẩm anime siêu đỉnh không thể bỏ qua</p>
+          </div>
+          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-anime-he">
+            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem tất cả</span>
+            <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+          </a>
+        </div>
+
+        <!-- Synced Swiper Container -->
+        <div class="relative">
+          <!-- Main Swiper -->
+          <div class="swiper anime-main-swiper">
+            <div class="swiper-wrapper">
+              {topAnimeList.map((movie: any) => (
+                <div class="swiper-slide relative bg-[#0a0b10]">
+                  <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="anime-slide-img" />
+                  <div class="absolute inset-0 bg-gradient-to-r from-[#0a0b10] via-[#0a0b10]/60 to-transparent"></div>
+                  <div class="anime-slide-content">
+                    <div class="max-w-md md:max-w-lg space-y-4 text-left">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="bg-primary/20 text-primary font-bold text-[10px] px-2 py-0.5 rounded border border-primary/20">{movie.quality}</span>
+                        <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded border border-white/10">{movie.releaseYear}</span>
+                        <span class="bg-secondary/15 text-secondary text-[10px] font-bold px-2 py-0.5 rounded border border-secondary/20">{movie.lang}</span>
+                      </div>
+                      <h3 class="text-2xl md:text-4xl font-extrabold text-white leading-tight font-outfit line-clamp-2">{movie.title}</h3>
+                      <p class="text-xs md:text-sm text-zinc-400 font-sans leading-relaxed line-clamp-3 md:line-clamp-4">{movie.description?.replace(/<[^>]*>/g, '')}</p>
+                      <div class="pt-2 flex gap-3">
+                        <a href={`/phim/${movie.slug}`} class="px-6 py-2.5 bg-gradient-to-br from-primary-container to-secondary-container hover:brightness-110 text-white rounded-xl text-xs font-bold transition-all shadow-[0_4px_15px_rgba(124,58,237,0.3)] inline-flex items-center gap-1.5 active:scale-95 no-underline">
+                          <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                          Xem ngay
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <!-- Thumbnails Swiper (Desktop) / Pagination dots (Mobile) -->
+          <div class="swiper anime-thumbs-swiper">
+            <div class="swiper-wrapper">
+              {topAnimeList.map((movie: any) => (
+                <div class="swiper-slide">
+                  <div class="v-thumbnail aspect-video overflow-hidden">
+                    <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" />
+                  </div>
+                  <p class="thumb-title text-[10px] text-zinc-400 font-bold truncate mt-1 text-center font-outfit">{movie.title}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- Top 10 Phim Lẻ Hay Nhức Nách (Image 2 style with skewed cards) -->
+    <section class="space-y-6">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+            Top 10 Phim Lẻ Hay Nhức Nách
+            <span class="material-symbols-outlined text-amber-400" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+          </h2>
+          <p class="text-on-surface-variant font-body-main mt-1 text-sm">Bảng xếp hạng phim lẻ ăn khách nhất hệ thống</p>
+        </div>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-10-phim-le">
           <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
           <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
         </a>
       </div>
-      <div id="movies-grid" class="grid grid-cols-2 md:grid-cols-4 gap-gutter min-h-[280px]">
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
-        <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
+
+      <!-- Swiper Slider for Skewed Cards -->
+      <div class="swiper top10-swiper">
+        <div class="swiper-wrapper">
+          {top10PhimLeList.map((movie: any, index: number) => (
+            <div class="swiper-slide">
+              <div class="top10-item group">
+                <a class="top10-thumbnail block" href={`/phim/${movie.slug}`}>
+                  <div class="absolute inset-0 bg-black/10 group-hover:bg-primary/10 transition-colors z-10 rounded-2xl"></div>
+                  {movie.episodeCurrent && (
+                    <div class="absolute top-2.5 left-2.5 z-25 bg-black/75 backdrop-blur-sm border border-white/5 px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider font-outfit">
+                      {movie.episodeCurrent}
+                    </div>
+                  )}
+                  <img src={movie.posterUrl} alt={movie.title} />
+                </a>
+                
+                <div class="top10-info">
+                  <div class="top10-number font-display-hero">
+                    {index + 1}
+                  </div>
+                  <h4 class="font-bold text-white text-xs md:text-sm line-clamp-1 group-hover:text-primary transition-colors font-outfit">
+                    <a href={`/phim/${movie.slug}`}>{movie.title}</a>
+                  </h4>
+                  <p class="text-[10px] text-zinc-500 line-clamp-1 font-outfit mt-0.5">{movie.originalTitle || movie.title}</p>
+                  
+                  <div class="info-line flex gap-1.5 mt-1.5 md:flex">
+                    <span class="text-[8px] bg-white/5 border border-white/10 px-1 py-0.2 rounded font-black text-zinc-400 font-outfit uppercase">{movie.quality}</span>
+                    <span class="text-[8px] text-zinc-500 font-bold font-outfit">{movie.releaseYear}</span>
+                    <span class="text-[8px] text-zinc-500 font-bold font-outfit">{movie.durationMinutes || '120 phút'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
 
@@ -844,6 +971,56 @@ const yeuThichMovies = [...allMoviesForServer]
 
   // Bind all initialization to 'astro:page-load'
   document.addEventListener('astro:page-load', async () => {
+    // Initialize Swipers
+    function initSwipers() {
+      if (typeof Swiper === 'undefined') {
+        setTimeout(initSwipers, 100);
+        return;
+      }
+      
+      const animeThumbs = new Swiper('.anime-thumbs-swiper', {
+        spaceBetween: 10,
+        slidesPerView: 4,
+        freeMode: true,
+        watchSlidesProgress: true,
+      });
+
+      new Swiper('.anime-main-swiper', {
+        spaceBetween: 10,
+        effect: 'fade',
+        fadeEffect: {
+          crossFade: true
+        },
+        thumbs: {
+          swiper: animeThumbs,
+        },
+        autoplay: {
+          delay: 5000,
+          disableOnInteraction: false,
+        },
+      });
+
+      new Swiper('.top10-swiper', {
+        slidesPerView: 2,
+        spaceBetween: 16,
+        breakpoints: {
+          640: {
+            slidesPerView: 3,
+            spaceBetween: 20,
+          },
+          768: {
+            slidesPerView: 4,
+            spaceBetween: 20,
+          },
+          1024: {
+            slidesPerView: 5,
+            spaceBetween: 24,
+          },
+        },
+      });
+    }
+    initSwipers();
+
     // 1. IntersectionObserver for Scroll-based Lazy Rendering
     const lazySections = document.querySelectorAll('.lazy-section');
     
@@ -1337,3 +1514,189 @@ const yeuThichMovies = [...allMoviesForServer]
     }
   });
 </script>
+
+<style is:global>
+  /* Swiper Custom Styles */
+  .anime-main-swiper {
+    height: 500px;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  @media (max-width: 990px) {
+    .anime-main-swiper {
+      height: 400px;
+    }
+  }
+
+  .anime-slide-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    z-index: 10;
+    padding: 0 48px;
+  }
+
+  @media (max-width: 990px) {
+    .anime-slide-content {
+      padding: 0 24px;
+      align-items: flex-end;
+      padding-bottom: 48px;
+    }
+  }
+
+  .anime-slide-img {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60%;
+    height: 100%;
+    object-fit: cover;
+    mask-image: linear-gradient(90deg, transparent, #000 30%, #000);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000);
+    opacity: 0.85;
+  }
+
+  @media (max-width: 990px) {
+    .anime-slide-img {
+      width: 100%;
+      opacity: 0.45;
+      mask-image: linear-gradient(180deg, transparent, #000 60%);
+      -webkit-mask-image: linear-gradient(180deg, transparent, #000 60%);
+    }
+  }
+
+  .anime-thumbs-swiper {
+    margin-top: 16px;
+    box-sizing: border-box;
+    padding: 10px 0;
+  }
+
+  .anime-thumbs-swiper .swiper-slide {
+    width: 25%;
+    height: 100%;
+    opacity: 0.4;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .anime-thumbs-swiper .swiper-slide-thumb-active {
+    opacity: 1;
+  }
+
+  .anime-thumbs-swiper .v-thumbnail {
+    border-radius: 12px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .anime-thumbs-swiper .swiper-slide-thumb-active .v-thumbnail {
+    border-color: #fecf59;
+    box-shadow: 0 0 15px rgba(254, 207, 89, 0.4);
+  }
+
+  @media (max-width: 990px) {
+    .anime-thumbs-swiper {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .anime-thumbs-swiper .swiper-slide {
+      width: 10px !important;
+      height: 10px !important;
+      border-radius: 50% !important;
+      background-color: rgba(255, 255, 255, 0.3) !important;
+      opacity: 1 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    
+    .anime-thumbs-swiper .swiper-slide-thumb-active {
+      background-color: #fecf59 !important;
+      transform: scale(1.2);
+    }
+    
+    .anime-thumbs-swiper .v-thumbnail,
+    .anime-thumbs-swiper .thumb-title {
+      display: none !important;
+    }
+  }
+
+  /* Top 10 Skewed Cards Styles */
+  .top10-swiper {
+    padding-bottom: 40px;
+  }
+
+  .top10-item {
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .top10-thumbnail {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    aspect-ratio: 2/3;
+    transform: translateZ(0);
+  }
+
+  .top10-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    clip-path: polygon(94.239% 100%, 5.761% 100%, 5.761% 100%, 4.826% 99.95%, 3.94% 99.803%, 3.113% 99.569%, 2.358% 99.256%, 1.687% 98.87%, 1.111% 98.421%, 0.643% 97.915%, 0.294% 97.362%, 0.075% 96.768%, 0px 96.142%, 0px 3.858%, 0px 3.858%, 0.087% 3.185%, 0.338% 2.552%, 0.737% 1.968%, 1.269% 1.442%, 1.92% 0.984%, 2.672% 0.602%, 3.512% 0.306%, 4.423% 0.105%, 5.391% 0.008%, 6.4% 0.024%, 94.879% 6.625%, 94.879% 6.625%, 95.731% 6.732%, 96.532% 6.919%, 97.272% 7.178%, 97.942% 7.503%, 98.533% 7.887%, 99.038% 8.323%, 99.445% 8.805%, 99.747% 9.326%, 99.935% 9.88%, 100% 10.459%, 100% 96.142%, 100% 96.142%, 99.925% 96.768%, 99.706% 97.362%, 99.357% 97.915%, 98.889% 98.421%, 98.313% 98.87%, 97.642% 99.256%, 96.887% 99.569%, 96.06% 99.803%, 95.174% 99.95%, 94.239% 100%);
+  }
+
+  .top10-swiper .swiper-slide:nth-child(2n) .top10-thumbnail img {
+    clip-path: polygon(5.761% 100%, 94.239% 100%, 94.239% 100%, 95.174% 99.95%, 96.06% 99.803%, 96.887% 99.569%, 97.642% 99.256%, 98.313% 98.87%, 98.889% 98.421%, 99.357% 97.915%, 99.706% 97.362%, 99.925% 96.768%, 100% 96.142%, 100% 3.858%, 100% 3.858%, 99.913% 3.185%, 99.662% 2.552%, 99.263% 1.968%, 98.731% 1.442%, 98.08% 0.984%, 97.328% 0.602%, 96.488% 0.306%, 95.577% 0.105%, 94.609% 0.008%, 93.6% 0.024%, 5.121% 6.625%, 5.121% 6.625%, 4.269% 6.732%, 3.468% 6.919%, 2.728% 7.178%, 2.058% 7.503%, 1.467% 7.887%, 0.962% 8.323%, 0.555% 8.805%, 0.253% 9.326%, 0.065% 9.88%, 0px 10.459%, 0px 96.142%, 0px 96.142%, 0.075% 96.768%, 0.294% 97.362%, 0.643% 97.915%, 1.111% 98.421%, 1.687% 98.87%, 2.358% 99.256%, 3.113% 99.569%, 3.94% 99.803%, 4.826% 99.95%, 5.761% 100%);
+  }
+
+  .top10-item:hover .top10-thumbnail img {
+    transform: scale(1.05);
+  }
+
+  .top10-info {
+    padding-left: 66px;
+    position: relative;
+    text-align: left;
+    margin-top: 12px;
+  }
+
+  .top10-number {
+    position: absolute;
+    left: 0;
+    top: -10px;
+    width: 50px;
+    text-align: center;
+    font-size: 4.2em;
+    font-weight: 900;
+    font-style: italic;
+    line-height: 0.9;
+    background: linear-gradient(39deg, #fecf59, #fff1cc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    pointer-events: none;
+  }
+
+  @media (max-width: 990px) {
+    .top10-info {
+      padding-left: 36px;
+    }
+    .top10-number {
+      font-size: 28px;
+      width: 30px;
+      height: 28px;
+      top: -2px;
+    }
+    .top10-info .info-line {
+      display: none !important;
+    }
+  }
+</style>

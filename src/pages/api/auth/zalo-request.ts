@@ -3,6 +3,7 @@ import { apiResponse } from '../../../lib/api/response';
 import { ZaloService } from '../../../services/ZaloService';
 import { SettingService } from '../../../services/SettingService';
 import { getEmailTemplate } from '../../../templates/emails/emailReader';
+import { SmtpClient } from '../../../lib/api/smtpClient';
 import { supabase } from '../../../lib/supabase';
 
 // Sử dụng SMTP để gửi thông báo cho Admin nếu SMTP được cấu hình
@@ -14,12 +15,9 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
 
     // Lấy danh sách email admin để gửi thông báo
     const adminEmail = settings.smtp.smtp_user; // Email gửi/nhận mặc định
-    const siteUrl = settings.general.site_url || 'https://webfilm.dongmephim.online';
-    const siteName = settings.general.site_name || 'WebFilm';
+    const siteUrl = settings.general.site_url || 'https://dongmephim.online';
+    const siteName = settings.general.site_name || 'DongMePhim';
     
-    // Gửi email test mô phỏng hoặc log
-    console.log(`[SMTP SIMULATOR] Sending new Zalo access request notification to Admin: ${adminEmail}`);
-
     const year = new Date().getFullYear().toString();
     const sendTime = new Date().toLocaleString('vi-VN');
     const approveUrl = `${siteUrl.replace(/\/$/, '')}/admin/duyet-zalo?search=${encodeURIComponent(nickname)}`;
@@ -51,6 +49,32 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
       .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
       .replace(/{year}/g, year);
 
+    // Gửi email thực tế qua SmtpClient
+    let sendResult: any = null;
+    let sendStatus = 'success';
+    let responseCode = '250 2.0.0 OK Message accepted';
+
+    try {
+      sendResult = await SmtpClient.sendMail({
+        host: settings.smtp.smtp_host,
+        port: settings.smtp.smtp_port,
+        secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+        user: settings.smtp.smtp_user,
+        pass: settings.smtp.smtp_pass,
+        fromEmail: settings.smtp.smtp_from_email,
+        fromName: settings.smtp.smtp_from_name,
+      }, {
+        to: adminEmail,
+        subject: `[Yêu cầu duyệt Zalo] ${nickname} xin tham gia nhóm`,
+        html: compiledHtml
+      });
+      responseCode = sendResult.responseCode || '250 2.0.0 OK Message accepted';
+    } catch (sendErr: any) {
+      console.error("[SMTP ERROR] Failed to send Zalo notification email to Admin:", sendErr);
+      sendStatus = 'failed';
+      responseCode = sendErr.message || 'Lỗi kết nối SMTP server';
+    }
+
     // Ghi log email gửi đi
     const emailLog = {
       id: 'mail_zalo_' + Math.floor(Math.random() * 100000000),
@@ -59,8 +83,8 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
       sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
       subject: `[Yêu cầu duyệt Zalo] ${nickname} xin tham gia nhóm`,
       category: 'Zalo Auth Notification',
-      status: 'success',
-      responseCode: '250 2.0.0 OK Message accepted',
+      status: sendStatus,
+      responseCode: responseCode,
       parameters: {
         nickname,
         token,
@@ -99,8 +123,7 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
       // Mock log storage on server console / local logs if needed
     }
     
-    // Trả về null để Frontend không lưu vào localStorage nữa
-    return null;
+    return emailLog;
   } catch (e) {
     console.error('Lỗi khi gửi email thông báo duyệt Zalo cho Admin:', e);
     return null;

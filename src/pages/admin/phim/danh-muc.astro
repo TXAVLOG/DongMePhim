@@ -1,0 +1,375 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { MovieService } from '../../../services/MovieService';
+import { HOMEPAGE_CATEGORIES, getHomepageCategories } from '../../../data/categories';
+
+const staticMovies = await MovieService.getMovies();
+const currentMappings = await getHomepageCategories();
+---
+
+<AdminLayout title="Quản lý Danh mục Trang chủ">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 mt-4">
+    <div>
+      <h3 class="font-headline-lg-mobile md:text-headline-lg font-headline-lg text-primary tracking-tight">Danh mục Trang chủ</h3>
+      <p class="text-on-surface-variant text-body-main opacity-80">Quản lý danh sách các phim xuất hiện ở các danh mục đặc biệt ngoài trang chủ.</p>
+    </div>
+    <button id="saveCategoriesBtn" class="bg-primary text-on-primary-fixed font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer border-none">
+      <span class="material-symbols-outlined">save</span>
+      <span>Lưu cấu hình</span>
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+    <!-- Cột trái: Chọn Danh mục -->
+    <div class="space-y-4">
+      <div class="glass-panel p-4 rounded-2xl border border-glass-stroke">
+        <h4 class="text-xs font-bold text-primary uppercase tracking-widest mb-4">Danh mục đặc biệt</h4>
+        <div class="flex flex-col gap-2" id="categoryTabContainer">
+          {HOMEPAGE_CATEGORIES.map((cat, idx) => (
+            <button
+              data-slug={cat.slug}
+              class={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer border-none bg-transparent flex flex-col gap-1 ${
+                idx === 0
+                  ? 'bg-primary/10 text-primary border border-primary/25'
+                  : 'text-on-surface-variant hover:bg-white/5 hover:text-white border border-transparent'
+              }`}
+            >
+              <span>{cat.title}</span>
+              <span class="text-[10px] text-zinc-500 font-medium normal-case font-sans line-clamp-1">{cat.description}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      <div class="glass-panel p-4 rounded-2xl border border-glass-stroke">
+        <span class="text-xs text-on-surface-variant block mb-2 font-semibold">Gợi ý phân loại:</span>
+        <ul class="text-[11px] text-zinc-400 space-y-1.5 pl-4 list-disc font-sans">
+          <li><strong>Top Anime mùa hè:</strong> Ưu tiên chọn các phim hoạt hình dài tập/lẻ hot mùa này.</li>
+          <li><strong>Top 10 Phim Lẻ:</strong> Chọn đúng 10 phim lẻ chất lượng cao nhất để hiển thị theo thứ tự hạng.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Cột phải: Quản lý gán phim -->
+    <div class="glass-panel rounded-2xl border border-glass-stroke p-6 space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-glass-stroke/50 pb-4">
+        <div>
+          <h4 class="text-sm font-bold text-white uppercase tracking-wider" id="activeCategoryTitle">---</h4>
+          <p class="text-xs text-on-surface-variant font-sans mt-0.5" id="activeCategoryDesc">---</p>
+        </div>
+        <div class="text-right shrink-0">
+          <span class="text-[11px] bg-primary-container/20 border border-primary/20 text-primary font-bold px-3 py-1 rounded-full font-mono" id="assignedCountBadge">Đã chọn: 0 phim</span>
+        </div>
+      </div>
+
+      <!-- Phim đã chọn -->
+      <div class="space-y-3">
+        <span class="text-xs font-bold text-zinc-400 block uppercase tracking-wider">Danh sách phim đã chọn (Kéo/Click để xóa)</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="assignedMoviesContainer">
+          <!-- Rendered dynamically -->
+        </div>
+        <div id="noAssignedNotice" class="hidden py-8 text-center text-xs text-on-surface-variant opacity-60 bg-white/5 border border-dashed border-white/10 rounded-xl">
+          Chưa chọn phim nào cho danh mục này. Hãy tìm kiếm ở dưới để thêm.
+        </div>
+      </div>
+
+      <div class="border-t border-glass-stroke/50 pt-6 space-y-4">
+        <!-- Tìm kiếm phim để thêm -->
+        <span class="text-xs font-bold text-zinc-400 block uppercase tracking-wider">Tìm kiếm phim từ hệ thống</span>
+        <div class="relative max-w-md">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">search</span>
+          <input
+            type="text"
+            id="movieSearchInput"
+            placeholder="Tìm theo tên phim, slug..."
+            class="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold placeholder:font-normal placeholder:text-zinc-600"
+          />
+        </div>
+
+        <div class="max-h-[300px] overflow-y-auto border border-glass-stroke rounded-xl bg-black/20 custom-scrollbar p-1">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-container-low/30 border-b border-glass-stroke text-[10px] font-bold text-zinc-500 font-label-caps uppercase">
+                <th class="px-4 py-2.5">Phim</th>
+                <th class="px-4 py-2.5">Năm</th>
+                <th class="px-4 py-2.5">Loại</th>
+                <th class="px-4 py-2.5 text-right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="searchResultTableBody" class="divide-y divide-glass-stroke/30">
+              <!-- Result list dynamic -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script id="staticMoviesData" type="application/json" set:html={JSON.stringify(staticMovies).replace(/</g, '\\u003c')}></script>
+  <script id="initialMappingsData" type="application/json" set:html={JSON.stringify(currentMappings).replace(/</g, '\\u003c')}></script>
+  <script id="categoriesDefinitionData" type="application/json" set:html={JSON.stringify(HOMEPAGE_CATEGORIES).replace(/</g, '\\u003c')}></script>
+
+  <script is:inline>
+    (function() {
+      let movies = [];
+      let mappings = {};
+      let categories = [];
+      let activeCategorySlug = "";
+
+      try {
+        movies = JSON.parse(document.getElementById('staticMoviesData').textContent);
+        mappings = JSON.parse(document.getElementById('initialMappingsData').textContent);
+        categories = JSON.parse(document.getElementById('categoriesDefinitionData').textContent);
+      } catch(e) {
+        console.error('Error loading static configuration data:', e);
+      }
+
+      if (categories.length > 0) {
+        activeCategorySlug = categories[0].slug;
+      }
+
+      function init() {
+        setupTabs();
+        renderActiveCategory();
+        setupSearch();
+        setupSaveButton();
+      }
+
+      function setupTabs() {
+        const container = document.getElementById('categoryTabContainer');
+        if (!container) return;
+
+        const buttons = container.querySelectorAll('button');
+        buttons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            buttons.forEach(b => {
+              b.className = 'w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer border-none bg-transparent flex flex-col gap-1 text-on-surface-variant hover:bg-white/5 hover:text-white border border-transparent';
+            });
+            btn.className = 'w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer border-none bg-transparent flex flex-col gap-1 bg-primary/10 text-primary border border-primary/25';
+            
+            activeCategorySlug = btn.getAttribute('data-slug');
+            renderActiveCategory();
+          });
+        });
+      }
+
+      function getMovieBySlug(slug) {
+        return movies.find(m => m.slug === slug);
+      }
+
+      function renderActiveCategory() {
+        const cat = categories.find(c => c.slug === activeCategorySlug);
+        if (!cat) return;
+
+        document.getElementById('activeCategoryTitle').textContent = cat.title;
+        document.getElementById('activeCategoryDesc').textContent = cat.description || '';
+
+        // Get currently assigned slugs
+        const assignedSlugs = mappings[activeCategorySlug] || [];
+        document.getElementById('assignedCountBadge').textContent = `Đã chọn: ${assignedSlugs.length} phim`;
+
+        const container = document.getElementById('assignedMoviesContainer');
+        const notice = document.getElementById('noAssignedNotice');
+        
+        if (assignedSlugs.length === 0) {
+          container.innerHTML = "";
+          notice.classList.remove('hidden');
+        } else {
+          notice.classList.add('hidden');
+          container.innerHTML = assignedSlugs.map((slug, idx) => {
+            const m = getMovieBySlug(slug);
+            if (!m) {
+              return `
+                <div class="glass-panel p-3 rounded-xl border border-glass-stroke flex items-center justify-between gap-3 text-xs bg-red-950/20">
+                  <span class="text-rose-400 font-bold truncate">Phim đã bị xóa (${slug})</span>
+                  <button class="text-zinc-500 hover:text-rose-400 p-1 bg-transparent border-none cursor-pointer" onclick="removeMovie('${slug}')">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </div>
+              `;
+            }
+            return `
+              <div class="glass-panel p-3 rounded-xl border border-glass-stroke flex items-center justify-between gap-3 text-xs hover:border-primary/20 transition-all">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="font-mono text-[10px] font-bold text-zinc-500 bg-white/5 border border-white/10 w-5 h-5 rounded flex items-center justify-center">${idx + 1}</span>
+                  <img src="${m.posterUrl}" class="w-8 h-10 object-cover rounded shadow" />
+                  <div class="min-w-0">
+                    <p class="font-bold text-white truncate">${m.title}</p>
+                    <p class="text-[10px] text-zinc-500 font-sans">${m.releaseYear} • ${m.type === 'movie' ? 'Phim Lẻ' : 'Phim Bộ'}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <!-- Order shifting actions -->
+                  <div class="flex flex-col">
+                    <button class="text-zinc-500 hover:text-white p-0.5 bg-transparent border-none cursor-pointer leading-none" onclick="shiftOrder('${slug}', -1)">
+                      <span class="material-symbols-outlined text-[14px]">keyboard_arrow_up</span>
+                    </button>
+                    <button class="text-zinc-500 hover:text-white p-0.5 bg-transparent border-none cursor-pointer leading-none" onclick="shiftOrder('${slug}', 1)">
+                      <span class="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
+                    </button>
+                  </div>
+                  <button class="text-zinc-500 hover:text-rose-400 p-1 bg-transparent border-none cursor-pointer" onclick="removeMovie('${slug}')">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        renderSearchResults();
+      }
+
+      window.shiftOrder = (slug, direction) => {
+        const list = mappings[activeCategorySlug] || [];
+        const idx = list.indexOf(slug);
+        if (idx === -1) return;
+
+        const nextIdx = idx + direction;
+        if (nextIdx < 0 || nextIdx >= list.length) return;
+
+        // Swap elements
+        const temp = list[idx];
+        list[idx] = list[nextIdx];
+        list[nextIdx] = temp;
+
+        mappings[activeCategorySlug] = list;
+        renderActiveCategory();
+      };
+
+      window.removeMovie = (slug) => {
+        const list = mappings[activeCategorySlug] || [];
+        mappings[activeCategorySlug] = list.filter(s => s !== slug);
+        renderActiveCategory();
+        if (window.showGlobalToast) window.showGlobalToast("Đã gỡ phim khỏi danh mục", "info");
+      };
+
+      window.addMovie = (slug) => {
+        const list = mappings[activeCategorySlug] || [];
+        if (list.includes(slug)) {
+          if (window.showGlobalToast) window.showGlobalToast("Phim này đã có trong danh mục!", "error");
+          return;
+        }
+
+        list.push(slug);
+        mappings[activeCategorySlug] = list;
+        renderActiveCategory();
+        if (window.showGlobalToast) window.showGlobalToast("Đã thêm phim vào danh mục", "success");
+      };
+
+      let searchKeyword = "";
+      function setupSearch() {
+        const input = document.getElementById('movieSearchInput');
+        if (!input) return;
+
+        input.addEventListener('input', (e) => {
+          searchKeyword = e.target.value.toLowerCase().trim();
+          renderSearchResults();
+        });
+      }
+
+      function renderSearchResults() {
+        const tbody = document.getElementById('searchResultTableBody');
+        if (!tbody) return;
+
+        const assignedSlugs = mappings[activeCategorySlug] || [];
+        
+        // Filter movies based on keyword
+        const filtered = movies.filter(m => {
+          const matchKeyword = m.title.toLowerCase().includes(searchKeyword) ||
+                               m.slug.toLowerCase().includes(searchKeyword) ||
+                               (m.originalTitle && m.originalTitle.toLowerCase().includes(searchKeyword));
+          return matchKeyword;
+        }).slice(0, 50); // Limit to 50 results
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" class="px-4 py-8 text-center text-zinc-600 text-xs">
+                Không tìm thấy phim nào phù hợp.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(m => {
+          const isAdded = assignedSlugs.includes(m.slug);
+          return `
+            <tr class="hover:bg-white/[0.02] text-xs">
+              <td class="px-4 py-3 min-w-0">
+                <div class="flex items-center gap-3">
+                  <img src="${m.posterUrl}" class="w-6 h-8 object-cover rounded" />
+                  <div class="min-w-0">
+                    <p class="font-bold text-white truncate max-w-[200px]">${m.title}</p>
+                    <p class="text-[10px] text-zinc-500 font-mono truncate max-w-[200px]">${m.slug}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-zinc-400 font-sans">${m.releaseYear}</td>
+              <td class="px-4 py-3 text-zinc-400 font-sans">${m.type === 'movie' ? 'Phim Lẻ' : 'Phim Bộ'}</td>
+              <td class="px-4 py-3 text-right">
+                ${isAdded 
+                  ? `<span class="inline-flex items-center gap-1 text-[10px] text-primary font-bold px-2 py-1 rounded-lg bg-primary/10 border border-primary/20"><span class="material-symbols-outlined text-[12px]">check</span> Đã chọn</span>`
+                  : `<button class="px-3 py-1 bg-white/5 border border-white/10 hover:border-primary/45 hover:text-primary transition-all text-white font-bold rounded-lg text-[10px] cursor-pointer" onclick="addMovie('${m.slug}')">Thêm</button>`
+                }
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function setupSaveButton() {
+        const btn = document.getElementById('saveCategoriesBtn');
+        if (!btn) return;
+
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          const originalText = btn.innerHTML;
+          btn.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> <span>Đang lưu...</span>`;
+
+          try {
+            const res = await fetch('/api/admin/homepage-categories', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(mappings)
+            });
+
+            const data = await res.json();
+            if (data.status === 'success') {
+              if (window.showGlobalToast) window.showGlobalToast("Đã lưu cấu hình danh mục trang chủ!", "success");
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast(data.message || "Không thể lưu cấu hình", "error");
+            }
+          } catch(e) {
+            console.error(e);
+            if (window.showGlobalToast) window.showGlobalToast("Lỗi kết nối máy chủ", "error");
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          }
+        });
+      }
+
+      // Boot
+      init();
+      document.addEventListener('astro:page-load', init);
+    })();
+  </script>
+</AdminLayout>
+
+<style>
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+</style>

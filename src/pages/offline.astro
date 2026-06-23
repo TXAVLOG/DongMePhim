@@ -1,0 +1,137 @@
+---
+export const prerender = true;
+import '../../src/styles/index.css';
+---
+
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mất kết nối mạng - DONGMEPHIM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet" />
+    <style>
+      :root {
+        --neon-blue: #00e3fd;
+        --neon-pink: #d2bbff;
+        --bg-noir: #030303;
+      }
+      body {
+        background-color: var(--bg-noir);
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        color: #ffffff;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .bokeh-container {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+      }
+      .bokeh {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.12;
+        animation: float 25s infinite alternate ease-in-out;
+      }
+      @keyframes float {
+        0% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(12%, 18%) scale(1.15); }
+        100% { transform: translate(-8%, 8%) scale(0.9); }
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 24px;
+        padding: 2.5rem;
+        max-width: 450px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        position: relative;
+        z-index: 10;
+      }
+      .gradient-text {
+        background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-pink) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .offline-icon {
+        font-size: 4rem;
+        background: linear-gradient(135deg, #ef4444, #f87171);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1.5rem;
+        animation: pulse-red 2s infinite;
+      }
+      @keyframes pulse-red {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        margin-top: 1.5rem;
+      }
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
+      .btn:active {
+        transform: translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Atmospheric Bokeh Layer -->
+    <div class="bokeh-container">
+      <div class="bokeh w-[400px] h-[400px] bg-red-500/10 top-[-10%] left-[-5%]"></div>
+      <div class="bokeh w-[500px] h-[500px] bg-purple-500/10 bottom-[-20%] right-[-10%]" style="animation-delay: -5s;"></div>
+    </div>
+
+    <div class="glass-card">
+      <span class="material-symbols-outlined offline-icon">wifi_off</span>
+      <h1 class="text-2xl font-black mb-3 font-display-hero">Kết Nối Đã Mất</h1>
+      <p class="text-sm text-zinc-400 leading-relaxed mb-6 font-body-main">
+        Có vẻ như bạn đang ngoại tuyến. Vui lòng kiểm tra lại kết nối Wi-Fi hoặc dữ liệu di động của thiết bị.
+      </p>
+      
+      <button onclick="window.location.reload()" class="btn">
+        <span class="material-symbols-outlined text-base">refresh</span>
+        Thử tải lại trang
+      </button>
+    </div>
+
+    <script>
+      // Auto reload if connection comes back online
+      window.addEventListener('online', () => {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>

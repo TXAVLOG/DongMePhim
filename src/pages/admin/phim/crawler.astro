@@ -1055,7 +1055,13 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                     }
 
                     try {
-                      const seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?api_key=${apiKey}&language=vi-VN`);
+                      let seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?api_key=${apiKey}&language=vi-VN`);
+                      if (!seasonRes.ok && seasonNumber !== 1) {
+                        addLog(`⚠️ Không thể lấy thông tin Season ${seasonNumber} từ TMDB. Thử lại với Season 1...`, 'warning');
+                        seasonNumber = 1;
+                        seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/1?api_key=${apiKey}&language=vi-VN`);
+                      }
+                      
                       if (seasonRes.ok) {
                         const seasonData = await seasonRes.json();
                         if (seasonData && Array.isArray(seasonData.episodes)) {

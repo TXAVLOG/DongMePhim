@@ -47,7 +47,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const year = new Date().getFullYear().toString();
-    const siteUrl = settings.general.site_url || 'https://DongMePhim.dongmephim.online';
+    const siteUrl = settings.general.site_url || 'https://dongmephim.online';
     const siteName = settings.general.site_name || 'DongMePhim';
     const resetLink = `${siteUrl.replace(/\/$/, '')}/auth/reset-password?token=mock_token_${Math.floor(Math.random() * 1000000)}`;
 

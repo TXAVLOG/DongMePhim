@@ -712,9 +712,6 @@ if (movie && movie.actors && movie.actors.length > 0) {
     // Helper: Parse YouTube embed URL
     function getYouTubeEmbedUrl(url: string) {
       if (!url) return '';
-      if (url.includes('/embed/')) {
-        return url;
-      }
       let videoId = '';
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
       const match = url.match(regExp);
@@ -724,9 +721,14 @@ if (movie && movie.actors && movie.actors.length > 0) {
         const trimmed = url.trim();
         if (trimmed.length === 11 && !trimmed.includes('/') && !trimmed.includes('.')) {
           videoId = trimmed;
+        } else if (url.includes('/embed/')) {
+          const parts = url.split('/embed/');
+          if (parts[1]) {
+            videoId = parts[1].split('?')[0];
+          }
         }
       }
-      return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+      return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1` : url.replace('youtube.com', 'youtube-nocookie.com');
     }
 
     // Trailer Modal Button Event Listener
@@ -744,6 +746,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
                   class="absolute top-0 left-0 w-full h-full border-0" 
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                   allowfullscreen
+                  referrerpolicy="strict-origin-when-cross-origin"
                 ></iframe>
               </div>
             `;
@@ -821,17 +824,18 @@ if (movie && movie.actors && movie.actors.length > 0) {
     const movieBanner = episodesContainer ? (episodesContainer.getAttribute('data-banner') || '') : '';
     const moviePoster = episodesContainer ? (episodesContainer.getAttribute('data-poster') || '') : '';
 
-    let isCompact = (() => {
-      if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
-      try {
-        const stored = localStorage.getItem('tsettings');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          return parsed.isCompact !== false;
+    let isCompact = true;
+    try {
+      const stored = localStorage.getItem('tsettings');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (typeof parsed.isCompact === 'boolean') {
+          isCompact = parsed.isCompact;
         }
-      } catch (e) {}
-      return true;
-    })();
+      }
+    } catch (e) {
+      console.warn('Error reading tsettings:', e);
+    }
 
     const toggleBtn = document.getElementById('toggle-compact-detail');
     const toggleCircle = document.getElementById('toggle-compact-circle');
@@ -859,7 +863,9 @@ if (movie && movie.actors && movie.actors.length > 0) {
           const parsed = stored ? JSON.parse(stored) : {};
           parsed.isCompact = isCompact;
           localStorage.setItem('tsettings', JSON.stringify(parsed));
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Error saving tsettings:', e);
+        }
         updateToggleUI();
         renderEpisodes(activeServerIdx, activeEpisodeSlug);
       });

@@ -893,6 +893,77 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 }) => {
   const [movie, setMovie] = useState<MovieDetail>(initialMovie);
   const servers = movie.episodes || [];
+
+  // Auto-update stills on the fly for old crawled movies
+  useEffect(() => {
+    if (!movie || !movie.episodes || movie.episodes.length === 0) return;
+    const firstServer = movie.episodes[0];
+    if (!firstServer || !firstServer.serverData) return;
+    
+    const needsUpdate = firstServer.serverData.some(ep => !ep.thumbUrl || ep.thumbUrl.includes('/logo-decoy.png') || ep.thumbUrl === '');
+    
+    if (needsUpdate) {
+      const triggerUpdate = async () => {
+        try {
+          let tmdbId = null;
+          let seasonNumber = 1;
+          
+          const phimApiRes = await fetch(`https://phimapi.com/phim/${movie.slug}`);
+          if (phimApiRes.ok) {
+            const phimApiData = (await phimApiRes.json()) as any;
+            if (phimApiData && phimApiData.movie && phimApiData.movie.tmdb) {
+              tmdbId = phimApiData.movie.tmdb.id;
+              seasonNumber = phimApiData.movie.tmdb.season || 1;
+            }
+          }
+          
+          if (!tmdbId) return;
+          
+          const TMDB_API_KEY = '211be8d45c0d31404f644ecdcf9caad5';
+          const tmdbRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=vi-VN`);
+          if (!tmdbRes.ok) return;
+          
+          const tmdbData = (await tmdbRes.json()) as any;
+          if (tmdbData && Array.isArray(tmdbData.episodes)) {
+            const tmdbEps = tmdbData.episodes;
+            let updated = false;
+            
+            const updatedEpisodes = movie.episodes.map(server => {
+              const srvData = server.serverData || [];
+              const updatedSrvData = srvData.map((ep: any, epIdx: number) => {
+                const tmdbEp = tmdbEps[epIdx];
+                if (tmdbEp && tmdbEp.still_path) {
+                  const newThumb = `https://image.tmdb.org/t/p/original${tmdbEp.still_path}`;
+                  if (ep.thumbUrl !== newThumb) {
+                    updated = true;
+                    return { ...ep, thumbUrl: newThumb };
+                  }
+                } else if (!ep.thumbUrl) {
+                  updated = true;
+                  return { ...ep, thumbUrl: movie.bannerUrl || movie.posterUrl || '' };
+                }
+                return ep;
+              });
+              return { ...server, serverData: updatedSrvData };
+            });
+            
+            if (updated) {
+              const updatedMovie = { ...movie, episodes: updatedEpisodes };
+              setMovie(updatedMovie);
+              
+              await supabase
+                .from('movies')
+                .update({ episodes: updatedEpisodes })
+                .eq('slug', movie.slug);
+            }
+          }
+        } catch (e) {
+          console.error('Error auto-updating stills:', e);
+        }
+      };
+      triggerUpdate();
+    }
+  }, [movie?.slug]);
   
   const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
   const [reportReason, setReportReason] = useState<string>('Không load được video');

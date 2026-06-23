@@ -247,8 +247,9 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
               const clone = res.clone();
               const json = await clone.json();
               const config = getTxaApiConfig();
-              if (json && json.d && json.v === 1 && config.encryptEnable && config.encryptPass) {
-                const decryptedText = await clientTxaDecrypt(json.d, config.encryptPass);
+              if (json && json.d && json.v === 1) {
+                const passphrase = config.encryptPass || 'tphimx';
+                const decryptedText = await clientTxaDecrypt(json.d, passphrase);
                 const decryptedJson = JSON.parse(decryptedText);
                 return new Response(JSON.stringify(decryptedJson), {
                   status: res.status,
@@ -902,22 +903,26 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
       </style>
       <script is:inline>
         (function() {
-          const splash = document.getElementById('splash-screen');
-          if (splash) {
-            if (sessionStorage.getItem('dongphim_splash_shown')) {
-              splash.style.display = 'none';
-              splash.remove();
-            } else {
-              sessionStorage.setItem('dongphim_splash_shown', 'true');
-              setTimeout(() => {
-                splash.style.opacity = '0';
-                splash.style.pointerEvents = 'none';
+          function handleSplash() {
+            const splash = document.getElementById('splash-screen');
+            if (splash) {
+              if (sessionStorage.getItem('dongphim_splash_shown')) {
+                splash.style.display = 'none';
+                splash.remove();
+              } else {
+                sessionStorage.setItem('dongphim_splash_shown', 'true');
                 setTimeout(() => {
-                  splash.remove();
-                }, 500);
-              }, 1500);
+                  splash.style.opacity = '0';
+                  splash.style.pointerEvents = 'none';
+                  setTimeout(() => {
+                    splash.remove();
+                  }, 500);
+                }, 1500);
+              }
             }
           }
+          handleSplash();
+          document.addEventListener('astro:page-load', handleSplash);
         })();
       </script>
     )}
@@ -1867,15 +1872,17 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
                 .then(res => res.json())
                 .then(data => {
                   showDesktopNavLoading(false);
-                  if (data.success) {
-                    if (data.exists) {
+                  const isSuccess = data.status === 'success' || data.success;
+                  const resData = data.data || data;
+                  if (isSuccess && resData) {
+                    if (resData.exists) {
                       if (window.showGlobalToast) {
-                        window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${data.user.name}`, 'success');
+                        window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${resData.user?.name || ''}`, 'success');
                       }
                       console.log("Logged in Google Account:", {
-                        avatar_url: data.user.avatar_url,
-                        name: data.user.name,
-                        email: data.user.email
+                        avatar_url: resData.user?.avatar_url,
+                        name: resData.user?.name,
+                        email: resData.user?.email
                       });
                       setTimeout(() => window.location.reload(), 1000);
                     } else {
@@ -1933,11 +1940,15 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
         const isLoggedIn = document.cookie.includes('txa_gate_passed');
         if (isLoggedIn) return;
 
+        if (window.txaGoogleOneTapCalled) return;
+
         const btn = document.getElementById('google-client-login-btn');
         if (!btn) return;
         const clientId = btn.dataset.clientid;
         const isOneTapEnabled = btn.dataset.onetap === 'true';
         if (!clientId || clientId === 'mock_google_id' || !isOneTapEnabled) return;
+
+        window.txaGoogleOneTapCalled = true;
 
         const loadOneTap = () => {
           if (typeof google === 'undefined') return;
@@ -1953,15 +1964,17 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
               .then(res => res.json())
               .then(data => {
                 showDesktopNavLoading(false);
-                if (data.success) {
-                  if (data.exists) {
+                const isSuccess = data.status === 'success' || data.success;
+                const resData = data.data || data;
+                if (isSuccess && resData) {
+                  if (resData.exists) {
                     if (window.showGlobalToast) {
-                      window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${data.user.name}`, 'success');
+                      window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${resData.user?.name || ''}`, 'success');
                     }
                     console.log("Logged in Google Account:", {
-                      avatar_url: data.user.avatar_url,
-                      name: data.user.name,
-                      email: data.user.email
+                      avatar_url: resData.user?.avatar_url,
+                      name: resData.user?.name,
+                      email: resData.user?.email
                     });
                     setTimeout(() => window.location.reload(), 1000);
                   } else {
@@ -1988,7 +2001,30 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
               });
             }
           });
-          google.accounts.id.prompt();
+          google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed()) {
+              const reason = notification.getNotDisplayedReason();
+              console.warn("One Tap not displayed:", reason);
+              if (reason === 'browser_denied' || reason === 'suppressed_by_user') {
+                if (window.showGlobalToast && !sessionStorage.getItem('txa_fedcm_alerted')) {
+                  sessionStorage.setItem('txa_fedcm_alerted', 'true');
+                  window.showGlobalToast(
+                    'Đăng nhập nhanh Google bị chặn: Vui lòng click biểu tượng 🔒 (ổ khóa/cài đặt) ở bên trái thanh địa chỉ trình duyệt -> Cho phép "Đăng nhập của bên thứ ba" hoặc bật Cookie bên thứ ba để sử dụng chức năng này.',
+                    'info',
+                    9000
+                  );
+                }
+              }
+            }
+            if (notification.isSkippedMoment()) {
+              if (notification.getSkippedReason() === 'user_cancel') {
+                window.txaGoogleOneTapCalled = false;
+              }
+            }
+            if (notification.isDismissedMoment()) {
+              window.txaGoogleOneTapCalled = false;
+            }
+          });
         };
 
         if (typeof google !== 'undefined') {
@@ -2018,14 +2054,16 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
               .then(res => res.json())
               .then(data => {
                 showDesktopNavLoading(false);
-                if (data.success && data.exists) {
+                const isSuccess = data.status === 'success' || data.success;
+                const resData = data.data || data;
+                if (isSuccess && resData && resData.exists) {
                   if (window.showGlobalToast) {
-                    window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${data.user.name}`, 'success');
+                    window.showGlobalToast(`Đăng nhập thành công! Chào mừng ${resData.user?.name || ''}`, 'success');
                   }
                   console.log("Logged in Google Account:", {
-                    avatar_url: data.user.avatar_url,
-                    name: data.user.name,
-                    email: data.user.email
+                    avatar_url: resData.user?.avatar_url,
+                    name: resData.user?.name,
+                    email: resData.user?.email
                   });
                   setTimeout(() => window.location.reload(), 1000);
                 } else {
@@ -2094,12 +2132,14 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
           })
           .then(res => res.json())
           .then(data => {
-            if (data.success) {
+            const isSuccess = data.status === 'success' || data.success;
+            const resData = data.data || data;
+            if (isSuccess && resData) {
               if (window.showGlobalToast) window.showGlobalToast('Đăng ký tài khoản Google thành công!', 'success');
               console.log("Registered Google Account:", {
-                avatar_url: data.user.avatar_url,
-                name: data.user.name,
-                email: data.user.email
+                avatar_url: resData.user?.avatar_url,
+                name: resData.user?.name,
+                email: resData.user?.email
               });
               closeGoogleExtraModal();
               setTimeout(() => window.location.reload(), 1000);
@@ -3616,8 +3656,11 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
           }, 1000);
           logoClicks++;
           if (logoClicks >= 2 && logoClicks <= 4) {
+            const msg = `Bạn đang kích hoạt mã ẩn! Click thêm ${5 - logoClicks} lần nữa...`;
             if (window.showGlobalToast) {
-              window.showGlobalToast(`Bạn đang kích hoạt mã ẩn! Click thêm ${5 - logoClicks} lần nữa...`, 'info');
+              window.showGlobalToast(msg, 'info');
+            } else {
+              alert(msg);
             }
           } else if (logoClicks >= 5) {
             logoClicks = 0;
@@ -4080,17 +4123,85 @@ const currentUser = await verifySession(Astro.request, Astro.cookies);
           }
         }
 
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then((reg) => console.log('[SW] Registered successfully with scope:', reg.scope))
+              .catch((err) => console.error('[SW] Registration failed:', err));
+          });
+        }
+
+        // Offline / Online handler
+        let originalTitle = document.title;
+        let titleBlinkInterval = null;
+        let isCurrentlyOffline = !navigator.onLine;
+
+        function startTitleBlink() {
+          if (titleBlinkInterval) clearInterval(titleBlinkInterval);
+          let showDot = true;
+          originalTitle = document.title.replace(/^🔴\s*/, '');
+          titleBlinkInterval = setInterval(() => {
+            if (showDot) {
+              document.title = '🔴 ' + originalTitle;
+            } else {
+              document.title = originalTitle;
+            }
+            showDot = !showDot;
+          }, 1000);
+        }
+
+        function stopTitleBlink() {
+          if (titleBlinkInterval) {
+            clearInterval(titleBlinkInterval);
+            titleBlinkInterval = null;
+          }
+          document.title = document.title.replace(/^🔴\s*/, '');
+        }
+
+        function updateNetworkStatus() {
+          if (!navigator.onLine) {
+            if (!isCurrentlyOffline) {
+              isCurrentlyOffline = true;
+              if (window.showToast) {
+                window.showToast('Bạn đã mất kết nối mạng. Một số tính năng có thể không khả dụng.', 'error');
+              }
+              startTitleBlink();
+            }
+          } else {
+            if (isCurrentlyOffline) {
+              isCurrentlyOffline = false;
+              if (window.showToast) {
+                window.showToast('Đã khôi phục kết nối Internet!', 'success');
+              }
+              stopTitleBlink();
+            }
+          }
+        }
+
+        window.addEventListener('offline', updateNetworkStatus);
+        window.addEventListener('online', updateNetworkStatus);
+
         // Run on page load
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
           runAdBlockCheck();
+          if (!navigator.onLine) startTitleBlink();
         } else {
-          document.addEventListener('DOMContentLoaded', runAdBlockCheck, { once: true });
+          document.addEventListener('DOMContentLoaded', () => {
+            runAdBlockCheck();
+            if (!navigator.onLine) startTitleBlink();
+          }, { once: true });
         }
 
         // Re-run on Astro page transitions
         document.addEventListener('astro:page-load', () => {
           sessionStorage.removeItem('txa_adblock_warned'); // Allow re-notify per page
           runAdBlockCheck();
+          if (!navigator.onLine) {
+            startTitleBlink();
+          } else {
+            stopTitleBlink();
+          }
         });
       })();
     </script>
