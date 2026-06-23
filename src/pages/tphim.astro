@@ -82,7 +82,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
   const isSeries = movie.type === 'series' || movie.type === 'hoathinh' || movie.type === 'tvshows';
   if (isSeries && movie.status === 'completed') {
     return `
-      <span class="bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide">
+      <span class="bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide">
         Hoàn tất
       </span>
     `;
@@ -121,21 +121,21 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     let html = '';
     if (pdEpisodes > 0) {
       html += `
-        <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+        <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
           PĐ ${pdEpisodes}
         </span>
       `;
     }
     if (tmEpisodes > 0) {
       html += `
-        <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+        <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
           TM ${tmEpisodes}
         </span>
       `;
     }
     if (pdEpisodes === 0 && tmEpisodes === 0) {
       html += `
-        <span class="bg-zinc-950/90 text-zinc-400 border border-zinc-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+        <span class="bg-zinc-950/90 text-zinc-400 border border-zinc-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
           Đang chiếu
         </span>
       `;
@@ -170,14 +170,14 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     let html = '';
     if (hasPd) {
       html += `
-        <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+        <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
           Vietsub
         </span>
       `;
     }
     if (hasTm) {
       html += `
-        <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+        <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
           TM
         </span>
       `;
@@ -289,8 +289,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             </h2>
             <p class="text-on-surface-variant font-body-main mt-1 text-sm">Những tác phẩm anime siêu đỉnh không thể bỏ qua</p>
           </div>
-          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-anime-he">
-            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem tất cả</span>
+          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3.5 hover:py-1 hover:gap-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-anime-he">
+            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[120px] transition-all duration-300 ease-out whitespace-nowrap">Xem tất cả</span>
             <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
           </a>
         </div>
@@ -344,7 +344,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     )}
 
     <!-- Top 10 Phim Lẻ Hay Nhức Nách (Image 2 style with skewed cards) -->
-    <section class="space-y-6">
+    <section class="space-y-6 fade-in-section opacity-0 invisible transition-all duration-700 min-h-[150px]">
       <div class="flex items-center justify-between mb-2">
         <div>
           <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
@@ -353,8 +353,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           </h2>
           <p class="text-on-surface-variant font-body-main mt-1 text-sm">Bảng xếp hạng phim lẻ ăn khách nhất hệ thống</p>
         </div>
-        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-10-phim-le">
-          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3.5 hover:py-1 hover:gap-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-10-phim-le">
+          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[120px] transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
           <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
         </a>
       </div>
@@ -371,10 +371,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                     const html = getMovieProgressBadgesSSR(movie);
                     if (!html || !html.trim()) return null;
                     return (
-                      <div class="absolute top-2.5 left-2.5 z-25 flex items-center select-none pointer-events-none">
-                        <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
-                          <Fragment set:html={html} />
-                        </div>
+                      <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-25 flex gap-1 items-center justify-center select-none pointer-events-none">
+                        <Fragment set:html={html} />
                       </div>
                     );
                   })()}
@@ -398,7 +396,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                 </div>
 
                 <!-- Hover Popover details card (Netflix style, desktop only) -->
-                <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+                <div class="hover-details-popover hidden">
                   <div class="relative w-full aspect-video bg-black/40">
                     <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                     <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
@@ -457,7 +455,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     </section>
 
     <!-- Top 10 Phim Bộ Hay Nhất (Same Swiper skewed cards style) -->
-    <section class="space-y-6">
+    <section class="space-y-6 fade-in-section opacity-0 invisible transition-all duration-700 min-h-[150px]">
       <div class="flex items-center justify-between mb-2">
         <div>
           <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
@@ -466,8 +464,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           </h2>
           <p class="text-on-surface-variant font-body-main mt-1 text-sm">Bảng xếp hạng phim bộ hot nhất hệ thống</p>
         </div>
-        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-10-phim-bo">
-          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+        <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3.5 hover:py-1 hover:gap-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-10-phim-bo">
+          <span class="max-w-0 overflow-hidden group-hover/more:max-w-[120px] transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
           <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
         </a>
       </div>
@@ -484,10 +482,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                     const html = getMovieProgressBadgesSSR(movie);
                     if (!html || !html.trim()) return null;
                     return (
-                      <div class="absolute top-2.5 left-2.5 z-25 flex items-center select-none pointer-events-none">
-                        <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
-                          <Fragment set:html={html} />
-                        </div>
+                      <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-25 flex gap-1 items-center justify-center select-none pointer-events-none">
+                        <Fragment set:html={html} />
                       </div>
                     );
                   })()}
@@ -511,7 +507,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                 </div>
 
                 <!-- Hover Popover details card (Netflix style, desktop only) -->
-                <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+                <div class="hover-details-popover hidden">
                   <div class="relative w-full aspect-video bg-black/40">
                     <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                     <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
@@ -570,7 +566,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     </section>
 
     <!-- Upgraded Bento Section: Top Comments Carousel & Three-Column Grid -->
-    <section class="glass-card bg-[#141416]/50 border border-glass-stroke rounded-3xl p-6 md:p-8 space-y-8 shadow-2xl relative overflow-hidden">
+    <section class="glass-card bg-[#141416]/50 border border-glass-stroke rounded-3xl p-6 md:p-8 space-y-8 shadow-2xl relative overflow-hidden fade-in-section opacity-0 invisible transition-all duration-700 min-h-[150px]">
       <!-- Glow backgrounds -->
       <div class="absolute -left-20 -top-20 w-80 h-80 bg-primary/5 blur-[120px] rounded-full"></div>
       <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-secondary/5 blur-[120px] rounded-full"></div>
@@ -614,13 +610,56 @@ const getMovieProgressBadgesSSR = (movie: any) => {
               const trendColor = index < 3 ? 'emerald' : 'zinc';
               const trendIcon = index === 0 ? 'trending_up' : index === 2 ? 'trending_up' : index === 3 ? 'trending_down' : 'remove';
               return (
-                <a href={`/phim/${movie.slug}`} class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
-                  <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">{index + 1}.</span>
+                <a href={`/phim/${movie.slug}`} class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group cursor-pointer w-full relative">
+                  <span class="text-sm font-black text-zinc-600 group-hover:text-primary transition-colors w-4 font-outfit">{index + 1}.</span>
                   <span class={`material-symbols-outlined text-${trendColor}-400 text-sm font-bold w-4`}>{trendIcon}</span>
                   <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
                     <img src={movie.posterUrl || '/favicon.png'} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                   </div>
-                  <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors line-clamp-1 flex-1 font-outfit">{movie.title}</span>
+                  <span class="text-xs font-bold text-zinc-300 group-hover:text-white transition-colors line-clamp-1 flex-1 font-outfit">{movie.title}</span>
+
+                  <!-- Hover Popover details card (Netflix style, desktop only) -->
+                  <div class="hover-details-popover hidden">
+                    <div class="relative w-full aspect-video bg-black/40">
+                      <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                      <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+                      <div class="absolute top-3 left-3 flex gap-1 items-center select-none pointer-events-none">
+                        <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">{movie.quality || 'FHD'}</span>
+                        {(() => {
+                          const html = getMovieProgressBadgesSSR(movie);
+                          if (!html || !html.trim()) return null;
+                          return (
+                            <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
+                              <Fragment set:html={html} />
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    <div class="p-4 space-y-3.5 text-left whitespace-normal">
+                      <div>
+                        <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">{movie.title}</h4>
+                        {movie.originalTitle && <p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">{movie.originalTitle}</p>}
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <a href={`/xem/${movie.slug}?ep=tap-1`} class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                          <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                          Xem ngay
+                        </a>
+                        <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
+                          <span class="material-symbols-outlined text-sm">favorite</span>
+                        </button>
+                        <a href={`/phim/${movie.slug}`} class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                          <span class="material-symbols-outlined text-sm">info</span>
+                        </a>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+                        <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb {(Number(movie.imdbScore) || 8.0).toFixed(1)}</span>
+                        <span>{movie.releaseYear || 2024}</span>
+                        <span>{movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}</span>
+                      </div>
+                    </div>
+                  </div>
                 </a>
               );
             })}
@@ -635,13 +674,56 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           </h4>
           <div id="yeu-thich-list" class="space-y-3">
             {yeuThichMovies.map((movie, index) => (
-              <a href={`/phim/${movie.slug}`} class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group/item cursor-pointer w-full">
-                <span class="text-sm font-black text-zinc-600 group-hover/item:text-primary transition-colors w-4 font-outfit">{index + 1}.</span>
+              <a href={`/phim/${movie.slug}`} class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-white/5 transition-all group cursor-pointer w-full relative">
+                <span class="text-sm font-black text-zinc-600 group-hover:text-primary transition-colors w-4 font-outfit">{index + 1}.</span>
                 <span class="material-symbols-outlined text-zinc-600 text-sm w-4">remove</span>
                 <div class="w-8 h-10 rounded overflow-hidden border border-glass-stroke bg-zinc-900 shrink-0 shadow-md">
                   <img src={movie.posterUrl || '/favicon.png'} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                 </div>
-                <span class="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors line-clamp-1 flex-1 font-outfit">{movie.title}</span>
+                <span class="text-xs font-bold text-zinc-300 group-hover:text-white transition-colors line-clamp-1 flex-1 font-outfit">{movie.title}</span>
+
+                <!-- Hover Popover details card (Netflix style, desktop only) -->
+                <div class="hover-details-popover hidden">
+                  <div class="relative w-full aspect-video bg-black/40">
+                    <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+                    <div class="absolute top-3 left-3 flex gap-1 items-center select-none pointer-events-none">
+                      <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">{movie.quality || 'FHD'}</span>
+                      {(() => {
+                        const html = getMovieProgressBadgesSSR(movie);
+                        if (!html || !html.trim()) return null;
+                        return (
+                          <div class="flex items-center gap-1 bg-black/60 border border-white/10 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-lg">
+                            <Fragment set:html={html} />
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div class="p-4 space-y-3.5 text-left whitespace-normal">
+                    <div>
+                      <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">{movie.title}</h4>
+                      {movie.originalTitle && <p class="text-primary text-[11px] font-semibold mt-0.5 font-outfit line-clamp-1">{movie.originalTitle}</p>}
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <a href={`/xem/${movie.slug}?ep=tap-1`} class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                        <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        Xem ngay
+                      </a>
+                      <button class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Thích">
+                        <span class="material-symbols-outlined text-sm">favorite</span>
+                      </button>
+                      <a href={`/phim/${movie.slug}`} class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                        <span class="material-symbols-outlined text-sm">info</span>
+                      </a>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+                      <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb {(Number(movie.imdbScore) || 8.0).toFixed(1)}</span>
+                      <span>{movie.releaseYear || 2024}</span>
+                      <span>{movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}</span>
+                    </div>
+                  </div>
+                </div>
               </a>
             ))}
           </div>
@@ -695,189 +777,194 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       </div>
     </section>
 
-      <!-- Điện Ảnh Hồng Kông ở Chỗ Này Này -->
-      <section class="lazy-section glass-card bg-[#141416]/40 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay">
-        <div class="flex flex-col md:flex-row gap-6 items-stretch">
-          <!-- Mobile Section Header -->
-          <div class="flex md:hidden justify-between items-center w-full mb-1">
-            <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
-              Điện ảnh <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> ở chỗ này này
-            </h2>
-            <a class="text-zinc-400 hover:text-white flex items-center" href="/c/dahk-o-cho-nay-nay">
-              <span class="material-symbols-outlined text-lg">chevron_right</span>
-            </a>
-          </div>
-          
-          <!-- Desktop Left Header Column -->
-          <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
-            <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
-              Điện ảnh <br/>
-              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> <br/>
-              ở chỗ này này
-            </h2>
-            <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/c/dahk-o-cho-nay-nay">
-              <span>Xem toàn bộ</span>
-              <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
-            </a>
-          </div>
+      <!-- Điện Ảnh Hồng Kông, Hàn Quốc, Trung Quốc, Âu Mỹ gộp chung 1 khối lớn -->
+      <div class="glass-card bg-[#141416]/45 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-2xl relative space-y-12 my-section-gap overflow-hidden">
+        <!-- Glow effects inside the big wrapper -->
+        <div class="absolute -left-20 -top-20 w-80 h-80 bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+        <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-secondary/5 blur-[120px] rounded-full pointer-events-none"></div>
 
-          <!-- Right Slider Content -->
-          <div class="relative flex-1 min-w-0">
-            <div id="hongkong-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+        <!-- Điện Ảnh Hồng Kông ở Chỗ Này Này -->
+        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay">
+          <div class="flex flex-col md:flex-row gap-6 items-stretch">
+            <!-- Mobile Section Header -->
+            <div class="flex md:hidden justify-between items-center w-full mb-1">
+              <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+                Điện ảnh <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> ở chỗ này này
+              </h2>
+              <a class="text-zinc-400 hover:text-white flex items-center" href="/c/dahk-o-cho-nay-nay">
+                <span class="material-symbols-outlined text-lg">chevron_right</span>
+              </a>
             </div>
-            <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
-              <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-    <!-- Sentinel 1 to trigger loading Group 1 -->
-    <div id="sentinel-1" class="h-2 w-full"></div>
-
-    <!-- Group 1: 3 sections (Korean, Chinese, US-UK) -->
-    <div class="scroll-load-group hidden opacity-0 transition-all duration-700 space-y-section-gap" id="scroll-group-1">
-      <!-- Phim Hàn Quốc Mới -->
-      <section class="lazy-section glass-card bg-[#141416]/40 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden" data-endpoint="/api/movies?category=Hàn Quốc&limit=10" data-grid-id="korean-grid" data-layout="slider" data-more-url="/quoc-gia/han-quoc">
-        <div class="flex flex-col md:flex-row gap-6 items-stretch">
-          <!-- Mobile Section Header -->
-          <div class="flex md:hidden justify-between items-center w-full mb-1">
-            <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
-              Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hàn Quốc</span> mới
-            </h2>
-            <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/han-quoc">
-              <span class="material-symbols-outlined text-lg">chevron_right</span>
-            </a>
-          </div>
-          
-          <!-- Desktop Left Header Column -->
-          <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
-            <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
-              Phim <br/>
-              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hàn Quốc</span> <br/>
-              mới
-            </h2>
-            <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/han-quoc">
-              <span>Xem toàn bộ</span>
-              <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
-            </a>
-          </div>
-
-          <!-- Right Slider Content -->
-          <div class="relative flex-1 min-w-0">
-            <div id="korean-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            
+            <!-- Desktop Left Header Column -->
+            <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+              <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+                Điện ảnh <br/>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hồng Kông</span> <br/>
+                ở chỗ này này
+              </h2>
+              <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/c/dahk-o-cho-nay-nay">
+                <span>Xem toàn bộ</span>
+                <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+              </a>
             </div>
-            <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
-              <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
-            </button>
-          </div>
-        </div>
-      </section>
 
-      <!-- Phim Trung Quốc Mới -->
-      <section class="lazy-section glass-card bg-[#141416]/40 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden" data-endpoint="/api/movies?category=Trung Quốc&limit=10" data-grid-id="chinese-grid" data-layout="slider" data-more-url="/quoc-gia/trung-quoc">
-        <div class="flex flex-col md:flex-row gap-6 items-stretch">
-          <!-- Mobile Section Header -->
-          <div class="flex md:hidden justify-between items-center w-full mb-1">
-            <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
-              Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Trung Quốc</span> mới
-            </h2>
-            <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/trung-quoc">
-              <span class="material-symbols-outlined text-lg">chevron_right</span>
-            </a>
-          </div>
-          
-          <!-- Desktop Left Header Column -->
-          <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
-            <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
-              Phim <br/>
-              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Trung Quốc</span> <br/>
-              mới
-            </h2>
-            <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/trung-quoc">
-              <span>Xem toàn bộ</span>
-              <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
-            </a>
-          </div>
-
-          <!-- Right Slider Content -->
-          <div class="relative flex-1 min-w-0">
-            <div id="chinese-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+            <!-- Right Slider Content -->
+            <div class="relative flex-1 min-w-0">
+              <div id="hongkong-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+              </div>
+              <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+                <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+              </button>
             </div>
-            <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
-              <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
-            </button>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Phim US-UK Mới -->
-      <section class="lazy-section glass-card bg-[#141416]/40 border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my">
-        <div class="flex flex-col md:flex-row gap-6 items-stretch">
-          <!-- Mobile Section Header -->
-          <div class="flex md:hidden justify-between items-center w-full mb-1">
-            <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
-              Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">US-UK</span> mới
-            </h2>
-            <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/au-my">
-              <span class="material-symbols-outlined text-lg">chevron_right</span>
-            </a>
-          </div>
-          
-          <!-- Desktop Left Header Column -->
-          <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
-            <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
-              Phim <br/>
-              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">US-UK</span> <br/>
-              mới
-            </h2>
-            <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/au-my">
-              <span>Xem toàn bộ</span>
-              <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
-            </a>
-          </div>
+        <!-- Divider line -->
+        <div class="border-t border-glass-stroke/40 my-6"></div>
 
-          <!-- Right Slider Content -->
-          <div class="relative flex-1 min-w-0">
-            <div id="western-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
-              <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+        <!-- Phim Hàn Quốc Mới -->
+        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Hàn Quốc&limit=10" data-grid-id="korean-grid" data-layout="slider" data-more-url="/quoc-gia/han-quoc">
+          <div class="flex flex-col md:flex-row gap-6 items-stretch">
+            <!-- Mobile Section Header -->
+            <div class="flex md:hidden justify-between items-center w-full mb-1">
+              <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+                Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hàn Quốc</span> mới
+              </h2>
+              <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/han-quoc">
+                <span class="material-symbols-outlined text-lg">chevron_right</span>
+              </a>
             </div>
-            <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
-              <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
-            </button>
+            
+            <!-- Desktop Left Header Column -->
+            <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+              <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+                Phim <br/>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Hàn Quốc</span> <br/>
+                mới
+              </h2>
+              <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/han-quoc">
+                <span>Xem toàn bộ</span>
+                <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+              </a>
+            </div>
+
+            <!-- Right Slider Content -->
+            <div class="relative flex-1 min-w-0">
+              <div id="korean-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+              </div>
+              <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+                <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
-    </div>
+        </section>
 
-    <!-- Sentinel 2 to trigger loading Group 2 -->
-    <div id="sentinel-2" class="h-2 w-full"></div>
+        <!-- Divider line -->
+        <div class="border-t border-glass-stroke/40 my-6"></div>
 
-    <div class="scroll-load-group hidden opacity-0 transition-all duration-700 space-y-section-gap" id="scroll-group-2">
+        <!-- Phim Trung Quốc Mới -->
+        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Trung Quốc&limit=10" data-grid-id="chinese-grid" data-layout="slider" data-more-url="/quoc-gia/trung-quoc">
+          <div class="flex flex-col md:flex-row gap-6 items-stretch">
+            <!-- Mobile Section Header -->
+            <div class="flex md:hidden justify-between items-center w-full mb-1">
+              <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+                Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Trung Quốc</span> mới
+              </h2>
+              <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/trung-quoc">
+                <span class="material-symbols-outlined text-lg">chevron_right</span>
+              </a>
+            </div>
+            
+            <!-- Desktop Left Header Column -->
+            <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+              <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+                Phim <br/>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">Trung Quốc</span> <br/>
+                mới
+              </h2>
+              <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/trung-quoc">
+                <span>Xem toàn bộ</span>
+                <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+              </a>
+            </div>
+
+            <!-- Right Slider Content -->
+            <div class="relative flex-1 min-w-0">
+              <div id="chinese-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+              </div>
+              <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+                <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Divider line -->
+        <div class="border-t border-glass-stroke/40 my-6"></div>
+
+        <!-- Phim US-UK Mới -->
+        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my">
+          <div class="flex flex-col md:flex-row gap-6 items-stretch">
+            <!-- Mobile Section Header -->
+            <div class="flex md:hidden justify-between items-center w-full mb-1">
+              <h2 class="text-lg font-bold text-white font-outfit flex items-center gap-1.5">
+                Phim <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">US-UK</span> mới
+              </h2>
+              <a class="text-zinc-400 hover:text-white flex items-center" href="/quoc-gia/au-my">
+                <span class="material-symbols-outlined text-lg">chevron_right</span>
+              </a>
+            </div>
+            
+            <!-- Desktop Left Header Column -->
+            <div class="hidden md:flex flex-col justify-center w-48 shrink-0 pr-4 space-y-3.5 select-none">
+              <h2 class="font-display-hero text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-outfit leading-tight">
+                Phim <br/>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-black">US-UK</span> <br/>
+                mới
+              </h2>
+              <a class="group inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-all hover:shadow-[0_0_8px_rgba(245,158,11,0.2)] font-outfit" href="/quoc-gia/au-my">
+                <span>Xem toàn bộ</span>
+                <span class="material-symbols-outlined text-[10px] transform group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+              </a>
+            </div>
+
+            <!-- Right Slider Content -->
+            <div class="relative flex-1 min-w-0">
+              <div id="western-grid" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+                <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-2xl aspect-[16/9] w-[240px] md:w-[280px] shrink-0"></div>
+              </div>
+              <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+                <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <!-- Phim Bộ Mới -->
-      <section class="lazy-section" data-endpoint="/api/movies?type=series&limit=4" data-grid-id="series-grid" data-aspect="aspect-[2/3]">
+      <section class="lazy-section opacity-0 transition-all duration-700 min-h-[300px]" data-endpoint="/api/movies?type=series&limit=4" data-grid-id="series-grid" data-aspect="aspect-[2/3]">
         <div class="flex items-center gap-3 mb-6">
           <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
             Phim Bộ Mới
           </h2>
-          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/phim-bo">
-            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3.5 hover:py-1 hover:gap-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/phim-bo">
+            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[120px] transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
             <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
           </a>
         </div>
@@ -890,13 +977,13 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       </section>
 
       <!-- Phim Hoạt Hình Mới -->
-      <section class="lazy-section" data-endpoint="/api/movies?type=hoathinh&limit=4" data-grid-id="anime-grid" data-aspect="aspect-[2/3]">
+      <section class="lazy-section opacity-0 transition-all duration-700 min-h-[300px]" data-endpoint="/api/movies?type=hoathinh&limit=4" data-grid-id="anime-grid" data-aspect="aspect-[2/3]">
         <div class="flex items-center gap-3 mb-6">
           <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
             Phim Hoạt Hình Mới
           </h2>
-          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/the-loai/hoat-hinh">
-            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3.5 hover:py-1 hover:gap-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/the-loai/hoat-hinh">
+            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[120px] transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
             <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
           </a>
         </div>
@@ -907,22 +994,15 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           <div class="skeleton-card animate-pulse bg-zinc-900/60 border border-glass-stroke/40 rounded-xl aspect-[2/3]"></div>
         </div>
       </section>
-    </div>
-
-    <!-- Sentinel 3 to trigger loading Group 3 -->
-    <div id="sentinel-3" class="h-2 w-full"></div>
-
-    <!-- Group 3: Phim Điện Ảnh Mới Coóng -->
-    <div class="scroll-load-group hidden opacity-0 transition-all duration-700 space-y-section-gap" id="scroll-group-3">
       <!-- Phim Điện Ảnh Mới Coóng -->
-      <section class="space-y-6">
+      <section class="fade-in-section opacity-0 transition-all duration-700 min-h-[150px] space-y-6">
         <div class="flex items-center gap-3 mb-6">
           <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
             Phim Điện Ảnh Mới Coóng
             <span class="material-symbols-outlined text-transparent bg-clip-text bg-gradient-to-tr from-primary to-secondary" style="font-variation-settings: 'FILL' 1;">movie</span>
           </h2>
-          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3 hover:py-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/phim-dien-anh-moi">
-            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[70px] group-hover/more:mr-1 transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
+          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3.5 hover:py-1 hover:gap-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/phim-dien-anh-moi">
+            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[120px] transition-all duration-300 ease-out whitespace-nowrap">Xem thêm</span>
             <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
           </a>
         </div>
@@ -932,6 +1012,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           ))}
         </div>
       </section>
+      <!-- Shared Global Hover Popover Portal -->
+      <div id="shared-hover-card" class="pointer-events-none absolute z-[9999] w-[300px] rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 scale-75 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hidden lg:block overflow-hidden font-outfit" style="display: none; transform: translate(-50%, -50%);"></div>
   </main>
 </MainLayout>
 
@@ -1124,17 +1206,47 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     const pkgTitle = plan.title;
 
     return `
-      <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300">
+      <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300 group relative">
         <div class="flex items-center gap-2 flex-wrap">
-          <div class="w-5 h-5 rounded-full bg-${badgeColor} text-white font-bold text-[9px] flex items-center justify-center font-outfit">${initial}</div>
-          <span class="text-xs font-bold ${isMod ? 'text-zinc-300' : `package-style-${pkgId}`}">${comment.author}</span>
-          ${!isMod ? `<span class="text-[7px] font-bold px-1.2 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-${pkgId}">${pkgTitle}</span>` : ''}
-          ${roleBadge}
+          <div class="w-5 h-5 rounded-full bg-\${badgeColor} text-white font-bold text-[9px] flex items-center justify-center font-outfit">\${initial}</div>
+          <span class="text-xs font-bold \${isMod ? 'text-zinc-300' : \`package-style-\${pkgId}\`} font-outfit">\${comment.author}</span>
+          \${!isMod ? \`<span class="text-[7px] font-bold px-1.2 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-\${pkgId}">\${pkgTitle}</span>\` : ''}
+          \${roleBadge}
         </div>
-        <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"${comment.content}"</p>
-        <a href="/phim/${comment.movieSlug}" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
-          <span class="material-symbols-outlined text-[10px]">play_circle</span> ${comment.movieTitle}
+        <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"\${comment.content}"</p>
+        <a href="/phim/\${comment.movieSlug}" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
+          <span class="material-symbols-outlined text-[10px]">play_circle</span> \${comment.movieTitle}
         </a>
+
+        <!-- Hover Popover details card (Netflix style, desktop only) -->
+        <div class="hover-details-popover hidden">
+          <div class="relative w-full aspect-video bg-black/40">
+            <img src="\${comment.moviePoster || '/favicon.png'}" alt="\${comment.movieTitle}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+            <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
+            <div class="absolute top-3 left-3 flex gap-1 items-center select-none pointer-events-none">
+              <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">FHD</span>
+            </div>
+          </div>
+          <div class="p-4 space-y-3.5 text-left whitespace-normal">
+            <div>
+              <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">\${comment.movieTitle}</h4>
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="/xem/\${comment.movieSlug}?ep=tap-1" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
+                <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                Xem ngay
+              </a>
+              <a href="/phim/\${comment.movieSlug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
+                <span class="material-symbols-outlined text-sm">info</span>
+              </a>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
+              <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb 8.0</span>
+              <span>2024</span>
+              <span>Đang chiếu</span>
+            </div>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -1144,7 +1256,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     const isSeries = movie.type === 'series' || movie.type === 'hoathinh' || movie.type === 'tvshows';
     if (isSeries && movie.status === 'completed') {
       return `
-        <span class="bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide">
+        <span class="bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide">
           Hoàn tất
         </span>
       `;
@@ -1183,21 +1295,21 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       let html = '';
       if (pdEpisodes > 0) {
         html += `
-          <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
             PĐ ${pdEpisodes}
           </span>
         `;
       }
       if (tmEpisodes > 0) {
         html += `
-          <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
             TM ${tmEpisodes}
           </span>
         `;
       }
       if (pdEpisodes === 0 && tmEpisodes === 0) {
         html += `
-          <span class="bg-zinc-950/90 text-zinc-400 border border-zinc-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          <span class="bg-zinc-950/90 text-zinc-400 border border-zinc-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
             Đang chiếu
           </span>
         `;
@@ -1232,14 +1344,14 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       let html = '';
       if (hasPd) {
         html += `
-          <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          <span class="bg-sky-950/90 text-sky-400 border border-sky-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
             Vietsub
           </span>
         `;
       }
       if (hasTm) {
         html += `
-          <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[8px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
+          <span class="bg-purple-950/90 text-purple-400 border border-purple-500/30 text-[10px] font-black px-2.5 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase">
             TM
           </span>
         `;
@@ -1299,7 +1411,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         </div>
 
         <!-- Hover Popover details card (Netflix style, desktop only) -->
-        <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+        <div class="hover-details-popover hidden">
           <div class="relative w-full aspect-video bg-black/40">
             <img src="${movie.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
             <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
@@ -1382,7 +1494,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         </div>
 
         <!-- Hover Popover details card (Netflix style, desktop only) -->
-        <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden font-outfit">
+        <div class="hover-details-popover hidden">
           <div class="relative w-full aspect-video bg-black/40">
             <img src="${movie.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
             <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
@@ -1514,7 +1626,20 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             const layout = section.getAttribute('data-layout');
             const grid = document.getElementById(gridId);
             
+            // Fade in the section immediately when it intersects
+            section.classList.remove('opacity-0', 'invisible', 'scale-[0.98]', 'translate-y-4');
+            section.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+
             if (endpoint && grid) {
+              // Show square bounce loading animation immediately
+              grid.innerHTML = `
+                <div class="flex items-center justify-center gap-3 py-16 w-full col-span-full select-none pointer-events-none">
+                  <div class="w-3.5 h-3.5 bg-primary rounded-sm animate-bounce shadow-[0_0_12px_rgba(124,58,237,0.5)]" style="animation-delay: 0s; animation-duration: 0.8s;"></div>
+                  <div class="w-3.5 h-3.5 bg-amber-400 rounded-sm animate-bounce shadow-[0_0_12px_rgba(245,158,11,0.5)]" style="animation-delay: 0.15s; animation-duration: 0.8s;"></div>
+                  <div class="w-3.5 h-3.5 bg-secondary rounded-sm animate-bounce shadow-[0_0_12px_rgba(236,72,153,0.5)]" style="animation-delay: 0.3s; animation-duration: 0.8s;"></div>
+                </div>
+              `;
+
               fetch(endpoint)
                 .then(res => res.json())
                 .then(result => {
@@ -1541,12 +1666,27 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             observer.unobserve(section);
           }
         });
-      }, { rootMargin: '100px 0px 400px 0px' });
+      }, { rootMargin: '50px 0px 100px 0px' });
       
       lazySections.forEach(section => observer.observe(section));
+
+      // Also observe fade-in-sections (like server-rendered movie sections)
+      const fadeInSections = document.querySelectorAll('.fade-in-section');
+      const fadeInObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.remove('opacity-0', 'invisible');
+            entry.target.classList.add('opacity-100');
+            fadeInObserver.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '50px 0px 100px 0px' });
+      fadeInSections.forEach(sec => fadeInObserver.observe(sec));
     } else {
       // Fallback if IntersectionObserver not supported
       lazySections.forEach(section => {
+        section.classList.remove('opacity-0');
+        section.classList.add('opacity-100');
         const endpoint = section.getAttribute('data-endpoint');
         const gridId = section.getAttribute('data-grid-id');
         const aspect = section.getAttribute('data-aspect') || 'aspect-[2/3]';
@@ -1569,56 +1709,89 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             });
         }
       });
-    }
-
-    // Scroll-to-load Groups controller
-    if ('IntersectionObserver' in window) {
-      const showGroup = (groupId) => {
-        const group = document.getElementById(groupId);
-        if (group) {
-          group.classList.remove('hidden');
-          // Trigger reflow
-          group.offsetHeight;
-          group.classList.remove('opacity-0');
-          group.classList.add('opacity-100');
-        }
-      };
-
-      const obsOptions = { rootMargin: '100px 0px 400px 0px' };
-
-      const obs1 = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          showGroup('scroll-group-1');
-          obs1.disconnect();
-        }
-      }, obsOptions);
-      const s1 = document.getElementById('sentinel-1');
-      if (s1) obs1.observe(s1);
-
-      const obs2 = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          showGroup('scroll-group-2');
-          obs2.disconnect();
-        }
-      }, obsOptions);
-      const s2 = document.getElementById('sentinel-2');
-      if (s2) obs2.observe(s2);
-
-      const obs3 = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          showGroup('scroll-group-3');
-          obs3.disconnect();
-        }
-      }, obsOptions);
-      const s3 = document.getElementById('sentinel-3');
-      if (s3) obs3.observe(s3);
-    } else {
-      // Fallback
-      ['scroll-group-1', 'scroll-group-2', 'scroll-group-3'].forEach(id => {
-        const group = document.getElementById(id);
-        if (group) group.classList.remove('hidden', 'opacity-0');
+      document.querySelectorAll('.fade-in-section').forEach(sec => {
+        sec.classList.remove('opacity-0');
+        sec.classList.add('opacity-100');
       });
     }
+
+    // 2. JS Hover Portal Controller for Netflix-style Details Popup
+    function initHoverPortal() {
+      const portal = document.getElementById('shared-hover-card');
+      if (!portal) return;
+
+      let activeCard = null;
+      let hoverTimeout = null;
+
+      // Mouseenter handler
+      document.addEventListener('mouseover', (e) => {
+        if (window.innerWidth < 1024) return; // Desktop only
+
+        // Find the movie card wrapper (has class group)
+        const card = e.target.closest('.group');
+        if (!card) return;
+
+        // Make sure it contains a template popover
+        const templatePopover = card.querySelector('.hover-details-popover');
+        if (!templatePopover) return;
+
+        if (activeCard === card) {
+          clearTimeout(hoverTimeout);
+          return;
+        }
+
+        clearTimeout(hoverTimeout);
+        activeCard = card;
+
+        // Copy template popover HTML to global portal
+        portal.innerHTML = templatePopover.innerHTML;
+
+        // Position over the hovered card
+        const rect = card.getBoundingClientRect();
+        portal.style.display = 'block';
+        portal.style.left = `${rect.left + window.pageXOffset + rect.width / 2}px`;
+        portal.style.top = `${rect.top + window.pageYOffset + rect.height / 2}px`;
+
+        // Trigger animations
+        requestAnimationFrame(() => {
+          portal.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
+          portal.classList.add('opacity-100', 'scale-100');
+        });
+      });
+
+      // Mouseleave handler
+      document.addEventListener('mouseout', (e) => {
+        if (window.innerWidth < 1024) return;
+
+        const toElement = e.relatedTarget;
+        if (toElement && (toElement.closest('.group') || toElement.closest('#shared-hover-card'))) {
+          // Moved inside another card or the portal itself
+          return;
+        }
+
+        clearTimeout(hoverTimeout);
+        hoverTimeout = setTimeout(() => {
+          portal.classList.remove('opacity-100', 'scale-100');
+          portal.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+          activeCard = null;
+        }, 300);
+      });
+
+      // Portal hover keeper
+      portal.addEventListener('mouseenter', () => {
+        clearTimeout(hoverTimeout);
+      });
+
+      portal.addEventListener('mouseleave', () => {
+        clearTimeout(hoverTimeout);
+        hoverTimeout = setTimeout(() => {
+          portal.classList.remove('opacity-100', 'scale-100');
+          portal.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+          activeCard = null;
+        }, 300);
+      });
+    }
+    initHoverPortal();
 
     // Scroll controls for slider layout sections
     document.querySelectorAll('.lazy-section[data-layout="slider"]').forEach(section => {

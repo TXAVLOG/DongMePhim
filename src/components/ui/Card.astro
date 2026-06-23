@@ -185,7 +185,7 @@ const progress = getEpisodeProgress() as any;
   </div>
 
   <!-- Hover Popover details card (Netflix style, desktop only) -->
-  <div class="pointer-events-none absolute left-1/2 top-1/2 z-50 w-[300px] -translate-x-1/2 -translate-y-1/2 scale-75 rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 group-hover:visible group-hover:delay-[600ms] hidden lg:block overflow-hidden">
+  <div class="hover-details-popover hidden">
     <!-- Movie Banner Image in Popover -->
     <div class="relative w-full aspect-video bg-black/40">
       <img src={movie?.bannerUrl || poster} alt={title} class="w-full h-full object-cover" />
