@@ -1693,7 +1693,11 @@ const firstHero = heroMovies[0] || null;
             heroDesc.textContent = movie.description || 'Không có mô tả cho phim này.';
             
             let watchUrl = `/xem/${movie.slug}`;
-            const dbItem = dbHistory.find(h => h.slug === movie.slug);
+            let dbItem = null;
+            if (typeof dbHistory !== 'undefined') {
+              const historyArray = Array.isArray(dbHistory) ? dbHistory : (dbHistory && Array.isArray(dbHistory.data) ? dbHistory.data : []);
+              dbItem = historyArray.find(h => h.slug === movie.slug);
+            }
             if (dbItem) {
               watchUrl = `/xem/${movie.slug}?ep=${dbItem.episodeSlug}&sv=${dbItem.serverIndex || 0}`;
             } else {
