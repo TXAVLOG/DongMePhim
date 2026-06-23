@@ -1040,6 +1040,67 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
                   if (tmdbData.vote_average) {
                     movieDetailObj.tmdbScore = tmdbData.vote_average;
                   }
+
+                  // If it's a TV Show, fetch season details to get episode thumbnail stills
+                  if (tmdbType === 'tv') {
+                    let seasonNumber = 1;
+                    if (detailData.movie.tmdb.season !== undefined) {
+                      seasonNumber = parseInt(detailData.movie.tmdb.season) || 1;
+                    } else {
+                      const seasonsName = movieDetailObj.seasons || '';
+                      const matchSeason = seasonsName.match(/\d+/);
+                      if (matchSeason) {
+                        seasonNumber = parseInt(matchSeason[0]) || 1;
+                      }
+                    }
+
+                    try {
+                      const seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?api_key=${apiKey}&language=vi-VN`);
+                      if (seasonRes.ok) {
+                        const seasonData = await seasonRes.json();
+                        if (seasonData && Array.isArray(seasonData.episodes)) {
+                          const tmdbEps = seasonData.episodes;
+                          if (Array.isArray(movieDetailObj.episodes)) {
+                            movieDetailObj.episodes.forEach(server => {
+                              const srvData = server.serverData || server.server_data || [];
+                              if (Array.isArray(srvData)) {
+                                srvData.forEach((ep, epIdx) => {
+                                  const tmdbEp = tmdbEps[epIdx];
+                                  if (tmdbEp && tmdbEp.still_path) {
+                                    ep.thumbUrl = `https://image.tmdb.org/t/p/original${tmdbEp.still_path}`;
+                                  } else {
+                                    ep.thumbUrl = movieDetailObj.bannerUrl || movieDetailObj.posterUrl || '';
+                                  }
+                                });
+                              }
+                            });
+                            addLog(`✓ Đã cập nhật ảnh thumbnail riêng biệt từ TMDB cho ${seasonData.episodes.length} tập phim.`, 'success');
+                          }
+                        }
+                      } else {
+                        throw new Error(`HTTP ${seasonRes.status}`);
+                      }
+                    } catch (errSeason) {
+                      addLog(`⚠️ Không thể lấy ảnh tập phim từ TMDB Season ${seasonNumber}: ${errSeason.message}. Dùng ảnh banner làm mặc định.`, 'warning');
+                      fallbackEpisodeThumbs(movieDetailObj);
+                    }
+                  } else {
+                    // For single movies, use the movie's main banner/poster as the episode's thumbnail
+                    fallbackEpisodeThumbs(movieDetailObj);
+                  }
+
+                  function fallbackEpisodeThumbs(movieObj) {
+                    if (Array.isArray(movieObj.episodes)) {
+                      movieObj.episodes.forEach(server => {
+                        const srvData = server.serverData || server.server_data || [];
+                        if (Array.isArray(srvData)) {
+                          srvData.forEach(ep => {
+                            ep.thumbUrl = movieObj.bannerUrl || movieObj.posterUrl || '';
+                          });
+                        }
+                      });
+                    }
+                  }
                 }
               } catch (e) {
                 addLog(`⚠️ Không thể lấy thông tin TMDB: ${e.message}`, 'warning');

@@ -499,7 +499,12 @@ if (movie && movie.actors && movie.actors.length > 0) {
                           </div>
                         )}
 
-                        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar" id="episodes-container">
+                        <div 
+                          class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar" 
+                          id="episodes-container"
+                          data-banner={movie.bannerUrl || movie.posterUrl || ''}
+                          data-poster={movie.posterUrl || movie.bannerUrl || ''}
+                        >
                           {servers[0].serverData.map((ep: any, idx: number) => {
                             const tabIdx = Math.floor(idx / episodesPerTab);
                             return (
@@ -813,10 +818,8 @@ if (movie && movie.actors && movie.actors.length > 0) {
     const episodesContainer = document.getElementById('episodes-container');
     const tabsContainer = document.getElementById('episode-tabs');
 
-    const movieBannerEl = document.getElementById('movie-banner');
-    const moviePosterEl = document.getElementById('movie-poster');
-    const movieBanner = movieBannerEl ? JSON.parse(movieBannerEl.textContent || '""') : '';
-    const moviePoster = moviePosterEl ? JSON.parse(moviePosterEl.textContent || '""') : '';
+    const movieBanner = episodesContainer ? (episodesContainer.getAttribute('data-banner') || '') : '';
+    const moviePoster = episodesContainer ? (episodesContainer.getAttribute('data-poster') || '') : '';
 
     let isCompact = (() => {
       if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
@@ -974,7 +977,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
             </a>
           `;
         } else {
-          const thumb = ep.thumbUrl || ep.thumb || ep.thumbnail || ep.image || movieBanner || moviePoster;
+          const thumb = ep.thumbUrl || ep.thumb || ep.thumbnail || ep.image || movieBanner || moviePoster || '/logo.png';
           epsHtml += `
             <a 
               href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}"
