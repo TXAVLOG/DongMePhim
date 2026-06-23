@@ -1958,7 +1958,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 <iframe 
                   src={adUrl} 
                   className="w-full h-full border-none" 
-                  allow="autoplay"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
                 />
               )}
               <div className="absolute bottom-6 right-6 flex items-center gap-3">
