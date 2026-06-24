@@ -37,6 +37,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nguồn dữ liệu</label>
             <select id="crawlSource" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
               <option value="kkphim">KKPhim API (phimapi.com)</option>
+              <option value="tmdb">TMDB API (themoviedb.org)</option>
             </select>
           </div>
           <div class="flex items-center gap-3 py-1">
@@ -784,19 +785,34 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       
       try {
         const searchMode = document.getElementById('searchMode')?.value || 'movie';
-        let searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`;
-        if (searchMode === 'actor') {
-          searchUrl = `/api/admin/actor-search?keyword=${encodeURIComponent(keyword)}`;
+        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
+        let searchUrl = '';
+        let responseData;
+        
+        if (crawlSource === 'tmdb') {
+          // Use TMDB API for search
+          searchUrl = `/api/admin/tmdb-search?keyword=${encodeURIComponent(keyword)}&limit=40`;
+          const res = await fetch(searchUrl);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          responseData = await res.json();
+        } else {
+          // Use KKPhim API
+          searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`;
+          if (searchMode === 'actor') {
+            searchUrl = `/api/admin/actor-search?keyword=${encodeURIComponent(keyword)}`;
+          }
+          const res = await fetch(searchUrl);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          responseData = await res.json();
         }
-
-        const res = await fetch(searchUrl);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const responseData = await res.json();
         
         // Handle standard vs custom endpoint response structures
         let items = [];
         let cdnDomain = 'https://phimimg.com';
-        if (searchMode === 'actor') {
+        if (crawlSource === 'tmdb') {
+          items = responseData.data?.items || [];
+          cdnDomain = responseData.data?.pathImage || 'https://image.tmdb.org/t/p/w500';
+        } else if (searchMode === 'actor') {
           items = responseData.data?.items || [];
           cdnDomain = responseData.data?.pathImage || 'https://phimimg.com';
         } else {
@@ -833,11 +849,13 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
           const safeName = item.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
           const episodeCurrent = item.episode_current || '';
+          const tmdbId = item.tmdb?.id || '';
+          const tmdbType = item.tmdb?.type || '';
 
           return `
             <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
               <td class="px-5 py-3 text-center">
-                <input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}')" 
+                <input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}', '${tmdbId}', '${tmdbType}')" 
                        ${isSelected ? 'checked' : ''} class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer item-checkbox"/>
               </td>
               <td class="px-5 py-3">
@@ -889,9 +907,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     });
 
     // Cart management
-    window.toggleCartItem = function(checkbox, slug, name, type = 'single', episodeCurrent = '') {
+    window.toggleCartItem = function(checkbox, slug, name, type = 'single', episodeCurrent = '', tmdbId = '', tmdbType = '') {
       if (checkbox.checked) {
-        cartSlugs.set(slug, { name, type, episodeCurrent });
+        cartSlugs.set(slug, { name, type, episodeCurrent, tmdbId, tmdbType });
       } else {
         cartSlugs.delete(slug);
       }
@@ -937,7 +955,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         slug,
         name: val.name,
         type: val.type,
-        episodeCurrent: val.episodeCurrent
+        episodeCurrent: val.episodeCurrent,
+        tmdbId: val.tmdbId,
+        tmdbType: val.tmdbType
       }));
 
       const totalPages = Math.ceil(items.length / cartPageSize);
@@ -1354,131 +1374,163 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         addLog(`⏳ Đang cào dữ liệu chi tiết cho slug: ${slug}...`);
         
         try {
-          const detailRes = await fetch(`https://phimapi.com/phim/${slug}`);
-          if (!detailRes.ok) throw new Error(`HTTP ${detailRes.status}`);
+          const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
+          let movieDetailObj;
           
-          let detailData;
-          const detailText = await detailRes.text();
-          try {
-            detailData = JSON.parse(detailText);
-          } catch (jsonErr) {
-            if (detailText.trim().startsWith('<')) {
-              const matchTitle = detailText.match(/<title>([^<]*)<\/title>/i);
-              const htmlTitle = matchTitle ? matchTitle[1].trim() : '';
-              if (htmlTitle.includes('Cloudflare') || htmlTitle.includes('Ray ID') || htmlTitle.includes('502') || htmlTitle.includes('503') || htmlTitle.includes('504')) {
-                throw new Error(`Lỗi Cloudflare/Mạng từ API Phim: ${htmlTitle || 'Gateway Error'}`);
+          if (crawlSource === 'tmdb') {
+            // Crawl from TMDB API
+            // For TMDB, slug format is: title-year, we need to extract tmdb_id from cart or search
+            // Check if this slug has TMDB info in cart
+            const cartItem = cartSlugs.get(slug);
+            if (cartItem && cartItem.tmdbId) {
+              const tmdbDetailUrl = `/api/admin/tmdb-detail?tmdb_id=${cartItem.tmdbId}&tmdb_type=${cartItem.tmdbType || 'movie'}`;
+              const tmdbRes = await fetch(tmdbDetailUrl);
+              if (!tmdbRes.ok) throw new Error(`HTTP ${tmdbRes.status}`);
+              
+              const tmdbData = await tmdbRes.json();
+              if (tmdbData.status !== 'success' || !tmdbData.data) {
+                throw new Error('TMDB API trả về dữ liệu không hợp lệ');
               }
-              throw new Error(`API Phim trả về trang HTML thay vì JSON: ${htmlTitle || 'Lỗi hệ thống'}`);
+              
+              movieDetailObj = tmdbData.data;
+              movieDetailObj.updatedAt = new Date().toISOString();
+              
+              // Note: TMDB doesn't provide streaming links, so episodes will be empty
+              // User will need to manually add episodes or use another source
+              addLog(`⚠️ TMDB chỉ cung cấp thông tin phim, không có link streaming. Bạn cần thêm tập thủ công sau khi cào.`, 'warning');
+            } else {
+              throw new Error('Không tìm thấy thông tin TMDB cho phim này. Vui lòng tìm kiếm lại từ TMDB.');
             }
-            throw new Error(`Không thể phân giải JSON từ API Phim: ${jsonErr.message}`);
-          }
-
-          if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
-            // Compare episodes count to see if update exists
-            const apiEpisodeCount = Math.max(...(detailData.episodes || []).map((server) => (server.server_data || server.serverData || []).length), 0);
-            const currentEpisodeCount = existingMoviesMap[slug] || 0;
-
-            if (currentEpisodeCount > 0 && apiEpisodeCount <= currentEpisodeCount) {
-              skipped++;
-              document.getElementById('statSkipped').textContent = skipped;
-              addLog(`→ Bỏ qua vì đã đầy đủ tập phim (${currentEpisodeCount}/${apiEpisodeCount} tập): "${detailData.movie.name}"`, 'warning');
-              continue;
-            }
-
-            const movieDetailObj = mapKKPhimToMovieDetail(detailData);
-            movieDetailObj.updatedAt = new Date().toISOString();
+          } else {
+            // Crawl from KKPhim API
+            const detailRes = await fetch(`https://phimapi.com/phim/${slug}`);
+            if (!detailRes.ok) throw new Error(`HTTP ${detailRes.status}`);
             
-            // Fetch TMDB images and override if available
-            if (detailData.movie.tmdb && detailData.movie.tmdb.id) {
-              const tmdbId = detailData.movie.tmdb.id;
-              const tmdbType = detailData.movie.tmdb.type === 'tv' ? 'tv' : 'movie';
-              try {
-                const tmdbRes = await fetch(`/api/tmdb-proxy?path=/3/${tmdbType}/${tmdbId}&language=vi-VN`);
-                if (tmdbRes.ok) {
-                  const tmdbData = await tmdbRes.json();
-                  if (tmdbData.poster_path) {
-                    movieDetailObj.posterUrl = `https://image.tmdb.org/t/p/original${tmdbData.poster_path}`;
-                  }
-                  if (tmdbData.backdrop_path) {
-                    movieDetailObj.bannerUrl = `https://image.tmdb.org/t/p/original${tmdbData.backdrop_path}`;
-                  }
-                  if (tmdbData.vote_average) {
-                    movieDetailObj.tmdbScore = tmdbData.vote_average;
-                  }
+            let detailData;
+            const detailText = await detailRes.text();
+            try {
+              detailData = JSON.parse(detailText);
+            } catch (jsonErr) {
+              if (detailText.trim().startsWith('<')) {
+                const matchTitle = detailText.match(/<title>([^<]*)<\/title>/i);
+                const htmlTitle = matchTitle ? matchTitle[1].trim() : '';
+                if (htmlTitle.includes('Cloudflare') || htmlTitle.includes('Ray ID') || htmlTitle.includes('502') || htmlTitle.includes('503') || htmlTitle.includes('504')) {
+                  throw new Error(`Lỗi Cloudflare/Mạng từ API Phim: ${htmlTitle || 'Gateway Error'}`);
+                }
+                throw new Error(`API Phim trả về trang HTML thay vì JSON: ${htmlTitle || 'Lỗi hệ thống'}`);
+              }
+              throw new Error(`Không thể phân giải JSON từ API Phim: ${jsonErr.message}`);
+            }
 
-                  // If it's a TV Show, fetch season details to get episode thumbnail stills
-                  if (tmdbType === 'tv') {
-                    let seasonNumber = 1;
-                    if (detailData.movie.tmdb.season !== undefined) {
-                      seasonNumber = parseInt(detailData.movie.tmdb.season) || 1;
-                    } else {
-                      const seasonsName = movieDetailObj.seasons || '';
-                      const matchSeason = seasonsName.match(/\d+/);
-                      if (matchSeason) {
-                        seasonNumber = parseInt(matchSeason[0]) || 1;
-                      }
+            if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
+              // Compare episodes count to see if update exists
+              const apiEpisodeCount = Math.max(...(detailData.episodes || []).map((server) => (server.server_data || server.serverData || []).length), 0);
+              const currentEpisodeCount = existingMoviesMap[slug] || 0;
+
+              if (currentEpisodeCount > 0 && apiEpisodeCount <= currentEpisodeCount) {
+                skipped++;
+                document.getElementById('statSkipped').textContent = skipped;
+                addLog(`→ Bỏ qua vì đã đầy đủ tập phim (${currentEpisodeCount}/${apiEpisodeCount} tập): "${detailData.movie.name}"`, 'warning');
+                continue;
+              }
+
+              movieDetailObj = mapKKPhimToMovieDetail(detailData);
+              movieDetailObj.updatedAt = new Date().toISOString();
+            
+              // Fetch TMDB images and override if available
+              if (detailData.movie.tmdb && detailData.movie.tmdb.id) {
+                const tmdbId = detailData.movie.tmdb.id;
+                const tmdbType = detailData.movie.tmdb.type === 'tv' ? 'tv' : 'movie';
+                try {
+                  const tmdbRes = await fetch(`/api/tmdb-proxy?path=/3/${tmdbType}/${tmdbId}&language=vi-VN`);
+                  if (tmdbRes.ok) {
+                    const tmdbData = await tmdbRes.json();
+                    if (tmdbData.poster_path) {
+                      movieDetailObj.posterUrl = `https://image.tmdb.org/t/p/original${tmdbData.poster_path}`;
+                    }
+                    if (tmdbData.backdrop_path) {
+                      movieDetailObj.bannerUrl = `https://image.tmdb.org/t/p/original${tmdbData.backdrop_path}`;
+                    }
+                    if (tmdbData.vote_average) {
+                      movieDetailObj.tmdbScore = tmdbData.vote_average;
                     }
 
-                    try {
-                      let seasonRes = await fetch(`/api/tmdb-proxy?path=/3/tv/${tmdbId}/season/${seasonNumber}&language=vi-VN`);
-                      if (!seasonRes.ok && seasonNumber !== 1) {
-                        addLog(`⚠️ Không thể lấy thông tin Season ${seasonNumber} từ TMDB. Thử lại với Season 1...`, 'warning');
-                        seasonNumber = 1;
-                        seasonRes = await fetch(`/api/tmdb-proxy?path=/3/tv/${tmdbId}/season/1&language=vi-VN`);
+                    // If it's a TV Show, fetch season details to get episode thumbnail stills
+                    if (tmdbType === 'tv') {
+                      let seasonNumber = 1;
+                      if (detailData.movie.tmdb.season !== undefined) {
+                        seasonNumber = parseInt(detailData.movie.tmdb.season) || 1;
+                      } else {
+                        const seasonsName = movieDetailObj.seasons || '';
+                        const matchSeason = seasonsName.match(/\d+/);
+                        if (matchSeason) {
+                          seasonNumber = parseInt(matchSeason[0]) || 1;
+                        }
                       }
-                      
-                      if (seasonRes.ok) {
-                        const seasonData = await seasonRes.json();
-                        if (seasonData && Array.isArray(seasonData.episodes)) {
-                          const tmdbEps = seasonData.episodes;
-                          if (Array.isArray(movieDetailObj.episodes)) {
-                            movieDetailObj.episodes.forEach(server => {
-                              const srvData = server.serverData || server.server_data || [];
-                              if (Array.isArray(srvData)) {
-                                srvData.forEach((ep, epIdx) => {
-                                  const tmdbEp = tmdbEps[epIdx];
-                                  if (tmdbEp && tmdbEp.still_path) {
-                                    ep.thumbUrl = `https://image.tmdb.org/t/p/original${tmdbEp.still_path}`;
-                                  } else {
-                                    ep.thumbUrl = movieDetailObj.bannerUrl || movieDetailObj.posterUrl || '';
-                                  }
-                                });
-                              }
-                            });
-                            addLog(`✓ Đã cập nhật ảnh thumbnail riêng biệt từ TMDB cho ${seasonData.episodes.length} tập phim.`, 'success');
+
+                      try {
+                        let seasonRes = await fetch(`/api/tmdb-proxy?path=/3/tv/${tmdbId}/season/${seasonNumber}&language=vi-VN`);
+                        if (!seasonRes.ok && seasonNumber !== 1) {
+                          addLog(`⚠️ Không thể lấy thông tin Season ${seasonNumber} từ TMDB. Thử lại với Season 1...`, 'warning');
+                          seasonNumber = 1;
+                          seasonRes = await fetch(`/api/tmdb-proxy?path=/3/tv/${tmdbId}/season/1&language=vi-VN`);
+                        }
+                        
+                        if (seasonRes.ok) {
+                          const seasonData = await seasonRes.json();
+                          if (seasonData && Array.isArray(seasonData.episodes)) {
+                            const tmdbEps = seasonData.episodes;
+                            if (Array.isArray(movieDetailObj.episodes)) {
+                              movieDetailObj.episodes.forEach(server => {
+                                const srvData = server.serverData || server.server_data || [];
+                                if (Array.isArray(srvData)) {
+                                  srvData.forEach((ep, epIdx) => {
+                                    const tmdbEp = tmdbEps[epIdx];
+                                    if (tmdbEp && tmdbEp.still_path) {
+                                      ep.thumbUrl = `https://image.tmdb.org/t/p/original${tmdbEp.still_path}`;
+                                    } else {
+                                      ep.thumbUrl = movieDetailObj.bannerUrl || movieDetailObj.posterUrl || '';
+                                    }
+                                  });
+                                }
+                              });
+                              addLog(`✓ Đã cập nhật ảnh thumbnail riêng biệt từ TMDB cho ${seasonData.episodes.length} tập phim.`, 'success');
+                            }
                           }
                         }
-                      } else {
-                        throw new Error(`HTTP ${seasonRes.status}`);
+                      } catch (errSeason) {
+                        addLog(`⚠️ Không thể lấy ảnh tập phim từ TMDB Season ${seasonNumber}: ${errSeason.message}. Dùng ảnh banner làm mặc định.`, 'warning');
+                        fallbackEpisodeThumbs(movieDetailObj);
                       }
-                    } catch (errSeason) {
-                      addLog(`⚠️ Không thể lấy ảnh tập phim từ TMDB Season ${seasonNumber}: ${errSeason.message}. Dùng ảnh banner làm mặc định.`, 'warning');
+                    } else {
+                      // For single movies, use the movie's main banner/poster as the episode's thumbnail
                       fallbackEpisodeThumbs(movieDetailObj);
                     }
-                  } else {
-                    // For single movies, use the movie's main banner/poster as the episode's thumbnail
-                    fallbackEpisodeThumbs(movieDetailObj);
-                  }
 
-                  function fallbackEpisodeThumbs(movieObj) {
-                    if (Array.isArray(movieObj.episodes)) {
-                      movieObj.episodes.forEach(server => {
-                        const srvData = server.serverData || server.server_data || [];
-                        if (Array.isArray(srvData)) {
-                          srvData.forEach(ep => {
-                            ep.thumbUrl = movieObj.bannerUrl || movieObj.posterUrl || '';
-                          });
-                        }
-                      });
+                    function fallbackEpisodeThumbs(movieObj) {
+                      if (Array.isArray(movieObj.episodes)) {
+                        movieObj.episodes.forEach(server => {
+                          const srvData = server.serverData || server.server_data || [];
+                          if (Array.isArray(srvData)) {
+                            srvData.forEach(ep => {
+                              ep.thumbUrl = movieObj.bannerUrl || movieObj.posterUrl || '';
+                            });
+                          }
+                        });
+                      }
                     }
                   }
+                } catch (e) {
+                  addLog(`⚠️ Không thể lấy thông tin TMDB: ${e.message}`, 'warning');
                 }
-              } catch (e) {
-                addLog(`⚠️ Không thể lấy thông tin TMDB: ${e.message}`, 'warning');
               }
+            } else {
+              throw new Error('Payload API bị lỗi hoặc trống');
             }
+          }
 
-            // Save to database Supabase via API
+          // Save to database Supabase via API (common for both sources)
+          if (movieDetailObj) {
             const saveRes = await fetch('/api/admin/movie-action', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1507,13 +1559,19 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             success++;
             document.getElementById('statSuccess').textContent = success;
             
-            // Format log message depending on whether movie is new or updated
-            if (currentEpisodeCount > 0) {
-              const addedCount = apiEpisodeCount - currentEpisodeCount;
-              addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (Cập nhật +${addedCount} tập)`, 'success');
-            } else {
+            // Format log message depending on source and whether movie is new or updated
+            const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
+            if (crawlSource === 'tmdb') {
               const episodeText = movieDetailObj.type === 'movie' ? 'Hoàn Tất (Full)' : movieDetailObj.episodeCurrent;
-              addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (${episodeText})`, 'success');
+              addLog(`✓ Cào thành công từ TMDB & đã lưu vào DB: "${movieDetailObj.title}" (${episodeText})`, 'success');
+            } else {
+              if (currentEpisodeCount > 0) {
+                const addedCount = apiEpisodeCount - currentEpisodeCount;
+                addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (Cập nhật +${addedCount} tập)`, 'success');
+              } else {
+                const episodeText = movieDetailObj.type === 'movie' ? 'Hoàn Tất (Full)' : movieDetailObj.episodeCurrent;
+                addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (${episodeText})`, 'success');
+              }
             }
             
             // Live update inventory list
