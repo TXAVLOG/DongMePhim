@@ -123,6 +123,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               <option value="au-my">Âu Mỹ</option>
               <option value="thai-lan">Thái Lan</option>
               <option value="viet-nam">Việt Nam</option>
+              <option value="HK">Hong Kong (TMDB)</option>
+              <option value="CN">Trung Quốc (TMDB)</option>
+              <option value="JP">Nhật Bản (TMDB)</option>
+              <option value="KR">Hàn Quốc (TMDB)</option>
+              <option value="US">Mỹ (TMDB)</option>
             </select>
           </div>
 
@@ -136,6 +141,12 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               <option value="khoa-hoc">Khoa Học</option>
               <option value="kinh-di">Kinh Dị</option>
               <option value="hai-huoc">Hài Hước</option>
+              <option value="27">Kinh Dị (TMDB)</option>
+              <option value="28">Hành Động (TMDB)</option>
+              <option value="35">Hài Hước (TMDB)</option>
+              <option value="18">Tình Cảm (TMDB)</option>
+              <option value="10749">Lãng Mạn (TMDB)</option>
+              <option value="878">Khoa Học Viễn Tưởng (TMDB)</option>
             </select>
           </div>
 
@@ -1689,42 +1700,114 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         const slugs = [];
         const country = document.getElementById('selectedCountry').value;
         const genre = document.getElementById('selectedGenre').value;
+        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
 
-        if (filterType === 'country') {
-          addLog(`⏳ Đang tải phim Quốc gia "${country}": Từ trang ${startPage} đến ${endPage}...`);
+        // Check if using TMDB format (numeric genre or 2-letter country code)
+        const isTMDBGenre = /^\d+$/.test(genre);
+        const isTMDBCountry = /^[A-Z]{2}$/.test(country);
+
+        if (crawlSource === 'tmdb' || isTMDBGenre || isTMDBCountry) {
+          // Use TMDB discover API
+          addLog(`⏳ Đang tải phim từ TMDB: ${filterType === 'country' ? 'Quốc gia ' + country : 'Thể loại ' + genre} (Trang ${startPage}-${endPage})...`);
+          
           for (let p = startPage; p <= endPage; p++) {
             try {
-              const res = await fetch(`https://phimapi.com/v1/api/quoc-gia/${country}?page=${p}`);
+              let discoverUrl = `/api/admin/tmdb-discover?page=${p}`;
+              if (filterType === 'country' && isTMDBCountry) {
+                discoverUrl += `&country=${country}`;
+              } else if (filterType === 'genre' && isTMDBGenre) {
+                discoverUrl += `&genre=${genre}`;
+              } else if (filterType === 'country' && !isTMDBCountry) {
+                // Try to map country name to code
+                const countryMap: any = {
+                  'trung-quoc': 'CN',
+                  'han-quoc': 'KR',
+                  'nhat-ban': 'JP',
+                  'au-my': 'US',
+                  'thai-lan': 'TH',
+                  'viet-nam': 'VN'
+                };
+                const countryCode = countryMap[country] || country.toUpperCase();
+                discoverUrl += `&country=${countryCode}`;
+              } else if (filterType === 'genre' && !isTMDBGenre) {
+                // Try to map genre name to ID
+                const genreMap: any = {
+                  'hanh-dong': '28',
+                  'phieu-luu': '12',
+                  'tinh-cam': '18',
+                  'hoat-hinh': '16',
+                  'khoa-hoc': '878',
+                  'kinh-di': '27',
+                  'hai-huoc': '35'
+                };
+                const genreId = genreMap[genre] || genre;
+                discoverUrl += `&genre=${genreId}`;
+              }
+
+              const res = await fetch(discoverUrl);
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
               const data = await res.json();
-              if (data && data.data && Array.isArray(data.data.items)) {
-                data.data.items.forEach(item => {
-                  if (item.slug) slugs.push(item.slug);
+              if (data.status === 'success' && data.data && Array.isArray(data.data.items)) {
+                data.data.items.forEach((item: any) => {
+                  if (item.slug) {
+                    slugs.push(item.slug);
+                    // Store TMDB info in cart for later crawling
+                    if (item.tmdb) {
+                      cartSlugs.set(item.slug, {
+                        name: item.name,
+                        type: item.type,
+                        episodeCurrent: item.episode_current,
+                        tmdbId: item.tmdb.id,
+                        tmdbType: item.tmdb.type
+                      });
+                    }
+                  }
                 });
-                addLog(`✓ Quét xong quốc gia ${country} trang ${p}: Thêm ${data.data.items.length} phim.`);
+                addLog(`✓ Quét xong TMDB trang ${p}: Thêm ${data.data.items.length} phim.`);
               }
             } catch (e) {
-              addLog(`✗ Lỗi tải trang quốc gia ${country} trang ${p}: ${e.message}`, 'error');
+              addLog(`✗ Lỗi tải TMDB trang ${p}: ${e.message}`, 'error');
             }
             await new Promise(r => setTimeout(r, 200));
           }
         } else {
-          addLog(`⏳ Đang tải phim Thể loại "${genre}": Từ trang ${startPage} đến ${endPage}...`);
-          for (let p = startPage; p <= endPage; p++) {
-            try {
-              const res = await fetch(`https://phimapi.com/v1/api/the-loai/${genre}?page=${p}`);
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const data = await res.json();
-              if (data && data.data && Array.isArray(data.data.items)) {
-                data.data.items.forEach(item => {
-                  if (item.slug) slugs.push(item.slug);
-                });
-                addLog(`✓ Quét xong thể loại ${genre} trang ${p}: Thêm ${data.data.items.length} phim.`);
+          // Use KKPhim API
+          if (filterType === 'country') {
+            addLog(`⏳ Đang tải phim Quốc gia "${country}": Từ trang ${startPage} đến ${endPage}...`);
+            for (let p = startPage; p <= endPage; p++) {
+              try {
+                const res = await fetch(`https://phimapi.com/v1/api/quoc-gia/${country}?page=${p}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (data && data.data && Array.isArray(data.data.items)) {
+                  data.data.items.forEach(item => {
+                    if (item.slug) slugs.push(item.slug);
+                  });
+                  addLog(`✓ Quét xong quốc gia ${country} trang ${p}: Thêm ${data.data.items.length} phim.`);
+                }
+              } catch (e) {
+                addLog(`✗ Lỗi tải trang quốc gia ${country} trang ${p}: ${e.message}`, 'error');
               }
-            } catch (e) {
-              addLog(`✗ Lỗi tải thể loại ${genre} trang ${p}: ${e.message}`, 'error');
+              await new Promise(r => setTimeout(r, 200));
             }
-            await new Promise(r => setTimeout(r, 200));
+          } else {
+            addLog(`⏳ Đang tải phim Thể loại "${genre}": Từ trang ${startPage} đến ${endPage}...`);
+            for (let p = startPage; p <= endPage; p++) {
+              try {
+                const res = await fetch(`https://phimapi.com/v1/api/the-loai/${genre}?page=${p}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (data && data.data && Array.isArray(data.data.items)) {
+                  data.data.items.forEach(item => {
+                    if (item.slug) slugs.push(item.slug);
+                  });
+                  addLog(`✓ Quét xong thể loại ${genre} trang ${p}: Thêm ${data.data.items.length} phim.`);
+                }
+              } catch (e) {
+                addLog(`✗ Lỗi tải thể loại ${genre} trang ${p}: ${e.message}`, 'error');
+              }
+              await new Promise(r => setTimeout(r, 200));
+            }
           }
         }
 

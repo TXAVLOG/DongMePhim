@@ -139,6 +139,67 @@ export class TMDBCrawlerService {
     }
   }
 
+  static async discoverMovies(options: { genre?: string; country?: string; page?: number; limit?: number }): Promise<any[]> {
+    try {
+      const settings = await SettingService.getSettings();
+      const apiKey = (settings.general as any).tmdb_api_key || '211be8d45c0d31404f644ecdcf9caad5';
+
+      const { genre, country, page = 1, limit = 40 } = options;
+      
+      let discoverUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=vi-VN&page=${page}`;
+      
+      if (genre) {
+        discoverUrl += `&with_genres=${genre}`;
+      }
+      
+      if (country) {
+        discoverUrl += `&with_origin_country=${country}`;
+      }
+
+      const res = await fetch(discoverUrl);
+      if (!res.ok) return [];
+
+      const data = await res.json() as any;
+      const results = data.results || [];
+
+      // Map to standard format
+      return results.slice(0, limit).map((item: any) => {
+        const title = item.title || item.name || '';
+        const originalTitle = item.original_title || item.original_name || '';
+        const year = item.release_date ? item.release_date.substring(0, 4) : 
+                     item.first_air_date ? item.first_air_date.substring(0, 4) : '2024';
+        const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : '';
+        const backdropPath = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : '';
+        const type = 'single';
+        const tmdbId = item.id;
+        const tmdbType = 'movie';
+
+        // Generate slug from title
+        const slug = this.generateSlug(title, year);
+
+        return {
+          slug,
+          name: title,
+          origin_name: originalTitle,
+          year,
+          poster_url: posterPath,
+          thumb_url: backdropPath,
+          type,
+          tmdb: {
+            id: tmdbId,
+            type: tmdbType
+          },
+          quality: 'HD',
+          episode_current: 'Full',
+          vote_average: item.vote_average
+        };
+      });
+    } catch (error) {
+      console.error('Error discovering TMDB movies:', error);
+      return [];
+    }
+  }
+
   static generateSlug(title: string, year: string): string {
     const cleanTitle = title
       .toLowerCase()
