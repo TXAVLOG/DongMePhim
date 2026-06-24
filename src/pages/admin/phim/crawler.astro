@@ -117,36 +117,115 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           <div id="filterCountryPanel">
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Quốc gia</label>
             <select id="selectedCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary mb-3">
-              <option value="trung-quoc">Trung Quốc</option>
-              <option value="han-quoc">Hàn Quốc</option>
-              <option value="nhat-ban">Nhật Bản</option>
-              <option value="au-my">Âu Mỹ</option>
-              <option value="thai-lan">Thái Lan</option>
-              <option value="viet-nam">Việt Nam</option>
-              <option value="HK">Hong Kong (TMDB)</option>
-              <option value="CN">Trung Quốc (TMDB)</option>
-              <option value="JP">Nhật Bản (TMDB)</option>
-              <option value="KR">Hàn Quốc (TMDB)</option>
-              <option value="US">Mỹ (TMDB)</option>
+              <optgroup label="KKPhim">
+                <option value="trung-quoc">Trung Quốc</option>
+                <option value="han-quoc">Hàn Quốc</option>
+                <option value="nhat-ban">Nhật Bản</option>
+                <option value="au-my">Âu Mỹ</option>
+                <option value="thai-lan">Thái Lan</option>
+                <option value="viet-nam">Việt Nam</option>
+              </optgroup>
+              <optgroup label="TMDB (Asia)">
+                <option value="HK">Hong Kong</option>
+                <option value="CN">Trung Quốc</option>
+                <option value="JP">Nhật Bản</option>
+                <option value="KR">Hàn Quốc</option>
+                <option value="TW">Đài Loan</option>
+                <option value="TH">Thái Lan</option>
+                <option value="VN">Việt Nam</option>
+                <option value="ID">Indonesia</option>
+                <option value="MY">Malaysia</option>
+                <option value="SG">Singapore</option>
+                <option value="PH">Philippines</option>
+                <option value="IN">Ấn Độ</option>
+              </optgroup>
+              <optgroup label="TMDB (Europe)">
+                <option value="US">Mỹ</option>
+                <option value="GB">Anh</option>
+                <option value="FR">Pháp</option>
+                <option value="DE">Đức</option>
+                <option value="IT">Ý</option>
+                <option value="ES">Tây Ban Nha</option>
+                <option value="RU">Nga</option>
+                <option value="UA">Ukraine</option>
+                <option value="PL">Ba Lan</option>
+                <option value="NL">Hà Lan</option>
+                <option value="SE">Thụy Điển</option>
+                <option value="NO">Na Uy</option>
+                <option value="DK">Đan Mạch</option>
+              </optgroup>
+              <optgroup label="TMDB (Others)">
+                <option value="CA">Canada</option>
+                <option value="AU">Úc</option>
+                <option value="BR">Brazil</option>
+                <option value="MX">Mexico</option>
+                <option value="AR">Argentina</option>
+                <option value="ZA">Nam Phi</option>
+                <option value="EG">Ai Cập</option>
+                <option value="TR">Thổ Nhĩ Kỳ</option>
+                <option value="IL">Israel</option>
+                <option value="SA">Ả Rập Xê Út</option>
+              </optgroup>
             </select>
           </div>
 
           <div id="filterGenrePanel" class="hidden">
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Thể loại</label>
             <select id="selectedGenre" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary mb-3">
-              <option value="hanh-dong">Hành Động</option>
-              <option value="phieu-luu">Phiêu Lưu</option>
-              <option value="tinh-cam">Tình Cảm</option>
-              <option value="hoat-hinh">Hoạt Hình</option>
-              <option value="khoa-hoc">Khoa Học</option>
-              <option value="kinh-di">Kinh Dị</option>
-              <option value="hai-huoc">Hài Hước</option>
-              <option value="27">Kinh Dị (TMDB)</option>
-              <option value="28">Hành Động (TMDB)</option>
-              <option value="35">Hài Hước (TMDB)</option>
-              <option value="18">Tình Cảm (TMDB)</option>
-              <option value="10749">Lãng Mạn (TMDB)</option>
-              <option value="878">Khoa Học Viễn Tưởng (TMDB)</option>
+              <optgroup label="KKPhim">
+                <option value="hanh-dong">Hành Động</option>
+                <option value="phieu-luu">Phiêu Lưu</option>
+                <option value="tinh-cam">Tình Cảm</option>
+                <option value="hoat-hinh">Hoạt Hình</option>
+                <option value="khoa-hoc">Khoa Học</option>
+                <option value="kinh-di">Kinh Dị</option>
+                <option value="hai-huoc">Hài Hước</option>
+              </optgroup>
+              <optgroup label="TMDB (Action & Adventure)">
+                <option value="28">Hành Động (Action)</option>
+                <option value="12">Phiêu Lưu (Adventure)</option>
+                <option value="10752">Chiến Tranh (War)</option>
+                <option value="37">Viễn Tây (Western)</option>
+              </optgroup>
+              <optgroup label="TMDB (Comedy & Drama)">
+                <option value="35">Hài Hước (Comedy)</option>
+                <option value="18">Tình Cảm (Drama)</option>
+                <option value="10749">Lãng Mạn (Romance)</option>
+                <option value="10402">Âm Nhạc (Music)</option>
+              </optgroup>
+              <optgroup label="TMDB (Horror & Thriller)">
+                <option value="27">Kinh Dị (Horror)</option>
+                <option value="53">Giật Gân (Thriller)</option>
+                <option value="9648">Bí Ẩn (Mystery)</option>
+                <option value="80">Tội Phạm (Crime)</option>
+              </optgroup>
+              <optgroup label="TMDB (Sci-Fi & Fantasy)">
+                <option value="878">Khoa Học Viễn Tưởng (Sci-Fi)</option>
+                <option value="14">Giả Tưởng (Fantasy)</option>
+                <option value="10770">TV Movie</option>
+              </optgroup>
+              <optgroup label="TMDB (Animation & Family)">
+                <option value="16">Hoạt Hình (Animation)</option>
+                <option value="10751">Gia Đình (Family)</option>
+              </optgroup>
+              <optgroup label="TMDB (Documentary & History)">
+                <option value="99">Tài Liệu (Documentary)</option>
+                <option value="36">Lịch Sử (History)</option>
+              </optgroup>
+              <optgroup label="TMDB (Others)">
+                <option value="10751">Gia Đình (Family)</option>
+                <option value="14">Giả Tưởng (Fantasy)</option>
+                <option value="36">Lịch Sử (History)</option>
+                <option value="27">Kinh Dị (Horror)</option>
+                <option value="10402">Âm Nhạc (Music)</option>
+                <option value="9648">Bí Ẩn (Mystery)</option>
+                <option value="10749">Lãng Mạn (Romance)</option>
+                <option value="878">Khoa Học Viễn Tưởng (Sci-Fi)</option>
+                <option value="10770">TV Movie</option>
+                <option value="53">Giật Gân (Thriller)</option>
+                <option value="10752">Chiến Tranh (War)</option>
+                <option value="37">Viễn Tây (Western)</option>
+              </optgroup>
             </select>
           </div>
 
