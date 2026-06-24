@@ -5,7 +5,7 @@ import { seedMovies, mapKKPhimToMovieDetail, mapKKPhimSearchItemToMovie } from '
 export class SupabaseMovieProvider implements IMovieProvider {
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string, slugs?: string[] }): Promise<Movie[]> {
     try {
-      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source';
       let query = supabase.from('movies').select(selectFields);
 
       if (params?.type) {
@@ -46,7 +46,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
           isStatic: false,
           broadcastSchedule: m.broadcast_schedule || undefined,
           actors: Array.isArray(m.actors) ? m.actors : [],
-          directors: Array.isArray(m.directors) ? m.directors : []
+          directors: Array.isArray(m.directors) ? m.directors : [],
+          source: m.source || 'manual'
         }));
       }
 
@@ -113,7 +114,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
       // 1. Kiểm tra database Supabase
       const { data: dbMovie, error } = await supabase
         .from('movies')
-        .select('*')
+        .select('*, source')
         .eq('slug', slug)
         .maybeSingle();
 
@@ -126,7 +127,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
         if (fallbackSlug !== slug) {
           const { data: dbMovieFallback, error: errFallback } = await supabase
             .from('movies')
-            .select('*')
+            .select('*, source')
             .eq('slug', fallbackSlug)
             .maybeSingle();
           if (!errFallback && dbMovieFallback) {
@@ -163,7 +164,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
           trailerUrl: finalDbMovie.trailer_url || '',
           episodes: Array.isArray(finalDbMovie.episodes) ? finalDbMovie.episodes : [],
           isStatic: false,
-          broadcastSchedule: finalDbMovie.broadcast_schedule || undefined
+          broadcastSchedule: finalDbMovie.broadcast_schedule || undefined,
+          source: finalDbMovie.source || 'manual'
         };
       }
 

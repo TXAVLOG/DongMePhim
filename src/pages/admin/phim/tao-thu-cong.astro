@@ -722,6 +722,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               trailerUrl: document.getElementById("movieTrailerUrl").value.trim(),
               seasons: document.getElementById("movieType").value === "movie" ? "Bản Điện Ảnh" : "Phần 1",
               broadcastSchedule,
+              source: "manual",
             },
             episodes: movieData.episodes.map(server => ({
               serverName: server.server_name || "Server VIP",

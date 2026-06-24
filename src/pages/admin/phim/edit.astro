@@ -37,10 +37,10 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         <div class="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h3 class="font-bold text-lg text-white mb-1 flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary">sync</span> Cập nhật tập mới từ KKPhim
+              <span class="material-symbols-outlined text-primary">sync</span> Cập nhật tập mới từ <span id="syncSourceName">KKPhim</span>
             </h3>
             <p class="text-xs text-zinc-400 font-body-main">
-              Quét và đồng bộ các tập phim mới được cập nhật trên hệ thống KKPhim mà không mất phụ đề hay timings cũ.
+              Quét và đồng bộ các tập phim mới được cập nhật trên hệ thống <span id="syncSourceDesc">KKPhim</span> mà không mất phụ đề hay timings cũ.
             </p>
           </div>
           <button id="btn-api-sync" class="bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary font-bold px-5 py-2.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
@@ -243,7 +243,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           episode_total: "", actor: [], director: [],
         },
         episodes: [],
-        isStatic: false
+        isStatic: false,
+        source: "manual"
       };
 
       let editSlug = "";
@@ -327,11 +328,25 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           
           const isStatic = !!m.isStatic;
           movieData.isStatic = isStatic;
+          movieData.source = m.source || 'manual';
 
-          if (isStatic) {
+          if (isStatic || movieData.source === 'manual') {
             apiSyncCard.classList.add("hidden");
           } else {
             apiSyncCard.classList.remove("hidden");
+            // Update sync UI based on source
+            const syncSourceName = document.getElementById("syncSourceName");
+            const syncSourceDesc = document.getElementById("syncSourceDesc");
+            if (movieData.source === 'kkphim') {
+              syncSourceName.textContent = "KKPhim";
+              syncSourceDesc.textContent = "KKPhim";
+            } else if (movieData.source === 'tmdb') {
+              syncSourceName.textContent = "TMDB";
+              syncSourceDesc.textContent = "TMDB";
+            } else {
+              syncSourceName.textContent = movieData.source;
+              syncSourceDesc.textContent = movieData.source;
+            }
           }
 
           movieData.movie = {
@@ -416,15 +431,30 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         }
       }
 
-      // Sync KKPhim new episodes API keeping current edits
+      // Sync new episodes API keeping current edits
       btnApiSync.onclick = async () => {
         btnApiSync.disabled = true;
         btnApiSync.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">autorenew</span> Đang quét...';
         
         try {
-          const res = await fetch(`https://phimapi.com/phim/${editSlug}`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
+          let data;
+          if (movieData.source === 'tmdb') {
+            // Sync from TMDB
+            const tmdbRes = await fetch(`/api/admin/tmdb-detail?tmdb_id=${editSlug}&tmdb_type=movie`);
+            if (!tmdbRes.ok) throw new Error(`HTTP ${tmdbRes.status}`);
+            const tmdbData = await tmdbRes.json();
+            
+            if (tmdbData.status === 'success' && tmdbData.data) {
+              data = { movie: tmdbData.data, episodes: [] }; // TMDB doesn't provide episodes
+            } else {
+              throw new Error(tmdbData.message || "Không thể lấy dữ liệu từ TMDB");
+            }
+          } else {
+            // Sync from KKPhim (default)
+            const res = await fetch(`https://phimapi.com/phim/${editSlug}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            data = await res.json();
+          }
 
           if (data && Array.isArray(data.episodes)) {
             let addedCount = 0;
@@ -467,6 +497,9 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             
             renderServers();
             if (window.showGlobalToast) window.showGlobalToast(`Quét hoàn tất! Thêm ${addedCount} tập phim mới.`, "success");
+          } else if (movieData.source === 'tmdb') {
+            // TMDB doesn't provide episodes, just update movie info
+            if (window.showGlobalToast) window.showGlobalToast("TMDB không cung cấp link streaming, cần thêm thủ công.", "success");
           }
         } catch (e) {
           if (window.showGlobalToast) window.showGlobalToast("Lỗi đồng bộ: " + e.message, "error");

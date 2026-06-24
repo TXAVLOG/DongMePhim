@@ -100,6 +100,7 @@ export class TMDBCrawlerService {
       // Extract trailer
       const trailer = (data.videos?.results || []).find((v: any) => v.type === 'Trailer' && v.site === 'YouTube');
       const trailerKey = trailer?.key || '';
+      const trailerUrl = trailerKey ? `https://www.youtube.com/watch?v=${trailerKey}` : '';
 
       // Extract IMDb ID
       const imdbId = data.external_ids?.imdb_id || '';
@@ -124,7 +125,7 @@ export class TMDBCrawlerService {
           type: tmdbType
         },
         imdbId,
-        trailerKey,
+        trailerUrl,
         tmdbScore: data.vote_average,
         quality: 'HD',
         country: data.production_countries?.[0]?.name || 'Quốc tế',

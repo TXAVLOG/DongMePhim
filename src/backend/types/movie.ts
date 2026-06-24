@@ -40,6 +40,7 @@ export interface Movie {
   broadcastSchedule?: BroadcastSchedule;
   updatedAt?: string;
   isStatic?: boolean;
+  source?: string;
 }
 
 export interface Episode {

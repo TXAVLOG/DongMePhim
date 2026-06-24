@@ -169,6 +169,7 @@ export const POST: APIRoute = async ({ request }) => {
         seasons: m.seasons || (m.type === 'movie' || m.type === 'single' ? 'Bản Điện Ảnh' : 'Phần 1'),
         trailer_url: m.trailerUrl || m.trailer_url || '',
         broadcast_schedule: m.broadcastSchedule || null,
+        source: m.source || 'manual',
         updated_at: new Date().toISOString()
       };
 

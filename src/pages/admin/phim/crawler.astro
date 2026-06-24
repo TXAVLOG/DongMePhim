@@ -1484,6 +1484,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               
               movieDetailObj = tmdbData.data;
               movieDetailObj.updatedAt = new Date().toISOString();
+              movieDetailObj.source = 'tmdb';
               
               // Note: TMDB doesn't provide streaming links, so episodes will be empty
               // User will need to manually add episodes or use another source
@@ -1526,6 +1527,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
               movieDetailObj = mapKKPhimToMovieDetail(detailData);
               movieDetailObj.updatedAt = new Date().toISOString();
+              movieDetailObj.source = 'kkphim';
             
               // Fetch TMDB images and override if available
               if (detailData.movie.tmdb && detailData.movie.tmdb.id) {
