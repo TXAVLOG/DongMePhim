@@ -39,10 +39,10 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             <span class="material-symbols-outlined text-secondary">bolt</span> Nhập nhanh & Tự động điền (Auto-fill) từ API
           </h3>
           <p class="text-xs text-zinc-400 mb-4 font-body-main">
-            Dán link phim (Ví dụ: <code>https://kkphim1.com/phim/digimon-beatbreak</code>) hoặc slug phim (Ví dụ: <code>digimon-beatbreak</code>) vào đây để hệ thống tự động tải và điền toàn bộ thông tin phim + danh sách tập phim.
+            Dán link phim KKPhim, slug phim, hoặc TMDB ID (Ví dụ: <code>https://kkphim1.com/phim/digimon-beatbreak</code>, <code>digimon-beatbreak</code>, hoặc <code>12345</code> cho TMDB) để hệ thống tự động tải và điền thông tin.
           </p>
           <div class="flex gap-2">
-            <input type="text" id="quickImportUrl" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-secondary text-sm text-white" placeholder="Dán link phim KKPhim hoặc slug phim..." />
+            <input type="text" id="quickImportUrl" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-secondary text-sm text-white" placeholder="Dán link KKPhim, slug phim, hoặc TMDB ID..." />
             <button id="quickImportBtn" class="bg-secondary/20 hover:bg-secondary/30 border border-secondary/30 text-secondary font-bold px-5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
               <span class="material-symbols-outlined text-sm">bolt</span> Nạp & Tự điền
             </button>
@@ -318,91 +318,146 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
       quickImportBtn.onclick = async () => {
         const urlInput = document.getElementById("quickImportUrl").value.trim();
         if (!urlInput) {
-          if (window.showGlobalToast) window.showGlobalToast("Vui lòng nhập link phim hoặc slug!", "error");
+          if (window.showGlobalToast) window.showGlobalToast("Vui lòng nhập link phim, slug, hoặc TMDB ID!", "error");
           return;
         }
 
-        let slug = urlInput;
-        try {
-          if (urlInput.startsWith("http://") || urlInput.startsWith("https://")) {
-            const url = new URL(urlInput);
-            const pathParts = url.pathname.split("/");
-            const phimIdx = pathParts.indexOf("phim");
-            if (phimIdx !== -1 && pathParts[phimIdx + 1]) {
-              slug = pathParts[phimIdx + 1];
-            } else {
-              slug = pathParts[pathParts.length - 1] || urlInput;
-            }
-          }
-        } catch (e) {
-          console.error(e);
-        }
+        // Check if input is a TMDB ID (numeric)
+        const isTMDBId = /^\d+$/.test(urlInput);
 
         quickImportBtn.disabled = true;
         quickImportBtn.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">autorenew</span> Đang nạp...';
 
         try {
-          const res = await fetch(`https://phimapi.com/phim/${slug}`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
+          if (isTMDBId) {
+            // Fetch from TMDB
+            const tmdbRes = await fetch(`/api/admin/tmdb-detail?tmdb_id=${urlInput}&tmdb_type=movie`);
+            if (!tmdbRes.ok) throw new Error(`HTTP ${tmdbRes.status}`);
+            const tmdbData = await tmdbRes.json();
 
-          if (data && data.movie) {
-            const m = data.movie;
+            if (tmdbData.status === 'success' && tmdbData.data) {
+              const m = tmdbData.data;
 
-            document.getElementById("movieTitle").value = m.name || "";
-            document.getElementById("movieOriginalTitle").value = m.origin_name || "";
-            document.getElementById("movieSlug").value = m.slug || slug;
+              document.getElementById("movieTitle").value = m.name || "";
+              document.getElementById("movieOriginalTitle").value = m.origin_name || "";
+              
+              // Generate slug from title and year
+              const year = m.year || new Date().getFullYear().toString();
+              const slug = cleanSlugify(`${m.name || ''} ${year}`);
+              document.getElementById("movieSlug").value = slug;
 
-            let typeVal = "series";
-            if (m.type === "single") typeVal = "movie";
-            else if (m.type === "hoathinh") typeVal = "hoathinh";
-            else if (m.type === "tvshows") typeVal = "tvshows";
-            document.getElementById("movieType").value = typeVal;
-            document.getElementById("movieStatus").value = m.status === "completed" ? "completed" : "ongoing";
+              let typeVal = "series";
+              if (m.type === "single") typeVal = "movie";
+              else if (m.type === "hoathinh") typeVal = "hoathinh";
+              else if (m.type === "tvshows") typeVal = "tvshows";
+              document.getElementById("movieType").value = typeVal;
+              document.getElementById("movieStatus").value = "completed";
 
-            const cdn = "https://phimimg.com";
-            let poster = m.poster_url || "";
-            if (poster && !poster.startsWith("http")) poster = `${cdn}/uploads/movies/${poster.replace(/^\/?uploads\/movies\//, "")}`;
-            let banner = m.thumb_url || m.poster_url || "";
-            if (banner && !banner.startsWith("http")) banner = `${cdn}/uploads/movies/${banner.replace(/^\/?uploads\/movies\//, "")}`;
+              document.getElementById("moviePosterUrl").value = m.poster_url || "";
+              document.getElementById("movieBannerUrl").value = m.thumb_url || "";
+              document.getElementById("movieTrailerUrl").value = m.trailer_url || "";
+              
+              const apiGenres = Array.isArray(m.category) ? m.category.map((c) => c.name) : ["Khác"];
+              renderGenresCheckboxes(apiGenres);
+              document.getElementById("movieCountry").value = m.country || "";
+              document.getElementById("movieActors").value = Array.isArray(m.actor) ? m.actor.filter(Boolean).join(", ") : "";
+              document.getElementById("movieDirectors").value = Array.isArray(m.director) ? m.director.filter(Boolean).join(", ") : "";
+              document.getElementById("movieDescription").value = m.content || "";
+              document.getElementById("movieQuality").value = "HD";
+              document.getElementById("movieLang").value = "Vietsub";
+              document.getElementById("movieEpCurrent").value = m.episode_current || "Full";
+              document.getElementById("movieEpTotal").value = m.episode_total || "1";
+              document.getElementById("movieYear").value = m.year || new Date().getFullYear();
+              document.getElementById("movieTime").value = m.time || "";
 
-            document.getElementById("moviePosterUrl").value = poster;
-            document.getElementById("movieBannerUrl").value = banner;
-            document.getElementById("movieTrailerUrl").value = m.trailer_url || "";
-            const apiGenres = Array.isArray(m.category) ? m.category.map((c) => c.name) : ["Khác"];
-            document.getElementById("movieCategory").value = apiGenres.join(", ");
-            
-            // Automatically handled by dynamic genres checklist rendering
-
-            renderGenresCheckboxes(apiGenres);
-            document.getElementById("movieCountry").value = Array.isArray(m.country) && m.country.length > 0 ? m.country[0].name : "";
-            document.getElementById("movieActors").value = Array.isArray(m.actor) ? m.actor.filter(Boolean).join(", ") : "";
-            document.getElementById("movieDirectors").value = Array.isArray(m.director) ? m.director.filter(Boolean).join(", ") : "";
-            document.getElementById("movieDescription").value = m.content ? m.content.replace(/<[^>]*>/g, "") : "";
-            document.getElementById("movieQuality").value = m.quality || "FHD";
-            document.getElementById("movieLang").value = m.lang || "Vietsub";
-            document.getElementById("movieEpCurrent").value = m.episode_current || "";
-            document.getElementById("movieEpTotal").value = m.episode_total || "";
-            document.getElementById("movieYear").value = m.year || 2026;
-            document.getElementById("movieTime").value = m.time || "";
-
-            if (Array.isArray(data.episodes)) {
-              movieData.episodes = data.episodes.map(server => ({
-                server_name: server.server_name || "Server VIP",
-                server_data: (server.server_data || []).map(ep => {
-                  let epName = ep.name || "";
-                  if (epName.trim().match(/^\d+$/)) epName = `Tập ${epName.padStart(2, "0")}`;
-                  return {
-                    name: epName, slug: ep.slug || `tap-${ep.name}`, filename: ep.filename || `${m.name} - ${epName}`,
-                    link_m3u8: ep.link_m3u8 || "", link_embed: ep.link_embed || "",
-                    time_intro_start: 0, time_intro_end: 0, time_outro_start: 0, time_outro_end: 0, subtitles: []
-                  };
-                })
-              }));
+              // TMDB doesn't provide streaming links, so episodes will be empty
+              movieData.episodes = [];
               renderServers();
+
+              if (window.showGlobalToast) window.showGlobalToast("Đã nạp dữ liệu TMDB thành công! (Không có link streaming, cần thêm thủ công)", "success");
+            } else {
+              throw new Error(tmdbData.message || "Không thể lấy dữ liệu từ TMDB");
+            }
+          } else {
+            // Fetch from KKPhim (existing logic)
+            let slug = urlInput;
+            try {
+              if (urlInput.startsWith("http://") || urlInput.startsWith("https://")) {
+                const url = new URL(urlInput);
+                const pathParts = url.pathname.split("/");
+                const phimIdx = pathParts.indexOf("phim");
+                if (phimIdx !== -1 && pathParts[phimIdx + 1]) {
+                  slug = pathParts[phimIdx + 1];
+                } else {
+                  slug = pathParts[pathParts.length - 1] || urlInput;
+                }
+              }
+            } catch (e) {
+              console.error(e);
             }
 
-            if (window.showGlobalToast) window.showGlobalToast("Đã nạp và tự điền dữ liệu thành công!", "success");
+            const res = await fetch(`https://phimapi.com/phim/${slug}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            if (data && data.movie) {
+              const m = data.movie;
+
+              document.getElementById("movieTitle").value = m.name || "";
+              document.getElementById("movieOriginalTitle").value = m.origin_name || "";
+              document.getElementById("movieSlug").value = m.slug || slug;
+
+              let typeVal = "series";
+              if (m.type === "single") typeVal = "movie";
+              else if (m.type === "hoathinh") typeVal = "hoathinh";
+              else if (m.type === "tvshows") typeVal = "tvshows";
+              document.getElementById("movieType").value = typeVal;
+              document.getElementById("movieStatus").value = m.status === "completed" ? "completed" : "ongoing";
+
+              const cdn = "https://phimimg.com";
+              let poster = m.poster_url || "";
+              if (poster && !poster.startsWith("http")) poster = `${cdn}/uploads/movies/${poster.replace(/^\/?uploads\/movies\//, "")}`;
+              let banner = m.thumb_url || m.poster_url || "";
+              if (banner && !banner.startsWith("http")) banner = `${cdn}/uploads/movies/${banner.replace(/^\/?uploads\/movies\//, "")}`;
+
+              document.getElementById("moviePosterUrl").value = poster;
+              document.getElementById("movieBannerUrl").value = banner;
+              document.getElementById("movieTrailerUrl").value = m.trailer_url || "";
+              const apiGenres = Array.isArray(m.category) ? m.category.map((c) => c.name) : ["Khác"];
+              document.getElementById("movieCategory").value = apiGenres.join(", ");
+              
+              // Automatically handled by dynamic genres checklist rendering
+
+              renderGenresCheckboxes(apiGenres);
+              document.getElementById("movieCountry").value = Array.isArray(m.country) && m.country.length > 0 ? m.country[0].name : "";
+              document.getElementById("movieActors").value = Array.isArray(m.actor) ? m.actor.filter(Boolean).join(", ") : "";
+              document.getElementById("movieDirectors").value = Array.isArray(m.director) ? m.director.filter(Boolean).join(", ") : "";
+              document.getElementById("movieDescription").value = m.content ? m.content.replace(/<[^>]*>/g, "") : "";
+              document.getElementById("movieQuality").value = m.quality || "FHD";
+              document.getElementById("movieLang").value = m.lang || "Vietsub";
+              document.getElementById("movieEpCurrent").value = m.episode_current || "";
+              document.getElementById("movieEpTotal").value = m.episode_total || "";
+              document.getElementById("movieYear").value = m.year || 2026;
+              document.getElementById("movieTime").value = m.time || "";
+
+              if (Array.isArray(data.episodes)) {
+                movieData.episodes = data.episodes.map(server => ({
+                  server_name: server.server_name || "Server VIP",
+                  server_data: (server.server_data || []).map(ep => {
+                    let epName = ep.name || "";
+                    if (epName.trim().match(/^\d+$/)) epName = `Tập ${epName.padStart(2, "0")}`;
+                    return {
+                      name: epName, slug: ep.slug || `tap-${ep.name}`, filename: ep.filename || `${m.name} - ${epName}`,
+                      link_m3u8: ep.link_m3u8 || "", link_embed: ep.link_embed || "",
+                      time_intro_start: 0, time_intro_end: 0, time_outro_start: 0, time_outro_end: 0, subtitles: []
+                    };
+                  })
+                }));
+                renderServers();
+              }
+
+              if (window.showGlobalToast) window.showGlobalToast("Đã nạp và tự điền dữ liệu thành công!", "success");
+            }
           }
         } catch (e) {
           if (window.showGlobalToast) window.showGlobalToast("Lỗi nạp phim: " + e.message, "error");
