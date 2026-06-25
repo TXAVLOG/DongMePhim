@@ -4148,10 +4148,22 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           const packages = settings.packages || [];
           const userPkg = packages.find(p => p.title === pkgName);
           const isFree = !userPkg || !userPkg.permissions?.bypass_ads;
-          if (!isFree) return; // Paid user, skip check
+          
+          // If user has bypass_ads permission, clear any existing warning
+          if (!isFree) {
+            sessionStorage.removeItem('txa_adblock_warned');
+            window.TXA_ADBLOCK_DETECTED = false;
+            return; // Paid user, skip check
+          }
 
           const detected = await checkAdBlock();
           window.TXA_ADBLOCK_DETECTED = detected;
+
+          // If AdBlock is not detected anymore, clear the warning
+          if (!detected) {
+            sessionStorage.removeItem('txa_adblock_warned');
+            return;
+          }
 
           if (detected) {
             // Save in sessionStorage to limit to once per tab
@@ -4235,7 +4247,8 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
 
         // Re-run on Astro page transitions
         document.addEventListener('astro:page-load', () => {
-          sessionStorage.removeItem('txa_adblock_warned'); // Allow re-notify per page
+          // Keep sessionStorage to persist warning across page transitions
+          // Only re-check AdBlock state but don't remove warning
           runAdBlockCheck();
           if (!navigator.onLine) {
             startTitleBlink();

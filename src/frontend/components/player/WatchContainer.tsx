@@ -1210,10 +1210,14 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           const urls = rawUrls.split(/\n+/).map((u: string) => u.trim()).filter(Boolean);
           if (urls.length > 0) {
             let randomUrl = urls[Math.floor(Math.random() * urls.length)];
-            const adType = ads.pre_roll_type || 'video';
+            let adType = ads.pre_roll_type || 'video';
             
-            // Tự động convert link youtube thường sang link embed nếu đang chọn mã nhúng
-            if (adType === 'embed') {
+            // Auto-detect if URL is direct MP4 video
+            if (randomUrl.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
+              adType = 'video';
+            }
+            // Auto-detect if URL is YouTube and type is embed
+            else if (adType === 'embed') {
               if (randomUrl.includes('<iframe') || randomUrl.includes('src=')) {
                 const srcMatch = randomUrl.match(/src=["']([^"']+)["']/i);
                 if (srcMatch && srcMatch[1]) {
@@ -1250,6 +1254,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             const skipSec = parseInt(ads.pre_roll_skip_seconds) || 5;
             setAdSkipSeconds(skipSec);
             setAdCountdown(skipSec);
+            
+            // Auto-show ad immediately for better UX
+            setTimeout(() => {
+              setShowAd(true);
+              setAdPending(false);
+            }, 100);
           }
         }
       } catch (e) {
@@ -1303,11 +1313,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   const handleSkipAd = () => {
     setShowAd(false);
-  };
-
-  const handlePlayCoverClick = () => {
-    setAdPending(false);
-    setShowAd(true);
   };
 
   useEffect(() => {
@@ -2131,14 +2136,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             </div>
           ) : isUnreleased && unreleasedEpisode ? (
             <UnreleasedPlayerPlaceholder episode={unreleasedEpisode} />
-          ) : adPending ? (
-            <div className="w-full h-full aspect-video rounded-xl overflow-hidden relative border border-glass-stroke shadow-2xl bg-cover bg-center" style={{ backgroundImage: `url('${movie.bannerUrl || movie.posterUrl}')`, minHeight: '350px' }}>
-              <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px] flex items-center justify-center cursor-pointer group" onClick={handlePlayCoverClick}>
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/90 hover:bg-primary text-slate-950 flex items-center justify-center shadow-[0_0_35px_rgba(210,187,255,0.4)] transition-all duration-300 transform group-hover:scale-105 active:scale-95">
-                  <span className="material-symbols-outlined text-4xl sm:text-5xl ml-1" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-                </div>
-              </div>
-            </div>
           ) : showAd ? (
             <div className="absolute inset-0 bg-black flex items-center justify-center z-[50]">
               {adType === 'video' ? (
