@@ -1122,7 +1122,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return findEpisodeIndexBySlug(currentServer?.serverData || [], initialEpisodeSlug);
   });
 
-  const [currentUserPackage, setCurrentUserPackage] = useState<string>('Free');
+  const [currentUserPackage, setCurrentUserPackage] = useState<string>('free');
+  const [currentUserPackageTitle, setCurrentUserPackageTitle] = useState<string>('Gói Free');
   const [userPermissions, setUserPermissions] = useState<any>(null);
 
   const [showAd, setShowAd] = useState<boolean>(false);
@@ -1140,12 +1141,14 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     const fetchUserAndAds = async (username: string) => {
       try {
         const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
-        let pkgName = 'Free';
+        let pkgId = 'free';
         if (res.ok) {
           const result = (await res.json()) as any;
-          pkgName = result.data?.package || 'Free';
+          pkgId = (result.data?.package || 'free').toLowerCase();
+          // Backward compat: normalize old format values
+          if (pkgId.includes('vip') || pkgId.includes('premium')) pkgId = 'vip';
         }
-        setCurrentUserPackage(pkgName);
+        setCurrentUserPackage(pkgId);
 
         // Tải danh sách yêu thích và danh sách phát
         if (username) {
@@ -1165,7 +1168,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
         const settings = (window as any).TXA_SITE_SETTINGS || {};
         const packages = settings.packages || [];
-        const userPkg = packages.find((p: any) => p.title === pkgName);
+        const userPkg = packages.find((p: any) => p.id === pkgId) || packages.find((p: any) => p.id === 'free');
+        setCurrentUserPackageTitle(userPkg?.title || 'Gói Free');
         let perms = null;
         if (userPkg) {
           perms = userPkg.permissions;
@@ -1184,7 +1188,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         setUserPermissions(perms);
 
         // Check AdBlock state for Free users
-        const isFreeUser = pkgName.toLowerCase() === 'free' || !perms?.bypass_ads;
+        const isFreeUser = pkgId === 'free' || !perms?.bypass_ads;
         if (isFreeUser) {
           // Poll window.TXA_ADBLOCK_DETECTED which is set by MainLayout
           const checkAdBlockState = () => {
@@ -1969,7 +1973,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   };
 
   const selectServer = (idx: number) => {
-    if (idx > 0 && currentUserPackage.toLowerCase() === 'free') {
+    if (idx > 0 && currentUserPackage === 'free') {
       const modalContent = `
         <div class="flex flex-col items-center justify-center p-6 text-center relative overflow-hidden space-y-4">
           <div class="bg-primary/20 w-14 h-14 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_20px_rgba(124,58,237,0.25)]">
@@ -1981,7 +1985,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           </p>
           <div class="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl">
             <p class="text-[10px] text-zinc-400 font-body-main">
-              Gói hiện tại của bạn: <em class="not-italic font-bold text-zinc-200">${currentUserPackage}</em>
+              Gói hiện tại của bạn: <em class="not-italic font-bold text-zinc-200">${currentUserPackageTitle}</em>
             </p>
           </div>
           <div class="pt-2">
@@ -2184,7 +2188,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 </p>
                 <div className="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl inline-block">
                   <p className="text-[10px] text-zinc-400 font-body-main">
-                     Gói hiện tại của bạn: <em className="not-italic font-bold text-zinc-200">{currentUserPackage}</em>
+                     Gói hiện tại của bạn: <em className="not-italic font-bold text-zinc-200">{currentUserPackageTitle}</em>
                   </p>
                 </div>
                 <div className="pt-2">

@@ -1356,7 +1356,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
             if (userDb) {
               const siteSettings = (window as any).TXA_SITE_SETTINGS || {};
               const packages: any[] = siteSettings.packages || [];
-              const userPkg = packages.find((p: any) => p.title === userDb.package);
+              const userPkg = packages.find((p: any) => p.id === userDb.package) || packages.find((p: any) => p.title === userDb.package);
               userPkgId = userPkg ? userPkg.id : 'free';
             }
           }

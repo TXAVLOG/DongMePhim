@@ -416,7 +416,7 @@ import MainLayout from '@layouts/MainLayout.astro';
 
         const siteSettings = window.TXA_SITE_SETTINGS || {};
         const packagesList = siteSettings.packages || [];
-        const userPkg = packagesList.find(p => p.title === (userDb?.package || 'Free'));
+        const userPkg = packagesList.find(p => p.id === (userDb?.package || 'free')) || packagesList.find(p => p.title === (userDb?.package || 'Free')) || packagesList.find(p => p.id === 'free');
         const userPkgId = userPkg ? userPkg.id : 'free';
         const isVIPUser = userPkgId !== 'free';
 
@@ -440,8 +440,8 @@ import MainLayout from '@layouts/MainLayout.astro';
         if (isVIPUser && userDb) {
           const expStr = userDb.expiryDate;
           
-          planTitle.textContent = userDb.package;
-          planBadge.textContent = userDb.package;
+          planTitle.textContent = userPkg?.title || userDb?.package || 'Free';
+          planBadge.textContent = userPkg?.title || userDb?.package || 'Free';
           planBadge.className = `px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full package-style-${userPkgId}`;
           planDesc.textContent = 'Tài khoản của bạn đã được kích hoạt VIP thành công. Bạn có toàn quyền truy cập tất cả tài nguyên phim với băng thông máy chủ cao tốc và chất lượng 4K UHD.';
 
@@ -471,7 +471,7 @@ import MainLayout from '@layouts/MainLayout.astro';
         } else {
           // Free tier
           planTitle.textContent = 'Free Plan';
-          planBadge.textContent = userDb?.package || 'Free';
+          planBadge.textContent = userPkg?.title || userDb?.package || 'Free';
           planBadge.className = `px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full package-style-${userPkgId}`;
           planDesc.textContent = 'Bạn đang sử dụng gói Cơ bản. Để có trải nghiệm xem phim Ultra HD không quảng cáo, hãy nâng cấp tài khoản của bạn.';
           planExpiryVal.textContent = 'Vô thời hạn';
@@ -715,7 +715,7 @@ import MainLayout from '@layouts/MainLayout.astro';
       const packageTitle = decodeURIComponent(packageTitleEncoded);
 
       if (isSandbox && method !== 'manual' && method !== 'sepay') {
-        window.location.href = `/checkout/gateway?method=${method}&cycle=${cycle}&price=${price}&packageTitle=${encodeURIComponent(packageTitle)}`;
+        window.location.href = `/checkout/gateway?method=${method}&cycle=${cycle}&price=${price}&packageId=${encodeURIComponent(packageId)}&packageTitle=${encodeURIComponent(packageTitle)}`;
         return;
       }
 
@@ -751,7 +751,7 @@ import MainLayout from '@layouts/MainLayout.astro';
               });
 
               // Redirect to SePay checkout gateway
-              const successUrl = `${window.location.origin}/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}`;
+              const successUrl = `${window.location.origin}/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId)}&packageTitle=${encodeURIComponent(packageTitle)}`;
               const failUrl = `${window.location.origin}/checkout/failed?method=sepay&user=${encodeURIComponent(username)}`;
               const gatewayUrl = `https://pay.sepay.vn/checkout?account_id=${payments.sepay_bank_account_id}&amount=${price}&memo=${memo}&success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(failUrl)}`;
               window.location.href = gatewayUrl;

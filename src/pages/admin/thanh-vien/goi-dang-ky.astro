@@ -452,6 +452,11 @@ const groupedPackages = packages.map((pkg: any) => {
               throw new Error('Không thể duyệt hóa đơn.');
             }
 
+            // Resolve package id from title
+            const allPkgs = loadedSettings.packages || [];
+            const matchedPkg = allPkgs.find((p: any) => p.title === tx.packageTitle) || allPkgs.find((p: any) => p.id === tx.packageTitle) || allPkgs.find((p: any) => p.id === 'free');
+            const pkgId = matchedPkg?.id || 'free';
+
             // Update user package
             const resUser = await fetch('/api/admin/members', {
               method: 'POST',
@@ -459,7 +464,7 @@ const groupedPackages = packages.map((pkg: any) => {
               body: JSON.stringify({
                 action: 'edit',
                 username: tx.username,
-                package: tx.packageTitle,
+                package: pkgId,
                 joinDate: new Date().toISOString(),
                 expiryDate: expiryDate,
                 status: 'active'
@@ -475,7 +480,7 @@ const groupedPackages = packages.map((pkg: any) => {
             if (currentLoggedIn === tx.username) {
               localStorage.setItem('txa_user_subscription', JSON.stringify({
                 username: tx.username,
-                tier: tx.packageTitle,
+                tier: matchedPkg?.title || tx.packageTitle,
                 status: 'active',
                 price: tx.price,
                 cycle: tx.cycle,

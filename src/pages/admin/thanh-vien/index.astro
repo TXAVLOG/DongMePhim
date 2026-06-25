@@ -333,9 +333,9 @@ const packages = settings.packages || [];
           const u = users.find(user => user.username === username);
           if (!u) return;
 
-          const currentIndex = packages.findIndex(p => p.title === u.package);
+          const currentIndex = packages.findIndex(p => p.id === u.package || p.title === u.package);
           const nextIndex = (currentIndex + 1) % packages.length;
-          const nextPackage = packages[nextIndex]?.title || 'Free';
+          const nextPackage = packages[nextIndex]?.id || 'free';
           try {
             const res = await fetch('/api/admin/members', {
               method: 'POST',
@@ -474,7 +474,7 @@ const packages = settings.packages || [];
               minute: '2-digit'
             }) : '—';
             
-            const pkg = packages.find(p => p.title === u.package);
+            const pkg = packages.find(p => p.id === u.package) || packages.find(p => p.title === u.package);
             let styleClass = '';
             let styleAttr = '';
             if (pkg) {
@@ -484,10 +484,10 @@ const packages = settings.packages || [];
                 styleClass = `package-border-${pkg.id} border`;
                 styleAttr = `style="color: ${pkg.custom_color}; border-color: ${pkg.custom_color}; font-weight: bold;"`;
               } else {
-                styleClass = u.package === 'Free' ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                styleClass = (u.package === 'free' || u.package === 'Free') ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
               }
             } else {
-              styleClass = u.package === 'Free' ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+              styleClass = (u.package === 'free' || u.package === 'Free') ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
             }
             const packageText = u.package;
 

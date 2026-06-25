@@ -71,6 +71,8 @@ const settings = await SettingService.getSettings();
       const txid = urlParams.get('txid') || urlParams.get('session_id') || 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
       const cycle = urlParams.get('cycle') || 'monthly';
       const price = Number(urlParams.get('price')) || 69000;
+      const packageId = urlParams.get('packageId') || '';
+      const packageTitle = urlParams.get('packageTitle') || '';
       const username = (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
 
       // Populate details
@@ -98,7 +100,7 @@ const settings = await SettingService.getSettings();
             txid: txid,
             username: username,
             email: userEmail,
-            packageTitle: 'Premium VIP',
+            packageTitle: packageTitle,
             price: price,
             cycle: cycle,
             method: urlParams.get('method') || 'online',
@@ -107,27 +109,28 @@ const settings = await SettingService.getSettings();
           })
         });
 
-        // 2. Update user subscription package details
+        // 2. Update user subscription package details (only if packageId is provided)
         const cycleDays = cycle === 'annual' ? 365 : 30;
         const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
-
-        await fetch('/api/admin/members', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'edit',
-            username: username,
-            package: 'Premium VIP',
-            joinDate: new Date().toISOString(),
-            expiryDate: expiryDate,
-            status: 'active'
-          })
-        });
+        if (packageId) {
+          await fetch('/api/admin/members', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'edit',
+              username: username,
+              package: packageId,
+              joinDate: new Date().toISOString(),
+              expiryDate: expiryDate,
+              status: 'active'
+            })
+          });
+        }
 
         // 3. Keep in localStorage for client auth-bypassing layout checking
         localStorage.setItem('txa_user_subscription', JSON.stringify({
           username: username,
-          tier: 'Premium VIP',
+            tier: packageTitle || packageId,
           status: 'active',
           price: price,
           cycle: cycle,

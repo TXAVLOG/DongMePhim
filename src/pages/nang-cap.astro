@@ -1,7 +1,7 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro';
 import { SettingService } from '@services/SettingService';
-import { getPackageIdByTitle } from '@lib/utils';
+
 
 const settings = await SettingService.getSettings();
 const packages = settings.packages || [];
@@ -844,7 +844,7 @@ const groupedPackages = packages.map((pkg: any) => {
       const packageTitle = decodeURIComponent(packageTitleEncoded);
 
       if (isSandbox && method !== 'manual' && method !== 'sepay') {
-        window.location.href = `/checkout/gateway?method=${method}&cycle=${cycle}&price=${price}&packageTitle=${encodeURIComponent(packageTitle)}`;
+        window.location.href = `/checkout/gateway?method=${method}&cycle=${cycle}&price=${price}&packageId=${encodeURIComponent(packageId)}&packageTitle=${encodeURIComponent(packageTitle)}`;
         return;
       }
 
@@ -880,7 +880,7 @@ const groupedPackages = packages.map((pkg: any) => {
               });
 
               // Redirect to SePay checkout gateway
-              const successUrl = `${window.location.origin}/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}`;
+              const successUrl = `${window.location.origin}/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId)}&packageTitle=${encodeURIComponent(packageTitle)}`;
               const failUrl = `${window.location.origin}/checkout/failed?method=sepay&user=${encodeURIComponent(username)}`;
               const gatewayUrl = `https://pay.sepay.vn/checkout?account_id=${payments.sepay_bank_account_id}&amount=${price}&memo=${memo}&success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(failUrl)}`;
               window.location.href = gatewayUrl;
@@ -1343,7 +1343,7 @@ const groupedPackages = packages.map((pkg: any) => {
             document.getElementById('txa-modal-close')?.click();
 
             setTimeout(() => {
-              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}`;
+              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId)}&packageTitle=${encodeURIComponent(packageTitle)}`;
             }, 1500);
           } else if (!silent) {
             if (window.showGlobalToast) window.showGlobalToast(data.message || 'Hệ thống chưa nhận được giao dịch. Quý khách vui lòng đợi trong giây lát.', 'info');

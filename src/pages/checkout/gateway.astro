@@ -68,7 +68,8 @@ const settings = await SettingService.getSettings();
       const method = urlParams.get('method') || 'stripe';
       const cycle = urlParams.get('cycle') || 'monthly';
       const price = Number(urlParams.get('price')) || 69000;
-      const packageTitle = urlParams.get('packageTitle') || 'Premium VIP';
+      const packageId = urlParams.get('packageId') || '';
+      const packageTitle = urlParams.get('packageTitle') || '';
       const username = (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
 
       // Populate details
@@ -119,7 +120,7 @@ const settings = await SettingService.getSettings();
             body: JSON.stringify({
               action: 'edit',
               username: username,
-              package: packageTitle,
+              package: packageId,
               joinDate: new Date().toISOString(),
               expiryDate: expiryDate,
               status: 'active'
@@ -142,7 +143,7 @@ const settings = await SettingService.getSettings();
         }
 
         // Redirect to success page
-        window.location.href = `/checkout/success?method=${method}&cycle=${cycle}&price=${price}&txid=${txid}`;
+        window.location.href = `/checkout/success?method=${method}&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId)}&packageTitle=${encodeURIComponent(packageTitle)}`;
       };
 
       // Handle Failed

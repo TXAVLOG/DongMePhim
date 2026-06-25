@@ -78,7 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
         name: username,
         avatar_url: `https://www.gravatar.com/avatar/${emailHash}?d=identicon`,
         gender: gender || 'other',
-        package: 'Free',
+        package: 'free',
         status: 'active',
         email_verified: true,
         join_date: new Date().toISOString()

@@ -104,7 +104,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         gender: gender,
         province: province,
         ward: ward,
-        package: 'Free',
+        package: 'free',
         status: 'active',
         email_verified: true,
         join_date: new Date().toISOString()

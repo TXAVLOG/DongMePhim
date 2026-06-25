@@ -26,7 +26,7 @@ export const GET: APIRoute = async ({ request }) => {
       ward: u.ward || '',
       createdAt: u.created_at,
       status: u.status || 'active',
-      package: u.package || 'Free',
+      package: u.package || 'free',
       emailVerified: u.email_verified !== false,
       expiryDate: u.expiry_date || '',
       joinDate: u.join_date || ''
@@ -81,7 +81,7 @@ export const POST: APIRoute = async ({ request }) => {
           role: role || roles || 'user',
           name: username,
           avatar_url: `https://www.gravatar.com/avatar/${emailHash}?d=identicon`,
-          package: userPackage || 'Free',
+          package: userPackage || 'free',
           status: status || 'active',
           email_verified: emailVerified !== false,
           expiry_date: expiryDate || null,

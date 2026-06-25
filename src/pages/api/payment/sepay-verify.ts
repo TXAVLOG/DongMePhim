@@ -111,14 +111,17 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (updateLogErr) throw updateLogErr;
 
-    // 4. Cập nhật hạn dùng cho user tương ứng
+    // 4. Resolve package id and update user
+    const allPkgs = settings.packages || [];
+    const resolvedPkg = allPkgs.find((p: any) => p.title === log.package_title) || allPkgs.find((p: any) => p.id === log.package_title) || allPkgs.find((p: any) => p.id === 'free');
+    const pkgId = resolvedPkg?.id || 'free';
     const cycleDays = log.cycle === 'annual' ? 365 : 30;
     const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
 
     const { error: updateUserErr } = await supabase
       .from('users')
       .update({
-        package: log.package_title,
+        package: pkgId,
         join_date: new Date().toISOString(),
         expiry_date: expiryDate,
         status: 'active',
