@@ -615,7 +615,7 @@ const packages = settings.packages || [];
               <div>
                 <label class="block text-zinc-400 font-bold mb-1">Chọn gói cước trao tặng</label>
                 <select id="giveaway-package" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none font-bold">
-                  ${packages.map(p => \`<option value="\${p.title}">\${p.title}</option>\`).join('')}
+                  ${packages.map(p => `<option value="${p.title}">${p.title}</option>`).join('')}
                   <option value="bypass_zalo">⭐ [Gói riêng] Key Bypass Zalo (15 Thiết bị)</option>
                 </select>
               </div>
@@ -643,7 +643,7 @@ const packages = settings.packages || [];
                       const res = await fetch('/api/admin/zalo-keys', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'create', packageTitle: 'Gói Key Bypass Giveaway', durationMonths: 1, note: \`Giveaway cho \${u.username}\` })
+                        body: JSON.stringify({ action: 'create', packageTitle: 'Gói Key Bypass Giveaway', durationMonths: 1, note: 'Giveaway cho ' + u.username })
                       });
                       if (res.ok) successCount++;
                       else failCount++;
@@ -662,7 +662,7 @@ const packages = settings.packages || [];
                 }
 
                 if (successCount > 0) {
-                  window.showGlobalToast(\`Đã tặng gói thành công cho \${successCount} người!\${failCount > 0 ? \` (\${failCount} thất bại)\` : ''}\`, 'success');
+                  window.showGlobalToast('Đã tặng gói thành công cho ' + successCount + ' người!' + (failCount > 0 ? ' (' + failCount + ' thất bại)' : ''), 'success');
                   loadUsersFromDb();
                 } else {
                   window.showGlobalToast('Tất cả yêu cầu đều thất bại!', 'error');
@@ -679,7 +679,7 @@ const packages = settings.packages || [];
               let searchTimeout = null;
 
               function updateCount() {
-                if (userCountEl) userCountEl.textContent = \`(\${selectedUsers.length} người)\`;
+                if (userCountEl) userCountEl.textContent = '(' + selectedUsers.length + ' người)';
               }
 
               function renderPills() {
@@ -689,11 +689,9 @@ const packages = settings.packages || [];
                 selectedUsers.forEach((u, idx) => {
                   const pill = document.createElement('div');
                   pill.className = 'giveaway-pill flex items-center gap-1.5 bg-purple-600/20 border border-purple-500/40 rounded-full pl-1 pr-2 py-0.5 text-[11px] font-bold text-purple-300 animate-in';
-                  pill.innerHTML = \`
-                    <img src="\${u.avatar || '/logo-decoy.png'}" class="w-5 h-5 rounded-full object-cover border border-purple-500/30" onerror="this.src='/logo-decoy.png'" />
-                    <span>\${u.username}</span>
-                    <button type="button" data-idx="\${idx}" class="giveaway-pill-remove ml-0.5 text-purple-400 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 leading-none text-sm">✕</button>
-                  \`;
+                  pill.innerHTML = '<img src="' + (u.avatar || '/logo-decoy.png') + '" class="w-5 h-5 rounded-full object-cover border border-purple-500/30" onerror="this.src=\'/logo-decoy.png\'" />' +
+                    '<span>' + u.username + '</span>' +
+                    '<button type="button" data-idx="' + idx + '" class="giveaway-pill-remove ml-0.5 text-purple-400 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 leading-none text-sm">✕</button>';
                   pillsContainer.insertBefore(pill, searchInput);
                 });
                 updateCount();
@@ -728,16 +726,16 @@ const packages = settings.packages || [];
                 if (filtered.length === 0) {
                   dropdown.innerHTML = '<div class="px-4 py-3 text-zinc-500 italic text-center">Không tìm thấy thành viên phù hợp</div>';
                 } else {
-                  dropdown.innerHTML = filtered.map(u => \`
-                    <div class="giveaway-dropdown-item flex items-center gap-3 px-3 py-2.5 hover:bg-purple-600/10 cursor-pointer transition-all border-b border-zinc-800/50 last:border-none" data-username="\${u.username}" data-avatar="\${u.avatar || ''}" data-email="\${u.email || ''}">
-                      <img src="\${u.avatar || '/logo-decoy.png'}" class="w-7 h-7 rounded-full object-cover border border-zinc-700" onerror="this.src='/logo-decoy.png'" />
-                      <div class="flex-1 min-w-0">
-                        <p class="text-white font-bold text-xs truncate">\${u.username}</p>
-                        <p class="text-zinc-500 text-[10px] truncate">\${u.email || 'Không có email'}</p>
-                      </div>
-                      <span class="text-[9px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-bold uppercase">\${u.package || 'free'}</span>
-                    </div>
-                  \`).join('');
+                  dropdown.innerHTML = filtered.map(u => 
+                    '<div class="giveaway-dropdown-item flex items-center gap-3 px-3 py-2.5 hover:bg-purple-600/10 cursor-pointer transition-all border-b border-zinc-800/50 last:border-none" data-username="' + u.username + '" data-avatar="' + (u.avatar || '') + '" data-email="' + (u.email || '') + '">' +
+                      '<img src="' + (u.avatar || '/logo-decoy.png') + '" class="w-7 h-7 rounded-full object-cover border border-zinc-700" onerror="this.src=\'/logo-decoy.png\'" />' +
+                      '<div class="flex-1 min-w-0">' +
+                        '<p class="text-white font-bold text-xs truncate">' + u.username + '</p>' +
+                        '<p class="text-zinc-500 text-[10px] truncate">' + (u.email || 'Không có email') + '</p>' +
+                      '</div>' +
+                      '<span class="text-[9px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-bold uppercase">' + (u.package || 'free') + '</span>' +
+                    '</div>'
+                  ).join('');
                 }
 
                 dropdown.classList.remove('hidden');
