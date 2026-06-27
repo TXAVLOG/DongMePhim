@@ -1126,6 +1126,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [currentUserPackageTitle, setCurrentUserPackageTitle] = useState<string>('Gói Free');
   const [userPermissions, setUserPermissions] = useState<any>(null);
 
+  const [isAdChecking, setIsAdChecking] = useState<boolean>(true);
   const [showAd, setShowAd] = useState<boolean>(false);
   const [adPending, setAdPending] = useState<boolean>(false);
   const [adSkipSeconds, setAdSkipSeconds] = useState<number>(5);
@@ -1253,22 +1254,18 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               }
             }
 
-            setAdPending(true);
             setAdUrl(randomUrl);
             setAdType(adType);
             const skipSec = parseInt(ads.pre_roll_skip_seconds) || 5;
             setAdSkipSeconds(skipSec);
             setAdCountdown(skipSec);
-            
-            // Auto-show ad immediately for better UX
-            setTimeout(() => {
-              setShowAd(true);
-              setAdPending(false);
-            }, 100);
+            setShowAd(true);
           }
         }
       } catch (e) {
         console.error("Error fetching user details in player:", e);
+      } finally {
+        setIsAdChecking(false);
       }
     };
 
@@ -2147,6 +2144,13 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             </div>
           ) : isUnreleased && unreleasedEpisode ? (
             <UnreleasedPlayerPlaceholder episode={unreleasedEpisode} />
+          ) : isAdChecking ? (
+            <div className="w-full h-full bg-black flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                <span className="text-xs font-bold text-zinc-400">Đang chuẩn bị nguồn phát...</span>
+              </div>
+            </div>
           ) : showAd ? (
             <div className="absolute inset-0 bg-black flex items-center justify-center z-[50]">
               {adType === 'video' ? (
