@@ -192,92 +192,33 @@ export const POST: APIRoute = async ({ request }) => {
 
       if (savedMovie && validActors.length > 0) {
         const movieId = savedMovie.id;
-        const actorIds: string[] = [];
+        // Take top 6 actors to keep worker CPU execution ultra light & fast
+        const topActors = validActors.slice(0, 6);
+        const actorPayloads = topActors.map((actorName: string) => ({
+          name: actorName,
+          slug: slugify(actorName),
+          bio: 'Thông tin về nghệ sĩ này đang được cập nhật.'
+        }));
 
-        for (const actorName of validActors) {
-          const actorSlug = slugify(actorName);
-          
-          // Kiểm tra xem diễn viên đã tồn tại chưa
-          const { data: existingActor } = await supabase
-            .from('actors')
-            .select('id, avatar_url, bio')
-            .eq('slug', actorSlug)
-            .maybeSingle();
+        // Batch upsert actors in 1 fast DB operation
+        await supabase
+          .from('actors')
+          .upsert(actorPayloads, { onConflict: 'slug', ignoreDuplicates: true });
 
-          let actorId = existingActor?.id;
-          let avatarUrl = existingActor?.avatar_url;
-          let bio = existingActor?.bio;
+        // Retrieve actor IDs for mapping
+        const { data: dbActors } = await supabase
+          .from('actors')
+          .select('id, slug')
+          .in('slug', topActors.map((a: string) => slugify(a)));
 
-          if (!existingActor) {
-            // Tải thông tin từ TMDB (fallback Wikipedia)
-            let actorInfo = await fetchActorFromTMDB(actorName);
-            if (!actorInfo || !actorInfo.avatarUrl) {
-              const wikiData = await fetchActorFromWikipedia(actorName);
-              if (wikiData) {
-                actorInfo = {
-                  avatarUrl: wikiData.avatarUrl || actorInfo?.avatarUrl || '',
-                  bio: wikiData.bio || actorInfo?.bio || ''
-                };
-              }
-            }
-            avatarUrl = actorInfo?.avatarUrl || '';
-            bio = actorInfo?.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.';
-
-            // Lưu diễn viên mới
-            const { data: newActor, error: actorInsertError } = await supabase
-              .from('actors')
-              .insert({
-                name: actorName,
-                slug: actorSlug,
-                avatar_url: avatarUrl,
-                bio: bio
-              })
-              .select('id')
-              .single();
-
-            if (!actorInsertError && newActor) {
-              actorId = newActor.id;
-            }
-          } else if (!avatarUrl || !bio || bio.startsWith('Thông tin')) {
-            // Nếu đã tồn tại nhưng thiếu ảnh/bio, thử cập nhật từ TMDB/Wikipedia
-            let actorInfo = await fetchActorFromTMDB(actorName);
-            if (!actorInfo || !actorInfo.avatarUrl) {
-              const wikiData = await fetchActorFromWikipedia(actorName);
-              if (wikiData) {
-                actorInfo = {
-                  avatarUrl: wikiData.avatarUrl || actorInfo?.avatarUrl || '',
-                  bio: wikiData.bio || actorInfo?.bio || ''
-                };
-              }
-            }
-            if (actorInfo) {
-              const updatePayload: any = {};
-              if (actorInfo.avatarUrl && !avatarUrl) updatePayload.avatar_url = actorInfo.avatarUrl;
-              if (actorInfo.bio && (!bio || bio.startsWith('Thông tin'))) updatePayload.bio = actorInfo.bio;
-              
-              if (Object.keys(updatePayload).length > 0) {
-                await supabase
-                  .from('actors')
-                  .update(updatePayload)
-                  .eq('id', actorId);
-              }
-            }
-          }
-
-          if (actorId) {
-            actorIds.push(actorId);
-          }
-        }
-
-        if (actorIds.length > 0) {
-          // Xóa liên kết cũ của phim
+        if (dbActors && dbActors.length > 0) {
+          const actorIds = dbActors.map((a: any) => a.id);
           await supabase
             .from('movie_actors')
             .delete()
             .eq('movie_id', movieId);
 
-          // Tạo liên kết mới
-          const mappings = actorIds.map(aId => ({
+          const mappings = actorIds.map((aId: string) => ({
             movie_id: movieId,
             actor_id: aId,
             role_name: 'Diễn viên'
