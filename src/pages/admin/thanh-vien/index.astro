@@ -12,7 +12,11 @@ const packages = settings.packages || [];
       <h2 class="font-headline-lg text-on-surface text-3xl">Quản lý Thành viên</h2>
       <p class="text-text-dim text-body-main mt-1 font-outfit">Quản lý các tài khoản đã đăng ký thành viên trên hệ thống.</p>
     </div>
-    <div>
+    <div class="flex items-center gap-2">
+      <button onclick="openGiveawayModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer border-none shadow-lg shadow-purple-600/20">
+        <span class="material-symbols-outlined text-sm">card_giftcard</span>
+        <span>Tặng gói cước (Giveaway)</span>
+      </button>
       <button id="add-member-btn" class="px-4 py-2.5 bg-primary hover:brightness-110 text-slate-950 font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer border-none shadow-lg shadow-primary/10">
         <span class="material-symbols-outlined text-sm">person_add</span>
         <span>Thêm thành viên</span>
@@ -595,6 +599,72 @@ const packages = settings.packages || [];
             summaryText.textContent = `${activeCount} Đang hoạt động / ${users.length} Tổng số`;
           }
         }
+
+        window.openGiveawayModal = function() {
+          const content = `
+            <div class="space-y-4 text-xs text-left pt-2">
+              <div>
+                <label class="block text-zinc-400 font-bold mb-1">Tên tài khoản người nhận</label>
+                <input type="text" id="giveaway-username" placeholder="Nhập username thành viên..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-purple-500 font-bold" />
+              </div>
+              <div>
+                <label class="block text-zinc-400 font-bold mb-1">Chọn gói cước trao tặng</label>
+                <select id="giveaway-package" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none font-bold">
+                  ${packages.map(p => `<option value="${p.title}">${p.title}</option>`).join('')}
+                  <option value="bypass_zalo">⭐ [Gói riêng] Key Bypass Zalo (15 Thiết bị)</option>
+                </select>
+              </div>
+            </div>
+          `;
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: '🎁 Tặng Gói Cước Giveaway Tốc Độ',
+              content: content,
+              confirmText: 'Xác nhận tặng gói',
+              cancelText: 'Hủy bỏ',
+              onConfirm: async () => {
+                const username = document.getElementById('giveaway-username').value.trim();
+                const selectedPkg = document.getElementById('giveaway-package').value;
+
+                if (!username) {
+                  window.showGlobalToast('Vui lòng nhập tên tài khoản!', 'error');
+                  return;
+                }
+
+                if (selectedPkg === 'bypass_zalo') {
+                  // Gọi API tạo Key Bypass
+                  try {
+                    const res = await fetch('/api/admin/zalo-keys', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'create', packageTitle: 'Gói Key Bypass Giveaway', durationMonths: 1, note: `Giveaway cho ${username}` })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      window.showGlobalToast(`Đã cấp mã Key Bypass thành công: ${data.data.key_code}`, 'success');
+                    }
+                  } catch (e) {}
+                } else {
+                  // Gán gói vào tài khoản người dùng
+                  try {
+                    const res = await fetch('/api/admin/members', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'edit', username, package: selectedPkg })
+                    });
+                    if (res.ok) {
+                      window.showGlobalToast(`Đã tặng gói ${selectedPkg} cho ${username} thành công!`, 'success');
+                      loadUsersFromDb();
+                    } else {
+                      window.showGlobalToast('Không tìm thấy thành viên hoặc lỗi cập nhật!', 'error');
+                    }
+                  } catch (e) {}
+                }
+              }
+            });
+          }
+        };
 
         // Add Member Modal Form Trigger
         if (addBtn) {

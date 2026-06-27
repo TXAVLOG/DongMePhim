@@ -175,6 +175,83 @@ export function getEmailTemplate(filename: string): string {
 </body>
 </html>`;
 
+    case 'zalo-auto-approved-admin.html':
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thông báo tự động duyệt Zalo bằng Key Bypass - {site_name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
+              <img src="{site_url}/favicon.png" alt="Logo" style="width:56px;height:56px;margin-bottom:16px;border-radius:12px;" />
+              <h2 style="margin:0;font-size:24px;font-weight:800;color:#10b981;letter-spacing:-0.5px;text-transform:uppercase;">{site_name} Auto-Approve</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 30px;">
+              <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#ffffff;">Xin chào Admin,</h3>
+              <p style="margin:0 0 20px;font-size:14px;color:#a1a1aa;line-height:1.6;">Hệ thống vừa tự động phê duyệt thành công một yêu cầu truy cập Zalo nhờ Mã Key Bypass hợp lệ.</p>
+              <div style="background-color:#18181b;border:1px solid #27272a;border-radius:16px;padding:20px;margin:24px 0;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;color:#a1a1aa;line-height:1.8;">
+                  <tr><td width="35%">Mã Key DP:</td><td style="color:#10b981;font-weight:bold;font-family:monospace;">{key_code}</td></tr>
+                  <tr><td>Nickname Zalo:</td><td style="color:#ffffff;font-weight:bold;">{nickname}</td></tr>
+                  <tr><td>Browser Token:</td><td style="color:#ffffff;font-family:monospace;font-size:11px;">{token}</td></tr>
+                  <tr><td>Địa chỉ IP:</td><td style="color:#ffffff;">{ip}</td></tr>
+                  <tr><td>Thời gian duyệt:</td><td style="color:#ffffff;">{send_time}</td></tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    case 'zalo-key-issued-user.html':
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mã Key Bypass Duyệt Zalo - {site_name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
+              <img src="{site_url}/favicon.png" alt="Logo" style="width:56px;height:56px;margin-bottom:16px;border-radius:12px;" />
+              <h2 style="margin:0;font-size:24px;font-weight:800;color:#a78bfa;letter-spacing:-0.5px;text-transform:uppercase;">{site_name} VIP Key</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 30px;">
+              <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#ffffff;">Xin chào Quý khách,</h3>
+              <p style="margin:0 0 20px;font-size:14px;color:#a1a1aa;line-height:1.6;">Cảm ơn bạn đã mua **{package_title}** tại {site_name}. Mã Key Bypass Zalo của bạn (Dùng tối đa 15 thiết bị):</p>
+              <div style="background-color:#18181b;border:2px dashed #a78bfa;border-radius:16px;padding:24px;margin:24px 0;text-align:center;">
+                <div style="font-size:32px;font-weight:900;color:#a78bfa;font-family:monospace;letter-spacing:3px;">{key_code}</div>
+                <p style="margin:8px 0 0;font-size:12px;color:#71717a;">Hạn sử dụng: <strong style="color:#ffffff;">{expiry_date}</strong></p>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
     default:
       return '';
   }

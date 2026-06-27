@@ -160,6 +160,61 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (error) throw error;
 
+    // Nếu trạng thái là 'approved' và đây là gói Key Bypass Zalo -> Tự động sinh mã Key và gửi Email cho khách
+    if (status === 'approved' && (packageTitle.toLowerCase().includes('bypass') || packageTitle.toLowerCase().includes('zalo') || packageTitle.toLowerCase().includes('key'))) {
+      try {
+        const { ZaloService } = await import('@services/ZaloService');
+        const { SettingService } = await import('@services/SettingService');
+        const { SmtpClient } = await import('@lib/api/smtpClient');
+        const { getEmailTemplate } = await import('@templates/emails/emailReader');
+
+        const durationMonths = cycle === 'annual' ? 12 : 1;
+        const keyRecord = await ZaloService.createBypassKey({
+          packageTitle: packageTitle,
+          durationMonths: durationMonths,
+          email: email || null,
+          maxDevices: 15
+        });
+
+        // Gửi Mail cho người dùng nếu có cấu hình SMTP và email người nhận
+        if (email) {
+          const settings = await SettingService.getSettings();
+          const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
+          if (isSmtpConfigured) {
+            const siteUrl = settings.general.site_url || 'https://dongmephim.online';
+            const siteName = settings.general.site_name || 'DongMePhim';
+            const year = new Date().getFullYear().toString();
+            const expDateStr = new Date(keyRecord.expiry_date).toLocaleDateString('vi-VN');
+
+            const htmlTemplate = getEmailTemplate('zalo-key-issued-user.html');
+            const compiledHtml = htmlTemplate
+              .replace(/{package_title}/g, packageTitle)
+              .replace(/{key_code}/g, keyRecord.key_code)
+              .replace(/{expiry_date}/g, expDateStr)
+              .replace(/{site_name}/g, siteName)
+              .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
+              .replace(/{year}/g, year);
+
+            await SmtpClient.sendMail({
+              host: settings.smtp.smtp_host,
+              port: settings.smtp.smtp_port,
+              secure: settings.smtp.smtp_secure as any,
+              user: settings.smtp.smtp_user,
+              pass: settings.smtp.smtp_pass,
+              fromEmail: settings.smtp.smtp_from_email,
+              fromName: settings.smtp.smtp_from_name,
+            }, {
+              to: email,
+              subject: `[${siteName}] Mã Key Bypass Duyệt Zalo của bạn: ${keyRecord.key_code}`,
+              html: compiledHtml
+            });
+          }
+        }
+      } catch (keyErr) {
+        console.error('Lỗi khi tự động phát hành mã Key Bypass cho đơn hàng:', keyErr);
+      }
+    }
+
     return apiResponse({ success: true }, 'success', 'Lưu nhật ký giao dịch thành công!', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);

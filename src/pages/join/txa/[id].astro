@@ -1,0 +1,310 @@
+---
+import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
+
+const { id } = Astro.params;
+const settings = await SettingService.getSettings();
+const events = (settings as any).lucky_draw_events || [];
+const event = events.find((e: any) => e.id === id);
+---
+
+<MainLayout title={event ? event.title : "Sự kiện Vòng Quay May Mắn"}>
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 min-h-[85vh] flex flex-col items-center justify-center">
+    {!event ? (
+      <div class="glass-panel border border-rose-500/30 bg-rose-500/5 rounded-3xl p-12 text-center max-w-lg space-y-4 shadow-2xl">
+        <div class="w-20 h-20 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto">
+          <span class="material-symbols-outlined text-rose-500 text-4xl">error</span>
+        </div>
+        <h1 class="text-2xl font-black text-white">Liên kết không hợp lệ!</h1>
+        <p class="text-xs text-zinc-400 font-body-main leading-relaxed">Sự kiện bạn đang tìm kiếm không tồn tại hoặc đã bị xóa khỏi hệ thống. Vui lòng kiểm tra lại đường dẫn.</p>
+        <a href="/tphim" class="inline-block px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full text-xs transition-all no-underline mt-4">Về Trang Chủ</a>
+      </div>
+    ) : (
+      <div class="w-full max-w-4xl space-y-8 text-center" id="lucky-draw-app-root" data-event={JSON.stringify(event)}>
+        
+        <!-- Header & Countdown -->
+        <div class="space-y-3">
+          <span class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-[10px] font-black uppercase tracking-widest">MINIGAME ĐẶC BIỆT</span>
+          <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight">{event.title}</h1>
+          <p class="text-xs md:text-sm text-zinc-400 max-w-xl mx-auto font-body-main">{event.description || 'Quay vòng quay may mắn để nhận ngay nhiều phần quà hấp dẫn!'}</p>
+        </div>
+
+        <!-- Participant & Timer Bar -->
+        <div class="flex flex-wrap items-center justify-center gap-4 text-xs">
+          <div class="glass-panel border border-glass-stroke rounded-2xl px-5 py-3 flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-emerald-400 text-lg">group</span>
+            <span class="text-zinc-400">Tham gia: <strong class="text-white font-bold" id="participants-cnt">{event.participantsCount || 128} người</strong></span>
+          </div>
+
+          <div class="glass-panel border border-glass-stroke rounded-2xl px-5 py-3 flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-amber-400 text-lg">timer</span>
+            <span class="text-zinc-400">Kết thúc sau: <strong class="text-amber-400 font-mono font-bold" id="countdown-timer">--:--:--</strong></span>
+          </div>
+        </div>
+
+        <!-- Wheel Canvas Area -->
+        <div class="relative w-[340px] h-[340px] sm:w-[420px] sm:h-[420px] mx-auto flex items-center justify-center my-6">
+          <!-- Pointer Pin -->
+          <div class="absolute -top-4 left-1/2 -translate-x-1/2 z-30 w-8 h-10 flex flex-col items-center drop-shadow-2xl">
+            <div class="w-6 h-6 bg-amber-400 rotate-45 rounded-sm shadow-lg border-2 border-slate-950"></div>
+          </div>
+
+          <!-- Canvas -->
+          <div class="p-4 bg-zinc-950/80 border-4 border-amber-500/40 rounded-full shadow-[0_0_60px_rgba(245,158,11,0.25)] relative overflow-hidden">
+            <canvas id="wheel-canvas" width="400" height="400" class="w-full h-full rounded-full transition-transform duration-700 ease-out"></canvas>
+          </div>
+
+          <!-- Center Spin Button -->
+          <button id="spin-btn" class="absolute z-20 w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-black text-sm uppercase tracking-wider shadow-2xl shadow-amber-500/50 border-4 border-slate-950 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center">
+            QUAY
+          </button>
+        </div>
+
+      </div>
+    )}
+  </main>
+</MainLayout>
+
+<script is:inline>
+  (function() {
+    const root = document.getElementById('lucky-draw-app-root');
+    if (!root) return;
+
+    const event = JSON.parse(root.dataset.event || '{}');
+    const canvas = document.getElementById('wheel-canvas');
+    const spinBtn = document.getElementById('spin-btn');
+    if (!canvas || !spinBtn) return;
+
+    const ctx = canvas.getContext('2d');
+    const prizes = event.prizes || [];
+    const numPrizes = prizes.length;
+    const arc = (2 * Math.PI) / numPrizes;
+    let startAngle = 0;
+    let isSpinning = false;
+
+    // Countdown Timer
+    function updateTimer() {
+      const timerEl = document.getElementById('countdown-timer');
+      if (!timerEl || !event.endTime) return;
+
+      const diff = new Date(event.endTime) - new Date();
+      if (diff <= 0) {
+        timerEl.textContent = 'Đã kết thúc!';
+        spinBtn.disabled = true;
+        spinBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      timerEl.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    setInterval(updateTimer, 1000);
+    updateTimer();
+
+    // Draw Wheel
+    function drawWheel() {
+      const outsideRadius = 195;
+      const textRadius = 135;
+      const insideRadius = 45;
+
+      ctx.clearRect(0, 0, 400, 400);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+      ctx.lineWidth = 2;
+
+      for (let i = 0; i < numPrizes; i++) {
+        const angle = startAngle + i * arc;
+        ctx.fillStyle = prizes[i].color || (i % 2 === 0 ? '#1f1f23' : '#27272a');
+
+        ctx.beginPath();
+        ctx.arc(200, 200, outsideRadius, angle, angle + arc, false);
+        ctx.arc(200, 200, insideRadius, angle + arc, angle, true);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.save();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 12px 'Be Vietnam Pro', sans-serif";
+        ctx.translate(200 + Math.cos(angle + arc / 2) * textRadius, 200 + Math.sin(angle + arc / 2) * textRadius);
+        ctx.rotate(angle + arc / 2 + Math.PI / 2);
+        
+        const text = prizes[i].type === 'empty' ? 'May mắn' : prizes[i].name;
+        ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+        ctx.restore();
+      }
+    }
+    drawWheel();
+
+    // Web Audio API for ticking and win sound
+    function playTick() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const actx = new AudioCtx();
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, actx.currentTime);
+        gain.gain.setValueAtTime(0.1, actx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start();
+        osc.stop(actx.currentTime + 0.05);
+      } catch (e) {}
+    }
+
+    function playWinSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const actx = new AudioCtx();
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, actx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, actx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, actx.currentTime + 0.2); // G5
+        gain.gain.setValueAtTime(0.3, actx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.6);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start();
+        osc.stop(actx.currentTime + 0.6);
+      } catch (e) {}
+    }
+
+    // Spin Handler
+    spinBtn.onclick = function() {
+      if (isSpinning) return;
+      
+      // Check login
+      if (!window.APP_USER) {
+        if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập tài khoản để quay thưởng!', 'error');
+        window.dispatchEvent(new Event('open-login-modal'));
+        return;
+      }
+
+      isSpinning = true;
+      spinBtn.disabled = true;
+
+      // Select random prize based on probability
+      const rand = Math.random() * 100;
+      let cumulative = 0;
+      let prizeIndex = 0;
+      for (let i = 0; i < numPrizes; i++) {
+        cumulative += (prizes[i].chance || 10);
+        if (rand <= cumulative) {
+          prizeIndex = i;
+          break;
+        }
+      }
+
+      const winPrize = prizes[prizeIndex];
+      const degreesPerSlice = 360 / numPrizes;
+      const targetDegree = 360 - (prizeIndex * degreesPerSlice + degreesPerSlice / 2);
+      const totalRounds = 5;
+      const finalDegree = totalRounds * 360 + targetDegree;
+
+      let currentDeg = 0;
+      const duration = 4000;
+      const startTime = performance.now();
+
+      function animateSpin(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Easing out cubic
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        currentDeg = easeProgress * finalDegree;
+
+        startAngle = (currentDeg * Math.PI) / 180;
+        drawWheel();
+
+        if (progress < 1) {
+          if (Math.floor(currentDeg / degreesPerSlice) !== Math.floor((currentDeg - 5) / degreesPerSlice)) {
+            playTick();
+          }
+          requestAnimationFrame(animateSpin);
+        } else {
+          isSpinning = false;
+          spinBtn.disabled = false;
+          playWinSound();
+          handleWin(winPrize);
+        }
+      }
+
+      requestAnimationFrame(animateSpin);
+    };
+
+    function handleWin(prize) {
+      if (prize.type === 'empty') {
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Chưa may mắn lần này!',
+            message: '<p class="text-xs text-zinc-300">Chúc bạn may mắn hơn trong lần quay tiếp theo nhé!</p>',
+            confirmText: 'Đóng'
+          });
+        }
+        return;
+      }
+
+      if (prize.type === 'phone') {
+        // Form nhập SĐT Việt Nam
+        const content = `
+          <div class="space-y-4 text-xs text-left">
+            <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
+              🎉 Bạn đã trúng phần quà: ${prize.name}!
+            </div>
+            <p class="text-zinc-400">Vui lòng nhập số điện thoại chính chủ để ban quản trị liên hệ gửi thẻ nạp / phần quà:</p>
+            <div>
+              <label class="block text-zinc-400 font-bold mb-1">Số điện thoại Việt Nam (10 số)</label>
+              <input type="tel" id="claim-phone-input" placeholder="0388xxxxxx..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white font-mono font-bold text-sm focus:outline-none focus:border-emerald-500" />
+            </div>
+          </div>
+        `;
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: '🎁 Nhận Phần Thưởng Trúng Giải',
+            content: content,
+            confirmText: 'Xác Nhận Nhận Giải',
+            cancelText: 'Hủy',
+            onConfirm: async () => {
+              const phone = (document.getElementById('claim-phone-input')?.value || '').trim();
+              const vnPnRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
+              if (!vnPnRegex.test(phone)) {
+                if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập đúng số điện thoại Việt Nam hợp lệ!', 'error');
+                return;
+              }
+
+              try {
+                const res = await fetch('/api/admin/lucky-draw', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'claim_phone_prize',
+                    phone: phone,
+                    winnerName: (window.APP_USER ? window.APP_USER.username : 'Khách'),
+                    prizeName: prize.name
+                  })
+                });
+                if (res.ok) {
+                  if (window.showGlobalToast) window.showGlobalToast('Đã gửi thông tin nhận giải! Ban quản trị sẽ liên hệ sớm nhất.', 'success');
+                }
+              } catch (e) {}
+            }
+          });
+        }
+      } else {
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: '🎉 THẤT ĐẠI PHÁT - TRÚNG GIẢI!',
+            message: `<p class="text-sm font-bold text-amber-400">Chúc mừng bạn đã trúng ${prize.name}!</p>`,
+            confirmText: 'Nhận Thưởng'
+          });
+        }
+      }
+    }
+  })();
+</script>

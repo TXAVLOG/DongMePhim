@@ -17,6 +17,9 @@ interface Props {
 
 const settings = await SettingService.getSettings();
 const packages = settings.packages || [];
+const bypassPackage = packages.find((p: any) => p.id === 'bypass_zalo' || p.id.includes('bypass'));
+const isBypassPackageEnabled = bypassPackage ? bypassPackage.enabled !== false : true;
+
 let packageStyles = `
   .package-style-free {
     background-color: #27272a !important;
@@ -878,18 +881,79 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 />
               </div>
 
+              <div>
+                <label class="block text-[9px] font-black uppercase tracking-wider text-purple-400 mb-2 flex justify-between items-center">
+                  <span>Mã Key Bypass Duyệt Zalo (Nếu có)</span>
+                  <span class="text-[8px] text-emerald-400 font-bold">DPxxxxxx (15 thiết bị)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="zalo-bypasskey-input"
+                  placeholder="Ví dụ: DP8A9B2C..." 
+                  class="w-full bg-purple-950/20 border border-purple-500/30 rounded-xl px-4 py-3 text-xs text-purple-200 focus:outline-none focus:border-purple-400 transition-all font-mono font-bold uppercase tracking-wider"
+                  maxlength="8"
+                />
+              </div>
+
+              <!-- Bypass Package Recommendation Widget -->
+              {isBypassPackageEnabled && (
+                <div class="p-3.5 bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-500/30 rounded-2xl space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-black text-purple-300 uppercase tracking-wider flex items-center gap-1">
+                      <i class="fas fa-bolt text-amber-400"></i> Không muốn chờ duyệt?
+                    </span>
+                    <span id="zalo-recommendation-badge" class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">Duyệt tự động 100%</span>
+                  </div>
+                  <p class="text-[10px] text-zinc-400 leading-relaxed font-body-main">Đăng ký Gói Key Bypass Zalo để nhận ngay mã Key <strong class="text-white">DPxxxxxx</strong> tự động duyệt tức thì trên 15 thiết bị.</p>
+                  <a id="btn-buy-bypass-modal" href="/checkout/order-summary?packageId=bypass_zalo&cycle=monthly" class="block w-full text-center py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-[11px] uppercase transition-all shadow-md cursor-pointer no-underline">
+                    Mua Key Bypass ngay (49.000đ)
+                  </a>
+                </div>
+              )}
+
               <button 
                 type="submit"
                 id="zalo-submit-btn"
                 class="w-full relative flex items-center justify-center gap-2 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-purple-600 text-white hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(168,85,247,0.3)] cursor-pointer border-none"
               >
                 <i class="fas fa-paper-plane"></i>
-                <span>Gửi yêu cầu duyệt</span>
+                <span>Gửi yêu cầu / Xác thực Key</span>
               </button>
             </form>
           </div>
       </div>
     </div>
+
+    <script is:inline>
+      (function() {
+        function updateZaloModalBypassPrice() {
+          const btn = document.getElementById('btn-buy-bypass-modal');
+          if (!btn) return;
+          try {
+            const stored = localStorage.getItem('thistory');
+            let count = 0;
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (Array.isArray(parsed)) count = parsed.length;
+              else if (typeof parsed === 'object' && parsed !== null) count = Object.keys(parsed).length;
+            }
+            if (count > 0) {
+              const basePrice = 49000;
+              const discount = Math.min(basePrice - 10000, count * 3000);
+              const dynamicPrice = Math.max(10000, basePrice - discount);
+              btn.textContent = `Mua Key Bypass ngay (${dynamicPrice.toLocaleString('vi-VN')}đ)`;
+              const badge = document.getElementById('zalo-recommendation-badge');
+              if (badge) badge.textContent = `Ưu đãi xem ${count} phim`;
+            }
+          } catch(e) {}
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', updateZaloModalBypassPrice);
+        } else {
+          updateZaloModalBypassPrice();
+        }
+      })();
+    </script>
 
     <!-- Mở thẻ bọc chính -->
     <div id="main-app-container">
@@ -3856,11 +3920,12 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         window.handleZaloRegister = async function(e) {
           e.preventDefault();
           const nickname = document.getElementById('zalo-nickname-input').value.trim();
+          const bypassKey = (document.getElementById('zalo-bypasskey-input')?.value || '').trim();
           if (!nickname) return;
 
           const submitBtn = document.getElementById('zalo-submit-btn');
           submitBtn.disabled = true;
-          submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> <span>Đang đăng ký...</span>';
+          submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> <span>Đang xử lý...</span>';
 
           try {
             const userEmail = (window.APP_USER ? window.APP_USER.username : null) || null;
@@ -3870,26 +3935,41 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               body: JSON.stringify({
                 token: browserToken,
                 nickname: nickname,
-                email: userEmail
+                email: userEmail,
+                bypassKey: bypassKey
               })
             });
             const data = await res.json();
             if (res.ok) {
-              if (window.showGlobalToast) window.showGlobalToast('Gửi yêu cầu thành công! Vui lòng chờ phê duyệt.', 'success');
-              
-              localStorage.setItem('zalo_access_status', 'pending');
-              closeZaloModal();
-              updateZaloUI('pending');
-              startZaloPolling();
+              if (data.data && data.data.isAutoApproved) {
+                if (window.showGlobalToast) window.showGlobalToast('Mã Key Bypass hợp lệ! Đã tự động phê duyệt truy cập.', 'success');
+                localStorage.setItem('zalo_access_status', 'approved');
+                document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
+                closeZaloModal();
+                updateZaloUI('approved');
+                setTimeout(() => {
+                  document.documentElement.classList.remove('gate-zalo');
+                  document.documentElement.classList.add('gate-passed');
+                  if (window.location.pathname !== '/tphim') {
+                    window.location.href = '/tphim';
+                  }
+                }, 1000);
+              } else {
+                if (window.showGlobalToast) window.showGlobalToast('Gửi yêu cầu thành công! Vui lòng chờ phê duyệt.', 'success');
+                localStorage.setItem('zalo_access_status', 'pending');
+                closeZaloModal();
+                updateZaloUI('pending');
+                startZaloPolling();
+              }
             } else {
               if (window.showGlobalToast) window.showGlobalToast(data.message || 'Đăng ký thất bại', 'error');
               submitBtn.disabled = false;
-              submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Gửi yêu cầu duyệt</span>';
+              submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Gửi yêu cầu / Xác thực Key</span>';
             }
           } catch (err) {
             if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối mạng!', 'error');
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Gửi yêu cầu duyệt</span>';
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Gửi yêu cầu / Xác thực Key</span>';
           }
         };
 

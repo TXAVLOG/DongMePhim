@@ -1,0 +1,305 @@
+---
+import MainLayout from '@layouts/MainLayout.astro';
+---
+
+<MainLayout title="Tổng kết đơn hàng & Thanh toán">
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 space-y-8 min-h-[80vh]">
+    
+    <!-- Header -->
+    <div class="border-b border-glass-stroke pb-6 flex items-center gap-4">
+      <a href="/nang-cap" class="p-2.5 bg-white/5 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-all">
+        <span class="material-symbols-outlined text-xl">arrow_back</span>
+      </a>
+      <div>
+        <h1 class="font-display-hero text-3xl text-white font-bold tracking-tight">Tổng kết đơn hàng</h1>
+        <p class="text-on-surface-variant text-xs mt-1 font-body-main">Kiểm tra thông tin chi tiết gói cước và chọn phương thức thanh toán.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <!-- Left Column: Order Details & Pricing Table -->
+      <div class="lg:col-span-7 space-y-6">
+        <div class="glass-panel border border-glass-stroke rounded-3xl p-6 md:p-8 space-y-6 relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-wider">THÔNG TIN GÓI DỊCH VỤ</span>
+              <h2 id="summary-pkg-title" class="text-2xl font-black text-white mt-3">Đang tải...</h2>
+              <p id="summary-pkg-cycle" class="text-xs text-zinc-400 mt-1 font-body-main">Chu kỳ: Hàng tháng</p>
+            </div>
+            <div class="p-3 bg-surface-container-high rounded-2xl">
+              <span class="material-symbols-outlined text-primary text-3xl">workspace_premium</span>
+            </div>
+          </div>
+
+          <!-- Package Details List -->
+          <div class="border-t border-glass-stroke/40 pt-4 space-y-2.5 text-xs text-zinc-300" id="summary-features-container">
+            <!-- Features populated dynamically -->
+          </div>
+
+          <!-- Email recipient input for Bypass Key packages -->
+          <div id="bypass-email-wrapper" class="hidden border-t border-glass-stroke/40 pt-4 space-y-2">
+            <label class="text-[11px] text-primary font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">mail</span>
+              Email nhận mã Key Bypass Zalo (Bắt buộc)
+            </label>
+            <input type="email" id="summary-recipient-email" placeholder="Ví dụ: name@example.com" class="w-full bg-zinc-900 border border-glass-stroke focus:border-primary rounded-xl px-4 py-3 text-xs text-white focus:outline-none transition-all" />
+            <p class="text-[10px] text-zinc-500 font-body-main">Mã Key DP 8 ký tự sẽ được gửi tự động về địa chỉ email này ngay sau khi thanh toán thành công.</p>
+          </div>
+
+          <!-- Invoice Price Calculation Table -->
+          <div class="border-t border-glass-stroke/40 pt-6 space-y-3 text-xs">
+            <div class="flex justify-between items-center text-zinc-400">
+              <span>Giá gốc dịch vụ (Tạm tính)</span>
+              <span id="summary-subtotal-val" class="font-mono font-semibold text-white">0đ</span>
+            </div>
+            <div class="flex justify-between items-center text-zinc-400">
+              <span class="flex items-center gap-1">
+                <span>Thuế giá trị gia tăng</span>
+                <span id="summary-vat-badge" class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[9px] font-bold">VAT 8%</span>
+              </span>
+              <span id="summary-vat-val" class="font-mono font-semibold text-white">0đ</span>
+            </div>
+            <div class="border-t border-glass-stroke/30 pt-3 flex justify-between items-center text-sm font-bold">
+              <span class="text-white uppercase tracking-wider font-label-caps">TỔNG CỘNG THANH TOÁN</span>
+              <span id="summary-total-val" class="text-xl font-black text-primary font-mono">0đ</span>
+            </div>
+            <p class="text-[10px] text-zinc-500 text-right font-body-main italic">* Giá hiển thị đã bao gồm đầy đủ thuế VAT theo quy định.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Payment Method Selection & Submit -->
+      <div class="lg:col-span-5 space-y-6">
+        <div class="glass-panel border border-glass-stroke rounded-3xl p-6 md:p-8 space-y-6">
+          <div>
+            <h3 class="text-base font-bold text-white uppercase tracking-wider">CHỌN PHƯƠNG THỨC THANH TOÁN</h3>
+            <p class="text-xs text-zinc-400 mt-1 font-body-main">Vui lòng chọn cổng thanh toán tiện lợi nhất cho bạn.</p>
+          </div>
+
+          <div id="payment-methods-list" class="space-y-3">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <button id="btn-submit-checkout" class="w-full py-4 rounded-xl font-black text-xs text-slate-950 bg-primary hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-lg shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-wider border-none">
+            <span>Xác nhận & Thanh toán</span>
+            <span class="material-symbols-outlined text-base font-bold">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</MainLayout>
+
+<script is:inline>
+  (function() {
+    let loadedSettings = {};
+    let selectedPackage = null;
+    let selectedMethod = 'manual';
+    let subtotal = 0;
+    let vatAmount = 0;
+    let totalAmount = 0;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const pkgId = urlParams.get('packageId') || 'vip';
+    const cycle = urlParams.get('cycle') || 'monthly';
+
+    async function initOrderSummary() {
+      try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+          const result = await res.json();
+          loadedSettings = result.data || {};
+        }
+      } catch (e) {
+        console.error('Error loading settings:', e);
+      }
+
+      const payments = loadedSettings.payments || {};
+      const vatRate = payments.vat_rate !== undefined ? Number(payments.vat_rate) : 8;
+      const packages = loadedSettings.packages || [];
+
+      // Find package
+      selectedPackage = packages.find(p => p.id === pkgId) || packages.find(p => p.title.toLowerCase().includes(pkgId.toLowerCase()));
+
+      if (!selectedPackage && (pkgId.includes('bypass') || pkgId.includes('zalo'))) {
+        selectedPackage = {
+          id: 'bypass_zalo',
+          title: 'Gói Key Bypass Duyệt Zalo (15 Thiết bị)',
+          price: 49000,
+          annual_price: 399000,
+          features: [
+            'Tự động duyệt Zalo 100% ngay lập tức',
+            'Cấp mã Key 8 ký tự độc lập (Dạng DPxxxxxx)',
+            'Sử dụng trên tối đa 15 trình duyệt/thiết bị khác nhau',
+            'Không cần đợi Admin phê duyệt thủ công'
+          ]
+        };
+      }
+
+      if (!selectedPackage) {
+        selectedPackage = packages.find(p => p.id === 'vip') || { title: 'Gói VIP', price: 69000, features: [] };
+      }
+
+      if (selectedPackage && selectedPackage.enabled === false) {
+        if (window.showGlobalToast) window.showGlobalToast('Gói cước này hiện tại đang tạm dừng cung cấp!', 'error');
+        setTimeout(() => window.location.href = '/nang-cap', 1500);
+        return;
+      }
+
+      // Populate package info
+      document.getElementById('summary-pkg-title').textContent = selectedPackage.title;
+      document.getElementById('summary-pkg-cycle').textContent = `Chu kỳ: ${cycle === 'annual' ? 'Hàng năm (12 tháng)' : 'Hàng tháng'}`;
+
+      const featContainer = document.getElementById('summary-features-container');
+      if (featContainer && selectedPackage.features) {
+        featContainer.innerHTML = selectedPackage.features.map(f => `
+          <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-emerald-400 text-base">check_circle</span>
+            <span>${f}</span>
+          </div>
+        `).join('');
+      }
+
+      function getWatchedCount() {
+        try {
+          const stored = localStorage.getItem('thistory');
+          if (!stored) return 0;
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed.length;
+          if (typeof parsed === 'object' && parsed !== null) return Object.keys(parsed).length;
+        } catch(e) {}
+        return 0;
+      }
+
+      function getBypassDynamicPrice(basePrice = 49000) {
+        const count = getWatchedCount();
+        if (count <= 0) return basePrice;
+        const discount = Math.min(basePrice - 10000, count * 3000);
+        return Math.max(10000, basePrice - discount);
+      }
+
+      // Check if bypass key package to show email input & dynamic price
+      const isBypassPkg = (selectedPackage.id && selectedPackage.id.includes('bypass')) || selectedPackage.title.toLowerCase().includes('bypass') || selectedPackage.title.toLowerCase().includes('zalo');
+      const emailWrapper = document.getElementById('bypass-email-wrapper');
+      if (emailWrapper) {
+        if (isBypassPkg) {
+          emailWrapper.classList.remove('hidden');
+          const currentEmail = (window.APP_USER ? window.APP_USER.email : '') || '';
+          const emailInput = document.getElementById('summary-recipient-email');
+          if (emailInput && currentEmail) emailInput.value = currentEmail;
+        } else {
+          emailWrapper.classList.add('hidden');
+        }
+      }
+
+      // Calculate Price & VAT
+      let fullPrice = cycle === 'annual' ? (selectedPackage.annual_price || selectedPackage.price * 10) : selectedPackage.price;
+      if (isBypassPkg) {
+        const watchedCount = getWatchedCount();
+        const basePrice = fullPrice;
+        fullPrice = getBypassDynamicPrice(basePrice);
+        if (watchedCount > 0) {
+          const featContainer = document.getElementById('summary-features-container');
+          if (featContainer) {
+            const discountNote = document.createElement('div');
+            discountNote.className = 'flex items-center gap-2 text-purple-300 bg-purple-500/10 border border-purple-500/20 p-2.5 rounded-xl font-bold mt-2';
+            discountNote.innerHTML = `<span class="material-symbols-outlined text-amber-400 text-base">workspace_premium</span><span>Ưu đãi tri ân máy bạn đã xem ${watchedCount} phim: Giảm còn ${fullPrice.toLocaleString('vi-VN')}đ (Gốc ${basePrice.toLocaleString('vi-VN')}đ)</span>`;
+            featContainer.appendChild(discountNote);
+          }
+        }
+      }
+      totalAmount = fullPrice;
+      subtotal = Math.round(totalAmount / (1 + vatRate / 100));
+      vatAmount = totalAmount - subtotal;
+
+      document.getElementById('summary-subtotal-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(subtotal);
+      document.getElementById('summary-vat-badge').textContent = `VAT ${vatRate}%`;
+      document.getElementById('summary-vat-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(vatAmount);
+      document.getElementById('summary-total-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount);
+
+      // Render Payment Methods
+      renderPaymentMethods(payments);
+    }
+
+    function renderPaymentMethods(payments) {
+      const listContainer = document.getElementById('payment-methods-list');
+      if (!listContainer) return;
+
+      const methods = [];
+      if (payments.manual_enable ?? true) methods.push({ id: 'manual', label: 'Chuyển khoản VietQR (Thủ công)', icon: 'qr_code_scanner' });
+      if (payments.sepay_enable ?? true) methods.push({ id: 'sepay', label: 'Cổng SePay Tự Động', icon: 'bolt' });
+      if (payments.payos_enable) methods.push({ id: 'payos', label: 'Cổng PayOS', icon: 'credit_card' });
+      if (payments.vnpay_enable) methods.push({ id: 'vnpay', label: 'Cổng VNPAY', icon: 'account_balance_wallet' });
+      if (payments.stripe_enable) methods.push({ id: 'stripe', label: 'Cổng Thẻ Quốc Tế Stripe', icon: 'credit_card' });
+
+      if (methods.length === 0) {
+        methods.push({ id: 'manual', label: 'Chuyển khoản VietQR', icon: 'qr_code_scanner' });
+      }
+
+      selectedMethod = methods[0].id;
+
+      listContainer.innerHTML = methods.map(m => {
+        const isChecked = m.id === selectedMethod ? 'checked' : '';
+        const borderClass = m.id === selectedMethod ? 'border-primary bg-primary/5' : 'border-glass-stroke bg-white/5 hover:bg-white/10';
+        return `
+          <label onclick="selectPaymentMethod('${m.id}')" class="flex items-center justify-between p-4 rounded-2xl border ${borderClass} cursor-pointer transition-all">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary text-xl">${m.icon}</span>
+              <span class="text-xs font-bold text-white">${m.label}</span>
+            </div>
+            <input type="radio" name="payment_method_choice" value="${m.id}" ${isChecked} class="accent-primary w-4 h-4 cursor-pointer" />
+          </label>
+        `;
+      }).join('');
+    }
+
+    window.selectPaymentMethod = function(id) {
+      selectedMethod = id;
+      const labels = document.querySelectorAll('#payment-methods-list label');
+      labels.forEach(lbl => {
+        const radio = lbl.querySelector('input');
+        if (radio.value === id) {
+          radio.checked = true;
+          lbl.className = 'flex items-center justify-between p-4 rounded-2xl border border-primary bg-primary/5 cursor-pointer transition-all';
+        } else {
+          radio.checked = false;
+          lbl.className = 'flex items-center justify-between p-4 rounded-2xl border border-glass-stroke bg-white/5 hover:bg-white/10 cursor-pointer transition-all';
+        }
+      });
+    };
+
+    // Submit handler
+    const submitBtn = document.getElementById('btn-submit-checkout');
+    if (submitBtn) {
+      submitBtn.onclick = async function() {
+        const isBypassPkg = (selectedPackage.id && selectedPackage.id.includes('bypass')) || selectedPackage.title.toLowerCase().includes('bypass') || selectedPackage.title.toLowerCase().includes('zalo');
+        let recipientEmail = '';
+
+        if (isBypassPkg) {
+          const emailInput = document.getElementById('summary-recipient-email');
+          recipientEmail = emailInput ? emailInput.value.trim() : '';
+          if (!recipientEmail || !recipientEmail.includes('@')) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập đúng địa chỉ Email nhận mã Key Bypass Zalo!', 'error');
+            return;
+          }
+        } else {
+          recipientEmail = (window.APP_USER ? window.APP_USER.email : '') || '';
+        }
+
+        const username = (window.APP_USER ? window.APP_USER.username : null) || 'guest_' + Math.random().toString(36).substring(2, 8);
+        const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+        if (selectedMethod === 'manual') {
+          // Redirect to VietQR bank transfer page
+          window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${cycle}&email=${encodeURIComponent(recipientEmail)}`;
+        } else if (selectedMethod === 'sepay') {
+          window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${cycle}&email=${encodeURIComponent(recipientEmail)}`;
+        } else {
+          window.location.href = `/checkout/gateway?method=${selectedMethod}&txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${cycle}&email=${encodeURIComponent(recipientEmail)}`;
+        }
+      };
+    }
+
+    initOrderSummary();
+  })();
+</script>

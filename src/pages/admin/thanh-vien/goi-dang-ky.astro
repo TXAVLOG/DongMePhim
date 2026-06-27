@@ -53,8 +53,27 @@ const groupedPackages = packages.map((pkg: any) => {
           const textClass = `package-style-${pkg.id}`;
           const btnClass = isFree ? 'border border-glass-stroke hover:bg-surface-container-high text-on-surface' : `package-btn-${pkg.id} hover:brightness-110 active:scale-95 shadow-lg`;
           
+          const isBypassKeyPkg = pkg.id === 'bypass_zalo' || pkg.id.includes('bypass') || pkg.title.toLowerCase().includes('bypass');
+          const isEnabled = pkg.enabled ?? true;
+          
           return (
             <div class={`glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden border ${cardBorderClass} ${cardGlowClass} transition-all duration-300`}>
+              {isBypassKeyPkg && (
+                <div class="absolute inset-0 z-20 bg-black/65 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center gap-3" data-txatooltip="Gói cước hệ thống cố định, không cho phép chỉnh sửa hoặc xóa">
+                  <div class="w-12 h-12 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                    <span class="material-symbols-outlined text-2xl">lock</span>
+                  </div>
+                  <span class="px-3 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full text-[10px] font-bold uppercase tracking-wider">Gói Cố Định Hệ Thống</span>
+                  <p class="text-[11px] text-zinc-300 font-medium">Gói cước riêng cấp mã Key Bypass 15 thiết bị. Không cho phép chỉnh sửa cấu hình.</p>
+                  
+                  <div class="pt-2 pointer-events-auto">
+                    <button onclick={`togglePackageEnable('${pkg.id}', ${!isEnabled})`} class={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer border-none ${isEnabled ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' : 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20'}`}>
+                      <span class="material-symbols-outlined text-base">{isEnabled ? 'power_settings_new' : 'power_off'}</span>
+                      <span>Trạng thái: {isEnabled ? 'Đang ĐÃ BẬT (Hiển thị)' : 'Đã ĐÃ TẮT (Ẩn)'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
               {!isFree && pkg.style_type === 'rainbow_effect' && (
                 <div class="absolute top-0 right-0">
                   <div class="bg-gradient-to-r from-red-500 via-green-500 to-blue-500 text-black px-6 py-1 rotate-45 translate-x-6 translate-y-2 text-[9px] font-black uppercase tracking-wider font-label-caps animate-pulse">POPULAR</div>
@@ -86,8 +105,8 @@ const groupedPackages = packages.map((pkg: any) => {
                   </li>
                 ))}
               </ul>
-              <button onclick={`openEditPlanModal('${pkg.monthlyId}')`} class={`mt-auto w-full py-3 rounded-lg font-semibold cursor-pointer ${btnClass}`}>
-                Edit Plan
+              <button onclick={isBypassKeyPkg ? undefined : `openEditPlanModal('${pkg.monthlyId}')`} class={`mt-auto w-full py-3 rounded-lg font-semibold cursor-pointer ${btnClass}`} disabled={isBypassKeyPkg}>
+                {isBypassKeyPkg ? 'Gói Hệ Thống' : 'Edit Plan'}
               </button>
             </div>
           );
@@ -958,7 +977,35 @@ const groupedPackages = packages.map((pkg: any) => {
         }
       };
 
+      window.togglePackageEnable = async function(packageId, newStatus) {
+        try {
+          if (!loadedSettings.packages) await loadSettings();
+          const targetPkg = loadedSettings.packages?.find(p => p.id === packageId);
+          if (targetPkg) {
+            targetPkg.enabled = newStatus;
+            const saveRes = await fetch('/api/admin/settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(loadedSettings)
+            });
+            if (saveRes.ok) {
+              if (window.showGlobalToast) window.showGlobalToast(`Đã ${newStatus ? 'BẬT' : 'TẮT'} gói cước thành công!`, 'success');
+              setTimeout(() => window.location.reload(), 800);
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast('Cập nhật thất bại!', 'error');
+            }
+          }
+        } catch (e) {
+          console.error(e);
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi khi đổi trạng thái gói!', 'error');
+        }
+      };
+
       window.openEditPlanModal = async function(packageId) {
+        if (packageId === 'bypass_zalo' || packageId.includes('bypass')) {
+          if (window.showGlobalToast) window.showGlobalToast('Gói cước hệ thống cố định, không cho phép chỉnh sửa!', 'error');
+          return;
+        }
         const pkg = loadedSettings.packages?.find(p => p.id === packageId);
         if (!pkg) return;
 

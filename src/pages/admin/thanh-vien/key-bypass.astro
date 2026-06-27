@@ -1,0 +1,252 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Quản lý Mã Key Bypass Zalo">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-purple-400 text-3xl">vpn_key</span>
+          Quản lý Mã Key Bypass Zalo (DPxxxxxx)
+        </h1>
+        <p class="text-xs text-zinc-400 mt-1 font-body-main">Phát hành và kiểm soát mã Key bỏ qua duyệt Zalo độc lập (Tối đa 15 trình duyệt/thiết bị per key).</p>
+      </div>
+      <button onclick="openCreateKeyModal()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-purple-600/30 border-none">
+        <span class="material-symbols-outlined text-base">add</span>
+        Tạo Mã Key Mới
+      </button>
+    </div>
+
+    <!-- Table Card -->
+    <div class="glass-panel border border-glass-stroke rounded-2xl overflow-hidden shadow-2xl">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-zinc-950/60 border-b border-glass-stroke text-zinc-400 font-bold uppercase tracking-wider">
+              <th class="px-6 py-4">Mã Key (8 ký tự)</th>
+              <th class="px-6 py-4">Tên Gói / Ghi chú</th>
+              <th class="px-6 py-4 text-center">Thiết bị (Max 15)</th>
+              <th class="px-6 py-4">Email nhận</th>
+              <th class="px-6 py-4">Hạn sử dụng</th>
+              <th class="px-6 py-4">Trạng thái</th>
+              <th class="px-6 py-4 text-right">Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="key-list-tbody" class="divide-y divide-glass-stroke/30 text-zinc-300">
+            <tr>
+              <td colspan="7" class="px-6 py-8 text-center text-zinc-500 font-body-main">Đang tải danh sách mã Key...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script is:inline>
+  (function() {
+    async function loadKeyList() {
+      const tbody = document.getElementById('key-list-tbody');
+      if (!tbody) return;
+
+      try {
+        const res = await fetch('/api/admin/zalo-keys');
+        if (!res.ok) throw new Error('Không thể lấy danh sách Key');
+        const result = await res.json();
+        const keys = result.data || [];
+
+        if (keys.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-zinc-500 font-body-main">Chưa có mã Key Bypass nào được tạo.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = keys.map(k => {
+          const isExpired = new Date(k.expiry_date) < new Date();
+          const isRevoked = k.status === 'revoked';
+          let statusBadge = `<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-bold text-[10px]">Hoạt động</span>`;
+          if (isRevoked) {
+            statusBadge = `<span class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full font-bold text-[10px]">Đã thu hồi</span>`;
+          } else if (isExpired) {
+            statusBadge = `<span class="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full font-bold text-[10px]">Hết hạn</span>`;
+          }
+
+          const expStr = new Date(k.expiry_date).toLocaleDateString('vi-VN');
+          const devCount = k.used_count || 0;
+          const devBadgeClass = devCount >= 15 ? 'bg-rose-500/20 text-rose-400' : 'bg-purple-500/20 text-purple-300';
+
+          return `
+            <tr class="hover:bg-white/5 transition-colors">
+              <td class="px-6 py-4 font-mono font-black text-purple-400 text-sm tracking-widest">${k.key_code}</td>
+              <td class="px-6 py-4">
+                <div class="font-bold text-white">${k.package_title || 'Key Bypass Zalo'}</div>
+                <div class="text-[10px] text-zinc-500 mt-0.5">${k.note || 'Không có ghi chú'}</div>
+              </td>
+              <td class="px-6 py-4 text-center">
+                <span class="px-3 py-1 ${devBadgeClass} rounded-full font-mono font-bold text-xs">
+                  ${devCount} / ${k.max_devices || 15}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-zinc-400">${k.email || '-'}</td>
+              <td class="px-6 py-4 text-zinc-300 font-medium">${expStr}</td>
+              <td class="px-6 py-4">${statusBadge}</td>
+              <td class="px-6 py-4 text-right space-x-2">
+                <button onclick="viewKeyLogs('${k.id}', '${k.key_code}')" class="p-2 bg-white/5 hover:bg-white/10 text-purple-300 rounded-lg transition-colors cursor-pointer border-none" title="Xem danh sách 15 thiết bị">
+                  <span class="material-symbols-outlined text-base">devices</span>
+                </button>
+                ${!isRevoked ? `
+                  <button onclick="revokeKey('${k.id}', '${k.key_code}')" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer border-none" title="Thu hồi mã Key">
+                    <span class="material-symbols-outlined text-base">block</span>
+                  </button>
+                ` : ''}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-rose-400 font-body-main">Lỗi: ${e.message}</td></tr>`;
+      }
+    }
+
+    window.openCreateKeyModal = function() {
+      const content = `
+        <div class="space-y-4 text-xs text-left">
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Tên gói cước / Mục đích</label>
+            <input type="text" id="modal-key-pkg" value="Gói Key Bypass Zalo Admin Cấp" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-500 font-bold" />
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Thời hạn (Tháng)</label>
+            <input type="number" id="modal-key-duration" value="1" min="1" max="120" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-500 font-bold" />
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Email người nhận (Không bắt buộc)</label>
+            <input type="email" id="modal-key-email" placeholder="user@example.com" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Ghi chú bổ sung</label>
+            <input type="text" id="modal-key-note" placeholder="Ví dụ: Tặng giveaway sự kiện..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-500" />
+          </div>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Tạo Mã Key Bypass Mới (DPxxxxxx)',
+          content: content,
+          confirmText: 'Tạo Key Ngay',
+          cancelText: 'Hủy',
+          onConfirm: async () => {
+            const packageTitle = document.getElementById('modal-key-pkg').value;
+            const durationMonths = document.getElementById('modal-key-duration').value;
+            const email = document.getElementById('modal-key-email').value;
+            const note = document.getElementById('modal-key-note').value;
+
+            try {
+              const res = await fetch('/api/admin/zalo-keys', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'create', packageTitle, durationMonths, email, note })
+              });
+              const data = await res.json();
+              if (res.ok) {
+                if (window.showGlobalToast) window.showGlobalToast(`Tạo thành công Key: ${data.data.key_code}`, 'success');
+                loadKeyList();
+              } else {
+                if (window.showGlobalToast) window.showGlobalToast(data.message || 'Lỗi khi tạo Key', 'error');
+              }
+            } catch (e) {
+              if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối máy chủ', 'error');
+            }
+          }
+        });
+      }
+    };
+
+    window.viewKeyLogs = async function(keyId, keyCode) {
+      if (!window.txamodal) return;
+
+      try {
+        const res = await fetch(`/api/admin/zalo-keys?action=logs&keyId=${keyId}`);
+        const result = await res.json();
+        const logs = result.data?.logs || [];
+
+        let logsHtml = `
+          <div class="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
+            <div class="flex justify-between items-center bg-purple-950/30 border border-purple-500/30 rounded-xl p-3 text-xs">
+              <span class="text-purple-300 font-bold">Tổng số trình duyệt đã kích hoạt:</span>
+              <span class="font-mono font-black text-white text-sm bg-purple-600 px-2.5 py-0.5 rounded-full">${logs.length} / 15</span>
+            </div>
+        `;
+
+        if (logs.length === 0) {
+          logsHtml += `<p class="text-xs text-zinc-500 text-center py-6 font-body-main">Chưa có thiết bị/trình duyệt nào kích hoạt mã Key này.</p>`;
+        } else {
+          logsHtml += `
+            <table class="w-full text-left text-[11px] border-collapse">
+              <thead>
+                <tr class="bg-zinc-900 border-b border-zinc-800 text-zinc-400 font-bold">
+                  <th class="p-2.5">STT</th>
+                  <th class="p-2.5">Nickname Zalo</th>
+                  <th class="p-2.5">Browser Token</th>
+                  <th class="p-2.5">IP</th>
+                  <th class="p-2.5">Thời gian</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-800/60 text-zinc-300">
+                ${logs.map((l, idx) => `
+                  <tr>
+                    <td class="p-2.5 font-bold text-zinc-500">${idx + 1}</td>
+                    <td class="p-2.5 font-bold text-white">${l.nickname || '-'}</td>
+                    <td class="p-2.5 font-mono text-[10px] text-purple-300 truncate max-w-[180px]" title="${l.browser_token}">${l.browser_token}</td>
+                    <td class="p-2.5 font-mono text-zinc-400">${l.ip || '-'}</td>
+                    <td class="p-2.5 text-zinc-400">${new Date(l.created_at).toLocaleString('vi-VN')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+        logsHtml += `</div>`;
+
+        window.txamodal.show({
+          title: `Nhật ký thiết bị của Mã Key: ${keyCode}`,
+          content: logsHtml,
+          size: 'lg',
+          confirmText: '',
+          cancelText: 'Đóng'
+        });
+      } catch (e) {
+        if (window.showGlobalToast) window.showGlobalToast('Không thể tải nhật ký thiết bị', 'error');
+      }
+    };
+
+    window.revokeKey = function(keyId, keyCode) {
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Xác nhận thu hồi Mã Key',
+          message: `Bạn có chắc chắn muốn thu hồi mã Key <strong class="text-purple-400 font-mono">${keyCode}</strong>? Sau khi thu hồi, người dùng sẽ không thể dùng mã này để bypass Zalo nữa.`,
+          type: 'danger',
+          confirmText: 'Thu hồi ngay',
+          cancelText: 'Hủy',
+          onConfirm: async () => {
+            try {
+              const res = await fetch('/api/admin/zalo-keys', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'revoke', keyId })
+              });
+              if (res.ok) {
+                if (window.showGlobalToast) window.showGlobalToast('Đã thu hồi mã Key thành công!', 'success');
+                loadKeyList();
+              }
+            } catch (e) {}
+          }
+        });
+      }
+    };
+
+    loadKeyList();
+  })();
+</script>

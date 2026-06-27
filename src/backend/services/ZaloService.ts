@@ -344,5 +344,254 @@ export const ZaloService = {
         localStorage.setItem('txa_zalo_bypass', JSON.stringify(list));
       }
     }
+  },
+
+  // 10. Tạo mã Key Bypass dạng DPxxxxxx
+  generateBypassCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = 'DP';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  },
+
+  // 11. Cấp mã Key Bypass Zalo mới
+  async createBypassKey(data: { packageTitle?: string; durationMonths?: number; email?: string; note?: string; maxDevices?: number }): Promise<any> {
+    const keyCode = this.generateBypassCode();
+    const durationMonths = data.durationMonths || 1;
+    const maxDevices = data.maxDevices || 15;
+    const expiryDate = new Date(Date.now() + durationMonths * 30 * 24 * 3600 * 1000).toISOString();
+    const record = {
+      id: 'key_' + Math.floor(Math.random() * 100000000),
+      key_code: keyCode,
+      package_title: data.packageTitle || 'Gói Key Bypass Zalo',
+      recipient_email: data.email || null,
+      note: data.note || null,
+      duration_months: durationMonths,
+      max_devices: maxDevices,
+      expiry_date: expiryDate,
+      status: 'active',
+      created_at: new Date().toISOString()
+    };
+
+    if (providerType === 'supabase') {
+      try {
+        const { data: dbData, error } = await supabase
+          .from('txa_zalo_bypass_keys')
+          .insert({
+            key_code: record.key_code,
+            package_title: record.package_title,
+            recipient_email: record.recipient_email,
+            note: record.note,
+            duration_months: record.duration_months,
+            max_devices: record.max_devices,
+            expiry_date: record.expiry_date,
+            status: record.status
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Lỗi insert key bypass Supabase, fallback record local:', error);
+        } else if (dbData) {
+          return dbData;
+        }
+      } catch (err) {
+        console.error('Supabase exception createBypassKey:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const list = JSON.parse(localStorage.getItem('txa_zalo_bypass_keys') || '[]');
+      list.push(record);
+      localStorage.setItem('txa_zalo_bypass_keys', JSON.stringify(list));
+    }
+    return record;
+  },
+
+  // 12. Lấy tất cả danh sách Key Bypass
+  async getAllBypassKeys(): Promise<any[]> {
+    if (providerType === 'supabase') {
+      try {
+        const { data, error } = await supabase
+          .from('txa_zalo_bypass_keys')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) return data;
+      } catch (err) {
+        console.error('Supabase getAllBypassKeys error:', err);
+      }
+    }
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      return JSON.parse(localStorage.getItem('txa_zalo_bypass_keys') || '[]');
+    }
+    return [];
+  },
+
+  // 13. Lấy chi tiết Key và danh sách Browser Tokens sử dụng
+  async getKeyDetailsWithLogs(keyCode: string): Promise<{ key: any; logs: any[] }> {
+    let keyObj = null;
+    let logsList: any[] = [];
+
+    if (providerType === 'supabase') {
+      try {
+        const { data: kData } = await supabase
+          .from('txa_zalo_bypass_keys')
+          .select('*')
+          .eq('key_code', keyCode)
+          .maybeSingle();
+        keyObj = kData;
+
+        const { data: lData } = await supabase
+          .from('txa_zalo_key_logs')
+          .select('*')
+          .eq('key_code', keyCode)
+          .order('used_at', { ascending: false });
+        if (lData) logsList = lData;
+      } catch (err) {
+        console.error('Supabase getKeyDetailsWithLogs error:', err);
+      }
+    }
+
+    if (!keyObj && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const keys = JSON.parse(localStorage.getItem('txa_zalo_bypass_keys') || '[]');
+      keyObj = keys.find((k: any) => k.key_code === keyCode);
+      const allLogs = JSON.parse(localStorage.getItem('txa_zalo_key_logs') || '[]');
+      logsList = allLogs.filter((l: any) => l.key_code === keyCode);
+    }
+
+    return { key: keyObj, logs: logsList };
+  },
+
+  // 14. Kiểm tra mã Key Bypass và gán tự động vào Browser Token
+  async verifyAndApplyBypassKey(keyCode: string, browserToken: string, nickname: string, ip: string, userAgent: string): Promise<{ success: boolean; message: string; key?: any }> {
+    const cleanKey = (keyCode || '').trim().toUpperCase();
+    if (!cleanKey.startsWith('DP') || cleanKey.length !== 8) {
+      return { success: false, message: 'Mã Key Bypass phải đúng 8 ký tự và bắt đầu bằng "DP"!' };
+    }
+
+    let keyRecord: any = null;
+    let keyLogs: any[] = [];
+
+    if (providerType === 'supabase') {
+      try {
+        const { data: kData } = await supabase
+          .from('txa_zalo_bypass_keys')
+          .select('*')
+          .eq('key_code', cleanKey)
+          .maybeSingle();
+        keyRecord = kData;
+
+        if (keyRecord) {
+          const { data: lData } = await supabase
+            .from('txa_zalo_key_logs')
+            .select('*')
+            .eq('key_code', cleanKey);
+          if (lData) keyLogs = lData;
+        }
+      } catch (err) {
+        console.error('Supabase verifyAndApplyBypassKey error:', err);
+      }
+    }
+
+    if (!keyRecord && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const keys = JSON.parse(localStorage.getItem('txa_zalo_bypass_keys') || '[]');
+      keyRecord = keys.find((k: any) => k.key_code === cleanKey);
+      const allLogs = JSON.parse(localStorage.getItem('txa_zalo_key_logs') || '[]');
+      keyLogs = allLogs.filter((l: any) => l.key_code === cleanKey);
+    }
+
+    if (!keyRecord) {
+      return { success: false, message: 'Mã Key Bypass không tồn tại hoặc không hợp lệ!' };
+    }
+
+    if (keyRecord.status !== 'active') {
+      return { success: false, message: `Mã Key này hiện đang ở trạng thái "${keyRecord.status}" và không thể sử dụng!` };
+    }
+
+    const expTime = new Date(keyRecord.expiry_date).getTime();
+    if (Date.now() > expTime) {
+      // Mark expired
+      keyRecord.status = 'expired';
+      return { success: false, message: 'Mã Key Bypass đã hết hạn sử dụng!' };
+    }
+
+    // Check unique devices / tokens
+    const maxAllowed = keyRecord.max_devices || 15;
+    const existingTokens = new Set((keyLogs || []).map((l: any) => l.browser_token));
+
+    if (!existingTokens.has(browserToken) && existingTokens.size >= maxAllowed) {
+      return { success: false, message: `Mã Key đã đạt giới hạn tối đa ${maxAllowed} thiết bị sử dụng. Vui lòng sử dụng hoặc mua mã Key mới!` };
+    }
+
+    // Log this browser token usage if new
+    if (!existingTokens.has(browserToken)) {
+      const newLog = {
+        id: 'log_' + Math.floor(Math.random() * 100000000),
+        key_code: cleanKey,
+        browser_token: browserToken,
+        nickname: nickname || 'Khách',
+        ip: ip || null,
+        user_agent: userAgent || null,
+        used_at: new Date().toISOString()
+      };
+
+      if (providerType === 'supabase') {
+        try {
+          await supabase.from('txa_zalo_key_logs').insert({
+            key_code: newLog.key_code,
+            browser_token: newLog.browser_token,
+            nickname: newLog.nickname,
+            ip: newLog.ip,
+            user_agent: newLog.user_agent
+          });
+        } catch (err) {
+          console.error('Lỗi lưu key log Supabase:', err);
+        }
+      }
+
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        const allLogs = JSON.parse(localStorage.getItem('txa_zalo_key_logs') || '[]');
+        allLogs.push(newLog);
+        localStorage.setItem('txa_zalo_key_logs', JSON.stringify(allLogs));
+      }
+    }
+
+    // Automatically approve zalo access for this token!
+    await this.submitZaloAccessRequest({
+      token: browserToken,
+      nickname: nickname || 'Khách Bypass DP',
+      status: 'approved',
+      ip,
+      userAgent
+    });
+    await this.updateZaloAccessStatus(browserToken, 'approved');
+
+    return { success: true, message: 'Xác thực mã Key Bypass hợp lệ! Đã tự động phê duyệt truy cập.', key: keyRecord };
+  },
+
+  // 15. Khóa / thu hồi Key Bypass
+  async revokeBypassKey(keyCode: string): Promise<void> {
+    if (providerType === 'supabase') {
+      try {
+        await supabase
+          .from('txa_zalo_bypass_keys')
+          .update({ status: 'revoked' })
+          .eq('key_code', keyCode);
+      } catch (err) {
+        console.error('Lỗi thu hồi key Supabase:', err);
+      }
+    }
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const keys = JSON.parse(localStorage.getItem('txa_zalo_bypass_keys') || '[]');
+      const found = keys.find((k: any) => k.key_code === keyCode);
+      if (found) {
+        found.status = 'revoked';
+        localStorage.setItem('txa_zalo_bypass_keys', JSON.stringify(keys));
+      }
+    }
   }
 };
+

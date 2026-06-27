@@ -4,7 +4,7 @@ import { SettingService } from '@services/SettingService';
 
 
 const settings = await SettingService.getSettings();
-const packages = settings.packages || [];
+const packages = (settings.packages || []).filter((pkg: any) => pkg.enabled !== false);
 
 const getDynamicFeaturesObj = (pkg: any) => {
   const p = pkg.permissions || {};
@@ -95,7 +95,7 @@ const groupedPackages = packages.map((pkg: any) => {
           'max-w-6xl md:grid-cols-3 lg:grid-cols-4'
         }`}
       >
-        {groupedPackages.map((pkg) => {
+        {groupedPackages.map((pkg: any) => {
           const isFree = pkg.id === 'free';
           const cardBorderClass = `package-border-${pkg.id}`;
           const cardGlowClass = `package-glow-${pkg.id}`;
@@ -151,6 +151,7 @@ const groupedPackages = packages.map((pkg: any) => {
                       / tháng
                     </span>
                   </div>
+                  <span class="text-[10px] text-zinc-400 mt-1 font-body-main font-semibold">(Đã bao gồm VAT)</span>
                   {!isFree && pkg.annualPrice && (
                     <div class="annual-price-details text-[10px] text-zinc-400 mt-1.5 font-medium hidden">
                       Thanh toán theo năm: <span class="line-through text-zinc-500 mr-1 original-annual-price">{pkg.originalAnnualPrice.toLocaleString('vi-VN')}đ</span> <span class="text-emerald-400 actual-annual-price">{pkg.annualPrice.toLocaleString('vi-VN')}đ</span>
@@ -204,7 +205,7 @@ const groupedPackages = packages.map((pkg: any) => {
             <thead>
               <tr class="bg-zinc-950/50 border-b border-glass-stroke">
                 <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider">Tính năng</th>
-                {groupedPackages.map((pkg) => (
+                {groupedPackages.map((pkg: any) => (
                   <th class="px-6 py-4 text-zinc-500 font-bold uppercase tracking-wider text-center">
                     <span class={pkg.style_type === 'rainbow_effect' ? `package-style-${pkg.id}` : ''} style={pkg.style_type === 'custom_color' && pkg.custom_color ? `color: ${pkg.custom_color}` : ''}>
                       {pkg.title}
@@ -216,7 +217,7 @@ const groupedPackages = packages.map((pkg: any) => {
             <tbody class="divide-y divide-glass-stroke/40">
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Chất lượng tối đa</td>
-                {groupedPackages.map((pkg) => (
+                {groupedPackages.map((pkg: any) => (
                   <td class="px-6 py-4 text-center text-zinc-200 font-bold">
                     {pkg.permissions?.max_resolution || 'SD'}
                   </td>
@@ -224,7 +225,7 @@ const groupedPackages = packages.map((pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Quảng cáo trình phát</td>
-                {groupedPackages.map((pkg) => (
+                {groupedPackages.map((pkg: any) => (
                   <td class="px-6 py-4 text-center">
                     {pkg.permissions?.bypass_ads ? (
                       <span class="text-emerald-400 font-bold">Bỏ qua QC</span>
@@ -236,7 +237,7 @@ const groupedPackages = packages.map((pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Tính năng Xem Chung</td>
-                {groupedPackages.map((pkg) => (
+                {groupedPackages.map((pkg: any) => (
                   <td class="px-6 py-4 text-center">
                     {pkg.permissions?.watch_together ? (
                       <span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
@@ -248,7 +249,7 @@ const groupedPackages = packages.map((pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Ẩn Watermark ẩn danh</td>
-                {groupedPackages.map((pkg) => (
+                {groupedPackages.map((pkg: any) => (
                   <td class="px-6 py-4 text-center">
                     {pkg.permissions?.hide_watermark ? (
                       <span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
@@ -260,7 +261,7 @@ const groupedPackages = packages.map((pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Huy hiệu VIP</td>
-                {groupedPackages.map((pkg) => (
+                {groupedPackages.map((pkg: any) => (
                   <td class="px-6 py-4 text-center">
                     {pkg.permissions?.vip_badge ? (
                       <span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
@@ -272,7 +273,7 @@ const groupedPackages = packages.map((pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Giới hạn Watchlist</td>
-                {groupedPackages.map((pkg) => (
+                {groupedPackages.map((pkg: any) => (
                   <td class="px-6 py-4 text-center text-zinc-200">
                     {pkg.permissions?.max_playlists || 0} phim
                   </td>
@@ -280,7 +281,7 @@ const groupedPackages = packages.map((pkg: any) => {
               </tr>
               <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-zinc-300 font-medium">Số lượng Server khả dụng</td>
-                {groupedPackages.map((pkg) => (
+                {groupedPackages.map((pkg: any) => (
                   <td class="px-6 py-4 text-center text-zinc-200 font-mono">
                     {pkg.permissions?.allowed_servers?.length || 0}
                   </td>
@@ -548,53 +549,77 @@ const groupedPackages = packages.map((pkg: any) => {
       const labelMonthly = document.getElementById('label-monthly');
       const labelAnnual = document.getElementById('label-annual');
 
-      function updatePrices() {
-        const isMonthly = billingCycle === 'monthly';
-        if (isMonthly) {
-          dot?.classList.remove('translate-x-6');
-          dot?.classList.add('translate-x-0');
-          labelMonthly?.classList.add('text-white');
-          labelMonthly?.classList.remove('text-zinc-400');
-          labelAnnual?.classList.add('text-zinc-400');
-          labelAnnual?.classList.remove('text-white');
-        } else {
-          dot?.classList.remove('translate-x-0');
-          dot?.classList.add('translate-x-6');
-          labelMonthly?.classList.remove('text-white');
-          labelMonthly?.classList.add('text-zinc-400');
-          labelAnnual?.classList.remove('text-zinc-400');
-          labelAnnual?.classList.add('text-white');
+    function getWatchedCount() {
+      try {
+        const stored = localStorage.getItem('thistory');
+        if (!stored) return 0;
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed.length;
+        if (typeof parsed === 'object' && parsed !== null) return Object.keys(parsed).length;
+      } catch(e) {}
+      return 0;
+    }
+
+    function getBypassDynamicPrice(basePrice = 49000) {
+      const count = getWatchedCount();
+      if (count <= 0) return basePrice;
+      const discount = Math.min(basePrice - 10000, count * 3000);
+      return Math.max(10000, basePrice - discount);
+    }
+
+    function updatePrices() {
+      const isMonthly = billingCycle === 'monthly';
+      const plansContainer = document.getElementById('plans-container');
+      const cards = plansContainer ? plansContainer.querySelectorAll('[id^="plan-card-"]') : [];
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const hasAnnual = card.getAttribute('data-has-annual') === 'true';
+        const cardId = card.getAttribute('data-id') || '';
+        const isFree = cardId === 'free';
+
+        if (isFree) {
+          card.classList.remove('hidden');
+          visibleCount++;
+          return;
         }
 
-        // Cập nhật giá trị và hiển thị trên card
-        const plansContainer = document.getElementById('plans-container');
-        const cards = plansContainer ? plansContainer.querySelectorAll('[id^="plan-card-"]') : [];
-        let visibleCount = 0;
+        const isBypass = cardId === 'bypass_zalo' || cardId.includes('bypass');
 
-        cards.forEach(card => {
-          const hasAnnual = card.getAttribute('data-has-annual') === 'true';
-          const isFree = card.getAttribute('data-id') === 'free';
+        if (isMonthly) {
+          card.classList.remove('hidden');
+          visibleCount++;
 
-          if (isFree) {
-            card.classList.remove('hidden');
-            visibleCount++;
-            return;
+          let monthlyPrice = parseInt(card.getAttribute('data-monthly-price') || '0');
+          const priceValEl = card.querySelector('.price-val');
+          const priceUnitEl = card.querySelector('.price-unit');
+          const savingBadge = card.querySelector('.saving-badge');
+          const annualDetails = card.querySelector('.annual-price-details');
+
+          if (isBypass) {
+            const watchedCount = getWatchedCount();
+            const dynamicPrice = getBypassDynamicPrice(monthlyPrice);
+            if (priceValEl) priceValEl.textContent = dynamicPrice.toLocaleString('vi-VN') + 'đ';
+
+            let dynamicBadge = card.querySelector('.bypass-dynamic-badge');
+            if (watchedCount > 0) {
+              if (!dynamicBadge) {
+                dynamicBadge = document.createElement('div');
+                dynamicBadge.className = 'bypass-dynamic-badge bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-xl text-[10px] font-bold mt-2 inline-block';
+                const priceContainer = card.querySelector('.flex-col');
+                if (priceContainer) priceContainer.appendChild(dynamicBadge);
+              }
+              dynamicBadge.innerHTML = `<span class="material-symbols-outlined text-xs align-middle mr-1 text-amber-400">workspace_premium</span>Ưu đãi máy bạn xem ${watchedCount} phim (Gốc ${monthlyPrice.toLocaleString('vi-VN')}đ)`;
+            } else if (dynamicBadge) {
+              dynamicBadge.remove();
+            }
+          } else {
+            if (priceValEl) priceValEl.textContent = monthlyPrice.toLocaleString('vi-VN') + 'đ';
           }
 
-          if (isMonthly) {
-            card.classList.remove('hidden');
-            visibleCount++;
-
-            const monthlyPrice = parseInt(card.getAttribute('data-monthly-price') || '0');
-            const priceValEl = card.querySelector('.price-val');
-            const priceUnitEl = card.querySelector('.price-unit');
-            const savingBadge = card.querySelector('.saving-badge');
-            const annualDetails = card.querySelector('.annual-price-details');
-
-            if (priceValEl) priceValEl.textContent = monthlyPrice.toLocaleString('vi-VN') + 'đ';
-            if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
-            if (savingBadge) savingBadge.classList.add('hidden');
-            if (annualDetails) annualDetails.classList.add('hidden');
+          if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
+          if (savingBadge) savingBadge.classList.add('hidden');
+          if (annualDetails) annualDetails.classList.add('hidden');
           } else {
             if (hasAnnual) {
               card.classList.remove('hidden');
@@ -760,67 +785,27 @@ const groupedPackages = packages.map((pkg: any) => {
       if (isFree) return;
 
       if (isMonthly) {
-        const id = card.getAttribute('data-monthly-id');
+        const id = card.getAttribute('data-monthly-id') || cardId;
         const title = card.getAttribute('data-monthly-title');
-        const price = parseInt(card.getAttribute('data-monthly-price') || '0');
+        let price = parseInt(card.getAttribute('data-monthly-price') || '0');
+        if (id === 'bypass_zalo' || id.includes('bypass')) {
+          price = getBypassDynamicPrice(price);
+        }
         selectPlan(id, title, price);
       } else {
-        const id = card.getAttribute('data-annual-id');
+        const id = card.getAttribute('data-annual-id') || cardId;
         const title = card.getAttribute('data-annual-title');
-        const price = parseInt(card.getAttribute('data-annual-price') || '0');
+        let price = parseInt(card.getAttribute('data-annual-price') || '0');
+        if (id === 'bypass_zalo' || id.includes('bypass')) {
+          price = getBypassDynamicPrice(price);
+        }
         selectPlan(id, title, price);
       }
     };
 
     function openPaymentSelector(packageId, packageTitle, price, targetPkg) {
-      const payments = loadedSettings.payments || {};
-      const isSandbox = payments.sandbox_mode ?? true;
-
-      // Collect available payment methods
-      const methods = [];
-      if (payments.manual_enable) methods.push({ id: 'manual', label: 'Chuyển khoản VietQR' });
-      if (payments.payos_enable) methods.push({ id: 'payos', label: 'Cổng PayOS' });
-      if (payments.stripe_enable) methods.push({ id: 'stripe', label: 'Cổng Stripe (Quốc tế)' });
-      if (payments.paypal_enable) methods.push({ id: 'paypal', label: 'Cổng PayPal' });
-      if (payments.sepay_enable) methods.push({ id: 'sepay', label: 'Cổng SePay' });
-      if (payments.vnpay_enable) methods.push({ id: 'vnpay', label: 'Cổng VNPAY' });
-
-      if (methods.length === 0) {
-        if (window.showGlobalToast) window.showGlobalToast('Không có cổng thanh toán nào hoạt động.', 'error');
-        return;
-      }
-
-      const cycle = targetPkg.cycle || 'monthly';
-      const cycleLabelStr = cycle === 'annual' ? 'Hàng năm' : cycle === 'monthly' ? 'Hàng tháng' : 'Vô thời hạn';
-
-      const modalHtml = `
-        <div class="flex flex-col gap-4">
-          <p class="text-xs text-zinc-400">Chọn phương thức thanh toán phù hợp dưới đây:</p>
-          <div class="flex flex-col gap-2.5">
-            ${methods.map(m => `
-              <button onclick="processPaymentSelect('${m.id}', ${price}, '${cycle}', '${packageId}', '${encodeURIComponent(packageTitle)}')" class="w-full p-4 rounded-xl border border-glass-stroke hover:border-primary/50 bg-white/5 hover:bg-white/10 text-left font-bold text-white text-xs flex justify-between items-center transition-all cursor-pointer">
-                <span class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-primary text-base">credit_card</span>
-                  ${m.label}
-                </span>
-                <span class="material-symbols-outlined text-zinc-500 text-sm">chevron_right</span>
-              </button>
-            `).join('')}
-          </div>
-          ${isSandbox ? '<div class="text-[10px] text-yellow-500 font-bold bg-yellow-500/10 border border-yellow-500/20 rounded p-2 text-center">Chế độ Sandbox (Giả lập) đang được Admin kích hoạt. Các cổng tự động sẽ đi qua trang mô phỏng.</div>' : ''}
-        </div>
-      `;
-
-      if (window.txamodal) {
-        window.txamodal.show({
-          title: `Thanh toán gói ${packageTitle} (${cycleLabelStr})`,
-          content: modalHtml,
-          type: 'info',
-          confirmText: '',
-          cancelText: 'Đóng',
-          onConfirm: () => {}
-        });
-      }
+      const cycle = targetPkg.cycle || billingCycle || 'monthly';
+      window.location.href = `/checkout/order-summary?packageId=${encodeURIComponent(packageId)}&cycle=${cycle}`;
     }
 
     // Expose select gateway globally

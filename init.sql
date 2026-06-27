@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS public.movies (
   broadcast_schedule jsonb,
   rating_score numeric DEFAULT 0,
   rating_count integer DEFAULT 0,
+  pinned boolean NOT NULL DEFAULT false,
+  source character varying DEFAULT 'manual'::character varying,
   PRIMARY KEY (id),
   CONSTRAINT watch_history_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
   CONSTRAINT schedules_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
@@ -207,6 +209,104 @@ CREATE TABLE IF NOT EXISTS public.settings (
 
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 
+-- Initial seed data for packages in settings table
+INSERT INTO public.settings (key, value) VALUES (
+  'packages',
+  '[
+    {
+      "id": "free",
+      "title": "Gói Free",
+      "price": 0,
+      "cycle": "free",
+      "style_type": "default",
+      "features": ["Có chứa quảng cáo ngẫu nhiên", "Xem chất lượng SD tiêu chuẩn", "Chỉ xem các server thường"],
+      "permissions": {
+        "max_resolution": "SD",
+        "allowed_servers": ["Vietsub", "Thuyết Minh", "Lồng Tiếng"],
+        "max_playlists": 10,
+        "watch_together": false,
+        "hide_watermark": false,
+        "vip_badge": false,
+        "bypass_ads": false
+      }
+    },
+    {
+      "id": "standard",
+      "title": "Gói Tiêu Chuẩn (Standard)",
+      "price": 39000,
+      "annual_price": 399000,
+      "cycle": "monthly",
+      "style_type": "custom_color",
+      "custom_color": "#3b82f6",
+      "features": [
+        "Không có quảng cáo pop-under / nhảy trang",
+        "Chỉ có quảng cáo trong trình phát khi xem",
+        "Xem chất lượng HD/FHD nét mượt",
+        "Hỗ trợ các server Vietsub, Thuyết Minh & Lồng Tiếng"
+      ],
+      "permissions": {
+        "max_resolution": "FHD",
+        "allowed_servers": [
+          "#Hà Nội (Vietsub)",
+          "#Hà Nội (Thuyết Minh)",
+          "#Hà Nội (Lồng Tiếng)",
+          "Vietsub",
+          "Thuyết Minh",
+          "Lồng Tiếng"
+        ],
+        "max_playlists": 50,
+        "watch_together": false,
+        "hide_watermark": false,
+        "vip_badge": false,
+        "bypass_ads": false,
+        "ads_only_in_player": true
+      }
+    },
+    {
+      "id": "vip",
+      "title": "Gói VIP",
+      "price": 69000,
+      "annual_price": 699000,
+      "cycle": "monthly",
+      "style_type": "default",
+      "features": ["Hoàn toàn không có quảng cáo", "Xem chất lượng cực nét 4K UHD", "Mở khóa toàn bộ các server VIP tốc độ cao", "Hỗ trợ tính năng Xem Chung"],
+      "permissions": {
+        "max_resolution": "4K",
+        "allowed_servers": ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"],
+        "max_playlists": 1000,
+        "watch_together": true,
+        "hide_watermark": true,
+        "vip_badge": true,
+        "bypass_ads": true
+      }
+    },
+    {
+      "id": "bypass_zalo",
+      "title": "Gói Key Bypass Duyệt Zalo (15 Thiết bị)",
+      "price": 49000,
+      "annual_price": 399000,
+      "cycle": "monthly",
+      "style_type": "custom_color",
+      "custom_color": "#a78bfa",
+      "features": [
+        "Tự động duyệt Zalo 100% ngay lập tức",
+        "Cấp mã Key 8 ký tự độc lập (Dạng DPxxxxxx)",
+        "Sử dụng trên tối đa 15 trình duyệt/thiết bị khác nhau",
+        "Không cần đợi Admin phê duyệt thủ công"
+      ],
+      "permissions": {
+        "max_resolution": "FHD",
+        "allowed_servers": ["Vietsub", "Thuyết Minh", "Lồng Tiếng"],
+        "max_playlists": 50,
+        "watch_together": false,
+        "hide_watermark": false,
+        "vip_badge": false,
+        "bypass_ads": true
+      }
+    }
+  ]'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
 -- Table: public.notifications
 CREATE TABLE IF NOT EXISTS public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -307,6 +407,10 @@ CREATE TABLE IF NOT EXISTS public.txa_comments (
   content text NOT NULL,
   likes integer DEFAULT 0,
   replies jsonb DEFAULT '[]'::jsonb,
+  episode_name text,
+  server_name text,
+  is_spoiler boolean DEFAULT false,
+  is_reported boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (id)
 );
@@ -372,6 +476,38 @@ CREATE TABLE IF NOT EXISTS public.txa_user_sessions (
   CONSTRAINT txa_user_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 
+-- Table: public.txa_zalo_bypass_keys
+CREATE TABLE IF NOT EXISTS public.txa_zalo_bypass_keys (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  key_code character varying NOT NULL UNIQUE,
+  package_title character varying NOT NULL,
+  recipient_email character varying,
+  note text,
+  duration_months integer DEFAULT 1,
+  max_devices integer DEFAULT 15,
+  expiry_date timestamp with time zone NOT NULL,
+  status character varying DEFAULT 'active'::character varying,
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
+
+ALTER TABLE public.txa_zalo_bypass_keys ENABLE ROW LEVEL SECURITY;
+
+-- Table: public.txa_zalo_key_logs
+CREATE TABLE IF NOT EXISTS public.txa_zalo_key_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  key_code character varying NOT NULL,
+  browser_token text NOT NULL,
+  nickname character varying,
+  ip character varying,
+  user_agent text,
+  used_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
+
+ALTER TABLE public.txa_zalo_key_logs ENABLE ROW LEVEL SECURITY;
+
 -- =================================================================================
 -- ROW LEVEL SECURITY POLICIES
 -- =================================================================================
@@ -422,3 +558,5 @@ CREATE POLICY "delete_txa_comments" ON public.txa_comments FOR DELETE TO authent
 CREATE POLICY "modify_txa_deleted_movies" ON public.txa_deleted_movies FOR ALL TO public USING (is_admin());
 CREATE POLICY "all_txa_movie_ratings" ON public.txa_movie_ratings FOR ALL TO public USING (true);
 CREATE POLICY "all_txa_payment_logs" ON public.txa_payment_logs FOR ALL TO public USING (true);
+CREATE POLICY "all_txa_zalo_bypass_keys" ON public.txa_zalo_bypass_keys FOR ALL TO public USING (true);
+CREATE POLICY "all_txa_zalo_key_logs" ON public.txa_zalo_key_logs FOR ALL TO public USING (true);

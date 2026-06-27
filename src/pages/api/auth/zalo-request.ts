@@ -137,7 +137,9 @@ export const POST: APIRoute = async ({ request }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { token, nickname, email } = body;
+    const { token, nickname, email, bypassKey, bypass_key, key } = body;
+    const inputKey = bypassKey || bypass_key || key;
+
     if (!token || !nickname) {
       return apiResponse(null, 'error', 'Thiếu thông tin token hoặc nickname!', 400, request);
     }
@@ -146,7 +148,22 @@ export const POST: APIRoute = async ({ request }) => {
     const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || '';
     const userAgent = request.headers.get('user-agent') || '';
 
-    // Gửi lưu vào database
+    // Nếu người dùng có nhập Mã Key Bypass
+    if (inputKey && typeof inputKey === 'string' && inputKey.trim()) {
+      const verifyRes = await ZaloService.verifyAndApplyBypassKey(inputKey, token, nickname, ip, userAgent);
+      if (!verifyRes.success) {
+        return apiResponse(null, 'error', verifyRes.message, 400, request);
+      }
+
+      // Thông báo cho Admin biết qua mail
+      try {
+        await notifyAdminNewRequest(nickname + ' (Key Bypass: ' + verifyRes.key?.key_code + ')', token, email || null);
+      } catch (e) {}
+
+      return apiResponse({ success: true, isAutoApproved: true, key: verifyRes.key }, 'success', verifyRes.message, 200, request);
+    }
+
+    // Gửi lưu vào database (chờ duyệt thông thường)
     const record = await ZaloService.submitZaloAccessRequest({
       token,
       nickname,
@@ -157,7 +174,6 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     // Thông báo không đồng bộ cho Admin
-    // Không làm nghẽn luồng phản hồi cho client
     let emailLog = null;
     try {
       emailLog = await notifyAdminNewRequest(nickname, token, email || null);

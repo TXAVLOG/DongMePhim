@@ -138,6 +138,7 @@ export interface PaymentSettings {
   stripe_enable: boolean;
   stripe_publishable_key: string;
   stripe_secret_key: string;
+  vat_rate?: number;
   manual_enable: boolean;
   manual_bank_name: string;
   manual_account_no: string;
@@ -164,6 +165,7 @@ export interface SubscriptionPlan {
   custom_color?: string;
   features: string[];
   permissions: PlanPermission;
+  enabled?: boolean;
 }
 
 export interface AdSettings {

@@ -153,79 +153,13 @@ export const seedSettings: SiteSettings = {
     stripe_enable: true,
     stripe_publishable_key: "mock_stripe_pub_key",
     stripe_secret_key: "mock_stripe_sec_key",
+    vat_rate: 8,
     manual_enable: true,
     manual_bank_name: "Ngân hàng Quân đội MB Bank",
     manual_account_no: "1903568999999",
     manual_account_name: "LE HOANG ANH"
   },
-  packages: [
-    {
-      id: "free",
-      title: "Gói Free",
-      price: 0,
-      cycle: "free",
-      style_type: "default",
-      features: ["Có chứa quảng cáo ngẫu nhiên", "Xem chất lượng SD tiêu chuẩn", "Chỉ xem các server thường"],
-      permissions: {
-        max_resolution: "SD",
-        allowed_servers: ["Vietsub", "Thuyết Minh", "Lồng Tiếng"],
-        max_playlists: 10,
-        watch_together: false,
-        hide_watermark: false,
-        vip_badge: false,
-        bypass_ads: false
-      }
-    },
-    {
-      id: "standard",
-      title: "Gói Tiêu Chuẩn (Standard)",
-      price: 39000,
-      annual_price: 399000,
-      cycle: "monthly",
-      style_type: "custom_color",
-      custom_color: "#3b82f6",
-      features: [
-        "Không có quảng cáo pop-under / nhảy trang",
-        "Chỉ có quảng cáo trong trình phát khi xem",
-        "Xem chất lượng HD/FHD nét mượt",
-        "Hỗ trợ các server Vietsub, Thuyết Minh & Lồng Tiếng"
-      ],
-      permissions: {
-        max_resolution: "FHD",
-        allowed_servers: [
-          "#Hà Nội (Vietsub)",
-          "#Hà Nội (Thuyết Minh)",
-          "#Hà Nội (Lồng Tiếng)",
-          "Vietsub",
-          "Thuyết Minh",
-          "Lồng Tiếng"
-        ],
-        max_playlists: 50,
-        watch_together: false,
-        hide_watermark: false,
-        vip_badge: false,
-        bypass_ads: false,
-        ads_only_in_player: true
-      }
-    },
-    {
-      id: "vip",
-      title: "Gói VIP",
-      price: 69000,
-      annual_price: 699000,
-      style_type: "default",
-      features: ["Hoàn toàn không có quảng cáo", "Xem chất lượng cực nét 4K UHD", "Mở khóa toàn bộ các server VIP tốc độ cao", "Hỗ trợ tính năng Xem Chung"],
-      permissions: {
-        max_resolution: "4K",
-        allowed_servers: ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"],
-        max_playlists: 1000,
-        watch_together: true,
-        hide_watermark: true,
-        vip_badge: true,
-        bypass_ads: true
-      }
-    }
-  ],
+  packages: [],
   ads: {
     pre_roll_enable: false,
     pre_roll_type: "video",

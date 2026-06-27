@@ -1,0 +1,248 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Quản lý Vòng Quay May Mắn">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-amber-400 text-3xl">casino</span>
+          Quản lý Vòng Quay May Mắn (Lucky Draw Events)
+        </h1>
+        <p class="text-xs text-zinc-400 mt-1 font-body-main">Tạo sự kiện minigame, thiết lập tỉ lệ/số lượng giải thưởng và xuất mã QR Code tham gia.</p>
+      </div>
+      <button onclick="openCreateEventModal()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-amber-500/20 border-none">
+        <span class="material-symbols-outlined text-base">add</span>
+        Tạo Sự Kiện Mới
+      </button>
+    </div>
+
+    <!-- Events Grid / List -->
+    <div id="events-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="col-span-full glass-panel border border-glass-stroke rounded-2xl p-8 text-center text-zinc-500">
+        Đang tải danh sách sự kiện...
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script is:inline>
+  (function() {
+    async function loadEvents() {
+      const container = document.getElementById('events-list-container');
+      if (!container) return;
+
+      try {
+        const res = await fetch('/api/admin/lucky-draw');
+        const result = await res.json();
+        const events = result.data || [];
+
+        if (events.length === 0) {
+          container.innerHTML = `
+            <div class="col-span-full glass-panel border border-glass-stroke rounded-3xl p-12 text-center space-y-4">
+              <span class="material-symbols-outlined text-zinc-600 text-5xl">casino</span>
+              <h3 class="text-base font-bold text-white">Chưa có sự kiện vòng quay nào</h3>
+              <p class="text-xs text-zinc-400 max-w-sm mx-auto">Nhấp vào nút "Tạo Sự Kiện Mới" ở góc trên để bắt đầu tổ chức minigame cho thành viên.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = events.map(e => {
+          const isExpired = e.endTime && new Date(e.endTime) < new Date();
+          const joinUrl = `${window.location.origin}/join/txa/${e.id}`;
+          return `
+            <div class="glass-panel border border-glass-stroke rounded-3xl p-6 space-y-5 relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-start gap-2">
+                  <span class="px-2.5 py-1 ${isExpired ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'} border rounded-full text-[10px] font-bold">
+                    ${isExpired ? 'Đã kết thúc' : 'Đang diễn ra'}
+                  </span>
+                  <span class="font-mono text-[11px] text-zinc-500 font-bold">ID: ${e.id}</span>
+                </div>
+                <h3 class="text-lg font-bold text-white mt-3">${e.title}</h3>
+                <p class="text-xs text-zinc-400 mt-1 line-clamp-2">${e.description || 'Không có mô tả'}</p>
+              </div>
+
+              <div class="space-y-3 pt-4 border-t border-glass-stroke/40 text-xs">
+                <div class="flex justify-between text-zinc-400">
+                  <span>Số giải thưởng:</span>
+                  <span class="font-bold text-white">${(e.prizes || []).length} giải</span>
+                </div>
+                <div class="flex justify-between text-zinc-400">
+                  <span>Người tham gia:</span>
+                  <span class="font-bold text-emerald-400">${e.participantsCount || 0} người</span>
+                </div>
+                <div class="flex justify-between text-zinc-400">
+                  <span>Thời hạn:</span>
+                  <span class="font-bold text-white">${e.endTime ? new Date(e.endTime).toLocaleString('vi-VN') : 'Vô thời hạn'}</span>
+                </div>
+
+                <div class="pt-2 flex flex-col gap-2">
+                  <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[11px]">
+                    <span class="text-zinc-500 truncate flex-1 font-mono">${joinUrl}</span>
+                    <button onclick="copyText('${joinUrl}')" class="text-primary hover:underline font-bold shrink-0">Copy</button>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button onclick="showQRCodeModal('${e.id}', '${encodeURIComponent(e.title)}', '${joinUrl}')" class="py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all border-none cursor-pointer">
+                      <span class="material-symbols-outlined text-sm">qr_code</span> Mã QR
+                    </button>
+                    <button onclick="deleteEvent('${e.id}')" class="py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all border-none cursor-pointer">
+                      <span class="material-symbols-outlined text-sm">delete</span> Xóa
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        container.innerHTML = `<div class="col-span-full text-center text-rose-400">Lỗi khi tải danh sách sự kiện!</div>`;
+      }
+    }
+
+    window.copyText = function(text) {
+      navigator.clipboard.writeText(text);
+      if (window.showGlobalToast) window.showGlobalToast('Đã sao chép liên kết!', 'success');
+    };
+
+    window.openCreateEventModal = function() {
+      const randomId = Math.floor(100000 + Math.random() * 900000).toString();
+      const content = `
+        <div class="space-y-4 text-xs text-left">
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Mã ID Sự Kiện (6 số)</label>
+            <input type="text" id="ev-id" value="${randomId}" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-amber-400 font-mono font-bold" readonly />
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Tên Sự Kiện Minigame</label>
+            <input type="text" id="ev-title" placeholder="Ví dụ: Vòng quay may mắn Tết 2026..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white font-bold" />
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Mô tả sự kiện</label>
+            <textarea id="ev-desc" placeholder="Mô tả thể lệ tham gia..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white h-20"></textarea>
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Thời gian kết thúc (EndTime)</label>
+            <input type="datetime-local" id="ev-endtime" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white" />
+          </div>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Tạo Sự Kiện Minigame Mới',
+          content: content,
+          confirmText: 'Tạo Sự Kiện',
+          cancelText: 'Hủy',
+          onConfirm: async () => {
+            const id = document.getElementById('ev-id').value;
+            const title = document.getElementById('ev-title').value.trim();
+            const description = document.getElementById('ev-desc').value.trim();
+            const endTime = document.getElementById('ev-endtime').value;
+
+            if (!title) {
+              if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập tên sự kiện!', 'error');
+              return;
+            }
+
+            const defaultPrizes = [
+              { id: '1', name: 'Gói VIP 1 Tháng', type: 'vip', value: 30, chance: 10, maxQuantity: 5, wonQuantity: 0, color: '#f59e0b' },
+              { id: '2', name: 'Thẻ Nạp Điện Thoại 50K', type: 'phone', value: 50000, chance: 5, maxQuantity: 2, wonQuantity: 0, color: '#10b981' },
+              { id: '3', name: 'Mã Key Bypass Zalo', type: 'key', value: 15, chance: 25, maxQuantity: 10, wonQuantity: 0, color: '#8b5cf6' },
+              { id: '4', name: 'Chúc bạn may mắn lần sau', type: 'empty', value: 0, chance: 60, maxQuantity: 9999, wonQuantity: 0, color: '#64748b' }
+            ];
+
+            try {
+              const res = await fetch('/api/admin/lucky-draw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'save_event',
+                  event: { id, title, description, endTime, prizes: defaultPrizes, participantsCount: 0 }
+                })
+              });
+              if (res.ok) {
+                if (window.showGlobalToast) window.showGlobalToast('Tạo sự kiện thành công!', 'success');
+                loadEvents();
+              }
+            } catch (e) {}
+          }
+        });
+      }
+    };
+
+    window.deleteEvent = function(id) {
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'Xác nhận xóa sự kiện',
+          message: `Bạn có chắc chắn muốn xóa sự kiện ID <strong>${id}</strong> không?`,
+          type: 'danger',
+          confirmText: 'Xóa ngay',
+          cancelText: 'Hủy',
+          onConfirm: async () => {
+            try {
+              const res = await fetch('/api/admin/lucky-draw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete_event', id })
+              });
+              if (res.ok) {
+                if (window.showGlobalToast) window.showGlobalToast('Đã xóa sự kiện!', 'success');
+                loadEvents();
+              }
+            } catch (e) {}
+          }
+        });
+      }
+    };
+
+    window.showQRCodeModal = function(id, titleEncoded, joinUrl) {
+      const title = decodeURIComponent(titleEncoded);
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}`;
+
+      const content = `
+        <div class="flex flex-col items-center gap-4 text-center py-2">
+          <div class="p-4 bg-white rounded-2xl border border-zinc-200 shadow-xl w-64 h-64 flex items-center justify-center">
+            <img id="qr-modal-img" src="${qrApiUrl}" class="w-full h-full object-contain" alt="QR Code" />
+          </div>
+          <p class="text-xs text-zinc-400 font-mono">${joinUrl}</p>
+          <button onclick="downloadQRCode('${qrApiUrl}', '${id}')" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer border-none shadow-md flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-base">download</span>
+            Tải Ảnh Mã QR (PNG)
+          </button>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: `Mã QR Tham Gia: ${title}`,
+          content: content,
+          confirmText: '',
+          cancelText: 'Đóng'
+        });
+      }
+    };
+
+    window.downloadQRCode = async function(url, id) {
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `qrcode_luckydraw_${id}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (e) {
+        if (window.showGlobalToast) window.showGlobalToast('Lỗi khi tải ảnh mã QR', 'error');
+      }
+    };
+
+    loadEvents();
+  })();
+</script>
