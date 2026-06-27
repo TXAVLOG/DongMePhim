@@ -710,42 +710,50 @@ packages.forEach((pkg: any) => {
       };
 
       // Global Toast Notification Helper
-      window.txatoast = {
-        show: (message, type = 'success', duration = 3000) => {
-          let container = document.getElementById('txa-toast-container');
-          if (!container) {
-            container = document.createElement('div');
-            container.id = 'txa-toast-container';
-            container.className = 'fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none';
-            document.body.appendChild(container);
-          }
-
-          const toast = document.createElement('div');
-          toast.className = 'txatoast flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border border-white/10 backdrop-blur-md bg-zinc-900/95 text-white pointer-events-auto transform translate-x-4 opacity-0 transition-all duration-300';
-          
-          const icons = { success: 'check_circle', error: 'cancel', info: 'info' };
-          const colors = { success: 'text-emerald-400', error: 'text-rose-500', info: 'text-cyan-400' };
-          
-          toast.innerHTML = `
-            <span class="material-symbols-outlined ${colors[type] || 'text-emerald-400'}">${icons[type] || 'check_circle'}</span>
-            <span class="text-xs font-medium font-body-main">${message}</span>
-          `;
-
-          container.appendChild(toast);
-          
-          setTimeout(() => {
-            toast.classList.remove('translate-x-4', 'opacity-0');
-          }, 10);
-
-          setTimeout(() => {
-            toast.classList.add('translate-x-4', 'opacity-0');
-            setTimeout(() => {
-              toast.remove();
-            }, 300);
-          }, duration);
+      const showAdminToastFn = (message, type = 'success', duration = 3000) => {
+        let container = document.getElementById('txa-toast-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'txa-toast-container';
+          container.className = 'fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none';
+          document.body.appendChild(container);
         }
+
+        const toast = document.createElement('div');
+        toast.className = 'txatoast flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border border-white/10 backdrop-blur-md bg-zinc-900/95 text-white pointer-events-auto transform translate-x-4 opacity-0 transition-all duration-300';
+        
+        const icons = { success: 'check_circle', error: 'cancel', info: 'info', warning: 'warning' };
+        const colors = { success: 'text-emerald-400', error: 'text-rose-500', info: 'text-cyan-400', warning: 'text-amber-400' };
+        
+        toast.innerHTML = `
+          <span class="material-symbols-outlined ${colors[type] || 'text-emerald-400'}">${icons[type] || 'check_circle'}</span>
+          <span class="text-xs font-medium font-body-main">${message}</span>
+        `;
+
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+          toast.classList.remove('translate-x-4', 'opacity-0');
+        }, 10);
+
+        setTimeout(() => {
+          toast.classList.add('translate-x-4', 'opacity-0');
+          setTimeout(() => {
+            toast.remove();
+          }, 300);
+        }, duration);
       };
-      window.showGlobalToast = window.txatoast.show;
+
+      window.showGlobalToast = showAdminToastFn;
+      window.showToast = showAdminToastFn;
+      window.txatoast = {
+        show: showAdminToastFn,
+        success: (msg, dur) => showAdminToastFn(msg, 'success', dur),
+        error: (msg, dur) => showAdminToastFn(msg, 'error', dur),
+        info: (msg, dur) => showAdminToastFn(msg, 'info', dur),
+        warning: (msg, dur) => showAdminToastFn(msg, 'warning', dur)
+      };
+      window.txaToast = window.txatoast;
       // Dynamic Profile updates
       const loggedIn = (window.APP_USER ? window.APP_USER.username : null);
       if (loggedIn) {

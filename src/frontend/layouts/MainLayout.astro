@@ -2340,7 +2340,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
       // Global Toast Manager (Stackable, supports calling via Console/JS)
       // ══════════════════════════════════════════════════════════════
       (function() {
-        window.showGlobalToast = function(message, type = 'success', duration = 3000) {
+        const showToastFn = function(message, type = 'success', duration = 3000) {
           let container = document.getElementById('txa-toast-container');
           if (!container) {
             container = document.createElement('div');
@@ -2352,8 +2352,8 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           const toast = document.createElement('div');
           toast.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border border-white/10 backdrop-blur-md bg-[#12141d]/90 text-white transition-all duration-300 transform translate-y-2 opacity-0';
           
-          const icons = { success: 'check_circle', error: 'error', info: 'info' };
-          const colors = { success: 'text-emerald-400', error: 'text-red-400', info: 'text-blue-400' };
+          const icons = { success: 'check_circle', error: 'error', info: 'info', warning: 'warning' };
+          const colors = { success: 'text-emerald-400', error: 'text-red-400', info: 'text-blue-400', warning: 'text-amber-400' };
           
           toast.innerHTML = `
             <span class="material-symbols-outlined ${colors[type] || colors.info}">${icons[type] || 'info'}</span>
@@ -2378,7 +2378,16 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           }, duration);
         };
         
-        window.showToast = window.showGlobalToast;
+        window.showGlobalToast = showToastFn;
+        window.showToast = showToastFn;
+        window.txatoast = {
+          show: showToastFn,
+          success: (msg, dur) => showToastFn(msg, 'success', dur),
+          error: (msg, dur) => showToastFn(msg, 'error', dur),
+          info: (msg, dur) => showToastFn(msg, 'info', dur),
+          warning: (msg, dur) => showToastFn(msg, 'warning', dur)
+        };
+        window.txaToast = window.txatoast;
       })();
 
       (function() {
@@ -3769,14 +3778,14 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           clearTimeout(clickTimer);
           clickTimer = setTimeout(() => {
             logoClicks = 0;
-          }, 1000);
+          }, 2500);
           logoClicks++;
           if (logoClicks >= 2 && logoClicks <= 4) {
-            const msg = `Bạn đang kích hoạt mã ẩn! Click thêm ${5 - logoClicks} lần nữa...`;
-            if (window.showGlobalToast) {
+            const msg = `⚡ Bạn đang kích hoạt cổng ẩn! Nhấp thêm ${5 - logoClicks} lần nữa...`;
+            if (window.txatoast) {
+              window.txatoast.info(msg);
+            } else if (window.showGlobalToast) {
               window.showGlobalToast(msg, 'info');
-            } else {
-              alert(msg);
             }
           } else if (logoClicks >= 5) {
             logoClicks = 0;
@@ -3785,6 +3794,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               modal.classList.remove('hidden');
               modal.classList.add('flex');
             }
+            if (window.txatoast) window.txatoast.success("🔓 Đã mở bảng nhập mật mã ngụy trang!");
           }
         };
 
@@ -3803,9 +3813,8 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           if (code === decoyPasscode) {
             closeBypassModal();
             localStorage.setItem('txa_referred_token', 'true');
-            if (window.showGlobalToast) {
-              window.showGlobalToast("Mật mã chính xác! Chào mừng bạn.", "success");
-            }
+            if (window.txatoast) window.txatoast.success("🎉 Mật mã chính xác! Chào mừng bạn.");
+            else if (window.showGlobalToast) window.showGlobalToast("🎉 Mật mã chính xác! Chào mừng bạn.", "success");
             
             // Cập nhật class hiển thị giao diện qua checkTxaGate
             if (typeof window.checkTxaGate === 'function') {
@@ -3829,9 +3838,8 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               checkZaloStatusOnLoad();
             }
           } else {
-            if (window.showGlobalToast) {
-              window.showGlobalToast("Mật mã không chính xác!", "error");
-            }
+            if (window.txatoast) window.txatoast.error("❌ Mật mã không chính xác!");
+            else if (window.showGlobalToast) window.showGlobalToast("❌ Mật mã không chính xác!", "error");
           }
         };
 
@@ -3949,7 +3957,8 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             const data = await res.json();
             if (res.ok) {
               if (data.data && data.data.isAutoApproved) {
-                if (window.showGlobalToast) window.showGlobalToast('Mã Key Bypass hợp lệ! Đã tự động phê duyệt truy cập.', 'success');
+                if (window.txatoast) window.txatoast.success('🔑 Mã Key Bypass hợp lệ! Đã tự động phê duyệt truy cập.');
+                else if (window.showGlobalToast) window.showGlobalToast('Mã Key Bypass hợp lệ! Đã tự động phê duyệt truy cập.', 'success');
                 localStorage.setItem('zalo_access_status', 'approved');
                 document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
                 closeZaloModal();
@@ -3962,19 +3971,22 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                   }
                 }, 1000);
               } else {
-                if (window.showGlobalToast) window.showGlobalToast('Gửi yêu cầu thành công! Vui lòng chờ phê duyệt.', 'success');
+                if (window.txatoast) window.txatoast.success('📩 Gửi yêu cầu thành công! Vui lòng chờ phê duyệt.');
+                else if (window.showGlobalToast) window.showGlobalToast('Gửi yêu cầu thành công! Vui lòng chờ phê duyệt.', 'success');
                 localStorage.setItem('zalo_access_status', 'pending');
                 closeZaloModal();
                 updateZaloUI('pending');
                 startZaloPolling();
               }
             } else {
-              if (window.showGlobalToast) window.showGlobalToast(data.message || 'Đăng ký thất bại', 'error');
+              if (window.txatoast) window.txatoast.error(data.message || 'Đăng ký thất bại!');
+              else if (window.showGlobalToast) window.showGlobalToast(data.message || 'Đăng ký thất bại', 'error');
               submitBtn.disabled = false;
               submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Gửi yêu cầu / Xác thực Key</span>';
             }
           } catch (err) {
-            if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối mạng!', 'error');
+            if (window.txatoast) window.txatoast.error('Lỗi kết nối mạng!');
+            else if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối mạng!', 'error');
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Gửi yêu cầu / Xác thực Key</span>';
           }

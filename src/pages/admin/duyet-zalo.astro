@@ -748,6 +748,7 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
 
     // Cập nhật trạng thái duyệt đơn lẻ
     window.updateStatus = async function(id, status) {
+      const statusText = status === 'approved' ? 'Phê duyệt thành công! Thành viên có thể vào xem phim.' : 'Đã từ chối yêu cầu truy cập.';
       if (providerType === 'supabase') {
         try {
           const res = await fetch('/api/admin/zalo-action', {
@@ -757,16 +758,19 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
           });
           const result = await res.json();
           if (res.ok) {
-            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Cập nhật thành công', 'success');
+            if (window.txatoast) window.txatoast.success(result.message || statusText);
+            else if (window.showGlobalToast) window.showGlobalToast(result.message || statusText, 'success');
             // Cập nhật client-side state
             const target = requestsData.find(x => x.id === id);
             if (target) target.status = status;
             renderRequests(document.getElementById('request-search')?.value || '');
           } else {
-            if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
+            if (window.txatoast) window.txatoast.error(result.message || 'Lỗi xử lý');
+            else if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
           }
         } catch (e) {
-          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+          if (window.txatoast) window.txatoast.error('Lỗi kết nối API');
+          else if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
         }
       } else {
         // Local mode
@@ -776,7 +780,8 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
           target.status = status;
           target.updatedAt = new Date().toISOString();
           localStorage.setItem('txa_zalo_access', JSON.stringify(list));
-          if (window.showGlobalToast) window.showGlobalToast('Cập nhật trạng thái Local thành công!', 'success');
+          if (window.txatoast) window.txatoast.success(statusText);
+          else if (window.showGlobalToast) window.showGlobalToast('Cập nhật trạng thái Local thành công!', 'success');
           requestsData = list;
           renderRequests(document.getElementById('request-search')?.value || '');
         }
@@ -795,21 +800,25 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
             });
             const result = await res.json();
             if (res.ok) {
-              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Xóa thành công', 'success');
+              if (window.txatoast) window.txatoast.success(result.message || 'Xóa thành công');
+              else if (window.showGlobalToast) window.showGlobalToast(result.message || 'Xóa thành công', 'success');
               requestsData = requestsData.filter(x => x.id !== id);
               renderRequests(document.getElementById('request-search')?.value || '');
             } else {
-              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
+              if (window.txatoast) window.txatoast.error(result.message || 'Lỗi xử lý');
+              else if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
             }
           } catch (e) {
-            if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+            if (window.txatoast) window.txatoast.error('Lỗi kết nối API');
+            else if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
           }
         } else {
           // Local mode
           let list = JSON.parse(localStorage.getItem('txa_zalo_access') || '[]');
           list = list.filter(x => x.id !== id && x.token !== id);
           localStorage.setItem('txa_zalo_access', JSON.stringify(list));
-          if (window.showGlobalToast) window.showGlobalToast('Đã xóa yêu cầu Local!', 'info');
+          if (window.txatoast) window.txatoast.info('Đã xóa yêu cầu!');
+          else if (window.showGlobalToast) window.showGlobalToast('Đã xóa yêu cầu Local!', 'info');
           requestsData = list;
           renderRequests(document.getElementById('request-search')?.value || '');
         }
@@ -845,7 +854,8 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
             });
             const result = await res.json();
             if (res.ok) {
-              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Cập nhật hàng loạt thành công', 'success');
+              if (window.txatoast) window.txatoast.success(result.message || 'Cập nhật hàng loạt thành công');
+              else if (window.showGlobalToast) window.showGlobalToast(result.message || 'Cập nhật hàng loạt thành công', 'success');
               
               if (action === 'delete_bulk') {
                 requestsData = requestsData.filter(x => !ids.includes(x.id));
@@ -861,10 +871,12 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
               if (mainCheck) mainCheck.checked = false;
               checkSelection();
             } else {
-              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
+              if (window.txatoast) window.txatoast.error(result.message || 'Lỗi xử lý');
+              else if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi xử lý', 'error');
             }
           } catch (e) {
-            if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
+            if (window.txatoast) window.txatoast.error('Lỗi kết nối API');
+            else if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối API', 'error');
           }
         } else {
           // Local mode bulk
@@ -881,7 +893,8 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
             });
           }
           localStorage.setItem('txa_zalo_access', JSON.stringify(list));
-          if (window.showGlobalToast) window.showGlobalToast('Đã cập nhật hàng loạt Local!', 'success');
+          if (window.txatoast) window.txatoast.success('Đã cập nhật hàng loạt thành công!');
+          else if (window.showGlobalToast) window.showGlobalToast('Đã cập nhật hàng loạt Local!', 'success');
           requestsData = list;
           renderRequests();
           const mainCheck = document.getElementById('check-all-requests');
