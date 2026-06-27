@@ -280,12 +280,9 @@ const groupedPackages = packages.map((pkg: any) => {
           
           let pkgBadge = '';
           let bgClass = 'bg-surface-container-highest text-on-surface-variant border-glass-stroke';
-          if (u.package && u.package.includes('VIP')) {
-            if (u.package.includes('Year')) {
-              bgClass = 'bg-secondary/10 text-secondary border border-secondary/20';
-            } else {
-              bgClass = 'bg-primary/10 text-primary border border-primary/20';
-            }
+          const isFree = !u.package || u.package.toLowerCase() === 'free';
+          if (!isFree) {
+            bgClass = 'bg-primary/10 text-primary border border-primary/20';
           }
           pkgBadge = `<span class="text-[13px] px-2.5 py-0.5 rounded-full font-medium whitespace-nowrap ${bgClass}">${u.package || 'Free'}</span>`;
 
@@ -296,7 +293,7 @@ const groupedPackages = packages.map((pkg: any) => {
           let statusDot = 'bg-on-surface-variant/30';
           let statusColor = 'text-on-surface-variant';
           
-          if (u.package && u.package.includes('VIP')) {
+          if (!isFree) {
             const exp = u.expiryDate ? new Date(u.expiryDate) : null;
             if (exp && new Date() > exp) {
               statusText = 'Expired';

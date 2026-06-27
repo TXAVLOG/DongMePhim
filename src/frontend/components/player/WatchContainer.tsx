@@ -1141,14 +1141,11 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     const fetchUserAndAds = async (username: string) => {
       try {
         const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
-        let pkgId = 'free';
+        let rawPkg = 'free';
         if (res.ok) {
           const result = (await res.json()) as any;
-          pkgId = (result.data?.package || 'free').toLowerCase();
-          // Backward compat: normalize old format values
-          if (pkgId.includes('vip') || pkgId.includes('premium')) pkgId = 'vip';
+          rawPkg = result.data?.package || 'free';
         }
-        setCurrentUserPackage(pkgId);
 
         // Tải danh sách yêu thích và danh sách phát
         if (username) {
@@ -1168,8 +1165,11 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
         const settings = (window as any).TXA_SITE_SETTINGS || {};
         const packages = settings.packages || [];
-        const userPkg = packages.find((p: any) => p.id === pkgId) || packages.find((p: any) => p.id === 'free');
+        const userPkg = packages.find((p: any) => p.id === rawPkg || p.title === rawPkg) || packages.find((p: any) => p.id === 'free');
+        const pkgId = userPkg?.id || 'free';
+        setCurrentUserPackage(pkgId);
         setCurrentUserPackageTitle(userPkg?.title || 'Gói Free');
+        
         let perms = null;
         if (userPkg) {
           perms = userPkg.permissions;
