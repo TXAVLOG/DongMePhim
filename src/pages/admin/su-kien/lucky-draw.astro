@@ -589,7 +589,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <td class="p-2">
               <select onchange="updatePrizeField(${idx}, 'type', this.value)" class="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-zinc-300 text-xs">
                 <option value="vip" ${p.type === 'vip' ? 'selected' : ''}>Gói VIP</option>
-                <option value="phone" ${p.type === 'phone' ? 'selected' : ''}>Thẻ cào / Quà</option>
                 <option value="key" ${p.type === 'key' ? 'selected' : ''}>Key Bypass</option>
                 <option value="empty" ${p.type === 'empty' ? 'selected' : ''}>Không trúng</option>
               </select>
@@ -619,21 +618,116 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         if (body) body.innerHTML = renderPrizesTableHtml();
       };
 
-      window.addNewPrizeItem = function() {
-        const colors = ['#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#3b82f6', '#64748b'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        currentPrizes.push({
-          id: Date.now().toString(),
-          name: 'Phần thưởng mới',
-          type: 'vip',
-          value: 30,
-          chance: 10,
-          maxQuantity: 10,
-          wonQuantity: 0,
-          color: randomColor
-        });
-        const body = document.getElementById('prizes-table-body');
-        if (body) body.innerHTML = renderPrizesTableHtml();
+      window.addNewPrizeItem = async function() {
+        let dbPackages = [];
+        try {
+          const res = await fetch('/api/admin/settings');
+          if (res.ok) {
+            const data = await res.json();
+            dbPackages = data.data?.packages || [];
+          }
+        } catch(e){}
+        if (dbPackages.length === 0) {
+          dbPackages = [
+            { id: 'TXA_P1_28062026_0004', title: 'Gói Tiêu Chuẩn (Standard)' },
+            { id: 'TXA_P2_28062026_0005', title: 'Gói VIP' },
+            { id: 'TXA_P3_28062026_0006', title: 'DongPhimS' }
+          ];
+        }
+
+        const modalHtml = `
+          <div class="space-y-4 text-xs text-left">
+            <p class="text-zinc-300 font-bold">Vui lòng chọn loại phần thưởng muốn thêm vào vòng quay:</p>
+            
+            <div class="space-y-3 bg-white/5 border border-glass-stroke/40 p-3.5 rounded-xl">
+              <label class="flex items-center gap-2 font-bold text-amber-400 cursor-pointer">
+                <input type="radio" name="add_prize_category" value="vip" checked onchange="toggleAddPrizeTypeFields(this.value)" class="accent-amber-400" />
+                <span>💎 1. Tặng Gói Cước VIP (Tự động nâng cấp tài khoản)</span>
+              </label>
+              <div id="add-prize-vip-wrapper" class="pl-6 space-y-1">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase">Chọn gói cước hệ thống</label>
+                <select id="add-prize-package-select" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white">
+                  ${dbPackages.filter(p => p.id !== 'free' && p.id !== 'bypass_zalo').map(p => `<option value="${p.id}" data-title="${p.title}">Gói ${p.title} (${p.id})</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <div class="space-y-3 bg-white/5 border border-glass-stroke/40 p-3.5 rounded-xl">
+              <label class="flex items-center gap-2 font-bold text-emerald-400 cursor-pointer">
+                <input type="radio" name="add_prize_category" value="phone" onchange="toggleAddPrizeTypeFields(this.value)" class="accent-emerald-400" />
+                <span>📱 2. Thẻ Cào / Quà Tặng Vật Lý (Khách nhập SĐT nhận quà)</span>
+              </label>
+              <div id="add-prize-phone-wrapper" class="pl-6 space-y-1 hidden">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase">Tên quà tặng / Thẻ cào</label>
+                <input type="text" id="add-prize-custom-name" placeholder="Ví dụ: Thẻ Viettel 50K, Tai nghe Bluetooth..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white" />
+              </div>
+            </div>
+
+            <div class="space-y-3 bg-white/5 border border-glass-stroke/40 p-3.5 rounded-xl">
+              <label class="flex items-center gap-2 font-bold text-purple-400 cursor-pointer">
+                <input type="radio" name="add_prize_category" value="other" onchange="toggleAddPrizeTypeFields(this.value)" class="accent-purple-400" />
+                <span>🔑 3. Key Bypass Zalo / Không Trúng</span>
+              </label>
+              <div id="add-prize-other-wrapper" class="pl-6 space-y-1 hidden">
+                <select id="add-prize-other-select" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white">
+                  <option value="key">Key Bypass Zalo</option>
+                  <option value="empty">Chúc bạn may mắn lần sau (Không trúng)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: 'Tạo Phần Thưởng Mới',
+            content: modalHtml,
+            confirmText: 'Xác Nhận Thêm',
+            cancelText: 'Hủy',
+            onConfirm: () => {
+              const selectedCategory = document.querySelector('input[name="add_prize_category"]:checked')?.value;
+              const colors = ['#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#3b82f6', '#64748b'];
+              const randomColor = colors[Math.floor(Math.random() * colors.length)];
+              
+              let newPrize = {
+                id: Date.now().toString(),
+                name: '',
+                type: 'vip',
+                value: 30,
+                chance: 10,
+                maxQuantity: 10,
+                wonQuantity: 0,
+                color: randomColor
+              };
+
+              if (selectedCategory === 'vip') {
+                const sel = document.getElementById('add-prize-package-select');
+                const opt = sel?.options[sel.selectedIndex];
+                newPrize.type = 'vip';
+                newPrize.packageId = sel?.value;
+                newPrize.name = opt ? `Gói ${opt.dataset.title}` : 'Gói VIP';
+              } else if (selectedCategory === 'phone') {
+                const customName = document.getElementById('add-prize-custom-name')?.value?.trim();
+                newPrize.type = 'phone';
+                newPrize.name = customName || 'Thẻ Nạp Điện Thoại 50K';
+              } else {
+                const oth = document.getElementById('add-prize-other-select')?.value;
+                newPrize.type = oth || 'empty';
+                newPrize.name = oth === 'key' ? 'Mã Key Bypass Zalo' : 'Chúc bạn may mắn lần sau';
+              }
+
+              currentPrizes.push(newPrize);
+              const body = document.getElementById('prizes-table-body');
+              if (body) body.innerHTML = renderPrizesTableHtml();
+            }
+          });
+
+          window.toggleAddPrizeTypeFields = function(val) {
+            document.getElementById('add-prize-vip-wrapper')?.classList.toggle('hidden', val !== 'vip');
+            document.getElementById('add-prize-phone-wrapper')?.classList.toggle('hidden', val !== 'phone');
+            document.getElementById('add-prize-other-wrapper')?.classList.toggle('hidden', val !== 'other');
+          };
+        }
       };
 
       const formattedEndTime = ev.endTime ? new Date(ev.endTime).toISOString().slice(0, 16) : '';
