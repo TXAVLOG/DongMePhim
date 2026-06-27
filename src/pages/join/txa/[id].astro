@@ -33,7 +33,7 @@ const event = events.find((e: any) => e.id === id);
         <div class="flex flex-wrap items-center justify-center gap-4 text-xs">
           <div class="glass-panel border border-glass-stroke rounded-2xl px-5 py-3 flex items-center gap-2.5">
             <span class="material-symbols-outlined text-emerald-400 text-lg">group</span>
-            <span class="text-zinc-400">Tham gia: <strong class="text-white font-bold" id="participants-cnt">{event.participantsCount || 128} người</strong></span>
+            <span class="text-zinc-400">Tham gia: <strong class="text-white font-bold" id="participants-cnt">{event.participantsCount || 0} người</strong></span>
           </div>
 
           <div class="glass-panel border border-glass-stroke rounded-2xl px-5 py-3 flex items-center gap-2.5">
@@ -74,6 +74,13 @@ const event = events.find((e: any) => e.id === id);
     const canvas = document.getElementById('wheel-canvas');
     const spinBtn = document.getElementById('spin-btn');
     if (!canvas || !spinBtn) return;
+
+    // Check if paused
+    if (event.status === 'paused') {
+      spinBtn.disabled = true;
+      spinBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      if (window.showGlobalToast) window.showGlobalToast('Sự kiện hiện đang tạm dừng!', 'warning');
+    }
 
     const ctx = canvas.getContext('2d');
     const prizes = event.prizes || [];
@@ -176,18 +183,20 @@ const event = events.find((e: any) => e.id === id);
     }
 
     // Spin Handler
-    spinBtn.onclick = function() {
+    spinBtn.onclick = async function() {
       if (isSpinning) return;
       
+      if (event.status === 'paused') {
+        if (window.showGlobalToast) window.showGlobalToast('Sự kiện hiện đang tạm dừng!', 'warning');
+        return;
+      }
+
       // Check login
       if (!window.APP_USER) {
         if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập tài khoản để quay thưởng!', 'error');
         window.dispatchEvent(new Event('open-login-modal'));
         return;
       }
-
-      isSpinning = true;
-      spinBtn.disabled = true;
 
       // Select random prize based on probability
       const rand = Math.random() * 100;
@@ -202,6 +211,32 @@ const event = events.find((e: any) => e.id === id);
       }
 
       const winPrize = prizes[prizeIndex];
+
+      // Send to backend to check spin limit and record spin
+      try {
+        const recordRes = await fetch('/api/admin/lucky-draw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'record_spin',
+            eventId: event.id,
+            prize: winPrize,
+            username: window.APP_USER.username
+          })
+        });
+        const recordData = await recordRes.json();
+        if (!recordRes.ok || recordData.status === 'error') {
+          if (window.showGlobalToast) window.showGlobalToast(recordData.message || 'Không thể thực hiện lượt quay!', 'error');
+          return;
+        }
+      } catch (e) {
+        if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối máy chủ!', 'error');
+        return;
+      }
+
+      isSpinning = true;
+      spinBtn.disabled = true;
+
       const degreesPerSlice = 360 / numPrizes;
       const targetDegree = 360 - (prizeIndex * degreesPerSlice + degreesPerSlice / 2);
       const totalRounds = 5;
@@ -214,7 +249,6 @@ const event = events.find((e: any) => e.id === id);
       function animateSpin(now) {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        // Easing out cubic
         const easeProgress = 1 - Math.pow(1 - progress, 3);
         currentDeg = easeProgress * finalDegree;
 
@@ -250,7 +284,6 @@ const event = events.find((e: any) => e.id === id);
       }
 
       if (prize.type === 'phone') {
-        // Form nhập SĐT Việt Nam
         const content = `
           <div class="space-y-4 text-xs text-left">
             <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
@@ -284,6 +317,7 @@ const event = events.find((e: any) => e.id === id);
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     action: 'claim_phone_prize',
+                    eventId: event.id,
                     phone: phone,
                     winnerName: (window.APP_USER ? window.APP_USER.username : 'Khách'),
                     prizeName: prize.name

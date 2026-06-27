@@ -11,12 +11,18 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           <span class="material-symbols-outlined text-amber-400 text-3xl">casino</span>
           Quản lý Vòng Quay May Mắn (Lucky Draw Events)
         </h1>
-        <p class="text-xs text-zinc-400 mt-1 font-body-main">Tạo sự kiện minigame, thiết lập tỉ lệ/số lượng giải thưởng và xuất mã QR Code tham gia.</p>
+        <p class="text-xs text-zinc-400 mt-1 font-body-main">Tạo sự kiện minigame, thiết lập tỉ lệ/số lượng giải thưởng, quản lý SĐT nhận quà và xuất Excel đối soát.</p>
       </div>
-      <button onclick="openCreateEventModal()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-amber-500/20 border-none">
-        <span class="material-symbols-outlined text-base">add</span>
-        Tạo Sự Kiện Mới
-      </button>
+      <div class="flex flex-wrap items-center gap-3">
+        <button onclick="openPhoneClaimsModal()" class="px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer border border-emerald-500/30">
+          <span class="material-symbols-outlined text-base">call</span>
+          Danh Sách SĐT Nhận Quà
+        </button>
+        <button onclick="openCreateEventModal()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-amber-500/20 border-none">
+          <span class="material-symbols-outlined text-base">add</span>
+          Tạo Sự Kiện Mới
+        </button>
+      </div>
     </div>
 
     <!-- Events Grid / List -->
@@ -30,6 +36,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
 <script is:inline>
   (function() {
+    let cachedEvents = [];
+
     async function loadEvents() {
       const container = document.getElementById('events-list-container');
       if (!container) return;
@@ -50,16 +58,28 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           return;
         }
 
+        cachedEvents = events;
         container.innerHTML = events.map(e => {
           const isExpired = e.endTime && new Date(e.endTime) < new Date();
+          const isPaused = e.status === 'paused';
           const joinUrl = `${window.location.origin}/join/txa/${e.id}`;
+          
+          let statusBadge = `<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-bold">Đang diễn ra</span>`;
+          if (isPaused) {
+            statusBadge = `<span class="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-[10px] font-bold">Tạm dừng</span>`;
+          } else if (isExpired) {
+            statusBadge = `<span class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full text-[10px] font-bold">Đã kết thúc</span>`;
+          }
+
+          const limitText = (e.maxSpinsPerUser && e.maxSpinsPerUser > 0) 
+            ? `${e.maxSpinsPerUser} lượt / ${e.spinLimitType === 'daily' ? 'ngày' : 'user'}` 
+            : 'Không giới hạn';
+
           return `
-            <div class="glass-panel border border-glass-stroke rounded-3xl p-6 space-y-5 relative overflow-hidden flex flex-col justify-between">
+            <div class="glass-panel border border-glass-stroke rounded-3xl p-6 space-y-5 relative overflow-hidden flex flex-col justify-between hover:border-amber-500/30 transition-all">
               <div>
                 <div class="flex justify-between items-start gap-2">
-                  <span class="px-2.5 py-1 ${isExpired ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'} border rounded-full text-[10px] font-bold">
-                    ${isExpired ? 'Đã kết thúc' : 'Đang diễn ra'}
-                  </span>
+                  ${statusBadge}
                   <span class="font-mono text-[11px] text-zinc-500 font-bold">ID: ${e.id}</span>
                 </div>
                 <h3 class="text-lg font-bold text-white mt-3">${e.title}</h3>
@@ -68,32 +88,48 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
               <div class="space-y-3 pt-4 border-t border-glass-stroke/40 text-xs">
                 <div class="flex justify-between text-zinc-400">
-                  <span>Số giải thưởng:</span>
-                  <span class="font-bold text-white">${(e.prizes || []).length} giải</span>
+                  <span>Cấu hình giải thưởng:</span>
+                  <span class="font-bold text-amber-400">${(e.prizes || []).length} phần quà</span>
                 </div>
                 <div class="flex justify-between text-zinc-400">
-                  <span>Người tham gia:</span>
-                  <span class="font-bold text-emerald-400">${e.participantsCount || 0} người</span>
+                  <span>Lượt tham gia:</span>
+                  <span class="font-bold text-emerald-400">${e.participantsCount || (e.winners || []).length || 0} lượt quay</span>
                 </div>
                 <div class="flex justify-between text-zinc-400">
-                  <span>Thời hạn:</span>
+                  <span>Giới hạn lượt quay:</span>
+                  <span class="font-bold text-purple-400">${limitText}</span>
+                </div>
+                <div class="flex justify-between text-zinc-400">
+                  <span>Thời hạn sự kiện:</span>
                   <span class="font-bold text-white">${e.endTime ? new Date(e.endTime).toLocaleString('vi-VN') : 'Vô thời hạn'}</span>
                 </div>
 
-                <div class="pt-2 flex flex-col gap-2">
+                <div class="pt-2 flex flex-col gap-2.5">
                   <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[11px]">
                     <span class="text-zinc-500 truncate flex-1 font-mono">${joinUrl}</span>
-                    <button onclick="copyText('${joinUrl}')" class="text-primary hover:underline font-bold shrink-0">Copy</button>
+                    <button onclick="copyText('${joinUrl}')" class="text-amber-400 hover:underline font-bold shrink-0 border-none bg-transparent cursor-pointer">Copy</button>
                   </div>
 
-                  <div class="grid grid-cols-2 gap-2 pt-1">
-                    <button onclick="showQRCodeModal('${e.id}', '${encodeURIComponent(e.title)}', '${joinUrl}')" class="py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all border-none cursor-pointer">
+                  <!-- Prominent Edit Event Button -->
+                  <button onclick="openEditEventModal('${e.id}')" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all border-none cursor-pointer shadow-lg shadow-amber-500/20">
+                    <span class="material-symbols-outlined text-base">edit_note</span> Chỉnh Sửa Sự Kiện
+                  </button>
+
+                  <div class="grid grid-cols-3 gap-2">
+                    <button onclick="toggleEventStatus('${e.id}')" class="py-2 ${isPaused ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'} rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer">
+                      <span class="material-symbols-outlined text-sm">${isPaused ? 'play_arrow' : 'pause'}</span> ${isPaused ? 'Mở lại' : 'Tạm dừng'}
+                    </button>
+                    <button onclick="showQRCodeModal('${e.id}', '${encodeURIComponent(e.title)}', '${joinUrl}')" class="py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer">
                       <span class="material-symbols-outlined text-sm">qr_code</span> Mã QR
                     </button>
-                    <button onclick="deleteEvent('${e.id}')" class="py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all border-none cursor-pointer">
-                      <span class="material-symbols-outlined text-sm">delete</span> Xóa
+                    <button onclick="openWinnersModal('${e.id}')" class="py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer">
+                      <span class="material-symbols-outlined text-sm">group</span> Trúng giải
                     </button>
                   </div>
+                  
+                  <button onclick="deleteEvent('${e.id}')" class="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all border-none cursor-pointer">
+                    <span class="material-symbols-outlined text-sm">delete</span> Xóa Sự Kiện
+                  </button>
                 </div>
               </div>
             </div>
@@ -109,52 +145,398 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       if (window.showGlobalToast) window.showGlobalToast('Đã sao chép liên kết!', 'success');
     };
 
+    window.toggleEventStatus = async function(id) {
+      try {
+        const res = await fetch('/api/admin/lucky-draw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'toggle_status', id })
+        });
+        if (res.ok) {
+          if (window.showGlobalToast) window.showGlobalToast('Đã thay đổi trạng thái sự kiện!', 'success');
+          loadEvents();
+        }
+      } catch (e) {}
+    };
+
+    // CSV Export helper supporting Vietnamese UTF-8 BOM
+    function exportToCSV(filename, headers, rows) {
+      let csvContent = "\uFEFF"; // UTF-8 BOM
+      csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + "\n";
+      rows.forEach(row => {
+        csvContent += row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(',') + "\n";
+      });
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    window.openPhoneClaimsModal = async function() {
+      try {
+        const res = await fetch('/api/admin/lucky-draw?claims=true');
+        const result = await res.json();
+        const claims = result.data || [];
+
+        const renderClaimsList = () => {
+          if (claims.length === 0) {
+            return `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Chưa có ai gửi số điện thoại nhận quà.</td></tr>`;
+          }
+          return claims.map(c => `
+            <tr class="border-b border-glass-stroke/30 text-xs hover:bg-white/5">
+              <td class="p-3 text-center">
+                <input type="checkbox" value="${c.id}" class="claim-select-chk w-4 h-4 accent-amber-500 rounded cursor-pointer" onchange="updateSelectedCount()" />
+              </td>
+              <td class="p-3 font-mono text-zinc-400">${new Date(c.claimedAt || Date.now()).toLocaleString('vi-VN')}</td>
+              <td class="p-3 font-bold text-white">${c.winnerName}</td>
+              <td class="p-3 font-mono font-bold text-emerald-400">${c.phone}</td>
+              <td class="p-3 font-bold text-amber-400">${c.prizeName} <span class="text-[10px] text-zinc-500 font-normal">(${c.eventTitle || c.eventId})</span></td>
+              <td class="p-3 text-center flex items-center justify-center gap-2">
+                ${c.status === 'completed' 
+                  ? `<span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded text-[10px] font-bold">Đã trao quà</span>`
+                  : `<button onclick="updateClaimStatus('${c.id}', 'completed')" class="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded text-[10px] cursor-pointer border-none">Duyệt trao quà</button>`
+                }
+                <button onclick="deleteClaimItem('${c.id}')" class="p-1 text-rose-400 hover:text-rose-300 border-none bg-transparent cursor-pointer">
+                  <span class="material-symbols-outlined text-base">delete</span>
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        };
+
+        const content = `
+          <div class="space-y-4 text-xs text-left max-h-[75vh] overflow-y-auto pr-1">
+            <!-- Header Status & Top Actions -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-zinc-900 p-3.5 rounded-xl border border-zinc-800">
+              <span class="text-zinc-400">Tổng yêu cầu nhận quà: <strong class="text-emerald-400">${claims.length}</strong></span>
+              <button onclick="exportPhoneClaimsCSV()" class="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
+                <span class="material-symbols-outlined text-sm">download</span> Xuất Excel (CSV)
+              </button>
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-400 text-lg">checklist</span>
+                <span class="text-amber-300 font-bold">Tác vụ hàng loạt (Bulk Actions):</span>
+                <span id="selected-claims-count" class="font-mono bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-xs font-bold">Đã chọn 0</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="bulkApproveClaims()" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer border-none">
+                  <span class="material-symbols-outlined text-sm">check_circle</span> Duyệt tất cả đã chọn
+                </button>
+                <button onclick="bulkDeleteClaims()" class="px-3 py-1.5 bg-rose-500 hover:bg-rose-400 text-white font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer border-none">
+                  <span class="material-symbols-outlined text-sm">delete_sweep</span> Xóa đã chọn
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto bg-black/40 rounded-xl border border-glass-stroke/40">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-white/5 border-b border-glass-stroke/40 text-[10px] text-zinc-400 uppercase font-bold">
+                    <th class="p-3 text-center w-10">
+                      <input type="checkbox" id="select-all-claims" onchange="toggleSelectAllClaims(this.checked)" class="w-4 h-4 accent-amber-500 rounded cursor-pointer" />
+                    </th>
+                    <th class="p-3">Thời gian</th>
+                    <th class="p-3">Thành viên</th>
+                    <th class="p-3">Số điện thoại</th>
+                    <th class="p-3">Phần quà trúng</th>
+                    <th class="p-3 text-center">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="claims-table-body" class="divide-y divide-glass-stroke/30">
+                  ${renderClaimsList()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+
+        window.updateSelectedCount = () => {
+          const chks = document.querySelectorAll('.claim-select-chk:checked');
+          const countEl = document.getElementById('selected-claims-count');
+          if (countEl) countEl.textContent = `Đã chọn ${chks.length}`;
+        };
+
+        window.toggleSelectAllClaims = (checked) => {
+          const chks = document.querySelectorAll('.claim-select-chk');
+          chks.forEach(c => c.checked = checked);
+          window.updateSelectedCount();
+        };
+
+        window.getSelectedClaimIds = () => {
+          const chks = document.querySelectorAll('.claim-select-chk:checked');
+          return Array.from(chks).map(c => c.value);
+        };
+
+        window.bulkApproveClaims = async () => {
+          const ids = window.getSelectedClaimIds();
+          if (ids.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng chọn ít nhất 1 yêu cầu!', 'error');
+            return;
+          }
+          const res = await fetch('/api/admin/lucky-draw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'bulk_update_claim_status', claimIds: ids, status: 'completed' })
+          });
+          if (res.ok) {
+            if (window.showGlobalToast) window.showGlobalToast(`Đã duyệt hàng loạt ${ids.length} yêu cầu!`, 'success');
+            window.openPhoneClaimsModal();
+          }
+        };
+
+        window.bulkDeleteClaims = async () => {
+          const ids = window.getSelectedClaimIds();
+          if (ids.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng chọn ít nhất 1 yêu cầu!', 'error');
+            return;
+          }
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: '⚠️ Xác nhận xóa hàng loạt',
+              message: `Bạn có chắc chắn muốn XÓA HÀNG LOẠT <strong>${ids.length}</strong> yêu cầu SĐT đã chọn không?`,
+              type: 'danger',
+              confirmText: 'Xóa Tất Cả',
+              cancelText: 'Hủy',
+              onConfirm: async () => {
+                const res = await fetch('/api/admin/lucky-draw', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'bulk_delete_claims', claimIds: ids })
+                });
+                if (res.ok) {
+                  if (window.showGlobalToast) window.showGlobalToast('Đã xóa các yêu cầu đã chọn!', 'success');
+                  window.openPhoneClaimsModal();
+                }
+              }
+            });
+          }
+        };
+
+        window.exportPhoneClaimsCSV = () => {
+          const headers = ["Thời Gian", "Thành Viên", "Số Điện Thoại", "Phần Quà", "Sự Kiện", "Trạng Thái"];
+          const rows = claims.map(c => [
+            new Date(c.claimedAt || Date.now()).toLocaleString('vi-VN'),
+            c.winnerName,
+            c.phone,
+            c.prizeName,
+            c.eventTitle || c.eventId,
+            c.status === 'completed' ? 'Đã trao quà' : 'Đang chờ'
+          ]);
+          exportToCSV(`Danh_Sach_SDT_Nhan_Qua_${Date.now()}.csv`, headers, rows);
+        };
+
+        window.updateClaimStatus = async (claimId, status) => {
+          const res = await fetch('/api/admin/lucky-draw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_claim_status', claimId, status })
+          });
+          if (res.ok) {
+            if (window.showGlobalToast) window.showGlobalToast('Đã duyệt trao quà!', 'success');
+            window.openPhoneClaimsModal();
+          }
+        };
+
+        window.deleteClaimItem = async (claimId) => {
+          const res = await fetch('/api/admin/lucky-draw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_claim', claimId })
+          });
+          if (res.ok) {
+            if (window.showGlobalToast) window.showGlobalToast('Đã xóa yêu cầu!', 'success');
+            window.openPhoneClaimsModal();
+          }
+        };
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: '📞 Danh Sách Số Điện Thoại Đăng Ký Nhận Quà',
+            content: content,
+            confirmText: '',
+            cancelText: 'Đóng'
+          });
+        }
+      } catch (e) {}
+    };
+
     window.openCreateEventModal = function() {
       const randomId = Math.floor(100000 + Math.random() * 900000).toString();
+      window.openEditEventModal(randomId, true);
+    };
+
+    window.openEditEventModal = function(eventId, isNew = false) {
+      let ev = cachedEvents.find(e => e.id === eventId);
+      if (!ev) {
+        ev = {
+          id: eventId,
+          title: '',
+          description: '',
+          endTime: '',
+          status: 'active',
+          maxSpinsPerUser: 0,
+          spinLimitType: 'total',
+          prizes: [
+            { id: '1', name: 'Gói VIP 1 Tháng', type: 'vip', value: 30, chance: 10, maxQuantity: 5, wonQuantity: 0, color: '#f59e0b' },
+            { id: '2', name: 'Thẻ Nạp Điện Thoại 50K', type: 'phone', value: 50000, chance: 5, maxQuantity: 2, wonQuantity: 0, color: '#10b981' },
+            { id: '3', name: 'Mã Key Bypass Zalo', type: 'key', value: 15, chance: 25, maxQuantity: 10, wonQuantity: 0, color: '#8b5cf6' },
+            { id: '4', name: 'Chúc bạn may mắn lần sau', type: 'empty', value: 0, chance: 60, maxQuantity: 9999, wonQuantity: 0, color: '#64748b' }
+          ],
+          participantsCount: 0
+        };
+      }
+
+      let currentPrizes = JSON.parse(JSON.stringify(ev.prizes || []));
+
+      function renderPrizesTableHtml() {
+        return currentPrizes.map((p, idx) => `
+          <tr class="border-b border-glass-stroke/30 text-xs">
+            <td class="p-2">
+              <input type="text" value="${p.name}" onchange="updatePrizeField(${idx}, 'name', this.value)" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-white text-xs" placeholder="Tên phần thưởng" />
+            </td>
+            <td class="p-2">
+              <select onchange="updatePrizeField(${idx}, 'type', this.value)" class="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-zinc-300 text-xs">
+                <option value="vip" ${p.type === 'vip' ? 'selected' : ''}>Gói VIP</option>
+                <option value="phone" ${p.type === 'phone' ? 'selected' : ''}>Thẻ cào / Quà</option>
+                <option value="key" ${p.type === 'key' ? 'selected' : ''}>Key Bypass</option>
+                <option value="empty" ${p.type === 'empty' ? 'selected' : ''}>Không trúng</option>
+              </select>
+            </td>
+            <td class="p-2">
+              <input type="number" value="${p.chance}" onchange="updatePrizeField(${idx}, 'chance', parseFloat(this.value))" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-amber-400 font-bold text-center text-xs" /> %
+            </td>
+            <td class="p-2">
+              <input type="number" value="${p.maxQuantity}" onchange="updatePrizeField(${idx}, 'maxQuantity', parseInt(this.value))" class="w-16 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-emerald-400 text-center text-xs" />
+            </td>
+            <td class="p-2 text-center">
+              <button onclick="removePrizeItem(${idx})" class="p-1 text-rose-400 hover:text-rose-300 border-none bg-transparent cursor-pointer">
+                <span class="material-symbols-outlined text-base">delete</span>
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      window.updatePrizeField = function(idx, field, val) {
+        if (currentPrizes[idx]) currentPrizes[idx][field] = val;
+      };
+
+      window.removePrizeItem = function(idx) {
+        currentPrizes.splice(idx, 1);
+        const body = document.getElementById('prizes-table-body');
+        if (body) body.innerHTML = renderPrizesTableHtml();
+      };
+
+      window.addNewPrizeItem = function() {
+        const colors = ['#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#3b82f6', '#64748b'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        currentPrizes.push({
+          id: Date.now().toString(),
+          name: 'Phần thưởng mới',
+          type: 'vip',
+          value: 30,
+          chance: 10,
+          maxQuantity: 10,
+          wonQuantity: 0,
+          color: randomColor
+        });
+        const body = document.getElementById('prizes-table-body');
+        if (body) body.innerHTML = renderPrizesTableHtml();
+      };
+
+      const formattedEndTime = ev.endTime ? new Date(ev.endTime).toISOString().slice(0, 16) : '';
+
       const content = `
-        <div class="space-y-4 text-xs text-left">
-          <div>
-            <label class="block text-zinc-400 font-bold mb-1">Mã ID Sự Kiện (6 số)</label>
-            <input type="text" id="ev-id" value="${randomId}" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-amber-400 font-mono font-bold" readonly />
+        <div class="space-y-4 text-xs text-left max-h-[75vh] overflow-y-auto pr-1">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-zinc-400 font-bold mb-1">Mã ID Sự Kiện (6 số)</label>
+              <input type="text" id="ev-id" value="${ev.id}" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-amber-400 font-mono font-bold" readonly />
+            </div>
+            <div>
+              <label class="block text-zinc-400 font-bold mb-1">Thời gian kết thúc (EndTime)</label>
+              <input type="datetime-local" id="ev-endtime" value="${formattedEndTime}" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white" />
+            </div>
           </div>
+
           <div>
             <label class="block text-zinc-400 font-bold mb-1">Tên Sự Kiện Minigame</label>
-            <input type="text" id="ev-title" placeholder="Ví dụ: Vòng quay may mắn Tết 2026..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white font-bold" />
+            <input type="text" id="ev-title" value="${ev.title || ''}" placeholder="Ví dụ: Vòng quay may mắn Tết 2026..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white font-bold" />
           </div>
+          
           <div>
             <label class="block text-zinc-400 font-bold mb-1">Mô tả sự kiện</label>
-            <textarea id="ev-desc" placeholder="Mô tả thể lệ tham gia..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white h-20"></textarea>
+            <textarea id="ev-desc" placeholder="Mô tả thể lệ tham gia..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white h-16">${ev.description || ''}</textarea>
           </div>
-          <div>
-            <label class="block text-zinc-400 font-bold mb-1">Thời gian kết thúc (EndTime)</label>
-            <input type="datetime-local" id="ev-endtime" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white" />
+
+          <div class="grid grid-cols-2 gap-4 p-3 bg-zinc-900/60 rounded-xl border border-zinc-800">
+            <div>
+              <label class="block text-purple-300 font-bold mb-1">Số lượt quay tối đa / User</label>
+              <input type="number" id="ev-max-spins" value="${ev.maxSpinsPerUser || 0}" placeholder="0 = Không giới hạn" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-bold" />
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Nhập 0 để không giới hạn</span>
+            </div>
+            <div>
+              <label class="block text-purple-300 font-bold mb-1">Loại giới hạn lượt quay</label>
+              <select id="ev-limit-type" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-300 font-bold">
+                <option value="total" ${ev.spinLimitType === 'total' ? 'selected' : ''}>Tổng số lượt (Mỗi tài khoản)</option>
+                <option value="daily" ${ev.spinLimitType === 'daily' ? 'selected' : ''}>Mỗi ngày (Reset hằng ngày)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-glass-stroke/40 space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="block text-amber-400 font-bold uppercase tracking-wider text-[11px]">Cấu hình Vòng Quay & Tỉ lệ trúng giải</label>
+              <button onclick="addNewPrizeItem()" class="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer border-none">
+                <span class="material-symbols-outlined text-sm">add</span> Thêm quà
+              </button>
+            </div>
+
+            <div class="overflow-x-auto bg-black/40 rounded-xl border border-glass-stroke/40">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-white/5 border-b border-glass-stroke/40 text-[10px] text-zinc-400 uppercase font-bold">
+                    <th class="p-2">Tên giải thưởng</th>
+                    <th class="p-2">Loại</th>
+                    <th class="p-2">Tỉ lệ (%)</th>
+                    <th class="p-2">Số lượng</th>
+                    <th class="p-2 text-center">Xóa</th>
+                  </tr>
+                </thead>
+                <tbody id="prizes-table-body">
+                  ${renderPrizesTableHtml()}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       `;
 
       if (window.txamodal) {
         window.txamodal.show({
-          title: 'Tạo Sự Kiện Minigame Mới',
+          title: isNew ? 'Tạo Sự Kiện Minigame Mới' : `Chỉnh Sửa Sự Kiện: ${ev.title || ev.id}`,
           content: content,
-          confirmText: 'Tạo Sự Kiện',
+          confirmText: 'Lưu Cấu Hình',
           cancelText: 'Hủy',
           onConfirm: async () => {
             const id = document.getElementById('ev-id').value;
             const title = document.getElementById('ev-title').value.trim();
             const description = document.getElementById('ev-desc').value.trim();
             const endTime = document.getElementById('ev-endtime').value;
+            const maxSpinsPerUser = parseInt(document.getElementById('ev-max-spins').value || 0);
+            const spinLimitType = document.getElementById('ev-limit-type').value;
 
             if (!title) {
               if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập tên sự kiện!', 'error');
               return;
             }
-
-            const defaultPrizes = [
-              { id: '1', name: 'Gói VIP 1 Tháng', type: 'vip', value: 30, chance: 10, maxQuantity: 5, wonQuantity: 0, color: '#f59e0b' },
-              { id: '2', name: 'Thẻ Nạp Điện Thoại 50K', type: 'phone', value: 50000, chance: 5, maxQuantity: 2, wonQuantity: 0, color: '#10b981' },
-              { id: '3', name: 'Mã Key Bypass Zalo', type: 'key', value: 15, chance: 25, maxQuantity: 10, wonQuantity: 0, color: '#8b5cf6' },
-              { id: '4', name: 'Chúc bạn may mắn lần sau', type: 'empty', value: 0, chance: 60, maxQuantity: 9999, wonQuantity: 0, color: '#64748b' }
-            ];
 
             try {
               const res = await fetch('/api/admin/lucky-draw', {
@@ -162,15 +544,103 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   action: 'save_event',
-                  event: { id, title, description, endTime, prizes: defaultPrizes, participantsCount: 0 }
+                  event: { ...ev, id, title, description, endTime, maxSpinsPerUser, spinLimitType, prizes: currentPrizes }
                 })
               });
               if (res.ok) {
-                if (window.showGlobalToast) window.showGlobalToast('Tạo sự kiện thành công!', 'success');
+                if (window.showGlobalToast) window.showGlobalToast('Lưu cấu hình sự kiện thành công!', 'success');
                 loadEvents();
               }
             } catch (e) {}
           }
+        });
+      }
+    };
+
+    window.openWinnersModal = function(eventId) {
+      const ev = cachedEvents.find(e => e.id === eventId);
+      if (!ev) return;
+
+      const winners = ev.winners || [];
+
+      const content = `
+        <div class="space-y-4 text-xs text-left max-h-[60vh] overflow-y-auto">
+          <div class="flex justify-between items-center bg-zinc-900 p-3 rounded-xl border border-zinc-800">
+            <span class="text-zinc-400">Tổng lượt quay trúng thưởng: <strong class="text-amber-400 text-sm">${winners.length} lượt</strong></span>
+            <div class="flex items-center gap-2">
+              <button onclick="exportWinnersCSV('${ev.id}')" class="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
+                <span class="material-symbols-outlined text-sm">download</span> Excel
+              </button>
+              <button onclick="resetEventHistory('${ev.id}')" class="px-3 py-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
+                <span class="material-symbols-outlined text-sm">restart_alt</span> Reset Lịch Sử
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto bg-black/40 rounded-xl border border-glass-stroke/40">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-white/5 border-b border-glass-stroke/40 text-[10px] text-zinc-400 uppercase font-bold">
+                  <th class="p-3">Thời gian</th>
+                  <th class="p-3">Thành viên</th>
+                  <th class="p-3">Giải thưởng đã trúng</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-glass-stroke/30">
+                ${winners.length === 0 ? `
+                  <tr><td colspan="3" class="p-6 text-center text-zinc-500">Chưa có ai quay trúng phần thưởng trong sự kiện này.</td></tr>
+                ` : winners.map(w => `
+                  <tr>
+                    <td class="p-3 font-mono text-zinc-400">${new Date(w.wonAt || Date.now()).toLocaleString('vi-VN')}</td>
+                    <td class="p-3 font-bold text-white">${w.username || 'Thành viên'}</td>
+                    <td class="p-3 font-bold text-amber-400">${w.prizeName || 'Phần quà'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      window.exportWinnersCSV = (evId) => {
+        const headers = ["Thời Gian", "Thành Viên", "Giải Thưởng"];
+        const rows = winners.map(w => [
+          new Date(w.wonAt || Date.now()).toLocaleString('vi-VN'),
+          w.username || 'Thành viên',
+          w.prizeName || 'Phần quà'
+        ]);
+        exportToCSV(`Danh_Sach_Trung_Thuong_${evId}_${Date.now()}.csv`, headers, rows);
+      };
+
+      window.resetEventHistory = (evId) => {
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: '⚠️ Xác Nhận Reset Lịch Sử Quay',
+            message: 'Bạn có chắc chắn muốn XÓA TOÀN BỘ lịch sử trúng thưởng và đặt lại lượt quay của sự kiện này về 0 không?',
+            type: 'danger',
+            confirmText: 'Reset Ngay',
+            cancelText: 'Hủy',
+            onConfirm: async () => {
+              const res = await fetch('/api/admin/lucky-draw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'reset_history', id: evId })
+              });
+              if (res.ok) {
+                if (window.showGlobalToast) window.showGlobalToast('Đã reset lịch sử sự kiện!', 'success');
+                loadEvents();
+              }
+            }
+          });
+        }
+      };
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: `Danh Sách Người Trúng Giải: ${ev.title}`,
+          content: content,
+          confirmText: '',
+          cancelText: 'Đóng'
         });
       }
     };
