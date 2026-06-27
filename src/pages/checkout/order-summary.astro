@@ -24,10 +24,21 @@ import MainLayout from '@layouts/MainLayout.astro';
             <div>
               <span class="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-wider">THÔNG TIN GÓI DỊCH VỤ</span>
               <h2 id="summary-pkg-title" class="text-2xl font-black text-white mt-3">Đang tải...</h2>
-              <p id="summary-pkg-cycle" class="text-xs text-zinc-400 mt-1 font-body-main">Chu kỳ: Hàng tháng</p>
+              <p id="summary-pkg-cycle" class="text-xs text-zinc-400 mt-1 font-body-main hidden">Chu kỳ: Hàng tháng</p>
             </div>
             <div class="p-3 bg-surface-container-high rounded-2xl">
               <span class="material-symbols-outlined text-primary text-3xl">workspace_premium</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Duration / Cycle Selection Box -->
+          <div id="summary-duration-wrapper" class="border-t border-glass-stroke/40 pt-4 space-y-3">
+            <label class="text-[11px] text-primary font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-amber-400">schedule</span>
+              Chọn thời hạn mua gói (Số tháng / 1 năm):
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="duration-selector-grid">
+              <!-- Rendered dynamically -->
             </div>
           </div>
 
@@ -95,13 +106,33 @@ import MainLayout from '@layouts/MainLayout.astro';
     let loadedSettings = {};
     let selectedPackage = null;
     let selectedMethod = 'manual';
+    let selectedCycle = 'monthly';
     let subtotal = 0;
     let vatAmount = 0;
     let totalAmount = 0;
+    let vatRate = 8;
 
     const urlParams = new URLSearchParams(window.location.search);
     const pkgId = urlParams.get('packageId') || 'vip';
-    const cycle = urlParams.get('cycle') || 'monthly';
+    selectedCycle = urlParams.get('cycle') || 'monthly';
+
+    function getWatchedCount() {
+      try {
+        const stored = localStorage.getItem('thistory');
+        if (!stored) return 0;
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed.length;
+        if (typeof parsed === 'object' && parsed !== null) return Object.keys(parsed).length;
+      } catch(e) {}
+      return 0;
+    }
+
+    function getBypassDynamicPrice(basePrice = 49000) {
+      const count = getWatchedCount();
+      if (count <= 0) return basePrice;
+      const discount = Math.min(basePrice - 10000, count * 3000);
+      return Math.max(10000, basePrice - discount);
+    }
 
     async function initOrderSummary() {
       try {
@@ -115,7 +146,7 @@ import MainLayout from '@layouts/MainLayout.astro';
       }
 
       const payments = loadedSettings.payments || {};
-      const vatRate = payments.vat_rate !== undefined ? Number(payments.vat_rate) : 8;
+      vatRate = payments.vat_rate !== undefined ? Number(payments.vat_rate) : 8;
       const packages = loadedSettings.packages || [];
 
       // Find package
@@ -148,7 +179,6 @@ import MainLayout from '@layouts/MainLayout.astro';
 
       // Populate package info
       document.getElementById('summary-pkg-title').textContent = selectedPackage.title;
-      document.getElementById('summary-pkg-cycle').textContent = `Chu kỳ: ${cycle === 'annual' ? 'Hàng năm (12 tháng)' : 'Hàng tháng'}`;
 
       const featContainer = document.getElementById('summary-features-container');
       if (featContainer && selectedPackage.features) {
@@ -160,25 +190,7 @@ import MainLayout from '@layouts/MainLayout.astro';
         `).join('');
       }
 
-      function getWatchedCount() {
-        try {
-          const stored = localStorage.getItem('thistory');
-          if (!stored) return 0;
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) return parsed.length;
-          if (typeof parsed === 'object' && parsed !== null) return Object.keys(parsed).length;
-        } catch(e) {}
-        return 0;
-      }
-
-      function getBypassDynamicPrice(basePrice = 49000) {
-        const count = getWatchedCount();
-        if (count <= 0) return basePrice;
-        const discount = Math.min(basePrice - 10000, count * 3000);
-        return Math.max(10000, basePrice - discount);
-      }
-
-      // Check if bypass key package to show email input & dynamic price
+      // Check if bypass key package to show email input & dynamic price note
       const isBypassPkg = (selectedPackage.id && selectedPackage.id.includes('bypass')) || selectedPackage.title.toLowerCase().includes('bypass') || selectedPackage.title.toLowerCase().includes('zalo');
       const emailWrapper = document.getElementById('bypass-email-wrapper');
       if (emailWrapper) {
@@ -187,28 +199,86 @@ import MainLayout from '@layouts/MainLayout.astro';
           const currentEmail = (window.APP_USER ? window.APP_USER.email : '') || '';
           const emailInput = document.getElementById('summary-recipient-email');
           if (emailInput && currentEmail) emailInput.value = currentEmail;
+
+          const watchedCount = getWatchedCount();
+          if (watchedCount > 0 && featContainer) {
+            const monthlyDiscounted = getBypassDynamicPrice(selectedPackage.price);
+            const discountNote = document.createElement('div');
+            discountNote.id = 'bypass-discount-note';
+            discountNote.className = 'flex items-center gap-2 text-purple-300 bg-purple-500/10 border border-purple-500/20 p-2.5 rounded-xl font-bold mt-2';
+            discountNote.innerHTML = `<span class="material-symbols-outlined text-amber-400 text-base">workspace_premium</span><span>Ưu đãi tri ân máy bạn đã xem ${watchedCount} phim: Giảm gốc theo tháng còn ${monthlyDiscounted.toLocaleString('vi-VN')}đ/tháng</span>`;
+            featContainer.appendChild(discountNote);
+          }
         } else {
           emailWrapper.classList.add('hidden');
         }
       }
 
-      // Calculate Price & VAT
-      let fullPrice = cycle === 'annual' ? (selectedPackage.annual_price || selectedPackage.price * 10) : selectedPackage.price;
+      // Render Duration / Cycle selection buttons
+      renderDurationOptions();
+
+      // Calculate initial Price & VAT
+      recalculatePrice();
+
+      // Render Payment Methods
+      renderPaymentMethods(payments);
+    }
+
+    function renderDurationOptions() {
+      const grid = document.getElementById('duration-selector-grid');
+      if (!grid) return;
+
+      const cycles = [
+        { id: 'monthly', label: '1 Tháng', months: 1, discount: 0, badge: '' },
+        { id: '3months', label: '3 Tháng', months: 3, discount: 0.05, badge: 'Giảm 5%' },
+        { id: '6months', label: '6 Tháng', months: 6, discount: 0.10, badge: 'Giảm 10%' },
+        { id: 'annual', label: '1 Năm (12T)', months: 12, discount: 0.20, badge: 'Tiết kiệm 20%' }
+      ];
+
+      grid.innerHTML = cycles.map(c => {
+        const isSelected = c.id === selectedCycle;
+        const activeClass = isSelected ? 'border-primary bg-primary/10 text-white font-black shadow-lg shadow-primary/20' : 'border-glass-stroke bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white font-medium';
+        return `
+          <button type="button" onclick="selectCycleOption('${c.id}')" class="p-3 rounded-2xl border ${activeClass} flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden text-center">
+            ${c.badge ? `<span class="absolute top-0 right-0 bg-amber-500 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded-bl">${c.badge}</span>` : ''}
+            <span class="text-xs uppercase tracking-wider font-label-caps mt-1">${c.label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    window.selectCycleOption = function(cId) {
+      selectedCycle = cId;
+      renderDurationOptions();
+      recalculatePrice();
+    };
+
+    function recalculatePrice() {
+      const isBypassPkg = (selectedPackage.id && selectedPackage.id.includes('bypass')) || selectedPackage.title.toLowerCase().includes('bypass') || selectedPackage.title.toLowerCase().includes('zalo');
+      
+      let baseMonthlyPrice = selectedPackage.price;
       if (isBypassPkg) {
-        const watchedCount = getWatchedCount();
-        const basePrice = fullPrice;
-        fullPrice = getBypassDynamicPrice(basePrice);
-        if (watchedCount > 0) {
-          const featContainer = document.getElementById('summary-features-container');
-          if (featContainer) {
-            const discountNote = document.createElement('div');
-            discountNote.className = 'flex items-center gap-2 text-purple-300 bg-purple-500/10 border border-purple-500/20 p-2.5 rounded-xl font-bold mt-2';
-            discountNote.innerHTML = `<span class="material-symbols-outlined text-amber-400 text-base">workspace_premium</span><span>Ưu đãi tri ân máy bạn đã xem ${watchedCount} phim: Giảm còn ${fullPrice.toLocaleString('vi-VN')}đ (Gốc ${basePrice.toLocaleString('vi-VN')}đ)</span>`;
-            featContainer.appendChild(discountNote);
-          }
-        }
+        baseMonthlyPrice = getBypassDynamicPrice(baseMonthlyPrice);
       }
-      totalAmount = fullPrice;
+
+      let calcTotal = 0;
+      if (selectedCycle === 'monthly') {
+        calcTotal = baseMonthlyPrice;
+      } else if (selectedCycle === '3months') {
+        calcTotal = Math.round(baseMonthlyPrice * 3 * 0.95);
+      } else if (selectedCycle === '6months') {
+        calcTotal = Math.round(baseMonthlyPrice * 6 * 0.90);
+      } else if (selectedCycle === 'annual') {
+        if (!isBypassPkg && selectedPackage.annual_price) {
+          calcTotal = selectedPackage.annual_price;
+        } else {
+          calcTotal = Math.round(baseMonthlyPrice * 12 * 0.80);
+        }
+      } else {
+        calcTotal = baseMonthlyPrice;
+      }
+
+      totalAmount = calcTotal;
       subtotal = Math.round(totalAmount / (1 + vatRate / 100));
       vatAmount = totalAmount - subtotal;
 
@@ -216,9 +286,6 @@ import MainLayout from '@layouts/MainLayout.astro';
       document.getElementById('summary-vat-badge').textContent = `VAT ${vatRate}%`;
       document.getElementById('summary-vat-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(vatAmount);
       document.getElementById('summary-total-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount);
-
-      // Render Payment Methods
-      renderPaymentMethods(payments);
     }
 
     function renderPaymentMethods(payments) {
@@ -291,11 +358,11 @@ import MainLayout from '@layouts/MainLayout.astro';
 
         if (selectedMethod === 'manual') {
           // Redirect to VietQR bank transfer page
-          window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${cycle}&email=${encodeURIComponent(recipientEmail)}`;
+          window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${selectedCycle}&email=${encodeURIComponent(recipientEmail)}`;
         } else if (selectedMethod === 'sepay') {
-          window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${cycle}&email=${encodeURIComponent(recipientEmail)}`;
+          window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${selectedCycle}&email=${encodeURIComponent(recipientEmail)}`;
         } else {
-          window.location.href = `/checkout/gateway?method=${selectedMethod}&txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${cycle}&email=${encodeURIComponent(recipientEmail)}`;
+          window.location.href = `/checkout/gateway?method=${selectedMethod}&txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${selectedCycle}&email=${encodeURIComponent(recipientEmail)}`;
         }
       };
     }
