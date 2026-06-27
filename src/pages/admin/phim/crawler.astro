@@ -446,7 +446,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
   </div>
 
   <script is:inline>
-    document.addEventListener('astro:page-load', () => {
+    (function() {
       // State
       let activeTab = 'standard'; // 'standard' | 'advanced'
       let standardSubTab = 'url'; // 'url' | 'batch' | 'filter'
@@ -1441,7 +1441,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
     // CORE SEQUENTIAL CRAWLER PROCESS
     async function runCrawlProcess(slugsList, startIndex = 0, initialSuccess = 0, initialSkipped = 0, initialFailed = 0) {
-      if (isRunning && startIndex === 0) return;
+      if (isRunning) return;
       isRunning = true;
       shouldStop = false;
       isPaused = false;
@@ -2079,7 +2079,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         renderCrawledList();
         checkAndRestoreCrawlSession();
       })();
-    });
+    })();
   </script>
 
   <style>
