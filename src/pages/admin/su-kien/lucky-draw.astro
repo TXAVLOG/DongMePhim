@@ -11,7 +11,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           <span class="material-symbols-outlined text-amber-400 text-3xl">casino</span>
           Quản lý Vòng Quay May Mắn (Lucky Draw Events)
         </h1>
-        <p class="text-xs text-zinc-400 mt-1 font-body-main">Tạo sự kiện minigame, thiết lập tỉ lệ/số lượng giải thưởng, quản lý SĐT nhận quà và xuất Excel đối soát.</p>
+        <p class="text-xs text-zinc-400 mt-1 font-body-main">Tạo sự kiện minigame, thiết lập tỉ lệ/số lượng giải thưởng, quay thưởng trực tiếp cho TV và xuất Excel đối soát.</p>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <button onclick="openPhoneClaimsModal()" class="px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer border border-emerald-500/30">
@@ -63,6 +63,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           const isExpired = e.endTime && new Date(e.endTime) < new Date();
           const isPaused = e.status === 'paused';
           const joinUrl = `${window.location.origin}/join/txa/${e.id}`;
+          const participantsList = e.participants || [];
+          const winnersList = e.winners || [];
           
           let statusBadge = `<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-bold">Đang diễn ra</span>`;
           if (isPaused) {
@@ -70,10 +72,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           } else if (isExpired) {
             statusBadge = `<span class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full text-[10px] font-bold">Đã kết thúc</span>`;
           }
-
-          const limitText = (e.maxSpinsPerUser && e.maxSpinsPerUser > 0) 
-            ? `${e.maxSpinsPerUser} lượt / ${e.spinLimitType === 'daily' ? 'ngày' : 'user'}` 
-            : 'Không giới hạn';
 
           return `
             <div class="glass-panel border border-glass-stroke rounded-3xl p-6 space-y-5 relative overflow-hidden flex flex-col justify-between hover:border-amber-500/30 transition-all">
@@ -92,12 +90,12 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                   <span class="font-bold text-amber-400">${(e.prizes || []).length} phần quà</span>
                 </div>
                 <div class="flex justify-between text-zinc-400">
-                  <span>Lượt tham gia:</span>
-                  <span class="font-bold text-emerald-400">${e.participantsCount || (e.winners || []).length || 0} lượt quay</span>
+                  <span>TV đã đăng ký:</span>
+                  <span class="font-bold text-emerald-400">${participantsList.length || e.participantsCount || 0} người</span>
                 </div>
                 <div class="flex justify-between text-zinc-400">
-                  <span>Giới hạn lượt quay:</span>
-                  <span class="font-bold text-purple-400">${limitText}</span>
+                  <span>Đã quay trúng:</span>
+                  <span class="font-bold text-purple-400">${winnersList.length} giải</span>
                 </div>
                 <div class="flex justify-between text-zinc-400">
                   <span>Thời hạn sự kiện:</span>
@@ -110,20 +108,26 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                     <button onclick="copyText('${joinUrl}')" class="text-amber-400 hover:underline font-bold shrink-0 border-none bg-transparent cursor-pointer">Copy</button>
                   </div>
 
-                  <!-- Prominent Edit Event Button -->
-                  <button onclick="openEditEventModal('${e.id}')" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all border-none cursor-pointer shadow-lg shadow-amber-500/20">
-                    <span class="material-symbols-outlined text-base">edit_note</span> Chỉnh Sửa Sự Kiện
+                  <!-- Prominent Admin Spin Wheel Button -->
+                  <button onclick="openAdminSpinModal('${e.id}')" class="w-full py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:scale-[1.02] text-slate-950 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all border-none cursor-pointer shadow-lg shadow-amber-500/25">
+                    <span class="material-symbols-outlined text-lg">casino</span> QUAY THƯỞNG CHO THÀNH VIÊN
                   </button>
 
-                  <div class="grid grid-cols-3 gap-2">
-                    <button onclick="toggleEventStatus('${e.id}')" class="py-2 ${isPaused ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'} rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer">
+                  <div class="grid grid-cols-2 gap-2">
+                    <button onclick="openEditEventModal('${e.id}')" class="py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl font-bold text-xs flex items-center justify-center gap-1 cursor-pointer">
+                      <span class="material-symbols-outlined text-sm">edit</span> Cấu hình
+                    </button>
+                    <button onclick="openWinnersModal('${e.id}')" class="py-2.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 rounded-xl font-bold text-xs flex items-center justify-center gap-1 cursor-pointer">
+                      <span class="material-symbols-outlined text-sm">group</span> Trúng giải (${winnersList.length})
+                    </button>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <button onclick="toggleEventStatus('${e.id}')" class="py-2 ${isPaused ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'} rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer border-none">
                       <span class="material-symbols-outlined text-sm">${isPaused ? 'play_arrow' : 'pause'}</span> ${isPaused ? 'Mở lại' : 'Tạm dừng'}
                     </button>
-                    <button onclick="showQRCodeModal('${e.id}', '${encodeURIComponent(e.title)}', '${joinUrl}')" class="py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer">
+                    <button onclick="showQRCodeModal('${e.id}', '${encodeURIComponent(e.title)}', '${joinUrl}')" class="py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer border-none">
                       <span class="material-symbols-outlined text-sm">qr_code</span> Mã QR
-                    </button>
-                    <button onclick="openWinnersModal('${e.id}')" class="py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer">
-                      <span class="material-symbols-outlined text-sm">group</span> Trúng giải
                     </button>
                   </div>
                   
@@ -159,9 +163,192 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       } catch (e) {}
     };
 
+    // Interactive Admin Spin Modal
+    window.openAdminSpinModal = function(eventId) {
+      const ev = cachedEvents.find(e => e.id === eventId);
+      if (!ev) return;
+
+      const prizes = ev.prizes || [];
+      const participants = ev.participants || [];
+      const winners = ev.winners || [];
+
+      const eligibleParticipants = participants.filter(p => {
+        const name = typeof p === 'string' ? p : p.username;
+        return !winners.some(w => w.username === name);
+      });
+
+      const content = `
+        <div class="space-y-6 text-center py-2 max-h-[80vh] overflow-y-auto pr-1">
+          <div class="flex justify-between items-center bg-zinc-900/80 p-4 rounded-2xl border border-zinc-800 text-xs">
+            <div>
+              <span class="text-zinc-400 block">TV đã đăng ký tham gia:</span>
+              <strong class="text-emerald-400 text-sm font-bold">${participants.length} người</strong>
+            </div>
+            <div>
+              <span class="text-zinc-400 block">TV đủ điều kiện quay:</span>
+              <strong class="text-amber-400 text-sm font-bold">${eligibleParticipants.length} người</strong>
+            </div>
+            <div>
+              <span class="text-zinc-400 block">Đã trao giải:</span>
+              <strong class="text-purple-400 text-sm font-bold">${winners.length} giải</strong>
+            </div>
+          </div>
+
+          <!-- Wheel Canvas Container -->
+          <div class="relative w-[320px] h-[320px] mx-auto flex items-center justify-center my-4">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-30 w-7 h-9 flex flex-col items-center">
+              <div class="w-5 h-5 bg-amber-400 rotate-45 rounded-sm shadow-lg border-2 border-slate-950"></div>
+            </div>
+            <div class="p-3 bg-zinc-950 border-4 border-amber-500/40 rounded-full shadow-[0_0_50px_rgba(245,158,11,0.25)] relative overflow-hidden">
+              <canvas id="admin-wheel-canvas" width="300" height="300" class="w-full h-full rounded-full"></canvas>
+            </div>
+            <button id="btn-admin-spin" onclick="runAdminSpinAnimation('${ev.id}')" class="absolute z-20 w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-black text-xs uppercase shadow-xl border-4 border-slate-950 hover:scale-110 transition-all cursor-pointer flex items-center justify-center">
+              QUAY
+            </button>
+          </div>
+
+          <!-- Display eligible participants tags -->
+          <div class="bg-black/40 p-4 rounded-2xl border border-zinc-800 text-left space-y-2">
+            <span class="text-[11px] text-zinc-400 font-bold uppercase tracking-wider block">Danh sách thành viên đăng ký chờ quay (${eligibleParticipants.length}):</span>
+            <div class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+              ${eligibleParticipants.length === 0 
+                ? `<span class="text-xs text-zinc-500 italic">Chưa có thành viên nào đăng ký hoặc tất cả đã trúng giải.</span>`
+                : eligibleParticipants.map(p => {
+                    const uName = typeof p === 'string' ? p : p.username;
+                    return `<span class="px-2.5 py-1 bg-zinc-800 text-zinc-200 rounded-lg text-xs font-bold border border-zinc-700">${uName}</span>`;
+                  }).join('')
+              }
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: `🎰 Vòng Quay Admin Quay Thưởng: ${ev.title}`,
+          content: content,
+          confirmText: '',
+          cancelText: 'Đóng'
+        });
+        setTimeout(() => drawAdminWheel(prizes), 100);
+      }
+    };
+
+    let adminWheelAngle = 0;
+    function drawAdminWheel(prizes) {
+      const canvas = document.getElementById('admin-wheel-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const num = prizes.length || 1;
+      const arc = (2 * Math.PI) / num;
+      ctx.clearRect(0, 0, 300, 300);
+
+      for (let i = 0; i < num; i++) {
+        const angle = adminWheelAngle + i * arc;
+        ctx.fillStyle = prizes[i]?.color || (i % 2 === 0 ? '#1f1f23' : '#27272a');
+        ctx.beginPath();
+        ctx.arc(150, 150, 145, angle, angle + arc, false);
+        ctx.arc(150, 150, 35, angle + arc, angle, true);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.stroke();
+
+        ctx.save();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 10px sans-serif";
+        ctx.translate(150 + Math.cos(angle + arc / 2) * 95, 150 + Math.sin(angle + arc / 2) * 95);
+        ctx.rotate(angle + arc / 2 + Math.PI / 2);
+        const text = prizes[i]?.name || 'Quà';
+        ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+        ctx.restore();
+      }
+    }
+
+    window.runAdminSpinAnimation = async function(eventId) {
+      const ev = cachedEvents.find(e => e.id === eventId);
+      if (!ev) return;
+      const participants = ev.participants || [];
+      const winners = ev.winners || [];
+      const prizes = ev.prizes || [];
+
+      const eligible = participants.filter(p => {
+        const name = typeof p === 'string' ? p : p.username;
+        return !winners.some(w => w.username === name);
+      });
+
+      if (eligible.length === 0) {
+        if (window.showGlobalToast) window.showGlobalToast('Chưa có thành viên hợp lệ nào đăng ký để quay!', 'warning');
+        return;
+      }
+      if (prizes.length === 0) {
+        if (window.showGlobalToast) window.showGlobalToast('Chưa cấu hình giải thưởng!', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btn-admin-spin');
+      if (btn) btn.disabled = true;
+
+      // Pick winner and prize based on chance
+      const winnerObj = eligible[Math.floor(Math.random() * eligible.length)];
+      const winnerName = typeof winnerObj === 'string' ? winnerObj : winnerObj.username;
+
+      const rand = Math.random() * 100;
+      let cumulative = 0;
+      let prizeIdx = 0;
+      for (let i = 0; i < prizes.length; i++) {
+        cumulative += (prizes[i].chance || 10);
+        if (rand <= cumulative) {
+          prizeIdx = i;
+          break;
+        }
+      }
+      const winPrize = prizes[prizeIdx];
+
+      // Spin animation
+      const totalRounds = 5;
+      const degreesPerSlice = 360 / prizes.length;
+      const targetDegree = 360 - (prizeIdx * degreesPerSlice + degreesPerSlice / 2);
+      const finalDegree = totalRounds * 360 + targetDegree;
+
+      let currentDeg = 0;
+      const duration = 3500;
+      const startTime = performance.now();
+
+      function animate(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        currentDeg = easeProgress * finalDegree;
+        adminWheelAngle = (currentDeg * Math.PI) / 180;
+        drawAdminWheel(prizes);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          if (btn) btn.disabled = false;
+          // Send to API
+          fetch('/api/admin/lucky-draw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'admin_spin_draw',
+              eventId: ev.id,
+              winnerUsername: winnerName,
+              prize: winPrize
+            })
+          }).then(() => {
+            if (window.showGlobalToast) window.showGlobalToast(`🎉 CHÚC MỪNG ${winnerName} TRÚNG ${winPrize.name}!`, 'success');
+            loadEvents();
+            window.openAdminSpinModal(ev.id);
+          });
+        }
+      }
+      requestAnimationFrame(animate);
+    };
+
     // CSV Export helper supporting Vietnamese UTF-8 BOM
     function exportToCSV(filename, headers, rows) {
-      let csvContent = "\uFEFF"; // UTF-8 BOM
+      let csvContent = "\uFEFF";
       csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + "\n";
       rows.forEach(row => {
         csvContent += row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(',') + "\n";
@@ -474,21 +661,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <textarea id="ev-desc" placeholder="Mô tả thể lệ tham gia..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white h-16">${ev.description || ''}</textarea>
           </div>
 
-          <div class="grid grid-cols-2 gap-4 p-3 bg-zinc-900/60 rounded-xl border border-zinc-800">
-            <div>
-              <label class="block text-purple-300 font-bold mb-1">Số lượt quay tối đa / User</label>
-              <input type="number" id="ev-max-spins" value="${ev.maxSpinsPerUser || 0}" placeholder="0 = Không giới hạn" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-bold" />
-              <span class="text-[10px] text-zinc-500 mt-0.5 block">Nhập 0 để không giới hạn</span>
-            </div>
-            <div>
-              <label class="block text-purple-300 font-bold mb-1">Loại giới hạn lượt quay</label>
-              <select id="ev-limit-type" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-300 font-bold">
-                <option value="total" ${ev.spinLimitType === 'total' ? 'selected' : ''}>Tổng số lượt (Mỗi tài khoản)</option>
-                <option value="daily" ${ev.spinLimitType === 'daily' ? 'selected' : ''}>Mỗi ngày (Reset hằng ngày)</option>
-              </select>
-            </div>
-          </div>
-
           <div class="pt-2 border-t border-glass-stroke/40 space-y-2">
             <div class="flex justify-between items-center">
               <label class="block text-amber-400 font-bold uppercase tracking-wider text-[11px]">Cấu hình Vòng Quay & Tỉ lệ trúng giải</label>
@@ -528,8 +700,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             const title = document.getElementById('ev-title').value.trim();
             const description = document.getElementById('ev-desc').value.trim();
             const endTime = document.getElementById('ev-endtime').value;
-            const maxSpinsPerUser = parseInt(document.getElementById('ev-max-spins').value || 0);
-            const spinLimitType = document.getElementById('ev-limit-type').value;
 
             if (!title) {
               if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập tên sự kiện!', 'error');
@@ -542,7 +712,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   action: 'save_event',
-                  event: { ...ev, id, title, description, endTime, maxSpinsPerUser, spinLimitType, prizes: currentPrizes }
+                  event: { ...ev, id, title, description, endTime, prizes: currentPrizes }
                 })
               });
               if (res.ok) {
@@ -668,16 +838,16 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       }
     };
 
-    // Colorful styled QR Modal with Logo and Color Themes
+    // Colorful styled QR Modal with Logo
     window.showQRCodeModal = function(id, titleEncoded, joinUrl) {
       const title = decodeURIComponent(titleEncoded);
       const logoUrl = `${window.location.origin}/logo-icon.gif`;
 
       const colorThemes = {
-        gold: { name: 'Vàng Hoàng Gia', dark: 'f59e0b', light: '121214', border: 'border-amber-500/40', text: 'text-amber-400' },
-        purple: { name: 'Tím Thất Đại Phát', dark: 'a855f7', light: '121214', border: 'border-purple-500/40', text: 'text-purple-400' },
-        emerald: { name: 'Xanh Ngọc VIP', dark: '10b981', light: '121214', border: 'border-emerald-500/40', text: 'text-emerald-400' },
-        rose: { name: 'Đỏ Tết May Mắn', dark: 'f43f5e', light: '121214', border: 'border-rose-500/40', text: 'text-rose-400' }
+        gold: { name: 'Vàng Hoàng Gia', dark: 'f59e0b', light: '121214' },
+        purple: { name: 'Tím Thất Đại Phát', dark: 'a855f7', light: '121214' },
+        emerald: { name: 'Xanh Ngọc VIP', dark: '10b981', light: '121214' },
+        rose: { name: 'Đỏ Tết May Mắn', dark: 'f43f5e', light: '121214' }
       };
 
       let activeTheme = 'gold';
@@ -689,18 +859,15 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
       const content = `
         <div class="flex flex-col items-center gap-5 text-center py-2">
-          <!-- Theme Picker Buttons -->
           <div class="flex flex-wrap items-center justify-center gap-2">
             <span class="text-[11px] font-bold text-zinc-400 mr-1">Chủ đề màu:</span>
-            <button onclick="changeQrTheme('gold')" class="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-xs font-bold cursor-pointer">🟡 Vàng</button>
-            <button onclick="changeQrTheme('purple')" class="px-3 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-full text-xs font-bold cursor-pointer">🟣 Tím</button>
-            <button onclick="changeQrTheme('emerald')" class="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-bold cursor-pointer">🟢 Xanh</button>
-            <button onclick="changeQrTheme('rose')" class="px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full text-xs font-bold cursor-pointer">🔴 Đỏ</button>
+            <button onclick="changeQrTheme('gold')" class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full text-xs font-bold cursor-pointer">🟡 Vàng</button>
+            <button onclick="changeQrTheme('purple')" class="px-3 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/30 rounded-full text-xs font-bold cursor-pointer">🟣 Tím</button>
+            <button onclick="changeQrTheme('emerald')" class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-bold cursor-pointer">🟢 Xanh</button>
+            <button onclick="changeQrTheme('rose')" class="px-3 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded-full text-xs font-bold cursor-pointer">🔴 Đỏ</button>
           </div>
 
-          <!-- Stylized QR Container Card -->
           <div id="qr-poster-card" class="relative p-6 bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 rounded-3xl border-2 border-amber-500/40 shadow-[0_0_50px_rgba(245,158,11,0.2)] w-72 flex flex-col items-center gap-4 transition-all">
-            <!-- Brand Header inside Poster -->
             <div class="flex items-center gap-2">
               <img src="${logoUrl}" class="h-6 w-auto object-contain" alt="Logo" onerror="this.style.display='none'" />
               <span class="text-xs font-black tracking-wider text-white uppercase">ĐỒNG MÊ PHIM</span>
@@ -708,17 +875,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             
             <div class="text-[11px] font-bold text-amber-400 max-w-[220px] truncate">${title}</div>
 
-            <!-- QR Box with Center Web Logo Badge -->
             <div class="relative w-56 h-56 p-3 bg-zinc-950 rounded-2xl border border-zinc-800 shadow-inner flex items-center justify-center overflow-hidden">
               <img id="qr-modal-img" src="${getQrUrl('gold')}" class="w-full h-full object-contain rounded-xl" alt="Mã QR Minigame" />
               
-              <!-- Center Web Logo Badge Overlay -->
               <div class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-zinc-950 border-2 border-amber-400 shadow-2xl p-1 flex items-center justify-center">
                 <img src="${logoUrl}" class="w-full h-full object-contain rounded-full" alt="Web Logo" onerror="this.src='/favicon.png'" />
               </div>
             </div>
 
-            <!-- Bottom Subtext -->
             <span class="text-[10px] text-zinc-500 font-mono truncate w-full px-2">${joinUrl}</span>
           </div>
 
@@ -742,7 +906,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         canvas.height = 750;
         const ctx = canvas.getContext('2d');
 
-        // Background gradient
         const bgGrad = ctx.createLinearGradient(0, 0, 0, 750);
         bgGrad.addColorStop(0, '#09090b');
         bgGrad.addColorStop(0.5, '#18181b');
@@ -750,12 +913,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, 600, 750);
 
-        // Border frame
         ctx.strokeStyle = '#f59e0b';
         ctx.lineWidth = 8;
         ctx.strokeRect(20, 20, 560, 710);
 
-        // Title Header
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 28px "Be Vietnam Pro", sans-serif';
         ctx.textAlign = 'center';
@@ -765,20 +926,16 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         ctx.font = 'bold 22px "Be Vietnam Pro", sans-serif';
         ctx.fillText(evtTitle, 300, 125);
 
-        // Load and Draw QR Image onto Canvas
         const qrImg = new Image();
         qrImg.crossOrigin = 'anonymous';
         const currentQrUrl = document.getElementById('qr-modal-img')?.src || getQrUrl(activeTheme);
         qrImg.src = currentQrUrl;
 
         qrImg.onload = () => {
-          // Draw white background for QR
           ctx.fillStyle = '#121214';
           ctx.fillRect(100, 160, 400, 400);
-
           ctx.drawImage(qrImg, 100, 160, 400, 400);
 
-          // Load and Draw Logo Badge in Center
           const logoImg = new Image();
           logoImg.crossOrigin = 'anonymous';
           logoImg.src = logoUrl;
@@ -798,7 +955,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             ctx.drawImage(logoImg, 260, 320, 80, 80);
             ctx.restore();
 
-            // Footer URL
             ctx.fillStyle = '#a1a1aa';
             ctx.font = 'bold 16px monospace';
             ctx.fillText(link, 300, 610);
@@ -807,7 +963,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             ctx.font = '14px sans-serif';
             ctx.fillText('Quét mã QR bằng điện thoại để tham gia vòng quay!', 300, 650);
 
-            // Trigger Download
             const a = document.createElement('a');
             a.href = canvas.toDataURL('image/png');
             a.download = `QR_Minigame_${eventId}.png`;
@@ -816,7 +971,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             document.body.removeChild(a);
           };
           logoImg.onerror = () => {
-            // Footer URL fallback
             ctx.fillStyle = '#a1a1aa';
             ctx.font = 'bold 16px monospace';
             ctx.fillText(link, 300, 610);

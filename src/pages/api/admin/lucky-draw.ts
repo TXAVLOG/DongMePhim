@@ -90,6 +90,49 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse({ success: true, events }, 'success', 'Xóa sự kiện thành công!', 200, request);
     }
 
+    if (action === 'join_event') {
+      const { eventId, username } = body;
+      const index = events.findIndex((e: any) => e.id === eventId);
+      if (index < 0) return apiResponse(null, 'error', 'Sự kiện không tồn tại', 404, request);
+
+      const ev = events[index];
+      if (ev.status === 'paused') return apiResponse(null, 'error', 'Sự kiện đang tạm dừng', 400, request);
+
+      if (!ev.participants) ev.participants = [];
+      const exists = ev.participants.some((p: any) => (typeof p === 'string' ? p === username : p.username === username));
+      if (!exists) {
+        ev.participants.push({ username, joinedAt: new Date().toISOString() });
+        ev.participantsCount = ev.participants.length;
+        await SettingService.updateSettings({ lucky_draw_events: events } as any);
+      }
+      return apiResponse({ success: true, participantsCount: ev.participants.length }, 'success', 'Đã tham gia sự kiện!', 200, request);
+    }
+
+    if (action === 'admin_spin_draw') {
+      const { eventId, winnerUsername, prize } = body;
+      const index = events.findIndex((e: any) => e.id === eventId);
+      if (index < 0) return apiResponse(null, 'error', 'Sự kiện không tồn tại', 404, request);
+
+      const ev = events[index];
+      if (!ev.winners) ev.winners = [];
+      ev.winners.push({
+        username: winnerUsername,
+        prizeName: prize.name,
+        prizeType: prize.type || 'gift',
+        wonAt: new Date().toISOString()
+      });
+
+      if (Array.isArray(ev.prizes)) {
+        const pIdx = ev.prizes.findIndex((p: any) => p.id === prize.id || p.name === prize.name);
+        if (pIdx >= 0) {
+          ev.prizes[pIdx].wonQuantity = (ev.prizes[pIdx].wonQuantity || 0) + 1;
+        }
+      }
+
+      await SettingService.updateSettings({ lucky_draw_events: events } as any);
+      return apiResponse({ success: true, winner: winnerUsername, prize: prize.name }, 'success', `Đã quay trúng ${prize.name} cho ${winnerUsername}!`, 200, request);
+    }
+
     if (action === 'record_spin') {
       const { eventId, prize, username } = body;
       const index = events.findIndex((e: any) => e.id === eventId);

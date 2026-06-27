@@ -26,14 +26,14 @@ const event = events.find((e: any) => e.id === id);
         <div class="space-y-3">
           <span class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-[10px] font-black uppercase tracking-widest">MINIGAME ĐẶC BIỆT</span>
           <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight">{event.title}</h1>
-          <p class="text-xs md:text-sm text-zinc-400 max-w-xl mx-auto font-body-main">{event.description || 'Quay vòng quay may mắn để nhận ngay nhiều phần quà hấp dẫn!'}</p>
+          <p class="text-xs md:text-sm text-zinc-400 max-w-xl mx-auto font-body-main">{event.description || 'Đăng ký tham gia minigame để có cơ hội nhận ngay nhiều phần quà hấp dẫn từ Ban Quản Trị!'}</p>
         </div>
 
         <!-- Participant & Timer Bar -->
         <div class="flex flex-wrap items-center justify-center gap-4 text-xs">
           <div class="glass-panel border border-glass-stroke rounded-2xl px-5 py-3 flex items-center gap-2.5">
             <span class="material-symbols-outlined text-emerald-400 text-lg">group</span>
-            <span class="text-zinc-400">Tham gia: <strong class="text-white font-bold" id="participants-cnt">{event.participantsCount || 0} người</strong></span>
+            <span class="text-zinc-400">TV đã tham gia: <strong class="text-white font-bold" id="participants-cnt">${(event.participants || []).length || event.participantsCount || 0} người</strong></span>
           </div>
 
           <div class="glass-panel border border-glass-stroke rounded-2xl px-5 py-3 flex items-center gap-2.5">
@@ -42,22 +42,93 @@ const event = events.find((e: any) => e.id === id);
           </div>
         </div>
 
-        <!-- Wheel Canvas Area -->
-        <div class="relative w-[340px] h-[340px] sm:w-[420px] sm:h-[420px] mx-auto flex items-center justify-center my-6">
-          <!-- Pointer Pin -->
-          <div class="absolute -top-4 left-1/2 -translate-x-1/2 z-30 w-8 h-10 flex flex-col items-center drop-shadow-2xl">
-            <div class="w-6 h-6 bg-amber-400 rotate-45 rounded-sm shadow-lg border-2 border-slate-950"></div>
+        <!-- Claim Prize Box if current user won -->
+        <div id="user-win-claim-box" class="hidden glass-panel border-2 border-emerald-500/50 bg-emerald-500/10 rounded-3xl p-6 text-left max-w-xl mx-auto space-y-3 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-emerald-400 text-3xl">emoji_events</span>
+            <div>
+              <h3 class="text-base font-bold text-white">🎉 Chúc Mừng Bạn Đã Trúng Giải!</h3>
+              <p class="text-xs text-emerald-300 font-bold" id="user-prize-name">Phần quà: ...</p>
+            </div>
           </div>
-
-          <!-- Canvas -->
-          <div class="p-4 bg-zinc-950/80 border-4 border-amber-500/40 rounded-full shadow-[0_0_60px_rgba(245,158,11,0.25)] relative overflow-hidden">
-            <canvas id="wheel-canvas" width="400" height="400" class="w-full h-full rounded-full transition-transform duration-700 ease-out"></canvas>
+          <p class="text-xs text-zinc-300">Vui lòng nhập Số Điện Thoại để Admin liên hệ gửi quà/thẻ cào:</p>
+          <div class="flex gap-2">
+            <input type="tel" id="user-phone-input" placeholder="Nhập SĐT của bạn (10 số)..." class="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white font-mono font-bold text-xs focus:outline-none focus:border-emerald-500" />
+            <button onclick="submitUserPhoneClaim('${event.id}')" class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer border-none shadow-md">
+              Gửi SĐT
+            </button>
           </div>
+        </div>
 
-          <!-- Center Spin Button -->
-          <button id="spin-btn" class="absolute z-20 w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-black text-sm uppercase tracking-wider shadow-2xl shadow-amber-500/50 border-4 border-slate-950 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center">
-            QUAY
+        <!-- Join Event Action Box -->
+        <div class="glass-panel border border-glass-stroke rounded-3xl p-8 max-w-xl mx-auto space-y-4 shadow-2xl">
+          <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto">
+            <span class="material-symbols-outlined text-amber-400 text-3xl">how_to_reg</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">Đăng Ký Tham Gia Minigame</h3>
+          <p class="text-xs text-zinc-400 font-body-main leading-relaxed">Nhấp vào nút bên dưới để ghi tên vào danh sách quay thưởng. Ban Quản Trị sẽ tiến hành quay vòng quay trực tiếp!</p>
+          
+          <button id="btn-join-event" onclick="joinMinigameEvent('${event.id}')" class="w-full py-4 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:scale-[1.02] active:scale-[0.98] text-slate-950 font-black text-sm uppercase tracking-wider rounded-2xl transition-all cursor-pointer border-none shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-xl">check_circle</span>
+            <span id="btn-join-text">XÁC NHẬN THAM GIA</span>
           </button>
+        </div>
+
+        <!-- Prize List Grid -->
+        <div class="space-y-4 pt-4">
+          <h3 class="text-base font-bold text-white uppercase tracking-wider flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-amber-400">card_giftcard</span> Danh Sách Giải Thưởng Minigame
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+            {(event.prizes || []).map((p: any) => (
+              <div class="glass-panel border border-glass-stroke/60 rounded-2xl p-4 space-y-2 flex flex-col justify-between" style={`border-left: 4px solid ${p.color || '#f59e0b'}`}>
+                <div>
+                  <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Giải Thưởng</span>
+                  <h4 class="text-sm font-bold text-white mt-0.5">{p.name}</h4>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-2 border-t border-glass-stroke/30">
+                  <span class="text-zinc-400">Số lượng:</span>
+                  <span class="font-bold text-amber-400">{p.maxQuantity || p.count || 1} phần</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Winners Leaderboard -->
+        <div class="glass-panel border border-glass-stroke rounded-3xl p-6 text-left space-y-4 shadow-xl">
+          <div class="flex justify-between items-center border-b border-glass-stroke/40 pb-3">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-amber-400">emoji_events</span> Bảng Vàng Người Trúng Giải
+            </h3>
+            <span class="text-xs text-zinc-400 font-mono" id="winners-cnt-badge">{(event.winners || []).length} người đã trúng</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="text-[10px] text-zinc-500 uppercase font-bold border-b border-glass-stroke/30">
+                  <th class="p-3">Thời gian quay</th>
+                  <th class="p-3">Thành viên</th>
+                  <th class="p-3">Giải thưởng đã trúng</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-glass-stroke/20" id="winners-table-body">
+                {(event.winners || []).length === 0 ? (
+                  <tr><td colspan="3" class="p-6 text-center text-zinc-500">Chưa có kết quả quay thưởng nào. Ban quản trị sẽ tiến hành quay sớm!</td></tr>
+                ) : (event.winners || []).map((w: any) => (
+                  <tr class="hover:bg-white/5 transition-all">
+                    <td class="p-3 font-mono text-zinc-400">{new Date(w.wonAt || w.drawnAt || Date.now()).toLocaleString('vi-VN')}</td>
+                    <td class="p-3 font-bold text-white flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+                      {w.username || 'Thành viên'}
+                    </td>
+                    <td class="p-3 font-bold text-amber-400">{w.prizeName || 'Phần quà'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
       </div>
@@ -71,23 +142,6 @@ const event = events.find((e: any) => e.id === id);
     if (!root) return;
 
     const event = JSON.parse(root.dataset.event || '{}');
-    const canvas = document.getElementById('wheel-canvas');
-    const spinBtn = document.getElementById('spin-btn');
-    if (!canvas || !spinBtn) return;
-
-    // Check if paused
-    if (event.status === 'paused') {
-      spinBtn.disabled = true;
-      spinBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      if (window.showGlobalToast) window.showGlobalToast('Sự kiện hiện đang tạm dừng!', 'warning');
-    }
-
-    const ctx = canvas.getContext('2d');
-    const prizes = event.prizes || [];
-    const numPrizes = prizes.length;
-    const arc = (2 * Math.PI) / numPrizes;
-    let startAngle = 0;
-    let isSpinning = false;
 
     // Countdown Timer
     function updateTimer() {
@@ -97,8 +151,6 @@ const event = events.find((e: any) => e.id === id);
       const diff = new Date(event.endTime) - new Date();
       if (diff <= 0) {
         timerEl.textContent = 'Đã kết thúc!';
-        spinBtn.disabled = true;
-        spinBtn.classList.add('opacity-50', 'cursor-not-allowed');
         return;
       }
 
@@ -110,235 +162,85 @@ const event = events.find((e: any) => e.id === id);
     setInterval(updateTimer, 1000);
     updateTimer();
 
-    // Draw Wheel
-    function drawWheel() {
-      const outsideRadius = 195;
-      const textRadius = 135;
-      const insideRadius = 45;
+    // Check user registration and winning status
+    function checkUserStatus() {
+      if (!window.APP_USER) return;
+      const uName = window.APP_USER.username;
+      const participants = event.participants || [];
+      const isJoined = participants.some(p => (typeof p === 'string' ? p === uName : p.username === uName));
 
-      ctx.clearRect(0, 0, 400, 400);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
-      ctx.lineWidth = 2;
-
-      for (let i = 0; i < numPrizes; i++) {
-        const angle = startAngle + i * arc;
-        ctx.fillStyle = prizes[i].color || (i % 2 === 0 ? '#1f1f23' : '#27272a');
-
-        ctx.beginPath();
-        ctx.arc(200, 200, outsideRadius, angle, angle + arc, false);
-        ctx.arc(200, 200, insideRadius, angle + arc, angle, true);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.save();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 12px 'Be Vietnam Pro', sans-serif";
-        ctx.translate(200 + Math.cos(angle + arc / 2) * textRadius, 200 + Math.sin(angle + arc / 2) * textRadius);
-        ctx.rotate(angle + arc / 2 + Math.PI / 2);
-        
-        const text = prizes[i].type === 'empty' ? 'May mắn' : prizes[i].name;
-        ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
-        ctx.restore();
-      }
-    }
-    drawWheel();
-
-    // Web Audio API for ticking and win sound
-    function playTick() {
-      try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const actx = new AudioCtx();
-        const osc = actx.createOscillator();
-        const gain = actx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, actx.currentTime);
-        gain.gain.setValueAtTime(0.1, actx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.05);
-        osc.connect(gain);
-        gain.connect(actx.destination);
-        osc.start();
-        osc.stop(actx.currentTime + 0.05);
-      } catch (e) {}
-    }
-
-    function playWinSound() {
-      try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const actx = new AudioCtx();
-        const osc = actx.createOscillator();
-        const gain = actx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, actx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, actx.currentTime + 0.1); // E5
-        osc.frequency.setValueAtTime(783.99, actx.currentTime + 0.2); // G5
-        gain.gain.setValueAtTime(0.3, actx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.6);
-        osc.connect(gain);
-        gain.connect(actx.destination);
-        osc.start();
-        osc.stop(actx.currentTime + 0.6);
-      } catch (e) {}
-    }
-
-    // Spin Handler
-    spinBtn.onclick = async function() {
-      if (isSpinning) return;
-      
-      if (event.status === 'paused') {
-        if (window.showGlobalToast) window.showGlobalToast('Sự kiện hiện đang tạm dừng!', 'warning');
-        return;
+      const btnText = document.getElementById('btn-join-text');
+      const btn = document.getElementById('btn-join-event');
+      if (isJoined && btnText && btn) {
+        btnText.textContent = 'BẠN ĐÃ THAM GIA THÀNH CÔNG';
+        btn.classList.remove('from-amber-500', 'via-amber-400', 'to-amber-600');
+        btn.classList.add('bg-emerald-600', 'text-white', 'cursor-default');
+        btn.disabled = true;
       }
 
-      // Check login
+      // Check if user won
+      const winners = event.winners || [];
+      const winEntry = winners.find(w => w.username === uName);
+      if (winEntry) {
+        const claimBox = document.getElementById('user-win-claim-box');
+        const prizeNameEl = document.getElementById('user-prize-name');
+        if (claimBox && prizeNameEl) {
+          prizeNameEl.textContent = `Phần quà: ${winEntry.prizeName}`;
+          claimBox.classList.remove('hidden');
+        }
+      }
+    }
+
+    setTimeout(checkUserStatus, 300);
+
+    window.joinMinigameEvent = async function(eventId) {
       if (!window.APP_USER) {
-        if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập tài khoản để quay thưởng!', 'error');
+        if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập để tham gia minigame!', 'error');
         window.dispatchEvent(new Event('open-login-modal'));
         return;
       }
 
-      // Select random prize based on probability
-      const rand = Math.random() * 100;
-      let cumulative = 0;
-      let prizeIndex = 0;
-      for (let i = 0; i < numPrizes; i++) {
-        cumulative += (prizes[i].chance || 10);
-        if (rand <= cumulative) {
-          prizeIndex = i;
-          break;
+      try {
+        const res = await fetch('/api/admin/lucky-draw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'join_event', eventId, username: window.APP_USER.username })
+        });
+        if (res.ok) {
+          if (window.showGlobalToast) window.showGlobalToast('Đã đăng ký tham gia thành công!', 'success');
+          setTimeout(() => window.location.reload(), 1000);
         }
+      } catch (e) {}
+    };
+
+    window.submitUserPhoneClaim = async function(eventId) {
+      const phone = (document.getElementById('user-phone-input')?.value || '').trim();
+      const vnPnRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
+      if (!vnPnRegex.test(phone)) {
+        if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập đúng số điện thoại Việt Nam hợp lệ!', 'error');
+        return;
       }
 
-      const winPrize = prizes[prizeIndex];
+      const winners = event.winners || [];
+      const winEntry = winners.find(w => w.username === (window.APP_USER ? window.APP_USER.username : ''));
 
-      // Send to backend to check spin limit and record spin
       try {
-        const recordRes = await fetch('/api/admin/lucky-draw', {
+        const res = await fetch('/api/admin/lucky-draw', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'record_spin',
-            eventId: event.id,
-            prize: winPrize,
-            username: window.APP_USER.username
+            action: 'claim_phone_prize',
+            eventId,
+            phone,
+            winnerName: window.APP_USER ? window.APP_USER.username : 'Khách',
+            prizeName: winEntry ? winEntry.prizeName : 'Phần quà'
           })
         });
-        const recordData = await recordRes.json();
-        if (!recordRes.ok || recordData.status === 'error') {
-          if (window.showGlobalToast) window.showGlobalToast(recordData.message || 'Không thể thực hiện lượt quay!', 'error');
-          return;
+        if (res.ok) {
+          if (window.showGlobalToast) window.showGlobalToast('Đã gửi thông tin SĐT nhận giải thành công!', 'success');
+          document.getElementById('user-win-claim-box')?.classList.add('hidden');
         }
-      } catch (e) {
-        if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối máy chủ!', 'error');
-        return;
-      }
-
-      isSpinning = true;
-      spinBtn.disabled = true;
-
-      const degreesPerSlice = 360 / numPrizes;
-      const targetDegree = 360 - (prizeIndex * degreesPerSlice + degreesPerSlice / 2);
-      const totalRounds = 5;
-      const finalDegree = totalRounds * 360 + targetDegree;
-
-      let currentDeg = 0;
-      const duration = 4000;
-      const startTime = performance.now();
-
-      function animateSpin(now) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const easeProgress = 1 - Math.pow(1 - progress, 3);
-        currentDeg = easeProgress * finalDegree;
-
-        startAngle = (currentDeg * Math.PI) / 180;
-        drawWheel();
-
-        if (progress < 1) {
-          if (Math.floor(currentDeg / degreesPerSlice) !== Math.floor((currentDeg - 5) / degreesPerSlice)) {
-            playTick();
-          }
-          requestAnimationFrame(animateSpin);
-        } else {
-          isSpinning = false;
-          spinBtn.disabled = false;
-          playWinSound();
-          handleWin(winPrize);
-        }
-      }
-
-      requestAnimationFrame(animateSpin);
+      } catch (e) {}
     };
-
-    function handleWin(prize) {
-      if (prize.type === 'empty') {
-        if (window.txamodal) {
-          window.txamodal.show({
-            title: 'Chưa may mắn lần này!',
-            message: '<p class="text-xs text-zinc-300">Chúc bạn may mắn hơn trong lần quay tiếp theo nhé!</p>',
-            confirmText: 'Đóng'
-          });
-        }
-        return;
-      }
-
-      if (prize.type === 'phone') {
-        const content = `
-          <div class="space-y-4 text-xs text-left">
-            <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
-              🎉 Bạn đã trúng phần quà: ${prize.name}!
-            </div>
-            <p class="text-zinc-400">Vui lòng nhập số điện thoại chính chủ để ban quản trị liên hệ gửi thẻ nạp / phần quà:</p>
-            <div>
-              <label class="block text-zinc-400 font-bold mb-1">Số điện thoại Việt Nam (10 số)</label>
-              <input type="tel" id="claim-phone-input" placeholder="0388xxxxxx..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white font-mono font-bold text-sm focus:outline-none focus:border-emerald-500" />
-            </div>
-          </div>
-        `;
-
-        if (window.txamodal) {
-          window.txamodal.show({
-            title: '🎁 Nhận Phần Thưởng Trúng Giải',
-            content: content,
-            confirmText: 'Xác Nhận Nhận Giải',
-            cancelText: 'Hủy',
-            onConfirm: async () => {
-              const phone = (document.getElementById('claim-phone-input')?.value || '').trim();
-              const vnPnRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-              if (!vnPnRegex.test(phone)) {
-                if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập đúng số điện thoại Việt Nam hợp lệ!', 'error');
-                return;
-              }
-
-              try {
-                const res = await fetch('/api/admin/lucky-draw', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    action: 'claim_phone_prize',
-                    eventId: event.id,
-                    phone: phone,
-                    winnerName: (window.APP_USER ? window.APP_USER.username : 'Khách'),
-                    prizeName: prize.name
-                  })
-                });
-                if (res.ok) {
-                  if (window.showGlobalToast) window.showGlobalToast('Đã gửi thông tin nhận giải! Ban quản trị sẽ liên hệ sớm nhất.', 'success');
-                }
-              } catch (e) {}
-            }
-          });
-        }
-      } else {
-        if (window.txamodal) {
-          window.txamodal.show({
-            title: '🎉 THẤT ĐẠI PHÁT - TRÚNG GIẢI!',
-            message: `<p class="text-sm font-bold text-amber-400">Chúc mừng bạn đã trúng ${prize.name}!</p>`,
-            confirmText: 'Nhận Thưởng'
-          });
-        }
-      }
-    }
   })();
 </script>
