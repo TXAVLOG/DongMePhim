@@ -1840,33 +1840,30 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     const durationRounded = Math.round(duration);
     const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
 
-    if (!username) {
-      const list = getLocalHistory();
-      const existingIdx = list.findIndex(x => x.slug === movie.slug);
-
-      const record: HistoryItem = {
-        slug: movie.slug,
-        episodeSlug: currentEpisode.slug,
-        episodeName: currentEpisode.name,
-        currentTime: timeRounded,
-        duration: durationRounded,
-        serverIndex: serverIndex,
-        serverName: currentServer?.serverName || 'Server VIP',
-        updatedAt: new Date().toISOString(),
-        synced: false,
-        title: movie.title,
-        posterUrl: movie.posterUrl
-      };
-
-      if (existingIdx !== -1) {
-        list[existingIdx] = record;
-      } else {
-        list.unshift(record);
-      }
-      
-      saveLocalHistory(list);
-      return;
+    // Always update local history so local UI stays updated immediately
+    const localList = getLocalHistory();
+    const existingIdx = localList.findIndex(x => x.slug === movie.slug);
+    const record: HistoryItem = {
+      slug: movie.slug,
+      episodeSlug: currentEpisode.slug,
+      episodeName: currentEpisode.name,
+      currentTime: timeRounded,
+      duration: durationRounded,
+      serverIndex: serverIndex,
+      serverName: currentServer?.serverName || 'Server VIP',
+      updatedAt: new Date().toISOString(),
+      synced: !!username,
+      title: movie.title,
+      posterUrl: movie.posterUrl
+    };
+    if (existingIdx !== -1) {
+      localList[existingIdx] = record;
+    } else {
+      localList.unshift(record);
     }
+    saveLocalHistory(localList);
+
+    if (!username) return;
 
     if (typeof navigator !== 'undefined' && navigator.onLine) {
       try {
@@ -1891,27 +1888,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           throw new Error('Failed to save progress to DB');
         }
       } catch (e) {
-        const list = getLocalHistory();
-        const existingIdx = list.findIndex(x => x.slug === movie.slug);
-        const record: HistoryItem = {
-          slug: movie.slug,
-          episodeSlug: currentEpisode.slug,
-          episodeName: currentEpisode.name,
-          currentTime: timeRounded,
-          duration: durationRounded,
-          serverIndex: serverIndex,
-          serverName: currentServer?.serverName || 'Server VIP',
-          updatedAt: new Date().toISOString(),
-          synced: false,
-          title: movie.title,
-          posterUrl: movie.posterUrl
-        };
-        if (existingIdx !== -1) {
-          list[existingIdx] = record;
-        } else {
-          list.unshift(record);
-        }
-        saveLocalHistory(list);
+        console.warn("Failed to sync history to server:", e);
       }
     } else {
       const list = getLocalHistory();

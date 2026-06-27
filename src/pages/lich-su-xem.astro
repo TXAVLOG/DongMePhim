@@ -196,8 +196,8 @@ const settings = await SettingService.getSettings();
     });
 
     function loadHistoryData() {
+      const localList = getLocalHistory();
       if (!username) {
-        const localList = getLocalHistory();
         renderHistoryList(localList);
         return;
       }
@@ -206,14 +206,15 @@ const settings = await SettingService.getSettings();
         fetch(`/api/user/history?username=${encodeURIComponent(username)}`)
           .then(res => res.ok ? res.json() : [])
           .then(onlineList => {
-            renderHistoryList(onlineList || []);
+            const list = (Array.isArray(onlineList) && onlineList.length > 0) ? onlineList : localList;
+            renderHistoryList(list);
           })
           .catch(err => {
             console.warn('Error fetching online history:', err);
-            renderHistoryList([]);
+            renderHistoryList(localList);
           });
       } else {
-        renderHistoryList([]);
+        renderHistoryList(localList);
       }
     }
 
