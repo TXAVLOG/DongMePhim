@@ -246,7 +246,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         autoPlayback: false,
         airplay: true,
         hotkey: true,
-        dblclick: false,
         // JWPlayer style settings
         theme: '#1e88e5',
         lang: 'vi',

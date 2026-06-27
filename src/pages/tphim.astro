@@ -1231,47 +1231,17 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     const pkgTitle = plan.title;
 
     return `
-      <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300 group relative">
+      <div class="p-3 bg-zinc-950/30 border border-glass-stroke/40 rounded-xl space-y-1 hover:border-primary/20 hover:bg-zinc-950/60 transition-all duration-300 relative">
         <div class="flex items-center gap-2 flex-wrap">
-          <div class="w-5 h-5 rounded-full bg-\${badgeColor} text-white font-bold text-[9px] flex items-center justify-center font-outfit">\${initial}</div>
-          <span class="text-xs font-bold \${isMod ? 'text-zinc-300' : \`package-style-\${pkgId}\`} font-outfit">\${comment.author}</span>
-          \${!isMod ? \`<span class="text-[7px] font-bold px-1.2 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-\${pkgId}">\${pkgTitle}</span>\` : ''}
-          \${roleBadge}
+          <div class="w-5 h-5 rounded-full bg-${badgeColor} text-white font-bold text-[9px] flex items-center justify-center font-outfit">${initial}</div>
+          <span class="text-xs font-bold ${isMod ? 'text-zinc-300' : `package-style-${pkgId}`} font-outfit">${comment.author}</span>
+          ${!isMod ? `<span class="text-[7px] font-bold px-1.2 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-${pkgId}">${pkgTitle}</span>` : ''}
+          ${roleBadge}
         </div>
-        <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"\${comment.content}"</p>
-        <a href="/phim/\${comment.movieSlug}" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
-          <span class="material-symbols-outlined text-[10px]">play_circle</span> \${comment.movieTitle}
+        <p class="text-xs text-zinc-400 italic line-clamp-1 font-body-main">"${comment.content}"</p>
+        <a href="/phim/${comment.movieSlug}" class="text-[9px] text-primary hover:underline flex items-center gap-1 pt-0.5 font-outfit">
+          <span class="material-symbols-outlined text-[10px]">play_circle</span> ${comment.movieTitle}
         </a>
-
-        <!-- Hover Popover details card (Netflix style, desktop only) -->
-        <div class="hover-details-popover hidden">
-          <div class="relative w-full aspect-video bg-black/40">
-            <img src="\${comment.moviePoster || '/favicon.png'}" alt="\${comment.movieTitle}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
-            <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
-            <div class="absolute top-3 left-3 flex gap-1 items-center select-none pointer-events-none">
-              <span class="bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm">FHD</span>
-            </div>
-          </div>
-          <div class="p-4 space-y-3.5 text-left whitespace-normal">
-            <div>
-              <h4 class="font-bold text-white text-base leading-tight font-outfit line-clamp-1">\${comment.movieTitle}</h4>
-            </div>
-            <div class="flex items-center gap-2">
-              <a href="/xem/\${comment.movieSlug}?ep=tap-1" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary/90 text-on-primary rounded-xl text-xs font-bold transition-all shadow-[0_4px_12px_rgba(124,58,237,0.25)] cursor-pointer">
-                <span class="material-symbols-outlined text-sm font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                Xem ngay
-              </a>
-              <a href="/phim/\${comment.movieSlug}" class="w-8 h-8 rounded-xl border border-glass-stroke flex items-center justify-center text-white hover:bg-white/5 transition-all cursor-pointer" data-txatooltip="Chi tiết">
-                <span class="material-symbols-outlined text-sm">info</span>
-              </a>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
-              <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb 8.0</span>
-              <span>2024</span>
-              <span>Đang chiếu</span>
-            </div>
-          </div>
-        </div>
       </div>
     `;
   }
@@ -1595,6 +1565,12 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         new Swiper(el, {
           slidesPerView: 2,
           spaceBetween: 16,
+          grabCursor: true,
+          simulateTouch: true,
+          touchRatio: 1.5,
+          mousewheel: {
+            forceToAxis: true,
+          },
           breakpoints: {
             640: {
               slidesPerView: 3,
