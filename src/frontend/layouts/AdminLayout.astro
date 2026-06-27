@@ -466,10 +466,10 @@ packages.forEach((pkg: any) => {
         <span class="material-symbols-outlined text-xl">movie</span>
         <span class="text-[9px] font-label-caps font-bold">Phim</span>
       </a>
-      <button id="mobile-menu-btn" type="button" class="flex flex-col items-center gap-0.5 text-primary bg-transparent border-none cursor-pointer">
-        <span class="material-symbols-outlined text-2xl text-primary animate-pulse">menu</span>
-        <span class="text-[9px] font-label-caps text-primary font-black uppercase tracking-wider">Danh mục</span>
-      </button>
+      <a class="flex flex-col items-center gap-0.5 text-on-surface-variant" href="/admin/duyet-zalo">
+        <span class="material-symbols-outlined text-xl">verified</span>
+        <span class="text-[9px] font-label-caps font-bold">Duyệt Zalo</span>
+      </a>
       <a class="flex flex-col items-center gap-0.5 text-on-surface-variant" href="/admin/thanh-vien">
         <span class="material-symbols-outlined text-xl">group</span>
         <span class="text-[9px] font-label-caps font-bold">Thành viên</span>
@@ -506,7 +506,6 @@ packages.forEach((pkg: any) => {
       const sidebar = document.getElementById('admin-sidebar');
       const backdrop = document.getElementById('admin-sidebar-backdrop');
       const toggleBtn = document.getElementById('admin-menu-toggle');
-      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
       const closeBtn = document.getElementById('admin-sidebar-close');
 
       const openSidebar = () => {
@@ -524,7 +523,6 @@ packages.forEach((pkg: any) => {
       };
 
       if (toggleBtn) toggleBtn.onclick = openSidebar;
-      if (mobileMenuBtn) mobileMenuBtn.onclick = openSidebar;
       if (closeBtn) closeBtn.onclick = closeSidebar;
       if (backdrop) backdrop.onclick = closeSidebar;
 
