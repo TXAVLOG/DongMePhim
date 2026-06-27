@@ -129,6 +129,53 @@ export const POST: APIRoute = async ({ request }) => {
         }
       }
 
+      // VIP Package automatic processing
+      if (prize.type === 'vip' && winnerUsername) {
+        try {
+          const { supabase } = await import('@lib/supabase');
+          const { data: user } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', winnerUsername)
+            .maybeSingle();
+
+          if (user) {
+            const currentPkg = user.package || 'free';
+            const wonPkg = prize.packageId || prize.name || 'vip';
+            
+            const getRank = (pkg: string) => {
+              const p = pkg.toLowerCase();
+              if (p.includes('ultra') || p.includes('4k') || p.includes('pro')) return 3;
+              if (p.includes('vip') || p.includes('premium') || p.includes('standard')) return 2;
+              if (p.includes('basic') || p.includes('silver')) return 1;
+              return 0; // free / unknown
+            };
+
+            const currentRank = getRank(currentPkg);
+            const wonRank = getRank(wonPkg);
+
+            const now = new Date();
+            const currentExpiry = user.expiry_date ? new Date(user.expiry_date) : now;
+            const baseTime = (currentExpiry > now) ? currentExpiry : now;
+
+            if (wonRank === currentRank || currentPkg === wonPkg) {
+              // Same package: add 30 days
+              const newExpiry = new Date(baseTime.getTime() + 30 * 24 * 3600 * 1000).toISOString();
+              await supabase.from('users').update({ expiry_date: newExpiry, status: 'active' }).eq('username', winnerUsername);
+            } else if (wonRank > currentRank) {
+              // Higher package: charge immediately
+              const newExpiry = new Date(now.getTime() + 30 * 24 * 3600 * 1000).toISOString();
+              await supabase.from('users').update({ package: wonPkg, expiry_date: newExpiry, status: 'active' }).eq('username', winnerUsername);
+            } else {
+              // Lower package: queue for next billing cycle
+              await supabase.from('users').update({ queued_package: wonPkg }).eq('username', winnerUsername);
+            }
+          }
+        } catch (vipErr) {
+          console.error('Lỗi tự động nâng cấp VIP khi trúng thưởng:', vipErr);
+        }
+      }
+
       await SettingService.updateSettings({ lucky_draw_events: events } as any);
       return apiResponse({ success: true, winner: winnerUsername, prize: prize.name }, 'success', `Đã quay trúng ${prize.name} cho ${winnerUsername}!`, 200, request);
     }
