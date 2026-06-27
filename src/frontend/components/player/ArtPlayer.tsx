@@ -25,6 +25,23 @@ if (typeof window !== 'undefined' && typeof HTMLVideoElement !== 'undefined' && 
   };
 }
 
+// Override HTMLVideoElement.prototype.play to catch AbortError when media element is unmounted
+if (typeof window !== 'undefined' && typeof HTMLVideoElement !== 'undefined' && HTMLVideoElement.prototype.play) {
+  const originalPlay = HTMLVideoElement.prototype.play;
+  HTMLVideoElement.prototype.play = function () {
+    const promise = originalPlay.call(this);
+    if (promise && typeof promise.catch === 'function') {
+      return promise.catch((err: any) => {
+        if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError' || (err.message && err.message.includes('interrupted')))) {
+          return;
+        }
+        return Promise.reject(err);
+      });
+    }
+    return promise;
+  };
+}
+
 export interface Subtitle {
   label: string;
   file: string;

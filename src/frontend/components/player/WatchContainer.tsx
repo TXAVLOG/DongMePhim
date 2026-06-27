@@ -1204,11 +1204,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           setAdBlockDetected(false); // Paid user — never blocked
         }
 
-        // Pre-roll ads logic
+        // Pre-roll ads logic (strictly ONLY shown to free users)
         const ads = settings.ads || {};
         const bypass = perms?.bypass_ads || false;
+        const isFreePackage = pkgId === 'free';
 
-        if (ads.pre_roll_enable && ads.pre_roll_url && !bypass) {
+        if (ads.pre_roll_enable && ads.pre_roll_url && isFreePackage && !bypass) {
           const rawUrls = ads.pre_roll_url;
           // Split by newline. If there's a comma, it might break iframe codes so we prefer newline split for pre-roll
           const urls = rawUrls.split(/\n+/).map((u: string) => u.trim()).filter(Boolean);
