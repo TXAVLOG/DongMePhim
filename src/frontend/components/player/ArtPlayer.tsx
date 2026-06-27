@@ -557,6 +557,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       }
 
       art.on('ready', () => {
+        // Auto-focus player so hotkeys work immediately
+        art.isFocus = true;
+
         if (currentTime > 0) {
           art.currentTime = currentTime;
           art.notice.show = `Đã khôi phục tiến trình xem: ${Math.floor(currentTime / 60)} phút ${Math.floor(currentTime % 60)} giây`;
@@ -564,6 +567,14 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         if (onPlayerReady) {
           onPlayerReady(() => art.currentTime || 0);
         }
+      });
+
+      // Keep focus on hover and play so hotkeys always work
+      art.on('hover', (state: boolean) => {
+        if (state) art.isFocus = true;
+      });
+      art.on('play', () => {
+        art.isFocus = true;
       });
 
       let lastUpdatedTime = 0;
