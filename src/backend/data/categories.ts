@@ -31,6 +31,21 @@ export const HOMEPAGE_CATEGORIES: CategoryDefinition[] = [
     slug: 'dahk-o-cho-nay-nay',
     title: 'Điện Ảnh Hồng Kông Ở Chỗ Này Này',
     description: 'Từ xã hội đen, võ thuật đến tâm lý hình sự, tinh hoa điện ảnh Hồng Kông hội tụ tại đây.'
+  },
+  {
+    slug: 'toi-so-con-nguoi-em-roi-do',
+    title: 'Tôi Sợ Con Người Em Rồi Đó, nhưng Không Bằng Sợ Ma',
+    description: 'Tuyển tập phim kinh dị, ma quái giật gân khiến bạn đứng tim từng phút giây.'
+  },
+  {
+    slug: 'phim-thai-new',
+    title: 'Phim Thái New: Không Drama Đời Không Nể',
+    description: 'Những bộ phim Thái Lan mới nhất đầy kịch tính, drama đỉnh cao và giải trí bùng nổ.'
+  },
+  {
+    slug: 'chau-tinh-tri-xem-la-cuoi',
+    title: 'Châu Tinh Trì – Xem Là Phải Cười, Không Cười Là Lỗi Ở Bạn',
+    description: 'Tuyển tập hài hước kinh điển của Vua Hài Châu Tinh Trì, xem là cười bể bụng.'
   }
 ];
 

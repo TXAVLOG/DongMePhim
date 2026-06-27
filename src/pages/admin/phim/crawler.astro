@@ -913,73 +913,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://phimimg.com';
         }
         
-        if (items.length === 0) {
-          searchResultTable.classList.add('hidden');
-          emptySearchResult.classList.remove('hidden');
-          emptySearchResult.innerHTML = `
-            <span class="material-symbols-outlined text-5xl opacity-20 mb-3">search_off</span>
-            <p class="text-zinc-400 text-sm">Không tìm thấy phim nào cho từ khóa "${keyword}".</p>
-          `;
-          return;
-        }
-
-        emptySearchResult.classList.add('hidden');
-        searchResultTable.classList.remove('hidden');
-        
-        searchResultBody.innerHTML = items.map(item => {
-          const localCount = existingMoviesMap[item.slug] || 0;
-          const isSelected = cartSlugs.has(item.slug);
-          const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
-
-          let posterUrl = item.poster_url || item.thumb_url || '';
-          if (posterUrl) {
-            if (!posterUrl.startsWith('http')) {
-              posterUrl = `${cdnDomain}/${posterUrl.replace(/^\//, '')}`;
-            }
-          } else {
-            posterUrl = '/logo.png';
-          }
-
-          const safeName = item.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-          const episodeCurrent = item.episode_current || '';
-          const tmdbId = item.tmdb?.id || '';
-          const tmdbType = item.tmdb?.type || '';
-
-          return `
-            <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
-              <td class="px-5 py-3 text-center">
-                <input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}', '${tmdbId}', '${tmdbType}')" 
-                       ${isSelected ? 'checked' : ''} class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer item-checkbox"/>
-              </td>
-              <td class="px-5 py-3">
-                <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
-                  <img src="${posterUrl}" class="w-full h-full object-cover" onerror="this.src='/logo.png'" alt="Poster" />
-                </div>
-              </td>
-              <td class="px-5 py-3 font-semibold text-white">
-                <div>${item.name}</div>
-                <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${item.origin_name} (${item.year})</div>
-              </td>
-              <td class="px-5 py-3">
-                <span class="bg-zinc-900 border border-glass-stroke rounded px-1.5 py-0.5 text-[10px] font-bold text-zinc-300 mr-1">${item.quality || 'FHD'}</span>
-                <span class="text-zinc-500 text-[10px] font-bold">${typeLabel}</span>
-              </td>
-              <td class="px-5 py-3 font-medium">
-                ${localCount > 0 
-                  ? `<span class="text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded text-[10px] font-bold">✓ Đã cào (${localCount} tập)</span>` 
-                  : '<span class="text-zinc-500 bg-zinc-950 border border-glass-stroke px-1.5 py-0.5 rounded text-[10px]">Chưa cào</span>'}
-              </td>
-              <td class="px-5 py-3 text-right">
-                <button type="button" onclick="crawlSingleDirect('${item.slug}')" class="text-primary hover:underline font-bold text-xs cursor-pointer">
-                  Cào ngay
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        // Reset select all checkbox
-        selectAllSearch.checked = false;
+        renderSearchResultsTable(items, cdnDomain, keyword);
 
       } catch (e) {
         if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy phim trực tuyến: ' + e.message, 'error');
@@ -989,12 +923,143 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       }
     });
 
+    let currentSearchItems = [];
+    let currentCdnDomain = 'https://phimimg.com';
+
+    function renderSearchResultsTable(items, cdnDomain = currentCdnDomain, keyword = '') {
+      currentSearchItems = items || [];
+      if (cdnDomain) currentCdnDomain = cdnDomain;
+
+      const isOverwrite = document.getElementById('overwrite')?.checked ?? true;
+      const searchResultBody = document.getElementById('searchResultBody');
+      const searchResultTable = document.getElementById('searchResultTable');
+      const emptySearchResult = document.getElementById('emptySearchResult');
+      const selectAllSearch = document.getElementById('selectAllSearch');
+
+      if (!items || items.length === 0) {
+        searchResultTable.classList.add('hidden');
+        emptySearchResult.classList.remove('hidden');
+        if (keyword) {
+          emptySearchResult.innerHTML = `
+            <span class="material-symbols-outlined text-5xl opacity-20 mb-3">search_off</span>
+            <p class="text-zinc-400 text-sm">Không tìm thấy phim nào cho từ khóa "${keyword}".</p>
+          `;
+        }
+        return;
+      }
+
+      emptySearchResult.classList.add('hidden');
+      searchResultTable.classList.remove('hidden');
+      
+      searchResultBody.innerHTML = items.map(item => {
+        const localCount = existingMoviesMap[item.slug] || 0;
+        const isAlreadyInDb = existingMoviesMap[item.slug] !== undefined;
+        const isSelected = cartSlugs.has(item.slug);
+        const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
+
+        let posterUrl = item.poster_url || item.thumb_url || '';
+        if (posterUrl) {
+          if (!posterUrl.startsWith('http')) {
+            posterUrl = `${currentCdnDomain}/${posterUrl.replace(/^\//, '')}`;
+          }
+        } else {
+          posterUrl = '/logo.png';
+        }
+
+        const safeName = item.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const episodeCurrent = item.episode_current || '';
+        const tmdbId = item.tmdb?.id || '';
+        const tmdbType = item.tmdb?.type || '';
+
+        // Extract API episode count from text (e.g., "Tập 36", "36/36", "Full")
+        const apiEpMatch = episodeCurrent.match(/\d+/);
+        const apiEpNum = apiEpMatch ? parseInt(apiEpMatch[0]) : (item.type === 'single' ? 1 : 0);
+        
+        // Check if API has newer episodes than DB
+        const hasNewEpisodes = isAlreadyInDb && (apiEpNum > localCount || (episodeCurrent.toLowerCase().includes('full') && localCount < 1));
+        const addedEpsCount = Math.max(1, apiEpNum - localCount);
+
+        // Show checkbox if overwrite is checked, OR if not in DB, OR if has new episodes
+        const showCheckbox = isOverwrite || !isAlreadyInDb || hasNewEpisodes;
+
+        let statusHtml = '';
+        if (isAlreadyInDb) {
+          if (hasNewEpisodes) {
+            statusHtml = `
+              <span class="text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded text-[10px] font-bold inline-block">✓ Đã cào (${localCount} tập)</span>
+              <span class="text-amber-400 font-bold text-[10px] block mt-1 animate-pulse">🔥 Có +${addedEpsCount} tập mới! (${episodeCurrent})</span>
+            `;
+          } else {
+            statusHtml = `<span class="text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded text-[10px] font-bold">✓ Đã cào (${localCount} tập)</span>`;
+          }
+        } else {
+          statusHtml = '<span class="text-zinc-500 bg-zinc-950 border border-glass-stroke px-1.5 py-0.5 rounded text-[10px]">Chưa cào</span>';
+        }
+
+        let actionBtnText = 'Cào ngay';
+        if (isAlreadyInDb) {
+          actionBtnText = hasNewEpisodes ? `Cào +${addedEpsCount} tập mới` : (isOverwrite ? 'Ghi đè phim' : 'Cào tiếp');
+        }
+
+        return `
+          <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
+            <td class="px-5 py-3 text-center">
+              ${showCheckbox 
+                ? `<input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}', '${tmdbId}', '${tmdbType}')" 
+                         ${isSelected ? 'checked' : ''} data-crawled="${isAlreadyInDb && !hasNewEpisodes ? 'true' : 'false'}" class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer item-checkbox"/>`
+                : '<span class="text-zinc-600 text-xs font-bold select-none" data-txatooltip="Phim đã cào đầy đủ">—</span>'
+              }
+            </td>
+            <td class="px-5 py-3">
+              <div class="w-12 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container border border-glass-stroke">
+                <img src="${posterUrl}" class="w-full h-full object-cover" onerror="this.src='/logo.png'" alt="Poster" />
+              </div>
+            </td>
+            <td class="px-5 py-3 font-semibold text-white">
+              <div>${item.name}</div>
+              <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${item.origin_name} (${item.year})</div>
+            </td>
+            <td class="px-5 py-3">
+              <span class="bg-zinc-900 border border-glass-stroke rounded px-1.5 py-0.5 text-[10px] font-bold text-zinc-300 mr-1">${item.quality || 'FHD'}</span>
+              <span class="text-zinc-500 text-[10px] font-bold">${typeLabel}</span>
+            </td>
+            <td class="px-5 py-3 font-medium">
+              ${statusHtml}
+            </td>
+            <td class="px-5 py-3 text-right">
+              <button type="button" onclick="crawlSingleDirect('${item.slug}')" class="text-primary hover:underline font-bold text-xs cursor-pointer">
+                ${actionBtnText}
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (selectAllSearch) selectAllSearch.checked = false;
+    }
+
+    // Re-render search results when overwrite checkbox toggles
+    document.getElementById('overwrite')?.addEventListener('change', () => {
+      if (currentSearchItems && currentSearchItems.length > 0) {
+        renderSearchResultsTable(currentSearchItems);
+      }
+    });
+
     // Select all checkboxes search results
     selectAllSearch.addEventListener('change', (e) => {
       const checked = e.target.checked;
+      const isOverwrite = document.getElementById('overwrite')?.checked ?? true;
       const checkboxes = document.querySelectorAll('.item-checkbox');
       checkboxes.forEach(cb => {
-        cb.checked = checked;
+        if (checked) {
+          if (!isOverwrite && cb.getAttribute('data-crawled') === 'true') {
+            cb.checked = false;
+            return;
+          }
+          cb.checked = true;
+        } else {
+          cb.checked = false;
+        }
         cb.dispatchEvent(new Event('change'));
       });
     });
