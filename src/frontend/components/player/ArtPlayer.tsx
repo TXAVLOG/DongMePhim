@@ -557,8 +557,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       }
 
       art.on('ready', () => {
-        // Auto-focus player so hotkeys work immediately
-        art.isFocus = true;
+        // Auto-focus player so hotkeys work immediately (cast to bypass readonly type)
+        (art as any).isFocus = true;
 
         if (currentTime > 0) {
           art.currentTime = currentTime;
@@ -571,10 +571,10 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
       // Keep focus on hover and play so hotkeys always work
       art.on('hover', (state: boolean) => {
-        if (state) art.isFocus = true;
+        if (state) (art as any).isFocus = true;
       });
       art.on('play', () => {
-        art.isFocus = true;
+        (art as any).isFocus = true;
       });
 
       let lastUpdatedTime = 0;
