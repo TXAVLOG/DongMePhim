@@ -51,7 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
                   <tr><td>SMTP Port:</td><td style="color:#ffffff;">${config.port}</td></tr>
                   <tr><td>SMTP Secure:</td><td style="color:#ffffff;">${config.secure}</td></tr>
                   <tr><td>SMTP User:</td><td style="color:#ffffff;">${config.user}</td></tr>
-                  <tr><td>Thời gian gửi:</td><td style="color:#ffffff;">${new Date().toLocaleString('vi-VN')}</td></tr>
+                  <tr><td>Thời gian gửi:</td><td style="color:#ffffff;">${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td></tr>
                 </table>
               </div>
               <p style="margin:0;font-size:13px;color:#71717a;">Nếu email này gửi thành công, các tính năng gửi mã và link xác minh sẽ hoạt động bình thường trên hệ thống DongMePhim.</p>

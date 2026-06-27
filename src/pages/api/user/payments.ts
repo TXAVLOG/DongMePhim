@@ -206,7 +206,7 @@ export const POST: APIRoute = async ({ request }) => {
             const siteUrl = settings.general.site_url || 'https://dongmephim.online';
             const siteName = settings.general.site_name || 'DongMePhim';
             const year = new Date().getFullYear().toString();
-            const expDateStr = new Date(keyRecord.expiry_date).toLocaleDateString('vi-VN');
+            const expDateStr = new Date(keyRecord.expiry_date).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
             const htmlTemplate = getEmailTemplate('zalo-key-issued-user.html');
             const compiledHtml = htmlTemplate

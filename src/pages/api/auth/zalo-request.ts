@@ -19,7 +19,7 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
     const siteName = settings.general.site_name || 'DongMePhim';
     
     const year = new Date().getFullYear().toString();
-    const sendTime = new Date().toLocaleString('vi-VN');
+    const sendTime = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
     const approveUrl = `${siteUrl.replace(/\/$/, '')}/admin/duyet-zalo?search=${encodeURIComponent(nickname)}`;
 
     // Tạo template email thông báo bằng verify-email.html hoặc định nghĩa thẳng
