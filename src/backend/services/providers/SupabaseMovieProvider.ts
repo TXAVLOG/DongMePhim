@@ -5,7 +5,7 @@ import { seedMovies, mapKKPhimToMovieDetail, mapKKPhimSearchItemToMovie } from '
 export class SupabaseMovieProvider implements IMovieProvider {
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string, slugs?: string[] }): Promise<Movie[]> {
     try {
-      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source';
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source, episodes';
       let query = supabase.from('movies').select(selectFields);
 
       if (params?.type) {
@@ -47,6 +47,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
           broadcastSchedule: m.broadcast_schedule || undefined,
           actors: Array.isArray(m.actors) ? m.actors : [],
           directors: Array.isArray(m.directors) ? m.directors : [],
+          episodes: Array.isArray(m.episodes) ? m.episodes : [],
           source: m.source || 'manual'
         }));
       }

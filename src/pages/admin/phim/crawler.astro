@@ -705,6 +705,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             const serverData = srv.serverData || srv.server_data || [];
             count = Math.max(count, serverData.length || 0);
           });
+          if (count === 0) {
+            count = (m.type === 'movie' || m.type === 'single') ? 1 : (m.episodeCurrent ? parseInt(m.episodeCurrent) || 1 : 1);
+          }
           existingMoviesMap[m.slug] = count;
         });
       } catch (e) {
@@ -1454,6 +1457,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
         // Check if exists in database
         const dup = existingMoviesMap[slug] !== undefined;
+        let currentEpisodeCount = existingMoviesMap[slug] || 0;
+        let apiEpisodeCount = 0;
+
         if (dup && !overwrite) {
           skipped++;
           document.getElementById('statSkipped').textContent = skipped;
@@ -1515,10 +1521,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
             if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
               // Compare episodes count to see if update exists
-              const apiEpisodeCount = Math.max(...(detailData.episodes || []).map((server) => (server.server_data || server.serverData || []).length), 0);
-              const currentEpisodeCount = existingMoviesMap[slug] || 0;
+              apiEpisodeCount = Math.max(...(detailData.episodes || []).map((server) => (server.server_data || server.serverData || []).length), 0);
 
-              if (currentEpisodeCount > 0 && apiEpisodeCount <= currentEpisodeCount) {
+              if (!overwrite && currentEpisodeCount > 0 && apiEpisodeCount <= currentEpisodeCount) {
                 skipped++;
                 document.getElementById('statSkipped').textContent = skipped;
                 addLog(`→ Bỏ qua vì đã đầy đủ tập phim (${currentEpisodeCount}/${apiEpisodeCount} tập): "${detailData.movie.name}"`, 'warning');
