@@ -1,0 +1,5 @@
+---
+// Redirect /duyet-zalo to /admin/duyet-zalo with query parameters preserved
+const search = Astro.url.search;
+return Astro.redirect(`/admin/duyet-zalo${search}`);
+---

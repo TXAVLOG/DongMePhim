@@ -622,6 +622,18 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
       document.querySelectorAll('.request-row-check').forEach(el => {
         el.addEventListener('change', checkSelection);
       });
+
+      if (searchQuery.trim()) {
+        setTimeout(() => {
+          const rows = tbody.querySelectorAll('tr[data-id]');
+          if (rows.length > 0) {
+            rows.forEach(r => {
+              r.classList.add('bg-purple-900/40', 'border-purple-500', 'ring-2', 'ring-purple-500/60', 'shadow-lg');
+            });
+            rows[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      }
     }
 
     // Copy to clipboard
@@ -1338,7 +1350,15 @@ const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
     function init() {
       loadData();
       updateStatsUI();
-      renderRequests();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialSearch = urlParams.get('search') || urlParams.get('q') || '';
+      const requestSearchInput = document.getElementById('request-search');
+      if (initialSearch && requestSearchInput) {
+        requestSearchInput.value = initialSearch;
+      }
+
+      renderRequests(initialSearch);
       renderWhitelist();
       initTokenDecryptor();
       
