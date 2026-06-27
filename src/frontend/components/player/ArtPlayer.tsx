@@ -473,6 +473,34 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             }
           }
         ],
+        controls: [
+          {
+            name: 'rewind-10',
+            position: 'left',
+            index: 10,
+            html: `<button class="art-icon" style="display: flex; align-items: center; justify-center: center;" title="Lùi 10s"><span class="material-symbols-outlined" style="font-size: 20px;">replay_10</span></button>`,
+            click: function () {
+              const art = playerInstanceRef.current;
+              if (art) {
+                art.currentTime = Math.max(0, art.currentTime - 10);
+                art.notice.show = 'Tua lại 10 giây ⏪';
+              }
+            },
+          },
+          {
+            name: 'forward-10',
+            position: 'left',
+            index: 11,
+            html: `<button class="art-icon" style="display: flex; align-items: center; justify-center: center;" title="Tua 10s"><span class="material-symbols-outlined" style="font-size: 20px;">forward_10</span></button>`,
+            click: function () {
+              const art = playerInstanceRef.current;
+              if (art) {
+                art.currentTime = Math.min(art.duration, art.currentTime + 10);
+                art.notice.show = 'Tua tiếp 10 giây ⏩';
+              }
+            },
+          },
+        ],
       });
 
       // --- Menu Cài đặt (Gear icon) Tùy chỉnh thay thế toàn bộ mặc định ---
@@ -540,40 +568,108 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
       playerInstanceRef.current = art;
 
-      // Double-tap seeking on mobile (left/right side double tap)
-      let lastTap = 0;
+      // Quick seek buttons overlay & Gesture double tap for mobile
+      let lastTapTime = 0;
+      let lastTapX = 0;
       const handleTouchEnd = (e: TouchEvent) => {
+        // Only trigger if touch was on video/player area and not on controls/buttons
+        const target = e.target as HTMLElement;
+        if (target && (target.closest('.art-controls') || target.closest('.art-setting') || target.closest('button'))) {
+          return;
+        }
+
         const now = Date.now();
-        const DOUBLE_TAP_DELAY = 300;
-        if (now - lastTap < DOUBLE_TAP_DELAY) {
-          const videoEl = art.template.$video;
-          if (!videoEl) return;
+        const DOUBLE_TAP_DELAY = 350;
+        const touch = e.changedTouches[0];
+        if (!touch) return;
+
+        if (now - lastTapTime < DOUBLE_TAP_DELAY && Math.abs(touch.clientX - lastTapX) < 80) {
+          const container = art.template.$container;
+          if (!container) return;
           
-          const rect = videoEl.getBoundingClientRect();
-          const touchX = e.changedTouches[0].clientX - rect.left;
+          const rect = container.getBoundingClientRect();
+          const touchX = touch.clientX - rect.left;
           const width = rect.width;
           
-          if (touchX < width * 0.35) {
+          if (touchX < width * 0.4) {
             // Seek back 10s
             art.currentTime = Math.max(0, art.currentTime - 10);
             art.notice.show = 'Tua lại 10 giây ⏪';
-          } else if (touchX > width * 0.65) {
+          } else if (touchX > width * 0.6) {
             // Seek forward 10s
             art.currentTime = Math.min(art.duration, art.currentTime + 10);
             art.notice.show = 'Tua tiếp 10 giây ⏩';
+          } else {
+            // Center tap: toggle play/pause
+            if (art.playing) art.pause();
+            else art.play();
           }
-          e.preventDefault(); // Prevent zoom/default pause behavior on double click
+          e.preventDefault();
         }
-        lastTap = now;
+        lastTapTime = now;
+        lastTapX = touch.clientX;
       };
 
-      const videoElement = art.template.$video;
-      if (videoElement) {
-        videoElement.addEventListener('touchend', handleTouchEnd);
+      const playerContainer = art.template.$container;
+      if (playerContainer) {
+        playerContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
       }
 
+      // 7. Disable keyboard shortcuts for download (Ctrl+S, Ctrl+U) & Global Player Hotkeys (Desktop)
+      const handleGlobalKeyDown = (e: KeyboardEvent) => {
+        if (!playerInstanceRef.current) return;
+        const art = playerInstanceRef.current;
+
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.key === 'u' || e.key === 'U')) {
+          e.preventDefault();
+          e.stopPropagation();
+          art.notice.show = '⛔ Tải xuống bị vô hiệu hóa';
+          return;
+        }
+
+        // Bỏ qua hotkey nếu đang gõ vào input, textarea hoặc contenteditable
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
+          return;
+        }
+
+        // Xử lý các phím tắt phổ biến trên máy tính
+        const key = e.key.toLowerCase();
+        const code = e.code;
+
+        if (code === 'Space' || key === 'k') {
+          e.preventDefault();
+          if (art.playing) art.pause();
+          else art.play();
+        } else if (code === 'ArrowLeft' || key === 'j') {
+          e.preventDefault();
+          art.currentTime = Math.max(0, art.currentTime - 5);
+          art.notice.show = 'Tua lại 5 giây ⏪';
+        } else if (code === 'ArrowRight' || key === 'l') {
+          e.preventDefault();
+          art.currentTime = Math.min(art.duration, art.currentTime + 5);
+          art.notice.show = 'Tua tiếp 5 giây ⏩';
+        } else if (code === 'ArrowUp') {
+          e.preventDefault();
+          art.volume = Math.min(1, art.volume + 0.1);
+          art.notice.show = `Âm lượng: ${Math.round(art.volume * 100)}% 🔊`;
+        } else if (code === 'ArrowDown') {
+          e.preventDefault();
+          art.volume = Math.max(0, art.volume - 0.1);
+          art.notice.show = `Âm lượng: ${Math.round(art.volume * 100)}% 🔉`;
+        } else if (key === 'm') {
+          e.preventDefault();
+          art.muted = !art.muted;
+          art.notice.show = art.muted ? 'Tắt tiếng 🔇' : 'Bật tiếng 🔊';
+        } else if (key === 'f') {
+          e.preventDefault();
+          art.fullscreen = !art.fullscreen;
+        }
+      };
+
+      window.addEventListener('keydown', handleGlobalKeyDown, true);
+
       art.on('ready', () => {
-        // Auto-focus player so hotkeys work immediately (cast to bypass readonly type)
         (art as any).isFocus = true;
 
         if (currentTime > 0) {
@@ -614,10 +710,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           const blockedExtensions = ['m3u8', '.ts', '.key'];
           XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, method: string, reqUrl: string | URL, async?: boolean, user?: string | null, password?: string | null) {
             const urlStr = String(reqUrl);
-            // Only allow our own page's XHR - block extension-injected ones sniffing for m3u8
             if (blockedExtensions.some(ext => urlStr.includes(ext))) {
               const stack = new Error().stack || '';
-              // If the call originates from a chrome-extension or moz-extension, block it
               if (stack.includes('extension') || stack.includes('chrome-extension') || stack.includes('moz-extension')) {
                 return; // silently block
               }
@@ -632,16 +726,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               return Promise.reject(new DOMException('Screen capture is disabled.', 'NotAllowedError'));
             };
           }
-
-          // 7. Disable keyboard shortcuts that could be used for download (Ctrl+S, Ctrl+U)
-          document.addEventListener('keydown', (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.key === 'u' || e.key === 'U')) {
-              e.preventDefault();
-              e.stopPropagation();
-              art.notice.show = '⛔ Tải xuống bị vô hiệu hóa';
-            }
-          }, true);
-
         } catch (antiDlErr) {
           console.warn('Anti-download init error:', antiDlErr);
         }
@@ -810,8 +894,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         clearInterval(intervalId);
         observer.disconnect();
         window.removeEventListener('txa-autoskip-changed', handleAutoSkipEvent);
-        if (videoElement) {
-          videoElement.removeEventListener('touchend', handleTouchEnd);
+        window.removeEventListener('keydown', handleGlobalKeyDown, true);
+        if (playerContainer) {
+          playerContainer.removeEventListener('touchend', handleTouchEnd);
         }
       });
     };

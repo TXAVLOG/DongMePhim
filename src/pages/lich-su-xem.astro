@@ -47,11 +47,47 @@ const settings = await SettingService.getSettings();
 
     const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
 
-    // Helper: Read thistory from localStorage
+    // Helper: Read thistory from localStorage and convert to list for rendering
     function getLocalHistory() {
       try {
         const stored = localStorage.getItem('thistory');
-        return stored ? JSON.parse(stored) : [];
+        if (!stored) return [];
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+        
+        // Nếu là dạng dict { [slug]: { title, posterUrl, updatedAt, episodes: { [epSlug]: { ... } } } }
+        const list = [];
+        if (parsed && typeof parsed === 'object') {
+          Object.keys(parsed).forEach(slug => {
+            const item = parsed[slug];
+            if (item && item.episodes) {
+              // Tìm tập phim mới nhất
+              const epKeys = Object.keys(item.episodes);
+              let latestEp = null;
+              epKeys.forEach(epKey => {
+                const ep = item.episodes[epKey];
+                if (!latestEp || new Date(ep.updatedAt).getTime() > new Date(latestEp.updatedAt).getTime()) {
+                  latestEp = ep;
+                }
+              });
+              if (latestEp) {
+                list.push({
+                  slug: slug,
+                  title: item.title,
+                  posterUrl: item.posterUrl,
+                  episodeSlug: latestEp.episodeSlug,
+                  episodeName: latestEp.episodeName,
+                  currentTime: latestEp.currentTime,
+                  duration: latestEp.duration,
+                  serverIndex: latestEp.serverIndex,
+                  updatedAt: latestEp.updatedAt || item.updatedAt,
+                  synced: latestEp.synced
+                });
+              }
+            }
+          });
+        }
+        return list;
       } catch (e) {
         return [];
       }
@@ -59,7 +95,30 @@ const settings = await SettingService.getSettings();
 
     // Helper: Save thistory to localStorage
     function saveLocalHistory(list) {
-      localStorage.setItem('thistory', JSON.stringify(list));
+      // Khi lưu từ UI mảng phẳng, convert lại sang cấu trúc dict
+      const dict = {};
+      list.forEach(item => {
+        if (item && item.slug) {
+          dict[item.slug] = {
+            title: item.title,
+            posterUrl: item.posterUrl,
+            updatedAt: item.updatedAt,
+            episodes: {
+              [item.episodeSlug || 'default']: {
+                episodeSlug: item.episodeSlug,
+                episodeName: item.episodeName,
+                currentTime: item.currentTime,
+                duration: item.duration,
+                serverIndex: item.serverIndex,
+                serverName: item.serverName || 'Server VIP',
+                updatedAt: item.updatedAt,
+                synced: item.synced
+              }
+            }
+          };
+        }
+      });
+      localStorage.setItem('thistory', JSON.stringify(dict));
     }
 
     // Render list

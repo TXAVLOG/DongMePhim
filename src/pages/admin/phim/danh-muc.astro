@@ -181,16 +181,20 @@ const currentMappings = await getHomepageCategories();
         const cat = categories.find(c => c.slug === activeCategorySlug);
         if (!cat) return;
 
-        document.getElementById('activeCategoryTitle').textContent = cat.title;
-        document.getElementById('activeCategoryDesc').textContent = cat.description || '';
+        const titleEl = document.getElementById('activeCategoryTitle');
+        const descEl = document.getElementById('activeCategoryDesc');
+        const badgeEl = document.getElementById('assignedCountBadge');
+        if (titleEl) titleEl.textContent = cat.title;
+        if (descEl) descEl.textContent = cat.description || '';
 
         // Get currently assigned slugs
         const assignedSlugs = mappings[activeCategorySlug] || [];
-        document.getElementById('assignedCountBadge').textContent = `Đã chọn: ${assignedSlugs.length} phim`;
+        if (badgeEl) badgeEl.textContent = `Đã chọn: ${assignedSlugs.length} phim`;
 
         const container = document.getElementById('assignedMoviesContainer');
         const notice = document.getElementById('noAssignedNotice');
-        
+        if (!container || !notice) return;
+
         if (assignedSlugs.length === 0) {
           container.innerHTML = "";
           notice.classList.remove('hidden');

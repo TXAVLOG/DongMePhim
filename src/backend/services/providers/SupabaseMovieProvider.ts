@@ -72,6 +72,22 @@ export class SupabaseMovieProvider implements IMovieProvider {
         const catSlug = slugify(cat);
         if (cat === 'Lồng Tiếng' || catSlug === 'long-tieng') {
           result = result.filter(m => m.lang === 'Lồng Tiếng' || m.lang === 'Thuyết Minh' || (m.lang && m.lang.toLowerCase().includes('lồng tiếng')));
+        } else if (cat === 'Châu Tinh Trì' || catSlug === 'chau-tinh-tri' || catSlug === 'chau-tinh-tri-xem-la-cuoi') {
+          result = result.filter(m => 
+            (Array.isArray(m.actors) && m.actors.some((a: any) => (typeof a === 'string' ? a : a?.name || '').toLowerCase().includes('châu tinh trì'))) ||
+            (m.title && m.title.toLowerCase().includes('châu tinh trì'))
+          );
+        } else if (catSlug === 'toi-so-con-nguoi-em-roi-do') {
+          result = result.filter(m => 
+            Array.isArray(m.genres) && m.genres.some((g: string) => {
+              const lower = (g || '').toLowerCase();
+              return lower.includes('kinh dị') || lower.includes('ma') || lower.includes('thriller') || lower.includes('horror');
+            })
+          );
+        } else if (catSlug === 'phim-thai-new') {
+          result = result.filter(m => 
+            m.category === 'Thái Lan' || (Array.isArray(m.genres) && m.genres.some((g: string) => (g || '').toLowerCase().includes('thái')))
+          );
         } else {
           result = result.filter(m => {
             if (m.category === cat || (m.category && slugify(m.category) === catSlug)) return true;

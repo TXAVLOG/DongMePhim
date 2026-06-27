@@ -1711,21 +1711,50 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     setActiveTab(tab);
   }, [episodeIndex, episodesPerTab]);
 
-  const getLocalHistory = (): HistoryItem[] => {
+  const getLocalHistoryDict = (): Record<string, any> => {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       try {
         const stored = localStorage.getItem('thistory');
-        return stored ? JSON.parse(stored) : [];
+        if (!stored) return {};
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          // Khôi phục / chuyển đổi từ format cũ (mảng) sang dict
+          const dict: Record<string, any> = {};
+          parsed.forEach((item: any) => {
+            if (item && item.slug) {
+              const epKey = item.episodeSlug || 'default';
+              dict[item.slug] = {
+                title: item.title,
+                posterUrl: item.posterUrl,
+                updatedAt: item.updatedAt || new Date().toISOString(),
+                episodes: {
+                  [epKey]: {
+                    episodeSlug: item.episodeSlug,
+                    episodeName: item.episodeName,
+                    currentTime: item.currentTime,
+                    duration: item.duration,
+                    serverIndex: item.serverIndex,
+                    serverName: item.serverName,
+                    updatedAt: item.updatedAt || new Date().toISOString(),
+                    synced: item.synced
+                  }
+                }
+              };
+            }
+          });
+          return dict;
+        }
+        return parsed && typeof parsed === 'object' ? parsed : {};
       } catch (e) {
-        return [];
+        return {};
       }
     }
-    return [];
+    return {};
   };
 
-  const saveLocalHistory = (list: HistoryItem[]) => {
+  const saveLocalHistoryDict = (dict: Record<string, any>) => {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      localStorage.setItem('thistory', JSON.stringify(list));
+      localStorage.setItem('thistory', JSON.stringify(dict));
     }
   };
 
@@ -1734,39 +1763,45 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
     if (!username) return;
 
-    const list = getLocalHistory();
-    const unsynced = list.filter(item => !item.synced);
-    
-    if (unsynced.length === 0) return;
+    const dict = getLocalHistoryDict();
+    let updated = false;
 
-    for (const item of unsynced) {
-      try {
-        const res = await fetch('/api/user/history', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username,
-            slug: item.slug,
-            episodeSlug: item.episodeSlug,
-            episodeName: item.episodeName,
-            currentTime: item.currentTime,
-            duration: item.duration,
-            serverIndex: item.serverIndex,
-            serverName: item.serverName,
-            updatedAt: item.updatedAt
-          })
-        });
-        if (res.ok) {
-          const currentList = getLocalHistory();
-          const target = currentList.find(x => x.slug === item.slug);
-          if (target) {
-            target.synced = true;
-            saveLocalHistory(currentList);
+    for (const movieSlug of Object.keys(dict)) {
+      const movieObj = dict[movieSlug];
+      if (!movieObj || !movieObj.episodes) continue;
+
+      for (const epKey of Object.keys(movieObj.episodes)) {
+        const item = movieObj.episodes[epKey];
+        if (item && !item.synced) {
+          try {
+            const res = await fetch('/api/user/history', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username,
+                slug: movieSlug,
+                episodeSlug: item.episodeSlug,
+                episodeName: item.episodeName,
+                currentTime: item.currentTime,
+                duration: item.duration,
+                serverIndex: item.serverIndex,
+                serverName: item.serverName,
+                updatedAt: item.updatedAt
+              })
+            });
+            if (res.ok) {
+              item.synced = true;
+              updated = true;
+            }
+          } catch (e) {
+            console.warn(`Sync failed for movie slug ${movieSlug} ep ${epKey}:`, e);
           }
         }
-      } catch (e) {
-        console.warn(`Sync failed for movie slug ${item.slug}:`, e);
       }
+    }
+
+    if (updated) {
+      saveLocalHistoryDict(dict);
     }
   };
 
@@ -1779,10 +1814,11 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
       const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
 
       if (!username) {
-        const localList = getLocalHistory();
-        const localMovieHist = localList.find(x => x.slug === movie.slug);
+        const localDict = getLocalHistoryDict();
+        const movieObj = localDict[movie.slug];
+        const localMovieHist = movieObj?.episodes?.[currentEpisode?.slug || ''];
         
-        if (localMovieHist && localMovieHist.episodeSlug === currentEpisode?.slug && localMovieHist.currentTime > 10 && (localMovieHist.duration - localMovieHist.currentTime) > 10) {
+        if (localMovieHist && localMovieHist.currentTime > 10 && (localMovieHist.duration - localMovieHist.currentTime) > 10) {
           setResumePrompt({
             show: true,
             time: localMovieHist.currentTime,
@@ -1839,29 +1875,38 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     const timeRounded = Math.round(time);
     const durationRounded = Math.round(duration);
     const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
+    const isoNow = new Date().toISOString();
 
-    // Always update local history so local UI stays updated immediately
-    const localList = getLocalHistory();
-    const existingIdx = localList.findIndex(x => x.slug === movie.slug);
-    const record: HistoryItem = {
-      slug: movie.slug,
+    // Luôn cập nhật thistory local dưới dạng dict
+    const dict = getLocalHistoryDict();
+    if (!dict[movie.slug]) {
+      dict[movie.slug] = {
+        title: movie.title,
+        posterUrl: movie.posterUrl,
+        updatedAt: isoNow,
+        episodes: {}
+      };
+    }
+    dict[movie.slug].title = movie.title || dict[movie.slug].title;
+    dict[movie.slug].posterUrl = movie.posterUrl || dict[movie.slug].posterUrl;
+    dict[movie.slug].updatedAt = isoNow;
+
+    if (!dict[movie.slug].episodes) {
+      dict[movie.slug].episodes = {};
+    }
+
+    dict[movie.slug].episodes[currentEpisode.slug] = {
       episodeSlug: currentEpisode.slug,
       episodeName: currentEpisode.name,
       currentTime: timeRounded,
       duration: durationRounded,
       serverIndex: serverIndex,
       serverName: currentServer?.serverName || 'Server VIP',
-      updatedAt: new Date().toISOString(),
-      synced: !!username,
-      title: movie.title,
-      posterUrl: movie.posterUrl
+      updatedAt: isoNow,
+      synced: !!username
     };
-    if (existingIdx !== -1) {
-      localList[existingIdx] = record;
-    } else {
-      localList.unshift(record);
-    }
-    saveLocalHistory(localList);
+
+    saveLocalHistoryDict(dict);
 
     if (!username) return;
 
@@ -1879,7 +1924,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             duration: durationRounded,
             serverIndex: serverIndex,
             serverName: currentServer?.serverName || 'Server VIP',
-            updatedAt: new Date().toISOString(),
+            updatedAt: isoNow,
             title: movie.title,
             posterUrl: movie.posterUrl
           })
@@ -1891,27 +1936,11 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         console.warn("Failed to sync history to server:", e);
       }
     } else {
-      const list = getLocalHistory();
-      const existingIdx = list.findIndex(x => x.slug === movie.slug);
-      const record: HistoryItem = {
-        slug: movie.slug,
-        episodeSlug: currentEpisode.slug,
-        episodeName: currentEpisode.name,
-        currentTime: timeRounded,
-        duration: durationRounded,
-        serverIndex: serverIndex,
-        serverName: currentServer?.serverName || 'Server VIP',
-        updatedAt: new Date().toISOString(),
-        synced: false,
-        title: movie.title,
-        posterUrl: movie.posterUrl
-      };
-      if (existingIdx !== -1) {
-        list[existingIdx] = record;
-      } else {
-        list.unshift(record);
+      const offlineDict = getLocalHistoryDict();
+      if (offlineDict[movie.slug]?.episodes?.[currentEpisode.slug]) {
+        offlineDict[movie.slug].episodes[currentEpisode.slug].synced = false;
+        saveLocalHistoryDict(offlineDict);
       }
-      saveLocalHistory(list);
     }
   };
 

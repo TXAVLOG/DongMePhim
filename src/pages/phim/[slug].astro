@@ -1146,13 +1146,70 @@ if (movie && movie.actors && movie.actors.length > 0) {
     const getLocalHistory = () => {
       const stored = localStorage.getItem('thistory');
       let list: any[] = [];
-      try { list = stored ? JSON.parse(stored) : []; } catch (e) {}
+      try {
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            list = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            Object.keys(parsed).forEach(slug => {
+              const item = parsed[slug];
+              if (item && item.episodes) {
+                const epKeys = Object.keys(item.episodes);
+                let latestEp: any = null;
+                epKeys.forEach(epKey => {
+                  const ep = item.episodes[epKey];
+                  if (!latestEp || new Date(ep.updatedAt).getTime() > new Date(latestEp.updatedAt).getTime()) {
+                    latestEp = ep;
+                  }
+                });
+                if (latestEp) {
+                  list.push({
+                    slug: slug,
+                    title: item.title,
+                    posterUrl: item.posterUrl,
+                    episodeSlug: latestEp.episodeSlug,
+                    episodeName: latestEp.episodeName,
+                    currentTime: latestEp.currentTime,
+                    duration: latestEp.duration,
+                    serverIndex: latestEp.serverIndex,
+                    updatedAt: latestEp.updatedAt || item.updatedAt,
+                    synced: latestEp.synced
+                  });
+                }
+              }
+            });
+          }
+        }
+      } catch (e) {}
       return list;
     };
 
     // Helper: Save thistory to localStorage
     const saveLocalHistory = (list: any[]) => {
-      localStorage.setItem('thistory', JSON.stringify(list));
+      const dict: Record<string, any> = {};
+      list.forEach(item => {
+        if (item && item.slug) {
+          dict[item.slug] = {
+            title: item.title,
+            posterUrl: item.posterUrl,
+            updatedAt: item.updatedAt,
+            episodes: {
+              [item.episodeSlug || 'default']: {
+                episodeSlug: item.episodeSlug,
+                episodeName: item.episodeName,
+                currentTime: item.currentTime,
+                duration: item.duration,
+                serverIndex: item.serverIndex,
+                serverName: item.serverName || 'Server VIP',
+                updatedAt: item.updatedAt,
+                synced: item.synced
+              }
+            }
+          };
+        }
+      });
+      localStorage.setItem('thistory', JSON.stringify(dict));
     };
 
     // Helper: Post watch history record to server
