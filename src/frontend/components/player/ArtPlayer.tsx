@@ -312,7 +312,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               const hls = new HlsClass({
                 // Obfuscate network requests to make extensions harder to sniff
                 xhrSetup: (xhr: XMLHttpRequest, xhrUrl: string) => {
-                  xhr.setRequestHeader('X-Player-Token', btoa(Date.now().toString(36)));
+                  // Do not send custom headers to cross-origin CDN servers to prevent CORS preflight blocking
                 },
               });
               hls.loadSource(url);
