@@ -467,6 +467,13 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           return;
         }
 
+        // Always bypass decoy & zalo lock for checkout and upgrade payment pages
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/checkout') || currentPath.startsWith('/nang-cap') || currentPath.startsWith('/goi-dich-vu')) {
+          document.documentElement.classList.add('gate-passed');
+          return;
+        }
+
         if (decoyEnable === false) {
           document.documentElement.classList.add('gate-passed');
           return;
