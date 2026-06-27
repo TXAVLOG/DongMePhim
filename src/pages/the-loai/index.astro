@@ -1,22 +1,12 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro';
 import { MovieService } from '@services/MovieService';
+import { slugify } from '../../backend/utils/categoryHelper';
 
 const movies = await MovieService.getMovies();
-// Extract unique genres
-const uniqueGenres = [...new Set(movies.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
-
-// Simple slugify helper
-const slugify = (text: string) => {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[đĐ]/g, 'd')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-');
-};
+const standardGenres = ["Hành Động", "Tình Cảm", "Kinh Dị", "Hài Hước", "Viễn Tưởng", "Cổ Trang", "Hoạt Hình", "Tâm Lý", "Hình Sự", "Võ Thuật", "Học Đường", "Phiêu Lưu", "Thần Thoại", "Chiến Tranh", "Bí Ẩn", "Kịch Tính", "Trinh Thám", "Lồng Tiếng"];
+const dynamicGenres = movies.flatMap((m: any) => m.genres || []).filter(Boolean);
+const uniqueGenres = [...new Set([...standardGenres, ...dynamicGenres])] as string[];
 
 const genreGradients = [
   'from-pink-500/20 via-purple-500/20 to-indigo-500/10',
@@ -62,7 +52,7 @@ const genreGradients = [
       {uniqueGenres.map((genre, idx) => {
         const slug = slugify(genre);
         const gradient = genreGradients[idx % genreGradients.length];
-        const genreMovies = movies.filter((m: any) => m.genres?.includes(genre));
+        const genreMovies = movies.filter((m: any) => (Array.isArray(m.genres) && m.genres.some((g: any) => slugify(g) === slug)) || slugify(m.category || '') === slug);
         return (
           <a href={`/the-loai/${slug}`} class={`group relative overflow-hidden rounded-2xl border border-glass-stroke p-6 bg-gradient-to-br ${gradient} hover:scale-[1.03] hover:border-primary/40 transition-all duration-300 shadow-xl cursor-pointer flex flex-col justify-between h-40`}>
             <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>

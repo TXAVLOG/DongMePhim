@@ -1,6 +1,7 @@
 import { supabase } from '@lib/supabase';
 import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
 import { seedMovies, mapKKPhimToMovieDetail, mapKKPhimSearchItemToMovie } from './LocalMovieProvider';
+import { slugify } from '../../utils/categoryHelper';
 
 export class SupabaseMovieProvider implements IMovieProvider {
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string, slugs?: string[] }): Promise<Movie[]> {
@@ -68,13 +69,17 @@ export class SupabaseMovieProvider implements IMovieProvider {
       // Lọc theo category
       if (params?.category) {
         const cat = params.category;
-        if (cat === 'Lồng Tiếng') {
-          result = result.filter(m => m.lang === 'Lồng Tiếng' || m.lang === 'Thuyết Minh');
+        const catSlug = slugify(cat);
+        if (cat === 'Lồng Tiếng' || catSlug === 'long-tieng') {
+          result = result.filter(m => m.lang === 'Lồng Tiếng' || m.lang === 'Thuyết Minh' || (m.lang && m.lang.toLowerCase().includes('lồng tiếng')));
         } else {
-          result = result.filter(m =>
-            m.category === cat ||
-            (Array.isArray(m.genres) && m.genres.includes(cat))
-          );
+          result = result.filter(m => {
+            if (m.category === cat || (m.category && slugify(m.category) === catSlug)) return true;
+            if (Array.isArray(m.genres)) {
+              return m.genres.some((g: string) => g === cat || slugify(g) === catSlug);
+            }
+            return false;
+          });
         }
       }
 

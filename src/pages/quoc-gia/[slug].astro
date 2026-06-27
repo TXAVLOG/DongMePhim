@@ -3,20 +3,10 @@ import MainLayout from '@layouts/MainLayout.astro';
 import Card from '@components/ui/Card.astro';
 import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
+import { getNameBySlug } from '../../backend/utils/categoryHelper';
 
 const { slug } = Astro.params;
-
-// Simple country mapping
-const countryMap: Record<string, string> = {
-  'han-quoc': 'Hàn Quốc',
-  'au-my': 'Âu Mỹ',
-  'trung-quoc': 'Trung Quốc',
-  'tvb': 'TVB',
-  'hong-kong': 'TVB',
-  'viet-nam': 'Việt Nam'
-};
-
-const countryName = slug ? (countryMap[slug] || slug.charAt(0).toUpperCase() + slug.slice(1).replace('-', ' ')) : '';
+const countryName = slug ? getNameBySlug(slug) : '';
 const movies = countryName ? await MovieService.getMovies({ category: countryName }) : [];
 const settings = await SettingService.getSettings();
 ---
@@ -143,12 +133,22 @@ const settings = await SettingService.getSettings();
         return true;
       });
 
+      const slugifyClient = function(text) {
+        if (!text) return '';
+        return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+      };
+      const catSlug = slugifyClient(categoryName);
+
       // Filter by the current countryName
       uniqueMovies = uniqueMovies.filter(m => {
-        if (categoryName === 'Lồng Tiếng') {
+        if (categoryName === 'Lồng Tiếng' || catSlug === 'long-tieng') {
           return m.lang === 'Lồng Tiếng' || m.lang === 'Thuyết Minh' || (m.lang && m.lang.toLowerCase().includes('lồng tiếng')) || (m.lang && m.lang.toLowerCase().includes('thuyết minh')) || m.category === 'Lồng Tiếng';
         }
-        return m.category === categoryName || (Array.isArray(m.genres) && m.genres.includes(categoryName));
+        if (m.category === categoryName || (m.category && slugifyClient(m.category) === catSlug)) return true;
+        if (Array.isArray(m.genres)) {
+          return m.genres.some(g => g === categoryName || slugifyClient(g) === catSlug);
+        }
+        return false;
       });
 
       // Sort strictly by updatedAt descending (newest updates first)
