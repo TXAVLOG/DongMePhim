@@ -133,6 +133,8 @@ export const POST: APIRoute = async ({ request }) => {
       if (prize.type === 'vip' && winnerUsername) {
         try {
           const { supabase } = await import('@lib/supabase');
+          const dbPackages = (settings as any).packages || [];
+          
           const { data: user } = await supabase
             .from('users')
             .select('*')
@@ -140,35 +142,32 @@ export const POST: APIRoute = async ({ request }) => {
             .maybeSingle();
 
           if (user) {
-            const currentPkg = user.package || 'free';
-            const wonPkg = prize.packageId || prize.name || 'vip';
+            const currentPkgId = user.package || 'free';
+            const wonPkgId = prize.packageId || (dbPackages.find((p: any) => p.title === prize.name || p.name === prize.name)?.id) || 'TXA_P2_28062026_0005';
             
-            const getRank = (pkg: string) => {
-              const p = pkg.toLowerCase();
-              if (p.includes('ultra') || p.includes('4k') || p.includes('pro')) return 3;
-              if (p.includes('vip') || p.includes('premium') || p.includes('standard')) return 2;
-              if (p.includes('basic') || p.includes('silver')) return 1;
-              return 0; // free / unknown
-            };
+            if (wonPkgId !== 'free' && wonPkgId !== 'bypass_zalo') {
+              const currentPkgObj = dbPackages.find((p: any) => p.id === currentPkgId) || { price: 0 };
+              const wonPkgObj = dbPackages.find((p: any) => p.id === wonPkgId) || { price: 0 };
 
-            const currentRank = getRank(currentPkg);
-            const wonRank = getRank(wonPkg);
+              const currentPrice = currentPkgObj.price || 0;
+              const wonPrice = wonPkgObj.price || 0;
 
-            const now = new Date();
-            const currentExpiry = user.expiry_date ? new Date(user.expiry_date) : now;
-            const baseTime = (currentExpiry > now) ? currentExpiry : now;
+              const now = new Date();
+              const currentExpiry = user.expiry_date ? new Date(user.expiry_date) : now;
+              const baseTime = (currentExpiry > now) ? currentExpiry : now;
 
-            if (wonRank === currentRank || currentPkg === wonPkg) {
-              // Same package: add 30 days
-              const newExpiry = new Date(baseTime.getTime() + 30 * 24 * 3600 * 1000).toISOString();
-              await supabase.from('users').update({ expiry_date: newExpiry, status: 'active' }).eq('username', winnerUsername);
-            } else if (wonRank > currentRank) {
-              // Higher package: charge immediately
-              const newExpiry = new Date(now.getTime() + 30 * 24 * 3600 * 1000).toISOString();
-              await supabase.from('users').update({ package: wonPkg, expiry_date: newExpiry, status: 'active' }).eq('username', winnerUsername);
-            } else {
-              // Lower package: queue for next billing cycle
-              await supabase.from('users').update({ queued_package: wonPkg }).eq('username', winnerUsername);
+              if (currentPkgId === wonPkgId || currentPrice === wonPrice) {
+                // Same package: add 30 days
+                const newExpiry = new Date(baseTime.getTime() + 30 * 24 * 3600 * 1000).toISOString();
+                await supabase.from('users').update({ expiry_date: newExpiry, status: 'active' }).eq('username', winnerUsername);
+              } else if (wonPrice > currentPrice) {
+                // Higher package: charge/upgrade immediately
+                const newExpiry = new Date(now.getTime() + 30 * 24 * 3600 * 1000).toISOString();
+                await supabase.from('users').update({ package: wonPkgId, expiry_date: newExpiry, status: 'active' }).eq('username', winnerUsername);
+              } else {
+                // Lower package: queue for next billing cycle
+                await supabase.from('users').update({ queued_package: wonPkgId }).eq('username', winnerUsername);
+              }
             }
           }
         } catch (vipErr) {

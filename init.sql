@@ -231,7 +231,7 @@ INSERT INTO public.settings (key, value) VALUES (
       }
     },
     {
-      "id": "standard",
+      "id": "TXA_P1_28062026_0004",
       "title": "Gói Tiêu Chuẩn (Standard)",
       "price": 39000,
       "annual_price": 399000,
@@ -263,7 +263,7 @@ INSERT INTO public.settings (key, value) VALUES (
       }
     },
     {
-      "id": "vip",
+      "id": "TXA_P2_28062026_0005",
       "title": "Gói VIP",
       "price": 69000,
       "annual_price": 699000,
