@@ -584,51 +584,120 @@ packages.forEach((pkg: any) => {
           }
       }
 
-      // Initialize global tooltip logic
-      let tooltipEl = document.getElementById('global-tooltip');
-      if (!tooltipEl) {
-        tooltipEl = document.createElement('div');
-        tooltipEl.id = 'global-tooltip';
-        tooltipEl.className = 'fixed pointer-events-none z-[9999] opacity-0 scale-95 transition-all duration-150 ease-out text-[11px] font-medium px-3 py-1.5 rounded-lg border border-white/10 bg-black/85 backdrop-blur-md text-white shadow-2xl';
-        document.body.appendChild(tooltipEl);
-      }
-
-      // Listen on document to handle client routing updates dynamically
-      const handleMouseOver = (e) => {
-        const target = e.target.closest('[data-txatooltip]');
-        if (target) {
-          const text = target.getAttribute('data-txatooltip');
-          tooltipEl.textContent = text;
-          tooltipEl.classList.remove('opacity-0', 'scale-95');
-          tooltipEl.classList.add('opacity-100', 'scale-100');
+      // ══════════════════════════════════════════════════════════════
+      // Ultimate Liquid Tooltip System (TXA Tooltip V2) - dongphim-koyeb standard
+      // ══════════════════════════════════════════════════════════════
+      (function() {
+        let tooltip = document.getElementById('txa-tooltip');
+        if (!tooltip) {
+          tooltip = document.createElement('div');
+          tooltip.id = 'txa-tooltip';
+          tooltip.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            z-index: 2147483647;
+            padding: 10px 16px;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 20px rgba(99, 102, 241, 0.2);
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.08s linear, top 0.08s linear;
+            white-space: normal;
+            max-width: 320px;
+            line-height: 1.6;
+            text-align: left;
+            word-break: break-word;
+            font-family: system-ui, -apple-system, sans-serif;
+          `;
+          document.body.appendChild(tooltip);
         }
-      };
 
-      const handleMouseMove = (e) => {
-        const target = e.target.closest('[data-txatooltip]');
-        if (target && tooltipEl) {
-          const x = e.clientX + 10;
-          const y = e.clientY + 15;
-          tooltipEl.style.left = `${x}px`;
-          tooltipEl.style.top = `${y}px`;
+        window.initTxaTooltips = function() {
+          if (!document.getElementById('txa-tooltip')) {
+            document.body.appendChild(tooltip);
+          }
+        };
+
+        let currentTarget = null;
+        let hideTimeout = null;
+
+        function updatePosition(e) {
+          if (!tooltip || tooltip.style.opacity === '0') return;
+          const offset = 18;
+          const rect = tooltip.getBoundingClientRect();
+          let x = e.clientX - (rect.width / 2);
+          let y = e.clientY - rect.height - offset;
+          const padding = 15;
+          if (x < padding) x = padding;
+          if (x + rect.width + padding > window.innerWidth) {
+            x = window.innerWidth - rect.width - padding;
+          }
+          if (y < padding) {
+            y = e.clientY + offset;
+          }
+          tooltip.style.left = x + 'px';
+          tooltip.style.top = y + 'px';
         }
-      };
 
-      const handleMouseOut = (e) => {
-        const target = e.target.closest('[data-txatooltip]');
-        if (target) {
-          tooltipEl.classList.add('opacity-0', 'scale-95');
-          tooltipEl.classList.remove('opacity-100', 'scale-100');
+        function showTooltip(text, target, e) {
+          if (!text) return;
+          clearTimeout(hideTimeout);
+          tooltip.innerHTML = `<div class="txa-tooltip-content">${text}</div>`;
+          tooltip.style.textAlign = text.length > 40 ? 'left' : 'center';
+          tooltip.style.opacity = '1';
+          tooltip.style.transform = 'scale(1) translateY(0)';
+          currentTarget = target;
+          if (e) updatePosition(e);
         }
-      };
 
-      document.removeEventListener('mouseover', handleMouseOver);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseout', handleMouseOut);
+        function hideTooltip() {
+          hideTimeout = setTimeout(() => {
+            tooltip.style.opacity = '0';
+            tooltip.style.transform = 'scale(0.95) translateY(10px)';
+            currentTarget = null;
+          }, 100);
+        }
 
-      document.addEventListener('mouseover', handleMouseOver);
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseout', handleMouseOut);
+        if (!window.__txa_tooltip_listeners_attached) {
+          window.__txa_tooltip_listeners_attached = true;
+          document.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('[data-txa-tooltip], [data-txatooltip], .txatooltip, .txaxtooltip');
+            if (target) {
+              const text = target.getAttribute('data-txa-tooltip') || target.getAttribute('data-txatooltip') || target.title;
+              if (text) {
+                if (target.title) {
+                  target.setAttribute('data-original-title', target.title);
+                  target.title = '';
+                }
+                showTooltip(text, target, e);
+              }
+            }
+          });
+
+          document.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('[data-txa-tooltip], [data-txatooltip], .txatooltip, .txaxtooltip');
+            if (target) {
+              const originalTitle = target.getAttribute('data-original-title');
+              if (originalTitle) {
+                target.title = originalTitle;
+                target.removeAttribute('data-original-title');
+              }
+              hideTooltip();
+            }
+          });
+
+          document.addEventListener('mousemove', (e) => {
+            if (currentTarget) updatePosition(e);
+          });
+        }
+      })();
       
       // Global Modal Controller
       window.txamodal = {

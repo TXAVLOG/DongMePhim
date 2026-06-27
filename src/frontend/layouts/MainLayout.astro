@@ -2336,6 +2336,121 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
       };
 
       // ══════════════════════════════════════════════════════════════
+      // Ultimate Liquid Tooltip System (TXA Tooltip V2) - dongphim-koyeb standard
+      // ══════════════════════════════════════════════════════════════
+      (function() {
+        let tooltip = document.getElementById('txa-tooltip');
+        if (!tooltip) {
+          tooltip = document.createElement('div');
+          tooltip.id = 'txa-tooltip';
+          tooltip.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            z-index: 2147483647;
+            padding: 10px 16px;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 20px rgba(99, 102, 241, 0.2);
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.08s linear, top 0.08s linear;
+            white-space: normal;
+            max-width: 320px;
+            line-height: 1.6;
+            text-align: left;
+            word-break: break-word;
+            font-family: system-ui, -apple-system, sans-serif;
+          `;
+          document.body.appendChild(tooltip);
+        }
+
+        window.initTxaTooltips = function() {
+          if (!document.getElementById('txa-tooltip')) {
+            document.body.appendChild(tooltip);
+          }
+        };
+
+        let currentTarget = null;
+        let hideTimeout = null;
+
+        function updatePosition(e) {
+          if (!tooltip || tooltip.style.opacity === '0') return;
+          const offset = 18;
+          const rect = tooltip.getBoundingClientRect();
+          let x = e.clientX - (rect.width / 2);
+          let y = e.clientY - rect.height - offset;
+          const padding = 15;
+          if (x < padding) x = padding;
+          if (x + rect.width + padding > window.innerWidth) {
+            x = window.innerWidth - rect.width - padding;
+          }
+          if (y < padding) {
+            y = e.clientY + offset;
+          }
+          tooltip.style.left = x + 'px';
+          tooltip.style.top = y + 'px';
+        }
+
+        function showTooltip(text, target, e) {
+          if (!text) return;
+          clearTimeout(hideTimeout);
+          tooltip.innerHTML = `<div class="txa-tooltip-content">${text}</div>`;
+          tooltip.style.textAlign = text.length > 40 ? 'left' : 'center';
+          tooltip.style.opacity = '1';
+          tooltip.style.transform = 'scale(1) translateY(0)';
+          currentTarget = target;
+          if (e) updatePosition(e);
+        }
+
+        function hideTooltip() {
+          hideTimeout = setTimeout(() => {
+            tooltip.style.opacity = '0';
+            tooltip.style.transform = 'scale(0.95) translateY(10px)';
+            currentTarget = null;
+          }, 100);
+        }
+
+        if (!window.__txa_tooltip_listeners_attached_main) {
+          window.__txa_tooltip_listeners_attached_main = true;
+          document.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('[data-txa-tooltip], [data-txatooltip], .txatooltip, .txaxtooltip');
+            if (target) {
+              const text = target.getAttribute('data-txa-tooltip') || target.getAttribute('data-txatooltip') || target.title;
+              if (text) {
+                if (target.title) {
+                  target.setAttribute('data-original-title', target.title);
+                  target.title = '';
+                }
+                showTooltip(text, target, e);
+              }
+            }
+          });
+
+          document.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('[data-txa-tooltip], [data-txatooltip], .txatooltip, .txaxtooltip');
+            if (target) {
+              const originalTitle = target.getAttribute('data-original-title');
+              if (originalTitle) {
+                target.title = originalTitle;
+                target.removeAttribute('data-original-title');
+              }
+              hideTooltip();
+            }
+          });
+
+          document.addEventListener('mousemove', (e) => {
+            if (currentTarget) updatePosition(e);
+          });
+        }
+      })();
+
+      // ══════════════════════════════════════════════════════════════
       // Global Toast Manager (Stackable, supports calling via Console/JS)
       // ══════════════════════════════════════════════════════════════
       (function() {

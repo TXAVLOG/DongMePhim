@@ -63,8 +63,13 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         }
 
         tbody.innerHTML = keys.map(k => {
-          const isExpired = new Date(k.expiry_date) < new Date();
+          const expDate = new Date(k.expiry_date);
+          const now = new Date();
+          const diffMs = expDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffMs / (1000 * 3600 * 24));
+          const isExpired = diffMs <= 0;
           const isRevoked = k.status === 'revoked';
+
           let statusBadge = `<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-bold text-[10px]">Hoạt động</span>`;
           if (isRevoked) {
             statusBadge = `<span class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full font-bold text-[10px]">Đã thu hồi</span>`;
@@ -72,7 +77,18 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             statusBadge = `<span class="px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full font-bold text-[10px]">Hết hạn</span>`;
           }
 
-          const expStr = new Date(k.expiry_date).toLocaleDateString('vi-VN');
+          let remainingText = '';
+          if (isExpired) {
+            remainingText = '<span class="text-rose-400 font-bold">Hết hạn</span>';
+          } else if (diffDays <= 1) {
+            remainingText = '<span class="text-amber-400 font-bold">Hết hạn hôm nay</span>';
+          } else {
+            remainingText = `<span class="text-emerald-400 font-bold">Còn ${diffDays} ngày</span>`;
+          }
+
+          const pad = n => String(n).padStart(2, '0');
+          const fullDateTimeStr = `Hết hạn lúc: ${pad(expDate.getDate())}/${pad(expDate.getMonth() + 1)}/${expDate.getFullYear()} ${pad(expDate.getHours())}:${pad(expDate.getMinutes())}:${pad(expDate.getSeconds())}`;
+          const dateOnlyStr = expDate.toLocaleDateString('vi-VN');
           const devCount = k.used_count || 0;
           const devBadgeClass = devCount >= 15 ? 'bg-rose-500/20 text-rose-400' : 'bg-purple-500/20 text-purple-300';
 
@@ -89,14 +105,17 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 </span>
               </td>
               <td class="px-6 py-4 text-zinc-400">${k.email || '-'}</td>
-              <td class="px-6 py-4 text-zinc-300 font-medium">${expStr}</td>
+              <td class="px-6 py-4 cursor-help" data-txatooltip="${fullDateTimeStr}">
+                <div class="text-xs font-medium">${remainingText}</div>
+                <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${dateOnlyStr}</div>
+              </td>
               <td class="px-6 py-4">${statusBadge}</td>
               <td class="px-6 py-4 text-right space-x-2">
-                <button onclick="viewKeyLogs('${k.id}', '${k.key_code}')" class="p-2 bg-white/5 hover:bg-white/10 text-purple-300 rounded-lg transition-colors cursor-pointer border-none" title="Xem danh sách 15 thiết bị">
+                <button onclick="viewKeyLogs('${k.id}', '${k.key_code}')" class="p-2 bg-white/5 hover:bg-white/10 text-purple-300 rounded-lg transition-colors cursor-pointer border-none" data-txatooltip="Xem danh sách 15 thiết bị">
                   <span class="material-symbols-outlined text-base">devices</span>
                 </button>
                 ${!isRevoked ? `
-                  <button onclick="revokeKey('${k.id}', '${k.key_code}')" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer border-none" title="Thu hồi mã Key">
+                  <button onclick="revokeKey('${k.id}', '${k.key_code}')" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer border-none" data-txatooltip="Thu hồi mã Key">
                     <span class="material-symbols-outlined text-base">block</span>
                   </button>
                 ` : ''}
@@ -104,6 +123,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             </tr>
           `;
         }).join('');
+
+        if (window.initTxaTooltips) {
+          setTimeout(() => window.initTxaTooltips(), 100);
+        }
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-rose-400 font-body-main">Lỗi: ${e.message}</td></tr>`;
       }

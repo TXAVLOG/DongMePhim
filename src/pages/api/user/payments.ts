@@ -168,7 +168,20 @@ export const POST: APIRoute = async ({ request }) => {
         const { SmtpClient } = await import('@lib/api/smtpClient');
         const { getEmailTemplate } = await import('@templates/emails/emailReader');
 
-        const durationMonths = cycle === 'annual' ? 12 : 1;
+        let durationMonths = 1;
+        if (cycle === 'annual') {
+          durationMonths = 12;
+        } else if (cycle === '6months') {
+          durationMonths = 6;
+        } else if (cycle === '3months') {
+          durationMonths = 3;
+        } else if (cycle && cycle.startsWith('custom_')) {
+          const parts = cycle.split('_');
+          if (parts.length >= 2) {
+            durationMonths = parseInt(parts[1]) || 1;
+          }
+        }
+
         const keyRecord = await ZaloService.createBypassKey({
           packageTitle: packageTitle,
           durationMonths: durationMonths,
