@@ -304,13 +304,19 @@ packages.forEach((pkg: any) => {
 </head>
 <body class="bg-surface-deep text-on-surface font-body-main selection:bg-primary/30">
   {isAdmin ? (
-  <div class="flex min-h-screen">
+  <div class="flex min-h-screen relative overflow-x-hidden">
+    <!-- Mobile Backdrop Overlay -->
+    <div id="admin-sidebar-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[99] hidden lg:hidden transition-opacity duration-300 opacity-0"></div>
+
     <!-- SideNavBar -->
-    <aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest/80 backdrop-blur-2xl border-r border-glass-stroke hidden lg:flex flex-col py-8 z-50">
-      <div class="px-6 mb-8 flex items-center gap-3">
+    <aside id="admin-sidebar" class="fixed left-0 top-0 h-full w-72 lg:w-64 bg-surface-container-lowest/95 lg:bg-surface-container-lowest/80 backdrop-blur-2xl border-r border-glass-stroke flex flex-col py-8 z-[100] -translate-x-full lg:translate-x-0 transition-transform duration-300 shadow-2xl lg:shadow-none">
+      <div class="px-6 mb-6 flex items-center justify-between">
         <a href="/tphim" class="flex items-center gap-2" data-txatooltip="Về trang chủ">
           <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-9 w-auto dyn-logo-img" />
         </a>
+        <button id="admin-sidebar-close" type="button" class="lg:hidden p-1.5 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl border border-glass-stroke/30 flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
       </div>
       
       <!-- Profile Info -->
@@ -411,7 +417,20 @@ packages.forEach((pkg: any) => {
     </aside>
 
     <!-- Main Content Area -->
-    <main class="flex-1 lg:ml-64 p-6 md:p-10 w-full overflow-x-hidden min-h-screen flex flex-col">
+    <main class="flex-1 lg:ml-64 p-4 md:p-10 w-full overflow-x-hidden min-h-screen flex flex-col pb-24 lg:pb-10">
+      <!-- Mobile Top Bar -->
+      <div class="flex lg:hidden items-center justify-between p-3 mb-4 bg-surface-container-lowest/90 backdrop-blur-md border border-glass-stroke rounded-2xl">
+        <div class="flex items-center gap-3">
+          <button id="admin-menu-toggle" type="button" class="p-2 text-on-surface-variant hover:text-white bg-white/5 hover:bg-white/10 rounded-xl flex items-center justify-center border border-glass-stroke/40 cursor-pointer">
+            <span class="material-symbols-outlined text-2xl">menu</span>
+          </button>
+          <a href="/tphim" class="flex items-center gap-2">
+            <img src="/logo-icon.gif" alt="Logo" class="h-7 w-auto dyn-logo-img" />
+            <span class="font-bold text-xs text-white uppercase tracking-wider font-label-caps">{settings.general.site_name} Admin</span>
+          </a>
+        </div>
+      </div>
+
       <slot />
 
       <!-- Footer -->
@@ -429,23 +448,27 @@ packages.forEach((pkg: any) => {
       </footer>
     </main>
 
-    <!-- Mobile Navigation -->
-    <nav class="fixed bottom-0 left-0 w-full lg:hidden bg-surface-container-lowest/90 backdrop-blur-xl border-t border-glass-stroke py-3 px-6 flex justify-between items-center z-50">
-      <a class="flex flex-col items-center gap-1 text-primary" href="/admin">
-        <span class="material-symbols-outlined">dashboard</span>
-        <span class="text-[10px] font-label-caps">Home</span>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 w-full lg:hidden bg-surface-container-lowest/95 backdrop-blur-xl border-t border-glass-stroke py-2.5 px-4 flex justify-around items-center z-[90]">
+      <a class="flex flex-col items-center gap-0.5 text-primary" href="/admin">
+        <span class="material-symbols-outlined text-xl">dashboard</span>
+        <span class="text-[9px] font-label-caps font-bold">Tổng quan</span>
       </a>
-      <a class="flex flex-col items-center gap-1 text-on-surface-variant" href="/admin/phim">
-        <span class="material-symbols-outlined">movie</span>
-        <span class="text-[10px] font-label-caps">Movies</span>
+      <a class="flex flex-col items-center gap-0.5 text-on-surface-variant" href="/admin/phim">
+        <span class="material-symbols-outlined text-xl">movie</span>
+        <span class="text-[9px] font-label-caps font-bold">Phim</span>
       </a>
-      <a class="flex flex-col items-center gap-1 text-on-surface-variant" href="/admin/thanh-vien">
-        <span class="material-symbols-outlined">group</span>
-        <span class="text-[10px] font-label-caps">Users</span>
+      <button id="mobile-menu-btn" type="button" class="flex flex-col items-center gap-0.5 text-primary bg-transparent border-none cursor-pointer">
+        <span class="material-symbols-outlined text-2xl text-primary animate-pulse">menu</span>
+        <span class="text-[9px] font-label-caps text-primary font-black uppercase tracking-wider">Danh mục</span>
+      </button>
+      <a class="flex flex-col items-center gap-0.5 text-on-surface-variant" href="/admin/thanh-vien">
+        <span class="material-symbols-outlined text-xl">group</span>
+        <span class="text-[9px] font-label-caps font-bold">Thành viên</span>
       </a>
-      <a class="flex flex-col items-center gap-1 text-on-surface-variant" href="/admin/cai-dat">
-        <span class="material-symbols-outlined">settings</span>
-        <span class="text-[10px] font-label-caps">Config</span>
+      <a class="flex flex-col items-center gap-0.5 text-on-surface-variant" href="/admin/cai-dat">
+        <span class="material-symbols-outlined text-xl">settings</span>
+        <span class="text-[9px] font-label-caps font-bold">Cài đặt</span>
       </a>
     </nav>
   </div>
@@ -471,6 +494,41 @@ packages.forEach((pkg: any) => {
   <script is:inline define:vars={{ providerType }}>
     // Highlight active sidebar item based on current URL path
     function initAdminLayout() {
+      // Setup Mobile Sidebar Drawer
+      const sidebar = document.getElementById('admin-sidebar');
+      const backdrop = document.getElementById('admin-sidebar-backdrop');
+      const toggleBtn = document.getElementById('admin-menu-toggle');
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+      const closeBtn = document.getElementById('admin-sidebar-close');
+
+      const openSidebar = () => {
+        if (!sidebar || !backdrop) return;
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+        setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+      };
+
+      const closeSidebar = () => {
+        if (!sidebar || !backdrop) return;
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('opacity-0');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+      };
+
+      if (toggleBtn) toggleBtn.onclick = openSidebar;
+      if (mobileMenuBtn) mobileMenuBtn.onclick = openSidebar;
+      if (closeBtn) closeBtn.onclick = closeSidebar;
+      if (backdrop) backdrop.onclick = closeSidebar;
+
+      const drawerLinks = sidebar ? sidebar.querySelectorAll('a') : [];
+      drawerLinks.forEach(link => {
+        link.onclick = () => {
+          if (window.innerWidth < 1024) {
+            closeSidebar();
+          }
+        };
+      });
+
       // Toggle Email logs link based on SMTP configuration
       const emailLink = document.getElementById('nav-email');
       if (emailLink) {

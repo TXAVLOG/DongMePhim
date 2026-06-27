@@ -1800,7 +1800,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 discoverUrl += `&genre=${genre}`;
               } else if (filterType === 'country' && !isTMDBCountry) {
                 // Try to map country name to code
-                const countryMap: any = {
+                const countryMap = {
                   'trung-quoc': 'CN',
                   'han-quoc': 'KR',
                   'nhat-ban': 'JP',
@@ -1812,7 +1812,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 discoverUrl += `&country=${countryCode}`;
               } else if (filterType === 'genre' && !isTMDBGenre) {
                 // Try to map genre name to ID
-                const genreMap: any = {
+                const genreMap = {
                   'hanh-dong': '28',
                   'phieu-luu': '12',
                   'tinh-cam': '18',
@@ -1829,7 +1829,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
               const data = await res.json();
               if (data.status === 'success' && data.data && Array.isArray(data.data.items)) {
-                data.data.items.forEach((item: any) => {
+                data.data.items.forEach((item) => {
                   if (item.slug) {
                     slugs.push(item.slug);
                     // Store TMDB info in cart for later crawling

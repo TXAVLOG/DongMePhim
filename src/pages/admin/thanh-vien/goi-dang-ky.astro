@@ -454,7 +454,7 @@ const groupedPackages = packages.map((pkg: any) => {
 
             // Resolve package id from title
             const allPkgs = loadedSettings.packages || [];
-            const matchedPkg = allPkgs.find((p: any) => p.title === tx.packageTitle) || allPkgs.find((p: any) => p.id === tx.packageTitle) || allPkgs.find((p: any) => p.id === 'free');
+            const matchedPkg = allPkgs.find((p) => p.title === tx.packageTitle) || allPkgs.find((p) => p.id === tx.packageTitle) || allPkgs.find((p) => p.id === 'free');
             const pkgId = matchedPkg?.id || 'free';
 
             // Update user package
