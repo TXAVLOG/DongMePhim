@@ -151,6 +151,7 @@ export interface PlanPermission {
   hide_watermark: boolean;
   vip_badge: boolean;
   bypass_ads: boolean;
+  ads_only_in_player?: boolean;
 }
 
 export interface SubscriptionPlan {

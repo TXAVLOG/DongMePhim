@@ -308,9 +308,11 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             const userPackage = user.package || 'Free';
             const siteSettings = window.TXA_SITE_SETTINGS || {};
             const packages = siteSettings.packages || [];
-            const userPkg = packages.find(p => p.title === userPackage);
-            if (userPkg && userPkg.permissions && userPkg.permissions.bypass_ads) {
-              return true;
+            const userPkg = packages.find(p => p.title === userPackage || p.id === userPackage || p.id === (userPackage.toLowerCase()));
+            if (userPkg && userPkg.permissions) {
+              if (userPkg.permissions.bypass_ads || userPkg.permissions.ads_only_in_player) {
+                return true;
+              }
             }
           } catch(e) {}
           return false;
@@ -404,7 +406,10 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
     <!-- ArtPlayer Premium CSS (CDN) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer@5.4.0/dist/artplayer.css" />
 
-    {settings.ads?.google_ads_enable && settings.ads?.google_ads_client_id && (
+    {settings.ads?.google_ads_enable && settings.ads?.google_ads_client_id && !currentPath.startsWith('/xem/') && (
+      <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${settings.ads.google_ads_client_id}`} crossorigin="anonymous"></script>
+    )}
+    {settings.ads?.google_ads_enable && settings.ads?.google_ads_client_id && currentPath.startsWith('/xem/') && !settings.ads?.pre_roll_enable && (
       <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${settings.ads.google_ads_client_id}`} crossorigin="anonymous"></script>
     )}
 

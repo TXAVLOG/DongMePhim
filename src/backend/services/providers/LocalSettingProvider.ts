@@ -177,6 +177,38 @@ export const seedSettings: SiteSettings = {
       }
     },
     {
+      id: "standard",
+      title: "Gói Tiêu Chuẩn (Standard)",
+      price: 39000,
+      annual_price: 399000,
+      cycle: "monthly",
+      style_type: "custom_color",
+      custom_color: "#3b82f6",
+      features: [
+        "Không có quảng cáo pop-under / nhảy trang",
+        "Chỉ có quảng cáo trong trình phát khi xem",
+        "Xem chất lượng HD/FHD nét mượt",
+        "Hỗ trợ các server Vietsub, Thuyết Minh & Lồng Tiếng"
+      ],
+      permissions: {
+        max_resolution: "FHD",
+        allowed_servers: [
+          "#Hà Nội (Vietsub)",
+          "#Hà Nội (Thuyết Minh)",
+          "#Hà Nội (Lồng Tiếng)",
+          "Vietsub",
+          "Thuyết Minh",
+          "Lồng Tiếng"
+        ],
+        max_playlists: 50,
+        watch_together: false,
+        hide_watermark: false,
+        vip_badge: false,
+        bypass_ads: false,
+        ads_only_in_player: true
+      }
+    },
+    {
       id: "vip",
       title: "Gói VIP",
       price: 69000,
