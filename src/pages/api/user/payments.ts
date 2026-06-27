@@ -30,6 +30,7 @@ export const GET: APIRoute = async ({ request, url }) => {
         method: log.method,
         status: log.status,
         receiptImg: log.receipt_img || '',
+        note: log.note || log.client_info || '',
         date: log.created_at
       };
       return apiResponse(mappedLog, 'success', '', 200, request);
@@ -57,6 +58,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       method: l.method,
       status: l.status,
       receiptImg: l.receipt_img || '',
+      note: l.note || l.client_info || '',
       date: l.created_at
     }));
 
@@ -70,7 +72,8 @@ export const GET: APIRoute = async ({ request, url }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = (await request.json()) as any;
-    const { txid, username, email, packageTitle, price, cycle, method, status, receiptImg } = body;
+    const { txid, username, email, packageTitle, price, cycle, method, status, receiptImg, note, clientInfo } = body;
+    const clientNote = note || clientInfo || null;
 
     if (!txid || !username || !packageTitle) {
       return apiResponse(null, 'error', 'Missing txid, username or packageTitle', 400, request);
@@ -143,20 +146,25 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    const upsertPayload: any = {
+      txid,
+      username,
+      email: email || null,
+      package_title: packageTitle,
+      price: Number(price) || 0,
+      cycle: cycle || 'monthly',
+      method: method || 'manual',
+      status: status || 'pending',
+      receipt_img: finalReceiptImg || null,
+      updated_at: new Date().toISOString()
+    };
+    if (clientNote) {
+      upsertPayload.note = clientNote;
+    }
+
     const { error } = await supabase
       .from('txa_payment_logs')
-      .upsert({
-        txid,
-        username,
-        email: email || null,
-        package_title: packageTitle,
-        price: Number(price) || 0,
-        cycle: cycle || 'monthly',
-        method: method || 'manual',
-        status: status || 'pending',
-        receipt_img: finalReceiptImg || null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'txid' });
+      .upsert(upsertPayload, { onConflict: 'txid' });
 
     if (error) throw error;
 
@@ -186,6 +194,7 @@ export const POST: APIRoute = async ({ request }) => {
           packageTitle: packageTitle,
           durationMonths: durationMonths,
           email: email || null,
+          note: clientNote || null,
           maxDevices: 15
         });
 

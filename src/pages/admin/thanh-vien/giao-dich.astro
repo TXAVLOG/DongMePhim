@@ -160,7 +160,10 @@ const settings = await SettingService.getSettings();
           <tr class="hover:bg-white/5 transition-colors">
             <td class="px-8 py-4 font-mono text-zinc-400">${item.txid}</td>
             <td class="px-8 py-4 font-semibold text-white">${item.username}</td>
-            <td class="px-8 py-4 text-zinc-300 font-medium">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
+            <td class="px-8 py-4 text-zinc-300 font-medium">
+              <div>${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</div>
+              ${item.note ? `<div class="text-[10px] text-purple-300 font-mono mt-0.5 truncate max-w-[220px] cursor-help" data-txatooltip="${item.note}">📍 ${item.note}</div>` : ''}
+            </td>
             <td class="px-8 py-4 text-zinc-200 font-bold">${formattedPrice}</td>
             <td class="px-8 py-4 text-zinc-400 font-bold">${methodLabel}</td>
             <td class="px-8 py-4 text-zinc-400">${dateStr}</td>
@@ -173,6 +176,9 @@ const settings = await SettingService.getSettings();
 
       if (showCountText) {
         showCountText.textContent = `HIỂN THỊ ${list.length} TRÊN TỔNG SỐ ${allLogs.length} GIAO DỊCH`;
+      }
+      if (window.initTxaTooltips) {
+        setTimeout(() => window.initTxaTooltips(), 100);
       }
     }
 

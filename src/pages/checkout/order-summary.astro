@@ -332,16 +332,38 @@ import MainLayout from '@layouts/MainLayout.astro';
         formattedEl.textContent = `${timeStr}${discStr}`;
       }
 
+      const rawOriginalMonthlyPrice = selectedPackage.price;
+      const rawOriginalTotal = rawOriginalMonthlyPrice * numMonths;
+      const rawOriginalSubtotal = Math.round(rawOriginalTotal / (1 + vatRate / 100));
+
       let calcTotal = Math.round(baseMonthlyPrice * numMonths * (1 - discountRate));
 
       totalAmount = calcTotal;
       subtotal = Math.round(totalAmount / (1 + vatRate / 100));
       vatAmount = totalAmount - subtotal;
 
-      document.getElementById('summary-subtotal-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(subtotal);
+      const fmt = num => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
+
+      const subtotalEl = document.getElementById('summary-subtotal-val');
+      if (subtotalEl) {
+        if (rawOriginalSubtotal > subtotal) {
+          subtotalEl.innerHTML = `<span class="line-through text-zinc-500 mr-2 font-normal">${fmt(rawOriginalSubtotal)}</span><span class="text-white font-semibold">${fmt(subtotal)}</span>`;
+        } else {
+          subtotalEl.innerHTML = `<span class="font-semibold text-white">${fmt(subtotal)}</span>`;
+        }
+      }
+
       document.getElementById('summary-vat-badge').textContent = `VAT ${vatRate}%`;
-      document.getElementById('summary-vat-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(vatAmount);
-      document.getElementById('summary-total-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount);
+      document.getElementById('summary-vat-val').textContent = fmt(vatAmount);
+
+      const totalEl = document.getElementById('summary-total-val');
+      if (totalEl) {
+        if (rawOriginalTotal > totalAmount) {
+          totalEl.innerHTML = `<span class="line-through text-zinc-500 text-sm font-semibold mr-2 font-mono">${fmt(rawOriginalTotal)}</span><span class="text-xl font-black text-primary font-mono">${fmt(totalAmount)}</span>`;
+        } else {
+          totalEl.innerHTML = `<span class="text-xl font-black text-primary font-mono">${fmt(totalAmount)}</span>`;
+        }
+      }
     }
 
     function renderPaymentMethods(payments) {
@@ -409,6 +431,41 @@ import MainLayout from '@layouts/MainLayout.astro';
           recipientEmail = (window.APP_USER ? window.APP_USER.email : '') || '';
         }
 
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> <span>Đang xử lý...</span>';
+
+        // Fetch location & device info from ipinfo.io
+        let clientInfo = '';
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2200);
+          const ipRes = await fetch('https://ipinfo.io/json', { signal: controller.signal });
+          clearTimeout(timeoutId);
+          let ipData = null;
+          if (ipRes.ok) ipData = await ipRes.json();
+
+          const ua = navigator.userAgent;
+          let os = 'Unknown OS';
+          let browser = 'Unknown Browser';
+          if (ua.includes('Windows')) os = 'Windows';
+          else if (ua.includes('Macintosh') || ua.includes('Mac OS')) os = 'macOS';
+          else if (ua.includes('iPhone')) os = 'iPhone';
+          else if (ua.includes('iPad')) os = 'iPad';
+          else if (ua.includes('Android')) os = 'Android';
+          else if (ua.includes('Linux')) os = 'Linux';
+
+          if (ua.includes('Chrome') || ua.includes('CriOS')) browser = 'Chrome';
+          else if (ua.includes('Firefox')) browser = 'Firefox';
+          else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+          else if (ua.includes('Edge')) browser = 'Edge';
+          else if (ua.includes('Zalo')) browser = 'Zalo App';
+
+          clientInfo = `${browser} (${os}) [Màn: ${window.screen.width}x${window.screen.height}]`;
+          if (ipData) {
+            clientInfo += ` | IP: ${ipData.ip || ''} - ${ipData.city || ''}, ${ipData.region || ''} (${ipData.country || ''}) | Org: ${ipData.org || ''}`;
+          }
+        } catch (e) {}
+
         let finalCycleStr = selectedCycle;
         if (selectedCycle === 'custom') {
           const input = document.getElementById('custom-months-input');
@@ -419,13 +476,32 @@ import MainLayout from '@layouts/MainLayout.astro';
         const username = (window.APP_USER ? window.APP_USER.username : null) || 'guest_' + Math.random().toString(36).substring(2, 8);
         const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
 
+        // Save initial pending payment record with clientInfo
+        try {
+          await fetch('/api/user/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txid: txid,
+              username: username,
+              email: recipientEmail,
+              packageTitle: selectedPackage.title,
+              price: totalAmount,
+              cycle: finalCycleStr,
+              method: selectedMethod,
+              status: 'pending',
+              note: clientInfo
+            })
+          });
+        } catch (e) {}
+
+        const encodedInfo = encodeURIComponent(clientInfo);
         if (selectedMethod === 'manual') {
-          // Redirect to VietQR bank transfer page
-          window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}`;
+          window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else if (selectedMethod === 'sepay') {
-          window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}`;
+          window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else {
-          window.location.href = `/checkout/gateway?method=${selectedMethod}&txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}`;
+          window.location.href = `/checkout/gateway?method=${selectedMethod}&txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         }
       };
     }
