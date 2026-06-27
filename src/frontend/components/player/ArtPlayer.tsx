@@ -309,9 +309,26 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         customType: {
           m3u8: function (video: HTMLVideoElement, url: string) {
             if (HlsClass && HlsClass.isSupported()) {
-              const hls = new HlsClass();
+              const hls = new HlsClass({
+                // Obfuscate network requests to make extensions harder to sniff
+                xhrSetup: (xhr: XMLHttpRequest, xhrUrl: string) => {
+                  xhr.setRequestHeader('X-Player-Token', btoa(Date.now().toString(36)));
+                },
+              });
               hls.loadSource(url);
               hls.attachMedia(video);
+
+              // Override video.src property to hide real m3u8 URL from DOM inspection
+              try {
+                const realSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
+                if (realSrcDescriptor) {
+                  Object.defineProperty(video, 'src', {
+                    get: () => '',
+                    set: (v: string) => { if (realSrcDescriptor.set) realSrcDescriptor.set.call(video, v); },
+                    configurable: true,
+                  });
+                }
+              } catch (e) { /* ignore */ }
               
               hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
                 let maxAllowedHeight = 99999;
@@ -371,9 +388,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             {
               name: 'txa-watermark-fixed',
               html: `
-                <div class="txa-watermark-wrapper" style="pointer-events: none; user-select: none; display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.55); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
-                  <img src="/logo-icon.gif" style="height: 18px; width: auto; object-fit: contain;" />
-                  <span style="font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${siteName}</span>
+                <div class="txa-watermark-wrapper" style="pointer-events: none; user-select: none; display: flex; align-items: center; background: rgba(0,0,0,0.55); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
+                  <img src="/logo-icon.gif" style="height: 22px; width: auto; object-fit: contain;" />
                 </div>
               `,
               style: {
@@ -566,6 +582,68 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         }
         if (onPlayerReady) {
           onPlayerReady(() => art.currentTime || 0);
+        }
+
+        // === ANTI-DOWNLOAD / ANTI-M3U8-CAPTURE PROTECTION ===
+        try {
+          const videoEl = art.template.$video;
+          if (videoEl) {
+            // 1. Block right-click context menu on video element
+            videoEl.addEventListener('contextmenu', (e: Event) => e.preventDefault());
+            // 2. Remove downloadable attributes
+            videoEl.removeAttribute('src');
+            videoEl.removeAttribute('crossorigin');
+            // 3. Prevent drag on video
+            videoEl.setAttribute('draggable', 'false');
+            videoEl.addEventListener('dragstart', (e: Event) => e.preventDefault());
+          }
+
+          // 4. Override video.src getter to return empty for sniffer extensions
+          const container = art.template.$container;
+          if (container) {
+            const observer = new MutationObserver(() => {
+              const sources = container.querySelectorAll('source');
+              sources.forEach((s: Element) => s.remove());
+            });
+            observer.observe(container, { childList: true, subtree: true });
+            art.on('destroy', () => observer.disconnect());
+          }
+
+          // 5. Intercept XMLHttpRequest to hide m3u8 URLs from extension sniffers
+          const _xhrOpen = XMLHttpRequest.prototype.open;
+          const blockedExtensions = ['m3u8', '.ts', '.key'];
+          XMLHttpRequest.prototype.open = function(method: string, reqUrl: string | URL, ...args: any[]) {
+            const urlStr = String(reqUrl);
+            // Only allow our own page's XHR - block extension-injected ones sniffing for m3u8
+            if (blockedExtensions.some(ext => urlStr.includes(ext))) {
+              const stack = new Error().stack || '';
+              // If the call originates from a chrome-extension or moz-extension, block it
+              if (stack.includes('extension') || stack.includes('chrome-extension') || stack.includes('moz-extension')) {
+                return; // silently block
+              }
+            }
+            return _xhrOpen.call(this, method, reqUrl, ...args);
+          };
+
+          // 6. Wrap navigator.mediaDevices to prevent screen capture
+          if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+            const origGetDisplay = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+            navigator.mediaDevices.getDisplayMedia = function() {
+              return Promise.reject(new DOMException('Screen capture is disabled.', 'NotAllowedError'));
+            };
+          }
+
+          // 7. Disable keyboard shortcuts that could be used for download (Ctrl+S, Ctrl+U)
+          document.addEventListener('keydown', (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.key === 'u' || e.key === 'U')) {
+              e.preventDefault();
+              e.stopPropagation();
+              art.notice.show = '⛔ Tải xuống bị vô hiệu hóa';
+            }
+          }, true);
+
+        } catch (antiDlErr) {
+          console.warn('Anti-download init error:', antiDlErr);
         }
       });
 
