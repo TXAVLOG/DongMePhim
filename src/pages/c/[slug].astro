@@ -50,8 +50,8 @@ if (category) {
     movies = allMovies.filter((m: any) => 
       m.category === 'Thái Lan' || (Array.isArray(m.genres) && m.genres.some((g: string) => (g || '').toLowerCase().includes('thái')))
     );
-  } else if (category.slug === 'chau-tinh-tri') {
-    const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+    } else if (category.slug === 'chau-tinh-tri-xem-la-cuoi') {
+      const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
     movies = allMovies.filter((m: any) => 
       Array.isArray(m.actors) && m.actors.some((a: any) => {
         const lower = (typeof a === 'string' ? a : (a && a.name ? a.name : '')).toLowerCase();
