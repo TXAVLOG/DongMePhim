@@ -32,7 +32,7 @@ export async function apiResponse(
     if (request) {
         try {
             const url = new URL(request.url);
-            if (!url.pathname.startsWith('/api/app/') && !url.pathname.startsWith('/api/auth/zalo-')) {
+            if (!url.pathname.startsWith('/api/app/') && !url.pathname.startsWith('/api/auth/zalo-') && !url.pathname.startsWith('/api/payment') && !url.pathname.startsWith('/api/user/payments')) {
                 isApp = false;
             }
         } catch (e) {
