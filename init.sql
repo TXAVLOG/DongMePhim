@@ -558,8 +558,8 @@ CREATE POLICY "delete_txa_comments" ON public.txa_comments FOR DELETE TO authent
 CREATE POLICY "modify_txa_deleted_movies" ON public.txa_deleted_movies FOR ALL TO public USING (is_admin());
 CREATE POLICY "all_txa_movie_ratings" ON public.txa_movie_ratings FOR ALL TO public USING (true);
 CREATE POLICY "all_txa_payment_logs" ON public.txa_payment_logs FOR ALL TO public USING (true);
-CREATE POLICY "all_txa_zalo_bypass_keys" ON public.txa_zalo_bypass_keys FOR ALL TO public USING (true);
-CREATE POLICY "all_txa_zalo_key_logs" ON public.txa_zalo_key_logs FOR ALL TO public USING (true);
+CREATE POLICY "all_txa_zalo_bypass_keys" ON public.txa_zalo_bypass_keys FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "all_txa_zalo_key_logs" ON public.txa_zalo_key_logs FOR ALL TO public USING (true) WITH CHECK (true);
 
 -- Table: public.txa_promo_codes
 CREATE TABLE IF NOT EXISTS public.txa_promo_codes (
