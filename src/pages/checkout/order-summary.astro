@@ -78,7 +78,7 @@ import MainLayout from '@layouts/MainLayout.astro';
 
             <!-- Input state (shown by default) -->
             <div id="promo-input-container" class="flex gap-2">
-              <input type="text" id="promo-code-input" placeholder="Enter promo code" class="flex-1 bg-zinc-900 border border-glass-stroke focus:border-purple-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none uppercase font-mono font-bold" />
+              <input type="text" id="promo-code-input" placeholder="Ví dụ: TX-KM100" class="flex-1 bg-zinc-900 border border-glass-stroke focus:border-purple-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none uppercase font-mono font-bold" />
               <button type="button" id="btn-apply-promo" class="px-4 py-2.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border border-purple-500/30 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-1">
                 <span>Áp dụng</span>
               </button>
@@ -312,9 +312,14 @@ import MainLayout from '@layouts/MainLayout.astro';
 
       if (applyBtn && promoInput) {
         applyBtn.addEventListener('click', async () => {
-          const code = promoInput.value.trim().toUpperCase();
+          let code = promoInput.value.trim().toUpperCase();
           if (!code) {
             if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập mã giảm giá!', 'error');
+            return;
+          }
+
+          if (!code.startsWith('TX-')) {
+            if (window.showGlobalToast) window.showGlobalToast('Định dạng mã không hợp lệ! Mã giảm giá phải bắt đầu bằng TX- (Ví dụ: TX-KM100)', 'error');
             return;
           }
 
@@ -397,7 +402,11 @@ import MainLayout from '@layouts/MainLayout.astro';
       // Tự động điền và áp dụng mã giảm giá nếu người dùng đi qua link có tham số ?promo=... hoặc &promo=... (hoặc ?coupon=...)
       const urlPromo = urlParams.get('promo') || urlParams.get('coupon');
       if (urlPromo && promoInput && applyBtn) {
-        promoInput.value = urlPromo.trim().toUpperCase();
+        let cleanUrlPromo = urlPromo.trim().toUpperCase();
+        if (!cleanUrlPromo.startsWith('TX-')) {
+          cleanUrlPromo = 'TX-' + cleanUrlPromo;
+        }
+        promoInput.value = cleanUrlPromo;
         setTimeout(() => {
           applyBtn.click();
         }, 300);

@@ -153,7 +153,7 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
             <label class="block text-zinc-400 font-bold mb-1">Mã Giảm Giá (Tự động đính kèm tiền tố TX-)</label>
             <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden focus-within:border-purple-500">
               <span class="px-3.5 py-2.5 bg-purple-500/20 text-purple-300 font-mono font-black border-r border-zinc-800 select-none">TX-</span>
-              <input type="text" id="modal-promo-code" placeholder="TRIAN100, KHUYENMAI50K" class="w-full bg-transparent px-3.5 py-2.5 text-white focus:outline-none font-mono font-bold uppercase" />
+              <input type="text" id="modal-promo-code" placeholder="Để trống để tự động tạo mã" class="w-full bg-transparent px-3.5 py-2.5 text-white focus:outline-none font-mono font-bold uppercase text-xs" />
             </div>
           </div>
 
@@ -200,10 +200,9 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
           onConfirm: async () => {
             let rawInput = document.getElementById('modal-promo-code').value.trim().toUpperCase();
             if (!rawInput) {
-              if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền mã giảm giá!', 'error');
-              return;
-            }
-            if (rawInput.startsWith('TX-')) {
+              // Tự động tạo mã ngẫu nhiên 6 ký tự
+              rawInput = Math.random().toString(36).substring(2, 8).toUpperCase();
+            } else if (rawInput.startsWith('TX-')) {
               rawInput = rawInput.substring(3).trim();
             }
             const code = 'TX-' + rawInput;

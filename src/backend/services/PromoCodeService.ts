@@ -116,6 +116,10 @@ export const PromoCodeService = {
       return { success: false, message: 'Vui lòng nhập mã giảm giá!' };
     }
 
+    if (!cleanCode.startsWith('TX-')) {
+      return { success: false, message: 'Định dạng mã không hợp lệ! Mã giảm giá phải bắt đầu bằng tiền tố TX- (Ví dụ: TX-TRIAN100).' };
+    }
+
     // Lấy thông tin mã từ DB
     const { data: promo, error } = await supabase
       .from('txa_promo_codes')
