@@ -675,10 +675,34 @@ const serverSettings = await SettingService.getSettings();
           window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else if (selectedMethod === 'sepay') {
           const integrationType = payments.sepay_integration_type || 'vietqr';
-          if (integrationType === 'gateway') {
-            const bankName = payments.sepay_bank_name || payments.manual_bank_name || 'MBBank';
-            const accountNo = payments.sepay_account_no || payments.manual_account_no || '0000000000';
-            window.location.href = `https://qr.sepay.vn/img?acc=${encodeURIComponent(accountNo)}&bank=${encodeURIComponent(bankName)}&amount=${totalAmount}&des=${encodeURIComponent(txid)}&template=compact&showinfo=true`;
+          const isSandbox = payments.sepay_sandbox_mode || payments.sandbox_mode;
+          const merchantId = isSandbox ? payments.sepay_sandbox_merchant_id : payments.sepay_merchant_id;
+          
+          if (integrationType === 'gateway' && merchantId) {
+            const pgEndpoint = isSandbox ? 'https://pgapi-sandbox.sepay.vn/v1/checkout/init' : 'https://pay.sepay.vn/v1/checkout/init';
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = pgEndpoint;
+            
+            const params = {
+              merchant: merchantId,
+              currency: 'VND',
+              order_amount: totalAmount,
+              order_description: txid,
+              order_invoice_number: txid,
+              operation: 'PURCHASE'
+            };
+            
+            for (const [key, value] of Object.entries(params)) {
+              const input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = key;
+              input.value = value;
+              form.appendChild(input);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
           } else {
             window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
           }

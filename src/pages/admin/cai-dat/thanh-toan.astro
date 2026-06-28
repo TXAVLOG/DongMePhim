@@ -116,12 +116,22 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
                 <label class="text-[10px] text-zinc-500 font-bold uppercase">Phương thức tích hợp</label>
                 <select id="payment-sepay-integration-type" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white cursor-pointer">
                   <option value="vietqr" selected={settings.payments?.sepay_integration_type === 'vietqr'}>Tự động hiển thị VietQR tại trang web (Polling đối soát)</option>
-                  <option value="gateway" selected={settings.payments?.sepay_integration_type === 'gateway'}>Chuyển hướng sang Trang thanh toán SePay (qr.sepay.vn)</option>
+                  <option value="gateway" selected={settings.payments?.sepay_integration_type === 'gateway'}>Cổng thanh toán Thương mại SePay PG (pay.sepay.vn/v1/checkout/init)</option>
                 </select>
               </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-500 font-bold uppercase">API Key (Live)</label>
+                  <input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] text-zinc-500 font-bold uppercase">Merchant ID (Live PG)</label>
+                  <input type="text" id="payment-sepay-merchant" value={settings.payments?.sepay_merchant_id} placeholder="Ví dụ: SP12345" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                </div>
+              </div>
               <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">API Key (Live)</label>
-                <input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                <label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key (Live PG - Mã hóa Signature)</label>
+                <input type="password" id="payment-sepay-secret" value={settings.payments?.sepay_secret_key} placeholder="Khóa bí mật dùng cho Cổng PG SePay Live" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
               </div>
               <div class="space-y-2 pt-1">
                 <div class="flex items-center gap-3">
@@ -132,13 +142,24 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
                   </span>
                 </div>
               </div>
-              <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase flex items-center gap-1.5">
-                  <span class="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[9px] rounded font-black">SANDBOX</span>
-                  API Key (Sandbox)
-                </label>
-                <input type="password" id="payment-sepay-sandbox-key" value={settings.payments?.sepay_sandbox_api_key} placeholder="Token Sandbox từ SePay (khác Live)" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
-                <p class="text-[9px] text-zinc-600">Dùng khi bật Sandbox Mode của SePay — hệ thống sẽ gọi API SePay Sandbox để xác minh giao dịch thử.</p>
+              <div class="space-y-3 p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-2xl">
+                <div class="space-y-1">
+                  <label class="text-[10px] text-yellow-500 font-bold uppercase flex items-center gap-1.5">
+                    <span class="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[9px] rounded font-black">SANDBOX</span>
+                    API Key (Sandbox)
+                  </label>
+                  <input type="password" id="payment-sepay-sandbox-key" value={settings.payments?.sepay_sandbox_api_key} placeholder="Token Sandbox từ SePay (khác Live)" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label class="text-[10px] text-yellow-500 font-bold uppercase">Merchant ID (Sandbox PG)</label>
+                    <input type="text" id="payment-sepay-sandbox-merchant" value={settings.payments?.sepay_sandbox_merchant_id} placeholder="Merchant ID thử nghiệm" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] text-yellow-500 font-bold uppercase">Secret Key (Sandbox PG)</label>
+                    <input type="password" id="payment-sepay-sandbox-secret" value={settings.payments?.sepay_sandbox_secret_key} placeholder="Secret Key thử nghiệm" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                  </div>
+                </div>
               </div>
               
               <!-- Verification panel -->
@@ -353,8 +374,12 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
         setChecked('payment-sepay-enable', s.payments?.sepay_enable);
         setVal('payment-sepay-integration-type', s.payments?.sepay_integration_type || 'vietqr');
         setVal('payment-sepay-key', s.payments?.sepay_api_key);
+        setVal('payment-sepay-merchant', s.payments?.sepay_merchant_id);
+        setVal('payment-sepay-secret', s.payments?.sepay_secret_key);
         setChecked('payment-sepay-sandbox-enable', s.payments?.sepay_sandbox_mode);
         setVal('payment-sepay-sandbox-key', s.payments?.sepay_sandbox_api_key);
+        setVal('payment-sepay-sandbox-merchant', s.payments?.sepay_sandbox_merchant_id);
+        setVal('payment-sepay-sandbox-secret', s.payments?.sepay_sandbox_secret_key);
         setVal('payment-sepay-bank-id', s.payments?.sepay_bank_account_id);
         setVal('payment-sepay-bank', s.payments?.sepay_bank_name);
         setVal('payment-sepay-no', s.payments?.sepay_account_no);
@@ -396,9 +421,13 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
               paypal_client_id: document.getElementById('payment-paypal-client')?.value || '',
               sepay_enable: document.getElementById('payment-sepay-enable')?.checked || false,
               sepay_api_key: document.getElementById('payment-sepay-key')?.value || '',
+              sepay_merchant_id: document.getElementById('payment-sepay-merchant')?.value || '',
+              sepay_secret_key: document.getElementById('payment-sepay-secret')?.value || '',
               sepay_integration_type: document.getElementById('payment-sepay-integration-type')?.value || 'vietqr',
               sepay_sandbox_mode: document.getElementById('payment-sepay-sandbox-enable')?.checked || false,
               sepay_sandbox_api_key: document.getElementById('payment-sepay-sandbox-key')?.value || '',
+              sepay_sandbox_merchant_id: document.getElementById('payment-sepay-sandbox-merchant')?.value || '',
+              sepay_sandbox_secret_key: document.getElementById('payment-sepay-sandbox-secret')?.value || '',
               sepay_bank_account_id: document.getElementById('payment-sepay-bank-id')?.value || '',
               sepay_bank_name: document.getElementById('payment-sepay-bank')?.value || '',
               sepay_account_no: document.getElementById('payment-sepay-no')?.value || '',
