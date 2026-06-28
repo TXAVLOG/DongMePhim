@@ -1,0 +1,184 @@
+---
+import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
+
+const settings = await SettingService.getSettings();
+const payments = settings.payments || {};
+
+const bankName = payments.sepay_bank_name || payments.manual_bank_name || 'MBBank';
+const accountNo = payments.sepay_account_no || payments.manual_account_no || '0000000000';
+const accountName = payments.sepay_account_name || payments.manual_account_name || 'HỆ THỐNG RẠP PHIM';
+---
+
+<MainLayout title="Thanh toán tự động qua SePay (VietQR)">
+  <main class="max-w-xl mx-auto px-4 py-8 pt-24 min-h-[80vh] flex flex-col justify-center">
+    
+    <!-- SePay Card Container -->
+    <div class="glass-panel border border-glass-stroke rounded-3xl p-6 md:p-8 relative overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-950 to-emerald-950/20 shadow-2xl space-y-6">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-glass-stroke/40 pb-4">
+        <div class="flex items-center gap-3">
+          <a href="/checkout/order-summary" class="p-2 bg-white/5 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-all">
+            <span class="material-symbols-outlined text-lg">arrow_back</span>
+          </a>
+          <div>
+            <h1 class="text-lg font-black text-white uppercase tracking-wider">Cổng SePay Tự Động</h1>
+            <p class="text-xs text-zinc-400 font-body-main">Hệ thống sẽ tự động phê duyệt ngay khi nhận tiền chuyển khoản</p>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          Đang chờ khớp tiền
+        </span>
+      </div>
+
+      <!-- Order Details Summary Box -->
+      <div class="bg-white/5 border border-glass-stroke/40 rounded-2xl p-4 text-xs space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-400">Gói cước:</span>
+          <span id="sepay-pkg-title" class="font-bold text-white text-right font-body-main">-</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-400">Mã giao dịch (Nội dung CK):</span>
+          <span id="sepay-txid" class="font-mono font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 text-xs">-</span>
+        </div>
+        <div class="flex justify-between items-center border-t border-glass-stroke/30 pt-2">
+          <span class="text-zinc-300 font-bold">Số tiền cần thanh toán chính xác:</span>
+          <span id="sepay-price" class="text-lg font-black text-primary font-mono">-</span>
+        </div>
+      </div>
+
+      <!-- QR Code Display -->
+      <div class="flex flex-col items-center justify-center space-y-3 py-2">
+        <div class="w-64 h-64 p-3 bg-white rounded-2xl shadow-2xl flex items-center justify-center border-4 border-emerald-500/20 relative group">
+          <img id="sepay-vietqr-img" src="" alt="Mã VietQR SePay" class="w-full h-full object-contain" />
+        </div>
+        <p class="text-[11px] text-emerald-400 font-bold flex items-center gap-1 animate-pulse">
+          <span class="material-symbols-outlined text-sm">sync</span>
+          Hệ thống đang tự động kiểm tra sao kê mỗi 3 giây...
+        </p>
+      </div>
+
+      <!-- Bank Account Copy Info Grid -->
+      <div class="space-y-2.5 text-xs">
+        <div class="p-3 bg-zinc-900/80 border border-glass-stroke rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[9px] text-zinc-500 font-black uppercase block">Ngân hàng thụ hưởng</span>
+            <span class="font-bold text-white text-sm" id="sepay-bank-name">{bankName}</span>
+          </div>
+          <button type="button" onclick="copyInfo('{bankName}', 'Tên ngân hàng')" class="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-zinc-900/80 border border-glass-stroke rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[9px] text-zinc-500 font-black uppercase block">Số tài khoản</span>
+            <span class="font-mono font-bold text-white text-base" id="sepay-account-no">{accountNo}</span>
+          </div>
+          <button type="button" onclick="copyInfo('{accountNo}', 'Số tài khoản')" class="p-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
+            <span>Sao chép</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-zinc-900/80 border border-glass-stroke rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[9px] text-zinc-500 font-black uppercase block">Chủ tài khoản</span>
+            <span class="font-bold text-white" id="sepay-account-name">{accountName}</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[9px] text-emerald-300 font-black uppercase block">Nội dung chuyển khoản (Chính xác 100%)</span>
+            <span class="font-mono font-black text-emerald-400 text-base" id="sepay-memo">-</span>
+          </div>
+          <button type="button" id="btn-copy-sepay-memo" class="p-2 bg-emerald-600 text-white rounded-lg font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1 hover:brightness-110">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
+            <span>Sao chép</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="pt-2">
+        <button type="button" id="btn-check-sepay-now" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 border-none">
+          <span class="material-symbols-outlined text-base">verified</span>
+          <span>Tôi đã chuyển khoản - Kiểm tra ngay</span>
+        </button>
+      </div>
+
+    </div>
+  </main>
+</MainLayout>
+
+<script is:inline define:vars={{ bankName, accountNo, accountName }}>
+  (function() {
+    let txid = '';
+    let packageTitle = '';
+    let price = 0;
+    let cycle = 'monthly';
+    let email = '';
+    let clientInfo = '';
+    let pollInterval = null;
+
+    window.copyInfo = function(text, label) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép ${label}!`, 'success');
+      });
+    };
+
+    async function checkPaymentStatus() {
+      if (!txid) return;
+      try {
+        const res = await fetch(`/api/user/payments?txid=${encodeURIComponent(txid)}`);
+        if (res.ok) {
+          const result = await res.json();
+          const data = result.data;
+          if (data && data.status === 'approved') {
+            if (pollInterval) clearInterval(pollInterval);
+            if (window.showGlobalToast) window.showGlobalToast('Thanh toán thành công! Đang kích hoạt gói cước...', 'success');
+            setTimeout(() => {
+              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageTitle=${encodeURIComponent(packageTitle)}`;
+            }, 1000);
+          }
+        }
+      } catch (e) {}
+    }
+
+    function initSepayCheckout() {
+      const urlParams = new URLSearchParams(window.location.search);
+      txid = urlParams.get('txid') || ('TXA' + Math.random().toString(36).substring(2, 10).toUpperCase());
+      packageTitle = urlParams.get('packageTitle') || 'Gói Dịch Vụ';
+      price = Number(urlParams.get('price')) || 0;
+      cycle = urlParams.get('cycle') || 'monthly';
+      email = urlParams.get('email') || '';
+      clientInfo = urlParams.get('clientInfo') || '';
+
+      document.getElementById('sepay-pkg-title').textContent = packageTitle;
+      document.getElementById('sepay-txid').textContent = txid;
+      document.getElementById('sepay-memo').textContent = txid;
+      document.getElementById('sepay-price').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
+      const qrUrl = `https://img.vietqr.io/image/${bankName}-${accountNo}-compact.png?amount=${price}&addInfo=${encodeURIComponent(txid)}&accountName=${encodeURIComponent(accountName)}`;
+      const qrImg = document.getElementById('sepay-vietqr-img');
+      if (qrImg) qrImg.src = qrUrl;
+
+      document.getElementById('btn-copy-sepay-memo')?.addEventListener('click', () => copyInfo(txid, 'Nội dung chuyển khoản'));
+
+      document.getElementById('btn-check-sepay-now')?.addEventListener('click', async () => {
+        if (window.showGlobalToast) window.showGlobalToast('Đang kiểm tra kết quả giao dịch từ ngân hàng...', 'info');
+        await checkPaymentStatus();
+      });
+
+      // Start automatic polling every 3.5s
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(checkPaymentStatus, 3500);
+    }
+
+    initSepayCheckout();
+    document.addEventListener('astro:page-load', initSepayCheckout);
+  })();
+</script>

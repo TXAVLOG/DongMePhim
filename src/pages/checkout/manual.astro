@@ -1,0 +1,217 @@
+---
+import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
+
+const settings = await SettingService.getSettings();
+const payments = settings.payments || {};
+
+const bankName = payments.manual_bank_name || 'MBBank';
+const accountNo = payments.manual_account_no || '0000000000';
+const accountName = payments.manual_account_name || 'HỆ THỐNG RẠP PHIM';
+---
+
+<MainLayout title="Thanh toán chuyển khoản VietQR Thủ công">
+  <main class="max-w-xl mx-auto px-4 py-8 pt-24 min-h-[80vh] flex flex-col justify-center">
+    
+    <!-- VietQR Card Container -->
+    <div class="glass-panel border border-glass-stroke rounded-3xl p-6 md:p-8 relative overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-950 to-purple-950/20 shadow-2xl space-y-6">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-glass-stroke/40 pb-4">
+        <div class="flex items-center gap-3">
+          <a href="/checkout/order-summary" class="p-2 bg-white/5 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-all">
+            <span class="material-symbols-outlined text-lg">arrow_back</span>
+          </a>
+          <div>
+            <h1 class="text-lg font-black text-white uppercase tracking-wider">Thanh Toán VietQR (Thủ công)</h1>
+            <p class="text-xs text-zinc-400 font-body-main">Quét mã QR hoặc chuyển khoản theo thông tin bên dưới</p>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase tracking-wider">Chờ chuyển khoản</span>
+      </div>
+
+      <!-- Order Details Summary Box -->
+      <div class="bg-white/5 border border-glass-stroke/40 rounded-2xl p-4 text-xs space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-400">Gói cước:</span>
+          <span id="manual-pkg-title" class="font-bold text-white text-right font-body-main">-</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-400">Mã giao dịch (Nội dung CK):</span>
+          <span id="manual-txid" class="font-mono font-black text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 text-xs">-</span>
+        </div>
+        <div class="flex justify-between items-center border-t border-glass-stroke/30 pt-2">
+          <span class="text-zinc-300 font-bold">Số tiền thanh toán:</span>
+          <span id="manual-price" class="text-lg font-black text-primary font-mono">-</span>
+        </div>
+      </div>
+
+      <!-- QR Code Display -->
+      <div class="flex flex-col items-center justify-center space-y-3 py-2">
+        <div class="w-64 h-64 p-3 bg-white rounded-2xl shadow-2xl flex items-center justify-center border-4 border-purple-500/20 relative group">
+          <img id="manual-vietqr-img" src="" alt="Mã VietQR Thanh Toán" class="w-full h-full object-contain" />
+        </div>
+        <p class="text-[11px] text-zinc-400 flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm text-emerald-400">center_focus_weak</span>
+          Mở app Ngân hàng hoặc Ví điện tử để quét mã
+        </p>
+      </div>
+
+      <!-- Bank Account Copy Info Grid -->
+      <div class="space-y-2.5 text-xs">
+        <div class="p-3 bg-zinc-900/80 border border-glass-stroke rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[9px] text-zinc-500 font-black uppercase block">Ngân hàng thụ hưởng</span>
+            <span class="font-bold text-white text-sm" id="info-bank-name">{bankName}</span>
+          </div>
+          <button type="button" onclick="copyInfo('{bankName}', 'Tên ngân hàng')" class="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all cursor-pointer">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-zinc-900/80 border border-glass-stroke rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[9px] text-zinc-500 font-black uppercase block">Số tài khoản</span>
+            <span class="font-mono font-bold text-white text-base" id="info-account-no">{accountNo}</span>
+          </div>
+          <button type="button" onclick="copyInfo('{accountNo}', 'Số tài khoản')" class="p-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
+            <span>Sao chép</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-zinc-900/80 border border-glass-stroke rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[9px] text-zinc-500 font-black uppercase block">Chủ tài khoản</span>
+            <span class="font-bold text-white" id="info-account-name">{accountName}</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl flex justify-between items-center">
+          <div>
+            <span class="text-[9px] text-purple-300 font-black uppercase block">Nội dung chuyển khoản (Bắt buộc)</span>
+            <span class="font-mono font-black text-purple-400 text-base" id="info-memo">-</span>
+          </div>
+          <button type="button" id="btn-copy-memo" class="p-2 bg-purple-600 text-white rounded-lg font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1 hover:brightness-110">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
+            <span>Sao chép</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Upload Receipt Container -->
+      <div class="space-y-2 border-t border-glass-stroke/40 pt-4">
+        <label class="text-[11px] font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm text-primary">upload_file</span>
+          Tải lên hóa đơn / Ảnh chụp màn hình chuyển khoản (Tùy chọn)
+        </label>
+        <input type="file" id="receipt-file-input" accept="image/*" class="w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary/20 file:text-primary hover:file:bg-primary/30 file:cursor-pointer cursor-pointer bg-zinc-900 p-2 rounded-xl border border-glass-stroke" />
+        <div id="receipt-preview-box" class="hidden mt-2 relative w-32 h-32 rounded-xl overflow-hidden border border-glass-stroke">
+          <img id="receipt-preview-img" src="" class="w-full h-full object-cover" alt="Hóa đơn" />
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="pt-2">
+        <button type="button" id="btn-confirm-manual-payment" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 border-none">
+          <span class="material-symbols-outlined text-base">check_circle</span>
+          <span>Tôi đã chuyển khoản thành công</span>
+        </button>
+      </div>
+
+    </div>
+  </main>
+</MainLayout>
+
+<script is:inline define:vars={{ bankName, accountNo, accountName }}>
+  (function() {
+    let txid = '';
+    let packageTitle = '';
+    let price = 0;
+    let cycle = 'monthly';
+    let email = '';
+    let clientInfo = '';
+    let base64Receipt = '';
+
+    window.copyInfo = function(text, label) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép ${label}!`, 'success');
+      });
+    };
+
+    function initManualCheckout() {
+      const urlParams = new URLSearchParams(window.location.search);
+      txid = urlParams.get('txid') || ('TXA' + Math.random().toString(36).substring(2, 10).toUpperCase());
+      packageTitle = urlParams.get('packageTitle') || 'Gói Dịch Vụ';
+      price = Number(urlParams.get('price')) || 0;
+      cycle = urlParams.get('cycle') || 'monthly';
+      email = urlParams.get('email') || '';
+      clientInfo = urlParams.get('clientInfo') || '';
+
+      document.getElementById('manual-pkg-title').textContent = packageTitle;
+      document.getElementById('manual-txid').textContent = txid;
+      document.getElementById('info-memo').textContent = txid;
+      document.getElementById('manual-price').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
+      const qrUrl = `https://img.vietqr.io/image/${bankName}-${accountNo}-compact.png?amount=${price}&addInfo=${encodeURIComponent(txid)}&accountName=${encodeURIComponent(accountName)}`;
+      const qrImg = document.getElementById('manual-vietqr-img');
+      if (qrImg) qrImg.src = qrUrl;
+
+      document.getElementById('btn-copy-memo')?.addEventListener('click', () => copyInfo(txid, 'Mã giao dịch (Nội dung CK)'));
+
+      // Receipt file preview listener
+      const fileInput = document.getElementById('receipt-file-input');
+      fileInput?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          base64Receipt = reader.result;
+          const previewBox = document.getElementById('receipt-preview-box');
+          const previewImg = document.getElementById('receipt-preview-img');
+          if (previewBox && previewImg) {
+            previewImg.src = base64Receipt;
+            previewBox.classList.remove('hidden');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Submit listener
+      const confirmBtn = document.getElementById('btn-confirm-manual-payment');
+      confirmBtn?.addEventListener('click', async function() {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-base">autorenew</span> <span>Đang xác nhận...</span>';
+
+        const username = (window.APP_USER ? window.APP_USER.username : null) || 'guest_' + Math.random().toString(36).substring(2, 8);
+
+        try {
+          await fetch('/api/user/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txid: txid,
+              username: username,
+              email: email,
+              packageTitle: packageTitle,
+              price: price,
+              cycle: cycle,
+              method: 'manual',
+              status: 'pending',
+              receiptImg: base64Receipt,
+              note: clientInfo
+            })
+          });
+        } catch (e) {}
+
+        if (window.showGlobalToast) window.showGlobalToast('Đã lưu thông tin chuyển khoản! Vui lòng chờ đối soát.', 'success');
+        setTimeout(() => {
+          window.location.href = `/checkout/success?method=manual&cycle=${cycle}&price=${price}&txid=${txid}&packageTitle=${encodeURIComponent(packageTitle)}`;
+        }, 1200);
+      });
+    }
+
+    initManualCheckout();
+    document.addEventListener('astro:page-load', initManualCheckout);
+  })();
+</script>
