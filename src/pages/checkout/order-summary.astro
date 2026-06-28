@@ -675,34 +675,38 @@ const serverSettings = await SettingService.getSettings();
           window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else if (selectedMethod === 'sepay') {
           const integrationType = payments.sepay_integration_type || 'gateway';
-          const isSandbox = payments.sepay_sandbox_mode && payments.sepay_sandbox_merchant_id;
-          const merchantId = (isSandbox ? payments.sepay_sandbox_merchant_id : payments.sepay_merchant_id) || payments.sepay_merchant_id || payments.sepay_sandbox_merchant_id || 'SP-LIVE-TX5B9345';
           
-          if (integrationType === 'gateway' || merchantId) {
-            const pgEndpoint = isSandbox ? 'https://pgapi-sandbox.sepay.vn/v1/checkout/init' : 'https://pay.sepay.vn/v1/checkout/init';
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = pgEndpoint;
-            
-            const params = {
-              merchant: merchantId,
-              currency: 'VND',
-              order_amount: totalAmount,
-              order_description: txid,
-              order_invoice_number: txid,
-              operation: 'PURCHASE'
-            };
-            
-            for (const [key, value] of Object.entries(params)) {
-              const input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = key;
-              input.value = value;
-              form.appendChild(input);
+          if (integrationType === 'gateway') {
+            try {
+              const initRes = await fetch('/api/payment/sepay-init', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ txid, totalAmount, packageTitle: selectedPackage.title })
+              });
+              const initData = await initRes.json();
+              if (initRes.ok && initData.data) {
+                const { checkoutUrl, fields } = initData.data;
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = checkoutUrl;
+                
+                for (const [key, value] of Object.entries(fields)) {
+                  const input = document.createElement('input');
+                  input.type = 'hidden';
+                  input.name = key;
+                  input.value = String(value);
+                  form.appendChild(input);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+                return;
+              }
+            } catch (err) {
+              console.error('Error initiating SePay PG checkout:', err);
             }
-            
-            document.body.appendChild(form);
-            form.submit();
+            // Fallback if API init fails
+            window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
           } else {
             window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
           }
