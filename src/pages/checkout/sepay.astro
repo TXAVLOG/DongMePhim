@@ -122,6 +122,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
     let cycle = 'monthly';
     let email = '';
     let clientInfo = '';
+    let pollInterval = null;
     let isApproved = false;
 
     window.copyInfo = function(text, label) {
