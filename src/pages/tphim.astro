@@ -983,19 +983,19 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       </div>
 
       <!-- Phim Bộ Mới -->
-      <section class="lazy-section opacity-0 transition-all duration-700 min-h-[50px]" data-endpoint="/api/movies?type=series&limit=12" data-grid-id="series-grid" data-aspect="aspect-[2/3]" data-title="Phim Bộ Mới" data-more-url="/phim-bo"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=series&limit=12" data-grid-id="series-grid" data-aspect="aspect-[2/3]" data-title="Phim Bộ Mới" data-more-url="/phim-bo"></section>
 
       <!-- Phim Hoạt Hình Mới -->
-      <section class="lazy-section opacity-0 transition-all duration-700 min-h-[50px]" data-endpoint="/api/movies?type=hoathinh&limit=12" data-grid-id="anime-grid" data-aspect="aspect-[2/3]" data-title="Phim Hoạt Hình Mới" data-more-url="/the-loai/hoat-hinh"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=hoathinh&limit=12" data-grid-id="anime-grid" data-aspect="aspect-[2/3]" data-title="Phim Hoạt Hình Mới" data-more-url="/the-loai/hoat-hinh"></section>
 
       <!-- Tôi Sợ Con Người Em Rồi Đó, nhưng Không Bằng Sợ Ma -->
-      <section class="lazy-section opacity-0 transition-all duration-700 min-h-[50px]" data-endpoint="/api/movies?category=toi-so-con-nguoi-em-roi-do&limit=12" data-grid-id="kinhdi-grid" data-aspect="aspect-[2/3]" data-title="Tôi Sợ Con Người Em Rồi Đó, Nhưng Không Bằng Sợ Ma" data-icon="skull" data-icon-color="text-rose-500" data-more-url="/c/toi-so-con-nguoi-em-roi-do"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=toi-so-con-nguoi-em-roi-do&limit=12" data-grid-id="kinhdi-grid" data-aspect="aspect-[2/3]" data-title="Tôi Sợ Con Người Em Rồi Đó, Nhưng Không Bằng Sợ Ma" data-icon="skull" data-icon-color="text-rose-500" data-more-url="/c/toi-so-con-nguoi-em-roi-do"></section>
 
       <!-- Phim Thái New: Không Drama Đời Không Nể -->
-      <section class="lazy-section opacity-0 transition-all duration-700 min-h-[50px]" data-endpoint="/api/movies?category=phim-thai-new&limit=12" data-grid-id="thai-grid" data-aspect="aspect-[2/3]" data-title="Phim Thái New: Drama Đỉnh Cao" data-icon="bolt" data-icon-color="text-amber-400" data-more-url="/c/phim-thai-new"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=phim-thai-new&limit=12" data-grid-id="thai-grid" data-aspect="aspect-[2/3]" data-title="Phim Thái New: Drama Đỉnh Cao" data-icon="bolt" data-icon-color="text-amber-400" data-more-url="/c/phim-thai-new"></section>
 
       <!-- Châu Tinh Trì – Xem Là Phải Cười -->
-      <section class="lazy-section opacity-0 transition-all duration-700 min-h-[50px]" data-endpoint="/api/movies?category=chau-tinh-tri-xem-la-cuoi&limit=12" data-grid-id="chautinhtri-grid" data-aspect="aspect-[2/3]" data-title="Tuyển Tập Châu Tinh Trì - Cười Bể Bụng" data-icon="sentiment_very_satisfied" data-icon-color="text-yellow-400" data-more-url="/c/chau-tinh-tri-xem-la-cuoi"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=chau-tinh-tri-xem-la-cuoi&limit=12" data-grid-id="chautinhtri-grid" data-aspect="aspect-[2/3]" data-title="Tuyển Tập Châu Tinh Trì - Cười Bể Bụng" data-icon="sentiment_very_satisfied" data-icon-color="text-yellow-400" data-more-url="/c/chau-tinh-tri-xem-la-cuoi"></section>
 
       <!-- Phim Điện Ảnh Mới Coóng -->
       <section class="fade-in-section opacity-0 transition-all duration-700 min-h-[150px] space-y-6">
@@ -1599,6 +1599,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const section = entry.target;
+            const endpoint = section.getAttribute('data-endpoint');
             // Check if section structure needs to be generated dynamically
             const title = section.getAttribute('data-title');
             const icon = section.getAttribute('data-icon');
@@ -1665,7 +1666,10 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         });
       }, { rootMargin: '50px 0px 100px 0px' });
       
-      lazySections.forEach(section => observer.observe(section));
+      // Delay observation slightly to prevent page load layout shifts from triggering all observers immediately
+      setTimeout(() => {
+        lazySections.forEach(section => observer.observe(section));
+      }, 250);
 
       // Also observe fade-in-sections (like server-rendered movie sections)
       const fadeInSections = document.querySelectorAll('.fade-in-section');
@@ -1678,7 +1682,10 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           }
         });
       }, { rootMargin: '50px 0px 100px 0px' });
-      fadeInSections.forEach(sec => fadeInObserver.observe(sec));
+      
+      setTimeout(() => {
+        fadeInSections.forEach(sec => fadeInObserver.observe(sec));
+      }, 250);
     } else {
       // Fallback if IntersectionObserver not supported
       lazySections.forEach(section => {
