@@ -674,11 +674,11 @@ const serverSettings = await SettingService.getSettings();
         if (selectedMethod === 'manual') {
           window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else if (selectedMethod === 'sepay') {
-          const integrationType = payments.sepay_integration_type || 'vietqr';
-          const isSandbox = payments.sepay_sandbox_mode || payments.sandbox_mode;
-          const merchantId = isSandbox ? payments.sepay_sandbox_merchant_id : payments.sepay_merchant_id;
+          const integrationType = payments.sepay_integration_type || 'gateway';
+          const isSandbox = payments.sepay_sandbox_mode && payments.sepay_sandbox_merchant_id;
+          const merchantId = (isSandbox ? payments.sepay_sandbox_merchant_id : payments.sepay_merchant_id) || payments.sepay_merchant_id || payments.sepay_sandbox_merchant_id || 'SP-LIVE-TX5B9345';
           
-          if (integrationType === 'gateway' && merchantId) {
+          if (integrationType === 'gateway' || merchantId) {
             const pgEndpoint = isSandbox ? 'https://pgapi-sandbox.sepay.vn/v1/checkout/init' : 'https://pay.sepay.vn/v1/checkout/init';
             const form = document.createElement('form');
             form.method = 'POST';
