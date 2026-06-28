@@ -242,3 +242,29 @@ export const POST: APIRoute = async ({ request }) => {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
+
+// DELETE: Xóa đơn hàng chưa thanh toán (pending) khi người dùng hủy hoặc quay lại
+export const DELETE: APIRoute = async ({ request, url }) => {
+  try {
+    const txid = url.searchParams.get('txid');
+    const username = url.searchParams.get('username');
+
+    if (!txid && !username) {
+      return apiResponse(null, 'error', 'Missing txid or username', 400, request);
+    }
+
+    let query = supabase.from('txa_payment_logs').delete();
+    if (txid) {
+      query = query.eq('txid', txid);
+    } else if (username) {
+      query = query.eq('username', username).eq('status', 'pending');
+    }
+
+    const { error } = await query;
+    if (error) throw error;
+
+    return apiResponse({ success: true }, 'success', 'Đã xóa đơn hàng dở dang!', 200, request);
+  } catch (err: any) {
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
+  }
+};

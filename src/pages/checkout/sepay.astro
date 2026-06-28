@@ -122,13 +122,31 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
     let cycle = 'monthly';
     let email = '';
     let clientInfo = '';
-    let pollInterval = null;
+    let isApproved = false;
 
     window.copyInfo = function(text, label) {
       navigator.clipboard.writeText(text).then(() => {
         if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép ${label}!`, 'success');
       });
     };
+
+    function cleanupOrderOnBack() {
+      if (isApproved || !txid) return;
+      isApproved = true; // prevent duplicate trigger
+      if (pollInterval) clearInterval(pollInterval);
+      
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(`/api/user/payments?txid=${encodeURIComponent(txid)}`);
+      }
+      fetch(`/api/user/payments?txid=${encodeURIComponent(txid)}`, { method: 'DELETE', keepalive: true }).catch(() => {});
+
+      if (email) {
+        sessionStorage.setItem('txa_saved_email', email);
+      }
+    }
+
+    window.addEventListener('popstate', cleanupOrderOnBack);
+    window.addEventListener('pagehide', cleanupOrderOnBack);
 
     async function checkPaymentStatus() {
       if (!txid) return;
@@ -138,6 +156,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
           const result = await res.json();
           const data = result.data;
           if (data && data.status === 'approved') {
+            isApproved = true;
             if (pollInterval) clearInterval(pollInterval);
             if (window.showGlobalToast) window.showGlobalToast('Thanh toán thành công! Đang kích hoạt gói cước...', 'success');
             setTimeout(() => {
@@ -156,6 +175,19 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
       cycle = urlParams.get('cycle') || 'monthly';
       email = urlParams.get('email') || '';
       clientInfo = urlParams.get('clientInfo') || '';
+
+      if (email) {
+        sessionStorage.setItem('txa_saved_email', email);
+      }
+
+      const backLink = document.querySelector('a[href="/checkout/order-summary"]');
+      if (backLink) {
+        backLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          cleanupOrderOnBack();
+          window.location.href = `/checkout/order-summary?email=${encodeURIComponent(email)}`;
+        });
+      }
 
       document.getElementById('sepay-pkg-title').textContent = packageTitle;
       document.getElementById('sepay-txid').textContent = txid;

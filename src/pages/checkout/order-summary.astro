@@ -222,9 +222,9 @@ import MainLayout from '@layouts/MainLayout.astro';
       if (emailWrapper) {
         if (isBypassPkg) {
           emailWrapper.classList.remove('hidden');
-          const currentEmail = (window.APP_USER ? window.APP_USER.email : '') || '';
+          const savedEmail = urlParams.get('email') || sessionStorage.getItem('txa_saved_email') || (window.APP_USER ? window.APP_USER.email : '') || '';
           const emailInput = document.getElementById('summary-recipient-email');
-          if (emailInput && currentEmail) emailInput.value = currentEmail;
+          if (emailInput && savedEmail) emailInput.value = savedEmail;
 
           const watchedCount = getWatchedCount();
           if (watchedCount > 0 && featContainer) {

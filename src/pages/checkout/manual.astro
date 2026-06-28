@@ -131,13 +131,30 @@ const accountName = payments.manual_account_name || 'HỆ THỐNG RẠP PHIM';
     let cycle = 'monthly';
     let email = '';
     let clientInfo = '';
-    let base64Receipt = '';
+    let isSubmitting = false;
 
     window.copyInfo = function(text, label) {
       navigator.clipboard.writeText(text).then(() => {
         if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép ${label}!`, 'success');
       });
     };
+
+    function cleanupOrderOnBack() {
+      if (isSubmitting || !txid) return;
+      isSubmitting = true; // prevent duplicate trigger
+      
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(`/api/user/payments?txid=${encodeURIComponent(txid)}`);
+      }
+      fetch(`/api/user/payments?txid=${encodeURIComponent(txid)}`, { method: 'DELETE', keepalive: true }).catch(() => {});
+
+      if (email) {
+        sessionStorage.setItem('txa_saved_email', email);
+      }
+    }
+
+    window.addEventListener('popstate', cleanupOrderOnBack);
+    window.addEventListener('pagehide', cleanupOrderOnBack);
 
     function initManualCheckout() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -147,6 +164,19 @@ const accountName = payments.manual_account_name || 'HỆ THỐNG RẠP PHIM';
       cycle = urlParams.get('cycle') || 'monthly';
       email = urlParams.get('email') || '';
       clientInfo = urlParams.get('clientInfo') || '';
+
+      if (email) {
+        sessionStorage.setItem('txa_saved_email', email);
+      }
+
+      const backLink = document.querySelector('a[href="/checkout/order-summary"]');
+      if (backLink) {
+        backLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          cleanupOrderOnBack();
+          window.location.href = `/checkout/order-summary?email=${encodeURIComponent(email)}`;
+        });
+      }
 
       document.getElementById('manual-pkg-title').textContent = packageTitle;
       document.getElementById('manual-txid').textContent = txid;
@@ -180,6 +210,7 @@ const accountName = payments.manual_account_name || 'HỆ THỐNG RẠP PHIM';
       // Submit listener
       const confirmBtn = document.getElementById('btn-confirm-manual-payment');
       confirmBtn?.addEventListener('click', async function() {
+        isSubmitting = true;
         confirmBtn.disabled = true;
         confirmBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-base">autorenew</span> <span>Đang xác nhận...</span>';
 
