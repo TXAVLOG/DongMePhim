@@ -90,7 +90,7 @@ export const POST: APIRoute = async ({ request }) => {
       merchant: merchantId,
       currency: 'VND',
       operation: 'PURCHASE',
-      order_description: `Thanh toan don hang ${txid}`,
+      order_description: String(txid),
       order_invoice_number: String(txid),
       success_url: `${cleanSiteUrl}/checkout/success?txid=${txid}&packageTitle=${encodeURIComponent(packageTitle || 'VIP')}`,
       error_url: `${cleanSiteUrl}/checkout/failed?txid=${txid}`,

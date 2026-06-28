@@ -647,7 +647,10 @@ const serverSettings = await SettingService.getSettings();
         }
 
         const username = (window.APP_USER ? window.APP_USER.username : null) || 'guest_' + Math.random().toString(36).substring(2, 8);
-        const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        const userPkg = window.APP_USER ? (window.APP_USER.package || 'free') : 'free';
+        const isRenew = userPkg !== 'free' && userPkg !== 'Free' && (selectedPackage && (selectedPackage.id === userPkg || selectedPackage.title === userPkg));
+        const prefix = isRenew ? 'TXAU' : 'TXAG';
+        const txid = prefix + Math.random().toString(36).substring(2, 10).toUpperCase();
 
         // Save initial pending payment record with clientInfo and promoCode
         try {
