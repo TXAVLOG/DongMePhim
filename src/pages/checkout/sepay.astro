@@ -110,8 +110,8 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
         </button>
 
         <a id="btn-open-sepay-gateway" href="#" target="_blank" class="w-full py-3.5 bg-white/5 hover:bg-white/10 border border-glass-stroke/60 text-zinc-300 hover:text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 no-underline">
-          <span class="material-symbols-outlined text-base text-emerald-400">open_in_new</span>
-          <span>Chuyển sang Cổng Cổng Thanh Toán SePay (pay.sepay.vn)</span>
+          <span class="material-symbols-outlined text-base text-emerald-400">qr_code_2</span>
+          <span>Mở ảnh mã VietQR full-size (SePay QR)</span>
         </a>
       </div>
 
@@ -286,10 +286,10 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
         copyMemoBtn.onclick = (e) => copyInfo(txid, 'Nội dung chuyển khoản', e);
       }
 
-      // Đặt URL cho nút mở Cổng thanh toán SePay (pay.sepay.vn)
+      // Đặt URL cho nút mở ảnh mã VietQR full-size (SePay QR Service)
       const gatewayBtn = document.getElementById('btn-open-sepay-gateway');
       if (gatewayBtn) {
-        gatewayBtn.href = `https://pay.sepay.vn/checkout?acc=${encodeURIComponent(accountNo)}&bank=${encodeURIComponent(bankName)}&amount=${price}&des=${encodeURIComponent(txid)}`;
+        gatewayBtn.href = `https://qr.sepay.vn/img?bank=${encodeURIComponent(bankName)}&acc=${encodeURIComponent(accountNo)}&template=compact&amount=${price}&des=${encodeURIComponent(txid)}`;
       }
 
       const checkNowBtn = document.getElementById('btn-check-sepay-now');

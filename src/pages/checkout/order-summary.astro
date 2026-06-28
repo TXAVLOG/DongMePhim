@@ -674,14 +674,7 @@ const serverSettings = await SettingService.getSettings();
         if (selectedMethod === 'manual') {
           window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else if (selectedMethod === 'sepay') {
-          const integrationType = payments.sepay_integration_type || 'vietqr';
-          if (integrationType === 'gateway') {
-            const bankName = payments.sepay_bank_name || payments.manual_bank_name || 'MBBank';
-            const accountNo = payments.sepay_account_no || payments.manual_account_no || '0000000000';
-            window.location.href = `https://pay.sepay.vn/checkout?acc=${encodeURIComponent(accountNo)}&bank=${encodeURIComponent(bankName)}&amount=${totalAmount}&des=${encodeURIComponent(txid)}`;
-          } else {
-            window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
-          }
+          window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else {
           window.location.href = `/checkout/gateway?method=${selectedMethod}&txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         }
