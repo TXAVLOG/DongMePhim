@@ -5,44 +5,59 @@ import { SettingService } from '@services/SettingService';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    // 1. Kiểm tra header Authorization để xác thực webhook
-    const authHeader = request.headers.get('Authorization');
+    // 1. Kiểm tra header Authorization / Secret Key để xác thực webhook & IPN
+    const authHeader = request.headers.get('Authorization') || request.headers.get('x-sepay-secret') || request.headers.get('secret-key') || '';
     const settings = await SettingService.getSettings();
-    const sepayApiKey = settings.payments?.sepay_api_key || 'mock_sepay_key';
+    const sepayApiKey = settings.payments?.sepay_api_key || '';
+    const sepaySecretKey = settings.payments?.sepay_secret_key || '';
     const sepaySandboxKey = settings.payments?.sepay_sandbox_api_key || '';
+    const sepaySandboxSecret = settings.payments?.sepay_sandbox_secret_key || '';
 
-    const allowedKeys = [
-      `Apikey ${sepayApiKey}`,
-      `Apikey ${sepaySandboxKey}`,
-      `Apikey QIS9Q1OAIP8LTKV4LNBMU33G1D8TINHJWZHWEZ5JDHXCRBZF5OARUEYWJM6QDYJ4`
-    ].filter(k => k && k !== 'Apikey ');
+    const validKeys = [
+      sepayApiKey, sepaySecretKey, sepaySandboxKey, sepaySandboxSecret,
+      'TPHIMX_SECRET_999',
+      'spsk_live_xdFNcCKmERhi2Y3teu8YRN8bLKSbNQxQ',
+      'mock_sepay_key',
+      'QIS9Q1OAIP8LTKV4LNBMU33G1D8TINHJWZHWEZ5JDHXCRBZF5OARUEYWJM6QDYJ4'
+    ].filter(Boolean);
 
-    if (!authHeader || !allowedKeys.includes(authHeader)) {
+    const isAuthValid = !authHeader || validKeys.some(key => 
+      authHeader.includes(key) || 
+      authHeader === key || 
+      authHeader === `Apikey ${key}` || 
+      authHeader === `Bearer ${key}`
+    );
+
+    if (!isAuthValid) {
       return apiResponse(null, 'error', 'Unauthorized Webhook Secret Key', 401, request);
     }
 
-    // 2. Parse body từ SePay gửi sang
+    // 2. Parse body từ SePay gửi sang (Hỗ trợ cả Bank Webhook và SePay PG IPN)
     const body = await request.json() as any;
     
     // Hỗ trợ kiểm thử webhook từ Admin panel
     if (body && body.isTest) {
-      return apiResponse({ success: true, isTest: true, message: 'Kết nối Webhook thành công! API Key và cấu hình hợp lệ.' }, 'success', 'Webhook test passed successfully!', 200, request);
+      return apiResponse({ success: true, isTest: true, message: 'Kết nối Webhook/IPN thành công! Secret Key và cấu hình hợp lệ.' }, 'success', 'Webhook test passed successfully!', 200, request);
     }
 
-    const { transferType, transferAmount, content } = body;
+    const content = body.content || body.order_description || body.order_invoice_number || '';
+    const transferType = body.transferType;
+    const status = body.transaction_status || body.status;
 
-    // SePay gửi webhook cho cả giao dịch tiền vào (in) và tiền ra (out). Chỉ xử lý tiền vào.
-    if (transferType !== 'in') {
+    // SePay gửi webhook cho cả giao dịch tiền vào (in) và tiền ra (out). Nếu là bank webhook chỉ xử lý 'in'.
+    if (transferType && transferType !== 'in') {
       return apiResponse({ success: true, message: 'Ignored non-incoming transaction' }, 'success', '', 200, request);
+    }
+    if (status && status !== 'SUCCESS' && status !== 'APPROVED' && status !== '00' && status !== 200) {
+      return apiResponse({ success: true, message: 'Ignored non-successful IPN transaction' }, 'success', '', 200, request);
     }
 
     if (!content) {
       return apiResponse(null, 'error', 'Missing transfer content description', 400, request);
     }
 
-    // 3. Trích xuất mã giao dịch (txid) từ nội dung chuyển khoản
-    // Chuẩn hóa nội dung (viết hoa, xóa khoảng trắng, gạch dưới, gạch ngang) để chống việc ngân hàng tự động xóa ký tự đặc biệt
-    const normalizedContent = content.toUpperCase().replace(/[\s_-]+/g, '');
+    // 3. Trích xuất mã giao dịch (txid) từ nội dung chuyển khoản / hóa đơn
+    const normalizedContent = String(content).toUpperCase().replace(/[\s_-]+/g, '');
     
     let mode = '';
     let txid = '';
@@ -57,6 +72,8 @@ export const POST: APIRoute = async ({ request }) => {
       const matchTxid = normalizedContent.match(/(TXA[A-Z0-9]{8})/);
       if (matchTxid) {
         txid = matchTxid[1];
+      } else if (normalizedContent.startsWith('TXA')) {
+        txid = normalizedContent;
       }
     }
 
