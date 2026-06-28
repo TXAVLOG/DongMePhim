@@ -89,8 +89,10 @@ packages.forEach((pkg: any) => {
   }
 });
 
+const currentPath = Astro.url.pathname;
+const isStaticPolicyPage = currentPath === '/bao-mat' || currentPath === '/dieu-khoan' || currentPath === '/lien-he' || currentPath === '/ve-chung-toi';
 const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
-const popularMovies = await MovieService.getMovies({ limit: 12 });
+const popularMovies = isStaticPolicyPage ? [] : await MovieService.getMovies({ limit: 12 });
 
 const decoyEnable = settings.general?.decoy_enable ?? true;
 const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;

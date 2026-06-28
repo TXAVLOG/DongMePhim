@@ -94,49 +94,9 @@ export const MovieService = {
   },
 
   getGenresAndCountries: async () => {
-    const cacheKey = 'genres_countries';
-    const cached = movieCache.get(cacheKey);
-    if (cached) return cached;
-
-    let countries: string[] = ["Trung Quốc", "Hàn Quốc", "Nhật Bản", "Mỹ", "Hồng Kông", "Đài Loan", "Thái Lan", "Âu Mỹ", "Việt Nam"];
-    let genres: string[] = ["Hành Động", "Viễn Tưởng", "Kinh Dị", "Tình Cảm", "Hài Hước", "Cổ Trang", "Võ Thuật", "Hình Sự", "Phiêu Lưu", "Tâm Lý", "Học Đường", "Chính Kịch", "Gia Đình", "Chiến Tranh", "Hoạt Hình"];
-
-    try {
-      // 1. Gọi API phimapi.com lấy danh sách thể loại và quốc gia
-      const [genresRes, countriesRes] = await Promise.all([
-        fetch('https://phimapi.com/the-loai').then(r => r.ok ? r.json() : null),
-        fetch('https://phimapi.com/quoc-gia').then(r => r.ok ? r.json() : null)
-      ]);
-
-      if (genresRes && Array.isArray(genresRes)) {
-        genres = genresRes.map((g: any) => g.name);
-      }
-      if (countriesRes && Array.isArray(countriesRes)) {
-        countries = countriesRes.map((c: any) => c.name);
-      }
-
-      // 2. Kết hợp thêm thể loại trong database
-      if (providerType === 'supabase') {
-        const { supabase } = await import('@lib/supabase');
-        const { data, error } = await supabase
-          .from('movies')
-          .select('genres');
-        
-        if (!error && data) {
-          const dbGenres = [...new Set(data.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
-          if (dbGenres.length > 0) {
-            genres = [...new Set([...genres, ...dbGenres])];
-          }
-        }
-      }
-    } catch (e) {
-      console.warn("Lỗi khi lấy genres/countries từ API/database, dùng static fallback:", e);
-    }
-
-    const result = { countries, genres };
-    // Cache trong 2 giờ
-    movieCache.set(cacheKey, result, 2 * 60 * 60 * 1000);
-    return result;
+    const countries = ["Trung Quốc", "Hàn Quốc", "Nhật Bản", "Mỹ", "Hồng Kông", "Đài Loan", "Thái Lan", "Âu Mỹ", "Việt Nam", "Ấn Độ", "Anh", "Pháp", "Đức", "Tây Ban Nha"];
+    const genres = ["Hành Động", "Viễn Tưởng", "Kinh Dị", "Tình Cảm", "Hài Hước", "Cổ Trang", "Võ Thuật", "Hình Sự", "Phiêu Lưu", "Tâm Lý", "Học Đường", "Chính Kịch", "Gia Đình", "Chiến Tranh", "Hoạt Hình", "Âm Nhạc", "Thể Thao", "Tài Liệu"];
+    return { countries, genres };
   },
 
   // Helper để xóa cache khi admin cào phim mới hoặc đồng bộ
