@@ -1,5 +1,8 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
+
+const serverSettings = await SettingService.getSettings();
 ---
 
 <MainLayout title="Tổng kết đơn hàng & Thanh toán">
@@ -155,9 +158,9 @@ import MainLayout from '@layouts/MainLayout.astro';
   </main>
 </MainLayout>
 
-<script is:inline>
+<script is:inline define:vars={{ serverSettings }}>
   (function() {
-    let loadedSettings = {};
+    let loadedSettings = serverSettings || {};
     let selectedPackage = null;
     let selectedMethod = 'manual';
     let selectedCycle = 'monthly';
@@ -205,16 +208,6 @@ import MainLayout from '@layouts/MainLayout.astro';
     }
 
     async function initOrderSummary() {
-      try {
-        const res = await fetch('/api/admin/settings');
-        if (res.ok) {
-          const result = await res.json();
-          loadedSettings = result.data || {};
-        }
-      } catch (e) {
-        console.error('Error loading settings:', e);
-      }
-
       const payments = loadedSettings.payments || {};
       vatRate = payments.vat_rate !== undefined ? Number(payments.vat_rate) : 8;
       const packages = loadedSettings.packages || [];
@@ -677,6 +670,7 @@ import MainLayout from '@layouts/MainLayout.astro';
         } catch (e) {}
 
         const encodedInfo = encodeURIComponent(clientInfo);
+        const payments = loadedSettings.payments || {};
         if (selectedMethod === 'manual') {
           window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else if (selectedMethod === 'sepay') {
