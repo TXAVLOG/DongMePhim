@@ -60,7 +60,14 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
                 return (
                   <tr class="hover:bg-white/5 transition-all">
                     <td class="py-4 px-4 font-mono font-black text-purple-400 text-sm">
-                      <span class="bg-purple-500/10 px-2.5 py-1 rounded border border-purple-500/20">{item.code}</span>
+                      <div 
+                        onclick={`copyPromoCodeOnly('${item.code}', event)`}
+                        class="inline-flex items-center gap-1.5 bg-purple-500/10 hover:bg-purple-500/20 px-2.5 py-1 rounded border border-purple-500/20 cursor-pointer active:scale-95 transition-all group"
+                        data-txatooltip="Click để sao chép nhanh mã này"
+                      >
+                        <span>{item.code}</span>
+                        <span class="material-symbols-outlined text-xs text-purple-400/60 group-hover:text-purple-300 transition-colors">content_copy</span>
+                      </div>
                     </td>
                     <td class="py-4 px-4 font-bold text-emerald-400">
                       {item.discount_type === 'percent' ? `Giảm ${item.discount_value}%` : `Giảm ${item.discount_value.toLocaleString('vi-VN')} đ`}
@@ -88,8 +95,16 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
                     <td class="py-4 px-4 text-right space-x-1.5">
                       <button 
                         type="button" 
+                        onclick={`copyPromoCodeOnly('${item.code}', event)`}
+                        class="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 active:scale-90 rounded-lg text-indigo-400 transition-all cursor-pointer"
+                        data-txatooltip="Sao chép nhanh mã Code"
+                      >
+                        <span class="material-symbols-outlined text-base">content_copy</span>
+                      </button>
+                      <button 
+                        type="button" 
                         onclick={`copyPromoLink('${item.code}', '${item.package_scope.replace(/'/g, "\\'")}')`}
-                        class="p-2 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg text-purple-400 transition-all cursor-pointer"
+                        class="p-2 bg-purple-500/10 hover:bg-purple-500/20 active:scale-90 rounded-lg text-purple-400 transition-all cursor-pointer"
                         data-txatooltip="Sao chép đường link mua hàng kèm mã này"
                       >
                         <span class="material-symbols-outlined text-base">link</span>
@@ -125,6 +140,20 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
 
 <script is:inline define:vars={{ packages }}>
   (function() {
+    window.copyPromoCodeOnly = function(code, evt) {
+      if (evt) evt.stopPropagation();
+      navigator.clipboard.writeText(code).then(() => {
+        if (evt && evt.currentTarget) {
+          const el = evt.currentTarget;
+          el.classList.add('scale-110', 'ring-2', 'ring-purple-400', 'bg-purple-500/30');
+          setTimeout(() => {
+            el.classList.remove('scale-110', 'ring-2', 'ring-purple-400', 'bg-purple-500/30');
+          }, 250);
+        }
+        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép mã ${code}!`, 'success');
+      });
+    };
+
     window.copyPromoLink = function(code, scope) {
       let pkgIdParam = 'vip';
       if (scope && scope !== 'all') {
