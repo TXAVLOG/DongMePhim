@@ -142,7 +142,6 @@ const slugify = (text: string) => {
     .replace(/\s+/g, '-');
 };
 
-const currentPath = Astro.url.pathname;
 const isActive = (path: string) => {
   if (path === '/tphim') {
     return currentPath === '/tphim';
