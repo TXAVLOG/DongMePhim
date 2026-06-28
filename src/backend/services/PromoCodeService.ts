@@ -54,23 +54,13 @@ export const PromoCodeService = {
 
   // 2. Tạo mới mã giảm giá (Admin)
   async createPromoCode(promo: PromoCode): Promise<PromoCode> {
-    let rawCode = (promo.code || '').trim().toUpperCase();
-    
-    if (rawCode.startsWith('TX-')) {
-      rawCode = rawCode.substring(3).trim();
-    }
-
-    if (!rawCode) {
-      // Tạo mã ngẫu nhiên 6 ký tự
-      rawCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    }
-
-    const finalCode = `TX-${rawCode}`;
+    const cleanCode = (promo.code || '').trim().toUpperCase();
+    if (!cleanCode) throw new Error('Mã giảm giá không được để trống!');
 
     const { data, error } = await supabase
       .from('txa_promo_codes')
       .insert({
-        code: finalCode,
+        code: cleanCode,
         discount_type: promo.discount_type || 'percent',
         discount_value: Number(promo.discount_value) || 0,
         package_scope: promo.package_scope || 'all',
@@ -121,12 +111,9 @@ export const PromoCodeService = {
     username: string,
     currentPrice: number
   ): Promise<{ success: boolean; message: string; discountAmount?: number; discountType?: string; discountValue?: number; codeObj?: PromoCode }> {
-    let cleanCode = (code || '').trim().toUpperCase();
+    const cleanCode = (code || '').trim().toUpperCase();
     if (!cleanCode) {
       return { success: false, message: 'Vui lòng nhập mã giảm giá!' };
-    }
-    if (!cleanCode.startsWith('TX-')) {
-      cleanCode = `TX-${cleanCode}`;
     }
 
     // Lấy thông tin mã từ DB
@@ -157,11 +144,25 @@ export const PromoCodeService = {
 
     // Kiểm tra Phạm vi gói cước (Package Scope)
     const scope = promo.package_scope || 'all';
-    if (scope !== 'all' && scope.toLowerCase() !== (packageTitle || '').toLowerCase()) {
-      return { 
-        success: false, 
-        message: `Mã giảm giá "${cleanCode}" chỉ áp dụng cho gói: ${scope}!` 
-      };
+    if (scope !== 'all') {
+      const cleanScope = scope.toLowerCase();
+      const cleanTitle = (packageTitle || '').toLowerCase();
+      const isBypassScope = cleanScope.includes('bypass') || cleanScope.includes('zalo');
+      const isBypassTitle = cleanTitle.includes('bypass') || cleanTitle.includes('zalo');
+
+      let isMatch = false;
+      if (isBypassScope && isBypassTitle) {
+        isMatch = true;
+      } else if (cleanScope === cleanTitle || cleanTitle.includes(cleanScope) || cleanScope.includes(cleanTitle)) {
+        isMatch = true;
+      }
+
+      if (!isMatch) {
+        return { 
+          success: false, 
+          message: `Mã giảm giá "${cleanCode}" chỉ áp dụng cho gói: ${scope}!` 
+        };
+      }
     }
 
     // Kiểm tra xem username đã từng dùng mã này chưa
