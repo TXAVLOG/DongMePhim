@@ -116,7 +116,7 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
                 <label class="text-[10px] text-zinc-500 font-bold uppercase">Phương thức tích hợp</label>
                 <select id="payment-sepay-integration-type" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white cursor-pointer">
                   <option value="vietqr" selected={settings.payments?.sepay_integration_type === 'vietqr'}>Tự động hiển thị VietQR tại trang web (Polling đối soát)</option>
-                  <option value="gateway" selected={settings.payments?.sepay_integration_type === 'gateway'}>Chuyển hướng sang Cổng thanh toán SePay (pay.sepay.vn)</option>
+                  <option value="gateway" selected={settings.payments?.sepay_integration_type === 'gateway'}>Chuyển hướng sang Trang thanh toán SePay (qr.sepay.vn)</option>
                 </select>
               </div>
               <div class="space-y-1">
