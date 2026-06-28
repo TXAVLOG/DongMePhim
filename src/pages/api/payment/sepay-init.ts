@@ -2,9 +2,8 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { SettingService } from '@services/SettingService';
 
-function generateSepaySignature(fields: Record<string, any>, secretKey: string): string {
+async function generateSepaySignature(fields: Record<string, any>, secretKey: string): Promise<string> {
   try {
-    const crypto = require('crypto');
     // Predefined field order according to official SePay developer documentation
     const orderedKeys = [
       'order_amount',
@@ -28,8 +27,34 @@ function generateSepaySignature(fields: Record<string, any>, secretKey: string):
     }
     
     const signedStr = signed.join(',');
-    return crypto.createHmac('sha256', secretKey).update(signedStr).digest('base64');
+
+    // Web Crypto API HMAC-SHA256 compatible with Cloudflare Workers
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secretKey);
+    const messageData = encoder.encode(signedStr);
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const signatureBuffer = await crypto.subtle.sign(
+      'HMAC',
+      cryptoKey,
+      messageData
+    );
+
+    const bytes = new Uint8Array(signatureBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
   } catch (e) {
+    console.error('Error generating signature:', e);
     return '';
   }
 }
@@ -85,7 +110,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    fields.signature = generateSepaySignature(fields, secretKey);
+    fields.signature = await generateSepaySignature(fields, secretKey);
 
     return apiResponse({ checkoutUrl, fields }, 'success', 'Khởi tạo cổng thanh toán SePay thành công', 200, request);
   } catch (err: any) {
