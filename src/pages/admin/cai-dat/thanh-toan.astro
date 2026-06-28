@@ -119,20 +119,80 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
                   <option value="gateway" selected={settings.payments?.sepay_integration_type === 'gateway'}>Cổng thanh toán Thương mại SePay PG (pay.sepay.vn/v1/checkout/init)</option>
                 </select>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="space-y-1">
-                  <label class="text-[10px] text-zinc-500 font-bold uppercase">API Key (Live)</label>
-                  <input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
-                </div>
-                <div class="space-y-1">
-                  <label class="text-[10px] text-zinc-500 font-bold uppercase">Merchant ID (Live PG)</label>
-                  <input type="text" id="payment-sepay-merchant" value={settings.payments?.sepay_merchant_id} placeholder="Ví dụ: SP12345" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+              <!-- Khối tích hợp Cổng Thương mại PG (Gateway) -->
+              <div id="sepay-gateway-fields" class="space-y-3 pt-2">
+                <div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl space-y-3">
+                  <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">payments</span>
+                    Cấu hình Cổng thanh toán Thương mại SePay PG (pay.sepay.vn)
+                  </span>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                      <label class="text-[10px] text-zinc-400 font-bold uppercase">Merchant ID (Live PG)</label>
+                      <input type="text" id="payment-sepay-merchant" value={settings.payments?.sepay_merchant_id} placeholder="Ví dụ: SP12345" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-[10px] text-zinc-400 font-bold uppercase">Secret Key (Live PG - Mã hóa Signature)</label>
+                      <input type="password" id="payment-sepay-secret" value={settings.payments?.sepay_secret_key} placeholder="Mã bí mật dùng cho Cổng PG Live" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key (Live PG - Mã hóa Signature)</label>
-                <input type="password" id="payment-sepay-secret" value={settings.payments?.sepay_secret_key} placeholder="Khóa bí mật dùng cho Cổng PG SePay Live" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+
+              <!-- Khối tích hợp VietQR Nhúng & Polling Sao kê -->
+              <div id="sepay-vietqr-fields" class="space-y-3 pt-2">
+                <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-3">
+                  <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">qr_code_scanner</span>
+                    Cấu hình API Đối soát Sao kê & Ngân hàng VietQR
+                  </span>
+                  <div class="space-y-1">
+                    <label class="text-[10px] text-zinc-400 font-bold uppercase">API Key Đối soát Sao kê (Live Access Token)</label>
+                    <input type="password" id="payment-sepay-key" value={settings.payments?.sepay_api_key} placeholder="Lấy tại SePay -> Kết nối API -> API Tokens" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                    <p class="text-[9px] text-zinc-400">Token này dùng cho các nút bên dưới để xác minh ID & tải danh sách tài khoản ngân hàng từ SePay.</p>
+                  </div>
+
+                  <!-- Verification panel -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div class="space-y-1">
+                      <label class="text-[10px] text-zinc-400 font-bold uppercase">ID ngân hàng trên SePay</label>
+                      <div class="flex gap-2">
+                        <input type="text" id="payment-sepay-bank-id" value={settings.payments?.sepay_bank_account_id} placeholder="Ví dụ: 18" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                        <button type="button" id="sepay-verify-btn" class="px-3 py-2 bg-primary/20 border border-primary/30 hover:bg-primary/30 active:scale-95 text-primary rounded-xl text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap">Xác minh ID</button>
+                      </div>
+                    </div>
+                    <div class="space-y-1 flex flex-col justify-end">
+                      <button type="button" id="sepay-load-list-btn" class="w-full px-3 py-2 bg-secondary/15 border border-secondary/35 hover:bg-secondary/25 active:scale-95 text-secondary rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 h-[34px]">
+                        <span class="material-symbols-outlined text-sm">download</span>
+                        Tải DS từ SePay
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- List display container -->
+                  <div id="sepay-accounts-dropdown-container" class="hidden glass-panel p-3 rounded-xl border border-glass-stroke/50 space-y-1.5">
+                    <label class="text-[9px] text-zinc-400 font-bold uppercase">Chọn tài khoản nhanh</label>
+                    <select id="sepay-accounts-select" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg px-2.5 py-1.5 text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
+                      <option value="">-- Chọn tài khoản --</option>
+                    </select>
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[10px] text-zinc-400 font-bold uppercase">Ngân hàng (Short Name)</label>
+                    <input type="text" id="payment-sepay-bank" value={settings.payments?.sepay_bank_name} placeholder="Ví dụ: Vietcombank" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] text-zinc-400 font-bold uppercase">Số tài khoản</label>
+                    <input type="text" id="payment-sepay-no" value={settings.payments?.sepay_account_no} placeholder="Ví dụ: 0071000899999" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[10px] text-zinc-400 font-bold uppercase">Tên chủ tài khoản</label>
+                    <input type="text" id="payment-sepay-name" value={settings.payments?.sepay_account_name} placeholder="Ví dụ: NGUYEN VAN A" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white uppercase" />
+                  </div>
+                </div>
               </div>
+
+              <!-- Cấu hình Sandbox dùng chung -->
               <div class="space-y-2 pt-1">
                 <div class="flex items-center gap-3">
                   <input type="checkbox" id="payment-sepay-sandbox-enable" checked={settings.payments?.sepay_sandbox_mode} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke cursor-pointer" />
@@ -146,7 +206,7 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
                 <div class="space-y-1">
                   <label class="text-[10px] text-yellow-500 font-bold uppercase flex items-center gap-1.5">
                     <span class="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[9px] rounded font-black">SANDBOX</span>
-                    API Key (Sandbox)
+                    API Access Token (Sandbox)
                   </label>
                   <input type="password" id="payment-sepay-sandbox-key" value={settings.payments?.sepay_sandbox_api_key} placeholder="Token Sandbox từ SePay (khác Live)" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
                 </div>
@@ -161,49 +221,11 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
                   </div>
                 </div>
               </div>
-              
-              <!-- Verification panel -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div class="space-y-1">
-                  <label class="text-[10px] text-zinc-500 font-bold uppercase">ID ngân hàng trên SePay</label>
-                  <div class="flex gap-2">
-                    <input type="text" id="payment-sepay-bank-id" value={settings.payments?.sepay_bank_account_id} placeholder="Ví dụ: 18" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
-                    <button type="button" id="sepay-verify-btn" class="px-3 py-2 bg-primary/20 border border-primary/30 hover:bg-primary/30 active:scale-95 text-primary rounded-xl text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap">Xác minh</button>
-                  </div>
-                </div>
-                <div class="space-y-1 flex flex-col justify-end">
-                  <button type="button" id="sepay-load-list-btn" class="w-full px-3 py-2 bg-secondary/15 border border-secondary/35 hover:bg-secondary/25 active:scale-95 text-secondary rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 h-[34px]">
-                    <span class="material-symbols-outlined text-sm">download</span>
-                    Tải DS từ SePay
-                  </button>
-                </div>
-              </div>
-
-              <!-- List display container -->
-              <div id="sepay-accounts-dropdown-container" class="hidden glass-panel p-3 rounded-xl border border-glass-stroke/50 space-y-1.5">
-                <label class="text-[9px] text-zinc-400 font-bold uppercase">Chọn tài khoản nhanh</label>
-                <select id="sepay-accounts-select" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg px-2.5 py-1.5 text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
-                  <option value="">-- Chọn tài khoản --</option>
-                </select>
-              </div>
-
-              <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">Ngân hàng (Short Name)</label>
-                <input type="text" id="payment-sepay-bank" value={settings.payments?.sepay_bank_name} placeholder="Ví dụ: Vietcombank" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" />
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">Số tài khoản</label>
-                <input type="text" id="payment-sepay-no" value={settings.payments?.sepay_account_no} placeholder="Ví dụ: 0071000899999" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] text-zinc-500 font-bold uppercase">Tên chủ tài khoản</label>
-                <input type="text" id="payment-sepay-name" value={settings.payments?.sepay_account_name} placeholder="Ví dụ: NGUYEN VAN A" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white uppercase" />
-              </div>
 
               <!-- Webhook URL Display & Test webhook button -->
               <div class="space-y-2 pt-3 border-t border-glass-stroke/30">
                 <div class="space-y-1">
-                  <label class="text-[10px] text-zinc-500 font-bold uppercase">URL Webhook nhận thông báo từ SePay</label>
+                  <label class="text-[10px] text-zinc-500 font-bold uppercase">URL Webhook / IPN nhận thông báo từ SePay</label>
                   <div class="flex gap-2">
                     <input type="text" id="sepay-webhook-url-input" readonly value="" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl px-4 py-2 text-xs text-zinc-400 focus:outline-none font-mono" />
                     <button type="button" id="sepay-copy-webhook-btn" class="px-3 py-2 bg-white/5 border border-glass-stroke hover:bg-white/10 active:scale-95 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center">
@@ -215,7 +237,7 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
                 <div class="flex gap-2.5 pt-1.5">
                   <button type="button" id="sepay-test-webhook-btn" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 active:scale-95 text-slate-950 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 border-none">
                     <span class="material-symbols-outlined text-sm">send</span>
-                    Send Test Webhook
+                    Send Test Webhook / IPN
                   </button>
                 </div>
               </div>
@@ -391,8 +413,25 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
         setVal('payment-stripe-pub', s.payments?.stripe_publishable_key);
         setVal('payment-stripe-sec', s.payments?.stripe_secret_key);
 
+        toggleSepayFields();
         renderSandboxLogs();
       }
+
+      function toggleSepayFields() {
+        const type = document.getElementById('payment-sepay-integration-type')?.value || 'vietqr';
+        const vietqrFields = document.getElementById('sepay-vietqr-fields');
+        const gatewayFields = document.getElementById('sepay-gateway-fields');
+
+        if (type === 'gateway') {
+          if (vietqrFields) vietqrFields.style.display = 'none';
+          if (gatewayFields) gatewayFields.style.display = 'block';
+        } else {
+          if (vietqrFields) vietqrFields.style.display = 'block';
+          if (gatewayFields) gatewayFields.style.display = 'none';
+        }
+      }
+
+      document.getElementById('payment-sepay-integration-type')?.addEventListener('change', toggleSepayFields);
 
       function setVal(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
       function setChecked(id, val) { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; }
@@ -572,11 +611,10 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 
       // Test webhook API simulation button
       document.getElementById('sepay-test-webhook-btn')?.addEventListener('click', async () => {
-        const apiKey = document.getElementById('payment-sepay-key')?.value;
-        if (!apiKey) {
-          if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền API Key trước khi test webhook!', 'error');
-          return;
-        }
+        const type = document.getElementById('payment-sepay-integration-type')?.value || 'vietqr';
+        const apiKey = type === 'gateway' 
+          ? (document.getElementById('payment-sepay-secret')?.value || 'TPHIMX_SECRET_999')
+          : (document.getElementById('payment-sepay-key')?.value || 'mock_sepay_key');
 
         const consoleEl = document.getElementById('postman-console');
         const statusBadge = document.getElementById('postman-status-badge');
