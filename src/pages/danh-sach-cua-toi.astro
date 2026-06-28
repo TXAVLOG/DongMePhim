@@ -36,7 +36,7 @@ const savedMovies = await MovieService.getMovies({ type: 'series', limit: 5 });
           <span class="material-symbols-outlined text-primary text-4xl">lock</span>
         </div>
         <h2 class="text-2xl text-white font-title-md mb-2">Yêu cầu đăng nhập</h2>
-        <p class="text-on-surface-variant max-w-md mx-auto mb-8 font-body-main">Bạn cần đăng nhập vào tài khoản để lưu và đồng bộ danh sách phim yêu thích trên nhiều thiết bị.</p>
+        <p class="text-on-surface-variant max-w-md mx-auto mb-8 font-body-main">Bạn cần đăng nhập vào tài khoản để lưu danh sách phim yêu thích trên nhiều thiết bị.</p>
         <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class="px-8 py-3 rounded-full text-white font-bold bg-gradient-to-br from-primary-container to-secondary-container shadow-lg hover:brightness-110 transition-all">
           Đăng nhập ngay
         </button>

@@ -141,11 +141,6 @@ const settings = await SettingService.getSettings();
       historyGrid.innerHTML = list.map(item => {
         const percent = item.duration > 0 ? Math.min(Math.round((item.currentTime / item.duration) * 100), 100) : 0;
         const watchUrl = `/xem/${item.slug}?ep=${item.episodeSlug}&sv=${item.serverIndex || 0}`;
-        
-        // Status cloud icon
-        const cloudIcon = (item.synced || username) 
-          ? '<span class="material-symbols-outlined text-emerald-400 text-sm" data-txatooltip="Đã đồng bộ máy chủ">cloud_done</span>' 
-          : '<span class="material-symbols-outlined text-zinc-500 text-sm animate-pulse" data-txatooltip="Chưa đồng bộ">cloud_sync</span>';
 
         // Fallback images
         const poster = item.posterUrl || '/favicon.png';
@@ -156,11 +151,6 @@ const settings = await SettingService.getSettings();
             <div class="relative aspect-video w-full bg-black/40 overflow-hidden shrink-0">
               <img src="${poster}" alt="${item.title || item.slug}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
               <div class="absolute inset-0 bg-gradient-to-t from-[#141416] via-[#141416]/20 to-transparent"></div>
-              
-              <!-- Sync Indicator -->
-              <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md p-1.5 rounded-lg flex items-center justify-center">
-                ${cloudIcon}
-              </div>
 
               <!-- Percent badge -->
               <div class="absolute bottom-3 left-3 bg-primary text-on-primary text-[10px] px-2 py-0.5 rounded font-bold">
