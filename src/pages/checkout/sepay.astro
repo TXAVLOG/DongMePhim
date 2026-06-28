@@ -121,7 +121,6 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
     let price = 0;
     let cycle = 'monthly';
     let email = '';
-    let clientInfo = '';
     let pollInterval = null;
     let isApproved = false;
 
@@ -175,7 +174,6 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
       price = Number(urlParams.get('price')) || 0;
       cycle = urlParams.get('cycle') || 'monthly';
       email = urlParams.get('email') || '';
-      clientInfo = urlParams.get('clientInfo') || '';
 
       if (email) {
         sessionStorage.setItem('txa_saved_email', email);
