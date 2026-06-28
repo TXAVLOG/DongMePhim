@@ -278,7 +278,7 @@ import MainLayout from '@layouts/MainLayout.astro';
 
         <!-- Premium Benefits Bento Card -->
         <div class="glass-panel border border-glass-stroke rounded-3xl p-6 bg-gradient-to-br from-zinc-950 to-zinc-900/60 relative overflow-hidden flex flex-col justify-between">
-          <h4 class="text-xs text-primary font-bold uppercase tracking-widest mb-4">LỢI ÍCH VIP MÀ BẠN CÓ</h4>
+          <h4 id="benefits-card-title" class="text-xs text-primary font-bold uppercase tracking-widest mb-4">LỢI ÍCH HIỆN TẠI CỦA GÓI</h4>
           <ul id="vip-benefits-list" class="space-y-3.5 flex-1">
             <li class="flex items-start gap-2.5 text-xs text-zinc-300">
               <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
@@ -479,22 +479,46 @@ import MainLayout from '@layouts/MainLayout.astro';
           planRemaining.classList.add('hidden');
         }
 
-        // Render dynamic VIP benefits from DB features
+        // Render dynamic package benefits & key features from DB
+        const benefitsTitle = document.getElementById('benefits-card-title');
         const benefitsList = document.getElementById('vip-benefits-list');
+        const currentPkgName = userPkg?.title || userDb?.package || 'Cơ bản';
+        
+        if (benefitsTitle) {
+          benefitsTitle.textContent = `LỢI ÍCH HIỆN TẠI CỦA GÓI (${currentPkgName.toUpperCase()})`;
+        }
+
         if (benefitsList) {
           let feats = userPkg?.features;
           if (!feats || feats.length === 0) {
-            const vipPkg = packagesList.find(p => p.id === 'vip' || p.price > 0);
-            feats = vipPkg?.features;
+            if (userPkg && userPkg.permissions) {
+              const p = userPkg.permissions;
+              feats = [
+                `Trình chiếu chất lượng tối đa: ${p.max_resolution || 'HD'}`,
+                p.bypass_ads ? 'Xem phim không quảng cáo' : 'Có hiển thị quảng cáo cơ bản',
+                p.vip_badge ? 'Huy hiệu VIP độc quyền trên tài khoản' : 'Tài khoản thường',
+                p.watch_together ? 'Hỗ trợ tính năng Xem chung phòng' : 'Không có Xem chung phòng',
+                p.hide_watermark ? 'Ẩn logo mờ khi xem phim' : 'Hiển thị logo mờ hệ thống'
+              ];
+            } else {
+              const vipPkg = packagesList.find(p => p.id === 'vip' || p.price > 0);
+              feats = vipPkg?.features;
+            }
           }
-          if (feats && feats.length > 0) {
-            benefitsList.innerHTML = feats.map(f => `
-              <li class="flex items-start gap-2.5 text-xs text-zinc-300">
-                <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
-                <span>${f}</span>
-              </li>
-            `).join('');
+          if (!feats || feats.length === 0) {
+            feats = [
+              "Không quảng cáo gây phiền nhiễu khi phát phim.",
+              "Trình chiếu chất lượng 4K UHD cao cấp nhất.",
+              "Truy cập độc quyền phim bom tấn mới nhất.",
+              "Tốc độ tải phim siêu tốc, máy chủ CDN VIP."
+            ];
           }
+          benefitsList.innerHTML = feats.map(f => `
+            <li class="flex items-start gap-2.5 text-xs text-zinc-300">
+              <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
+              <span>${f}</span>
+            </li>
+          `).join('');
         }
 
         // Render Expiry Warning Banner (Expiring Soon)
