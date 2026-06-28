@@ -67,7 +67,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
             <span class="text-[9px] text-zinc-500 font-black uppercase block">Ngân hàng thụ hưởng</span>
             <span class="font-bold text-white text-sm" id="sepay-bank-name">{bankName}</span>
           </div>
-          <button type="button" onclick="copyInfo('{bankName}', 'Tên ngân hàng')" class="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all cursor-pointer">
+          <button type="button" onclick="copyInfo(document.getElementById('sepay-bank-name').textContent, 'Tên ngân hàng', event)" class="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all cursor-pointer">
             <span class="material-symbols-outlined text-sm">content_copy</span>
           </button>
         </div>
@@ -77,7 +77,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
             <span class="text-[9px] text-zinc-500 font-black uppercase block">Số tài khoản</span>
             <span class="font-mono font-bold text-white text-base" id="sepay-account-no">{accountNo}</span>
           </div>
-          <button type="button" onclick="copyInfo('{accountNo}', 'Số tài khoản')" class="p-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1">
+          <button type="button" onclick="copyInfo(document.getElementById('sepay-account-no').textContent, 'Số tài khoản', event)" class="p-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1">
             <span class="material-symbols-outlined text-sm">content_copy</span>
             <span>Sao chép</span>
           </button>
@@ -124,9 +124,30 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
     let pollInterval = null;
     let isApproved = false;
 
-    window.copyInfo = function(text, label) {
+    window.copyInfo = function(text, label, evt) {
+      if (evt) evt.stopPropagation();
+      if (!text) return;
       navigator.clipboard.writeText(text).then(() => {
-        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép ${label}!`, 'success');
+        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép ${label}!`, 'success', 1500);
+        
+        if (evt && evt.currentTarget) {
+          const btn = evt.currentTarget;
+          const icon = btn.querySelector('.material-symbols-outlined');
+          const textSpan = btn.querySelector('span:not(.material-symbols-outlined)');
+          
+          const origIcon = icon ? icon.textContent : 'content_copy';
+          const origText = textSpan ? textSpan.textContent : '';
+          
+          if (icon) icon.textContent = 'check';
+          if (textSpan) textSpan.textContent = 'Đã chép';
+          btn.classList.add('scale-105', 'brightness-125');
+          
+          setTimeout(() => {
+            if (icon) icon.textContent = origIcon;
+            if (textSpan) textSpan.textContent = origText;
+            btn.classList.remove('scale-105', 'brightness-125');
+          }, 1500);
+        }
       });
     };
 
@@ -181,11 +202,11 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
 
       const backLink = document.querySelector('a[href="/checkout/order-summary"]');
       if (backLink) {
-        backLink.addEventListener('click', (e) => {
+        backLink.onclick = (e) => {
           e.preventDefault();
           cleanupOrderOnBack();
           window.location.href = `/checkout/order-summary?email=${encodeURIComponent(email)}`;
-        });
+        };
       }
 
       document.getElementById('sepay-pkg-title').textContent = packageTitle;
@@ -197,12 +218,18 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
       const qrImg = document.getElementById('sepay-vietqr-img');
       if (qrImg) qrImg.src = qrUrl;
 
-      document.getElementById('btn-copy-sepay-memo')?.addEventListener('click', () => copyInfo(txid, 'Nội dung chuyển khoản'));
+      const copyMemoBtn = document.getElementById('btn-copy-sepay-memo');
+      if (copyMemoBtn) {
+        copyMemoBtn.onclick = (e) => copyInfo(txid, 'Nội dung chuyển khoản', e);
+      }
 
-      document.getElementById('btn-check-sepay-now')?.addEventListener('click', async () => {
-        if (window.showGlobalToast) window.showGlobalToast('Đang kiểm tra kết quả giao dịch từ ngân hàng...', 'info');
-        await checkPaymentStatus();
-      });
+      const checkNowBtn = document.getElementById('btn-check-sepay-now');
+      if (checkNowBtn) {
+        checkNowBtn.onclick = async () => {
+          if (window.showGlobalToast) window.showGlobalToast('Đang kiểm tra kết quả giao dịch từ ngân hàng...', 'info');
+          await checkPaymentStatus();
+        };
+      }
 
       // Start automatic polling every 3.5s
       if (pollInterval) clearInterval(pollInterval);
@@ -210,6 +237,5 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
     }
 
     initSepayCheckout();
-    document.addEventListener('astro:page-load', initSepayCheckout);
   })();
 </script>

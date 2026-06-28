@@ -279,7 +279,7 @@ import MainLayout from '@layouts/MainLayout.astro';
         <!-- Premium Benefits Bento Card -->
         <div class="glass-panel border border-glass-stroke rounded-3xl p-6 bg-gradient-to-br from-zinc-950 to-zinc-900/60 relative overflow-hidden flex flex-col justify-between">
           <h4 class="text-xs text-primary font-bold uppercase tracking-widest mb-4">LỢI ÍCH VIP MÀ BẠN CÓ</h4>
-          <ul class="space-y-3.5 flex-1">
+          <ul id="vip-benefits-list" class="space-y-3.5 flex-1">
             <li class="flex items-start gap-2.5 text-xs text-zinc-300">
               <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
               <span>Không quảng cáo gây phiền nhiễu khi phát phim.</span>
@@ -477,6 +477,24 @@ import MainLayout from '@layouts/MainLayout.astro';
           planExpiryVal.textContent = 'Vô thời hạn';
           planCycleDiv.classList.add('hidden');
           planRemaining.classList.add('hidden');
+        }
+
+        // Render dynamic VIP benefits from DB features
+        const benefitsList = document.getElementById('vip-benefits-list');
+        if (benefitsList) {
+          let feats = userPkg?.features;
+          if (!feats || feats.length === 0) {
+            const vipPkg = packagesList.find(p => p.id === 'vip' || p.price > 0);
+            feats = vipPkg?.features;
+          }
+          if (feats && feats.length > 0) {
+            benefitsList.innerHTML = feats.map(f => `
+              <li class="flex items-start gap-2.5 text-xs text-zinc-300">
+                <span class="material-symbols-outlined text-emerald-400 text-sm font-bold mt-0.5">check_circle</span>
+                <span>${f}</span>
+              </li>
+            `).join('');
+          }
         }
 
         // Render Expiry Warning Banner (Expiring Soon)
@@ -678,20 +696,44 @@ import MainLayout from '@layouts/MainLayout.astro';
       }
     }
 
-    window.copyRenewField = function(id) {
+    window.copyRenewField = function(id, evt) {
+      if (evt) evt.stopPropagation();
       const text = document.getElementById(id)?.textContent;
       if (text) {
         navigator.clipboard.writeText(text);
         if (window.showGlobalToast) window.showGlobalToast('Đã sao chép vào bộ nhớ tạm!', 'success', 1500);
+        if (evt && evt.currentTarget) {
+          const btn = evt.currentTarget;
+          const icon = btn.querySelector('.material-symbols-outlined');
+          const origIcon = icon ? icon.textContent : 'content_copy';
+          if (icon) icon.textContent = 'check';
+          btn.classList.add('scale-110', 'text-emerald-400');
+          setTimeout(() => {
+            if (icon) icon.textContent = origIcon;
+            btn.classList.remove('scale-110', 'text-emerald-400');
+          }, 1200);
+        }
       }
     };
     
-    window.copyRenewRawField = function(id) {
+    window.copyRenewRawField = function(id, evt) {
+      if (evt) evt.stopPropagation();
       const textStr = document.getElementById(id)?.textContent;
       if (textStr) {
         const cleanedVal = textStr.replace(/[^0-9]/g, '');
         navigator.clipboard.writeText(cleanedVal);
         if (window.showGlobalToast) window.showGlobalToast('Đã sao chép số tiền!', 'success', 1500);
+        if (evt && evt.currentTarget) {
+          const btn = evt.currentTarget;
+          const icon = btn.querySelector('.material-symbols-outlined');
+          const origIcon = icon ? icon.textContent : 'content_copy';
+          if (icon) icon.textContent = 'check';
+          btn.classList.add('scale-110', 'text-emerald-400');
+          setTimeout(() => {
+            if (icon) icon.textContent = origIcon;
+            btn.classList.remove('scale-110', 'text-emerald-400');
+          }, 1200);
+        }
       }
     };
 

@@ -103,7 +103,7 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
                       </button>
                       <button 
                         type="button" 
-                        onclick={`copyPromoLink('${item.code}', '${item.package_scope.replace(/'/g, "\\'")}')`}
+                        onclick={`copyPromoLink('${item.code}', '${item.package_scope.replace(/'/g, "\\'")}', event)`}
                         class="p-2 bg-purple-500/10 hover:bg-purple-500/20 active:scale-90 rounded-lg text-purple-400 transition-all cursor-pointer"
                         data-txatooltip="Sao chép đường link mua hàng kèm mã này"
                       >
@@ -145,16 +145,21 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
       navigator.clipboard.writeText(code).then(() => {
         if (evt && evt.currentTarget) {
           const el = evt.currentTarget;
-          el.classList.add('scale-110', 'ring-2', 'ring-purple-400', 'bg-purple-500/30');
+          const icon = el.querySelector('.material-symbols-outlined');
+          const origIcon = icon ? icon.textContent : 'content_copy';
+          if (icon) icon.textContent = 'check';
+          el.classList.add('scale-110', 'ring-2', 'ring-emerald-400', 'bg-emerald-500/30', 'text-emerald-300');
           setTimeout(() => {
-            el.classList.remove('scale-110', 'ring-2', 'ring-purple-400', 'bg-purple-500/30');
-          }, 250);
+            if (icon) icon.textContent = origIcon;
+            el.classList.remove('scale-110', 'ring-2', 'ring-emerald-400', 'bg-emerald-500/30', 'text-emerald-300');
+          }, 1200);
         }
-        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép mã ${code}!`, 'success');
+        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép mã ${code}!`, 'success', 1500);
       });
     };
 
-    window.copyPromoLink = function(code, scope) {
+    window.copyPromoLink = function(code, scope, evt) {
+      if (evt) evt.stopPropagation();
       let pkgIdParam = 'vip';
       if (scope && scope !== 'all') {
         if (scope.toLowerCase().includes('bypass') || scope.toLowerCase().includes('zalo')) {
@@ -166,7 +171,18 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
       }
       const fullUrl = `${window.location.origin}/checkout/order-summary?packageId=${encodeURIComponent(pkgIdParam)}&promo=${encodeURIComponent(code)}`;
       navigator.clipboard.writeText(fullUrl).then(() => {
-        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép link khuyến mãi cho mã ${code}!`, 'success');
+        if (evt && evt.currentTarget) {
+          const el = evt.currentTarget;
+          const icon = el.querySelector('.material-symbols-outlined');
+          const origIcon = icon ? icon.textContent : 'link';
+          if (icon) icon.textContent = 'check';
+          el.classList.add('scale-110', 'ring-2', 'ring-emerald-400', 'bg-emerald-500/30', 'text-emerald-300');
+          setTimeout(() => {
+            if (icon) icon.textContent = origIcon;
+            el.classList.remove('scale-110', 'ring-2', 'ring-emerald-400', 'bg-emerald-500/30', 'text-emerald-300');
+          }, 1200);
+        }
+        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép link khuyến mãi cho mã ${code}!`, 'success', 1500);
       });
     };
 
