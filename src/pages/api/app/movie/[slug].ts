@@ -6,55 +6,58 @@ import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 
 export const GET: APIRoute = async ({ params, cookies, request }) => {
-  const { slug } = params;
-  if (!slug) {
-    return apiResponse(null, 'error', 'Missing slug parameter', 400);
-  }
+  try {
+    const { slug } = params;
+    if (!slug) {
+      return apiResponse(null, 'error', 'Missing slug parameter', 400);
+    }
 
-  const movie = await MovieService.getMovieBySlug(slug);
-  if (!movie) {
-    return apiResponse(null, 'error', 'Movie not found', 404);
-  }
+    const movie = await MovieService.getMovieBySlug(slug);
+    if (!movie) {
+      return apiResponse(null, 'error', 'Movie not found', 404);
+    }
 
-  // Fetch related movies
-  const relatedMovies = await MovieService.getRelatedMovies(movie.id);
+    // Fetch related movies
+    const relatedMovies = await MovieService.getRelatedMovies(movie.id);
 
-  // Read online history from cookie if available
-  const historyCookie = cookies.get('txa_online_history');
-  let historyData: any = null;
-  if (historyCookie) {
+    // Read online history from cookie if available
+    const historyCookie = cookies.get('txa_online_history');
+    let historyData: any = null;
+    if (historyCookie) {
+      try {
+        const historyList = JSON.parse(historyCookie.value);
+        if (Array.isArray(historyList)) {
+          const item = historyList.find((x: any) => x.slug === slug);
+          if (item) {
+            historyData = {
+              episode_id: item.episodeSlug,
+              current_time: parseFloat(item.currentTime) || 0,
+              server_index: parseInt(item.serverIndex) || 0
+            };
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing online history for API:', e);
+      }
+    }
+
+    // Fetch real favorite status
+    let isFavorite = false;
     try {
-      const historyList = JSON.parse(historyCookie.value);
-      if (Array.isArray(historyList)) {
-        const item = historyList.find((x: any) => x.slug === slug);
-        if (item) {
-          historyData = {
-            episode_id: item.episodeSlug,
-            current_time: parseFloat(item.currentTime) || 0,
-            server_index: parseInt(item.serverIndex) || 0
-          };
+      const user = await verifyUserFromRequest(request, cookies);
+      if (user) {
+        const { data: fav } = await supabase
+          .from('watch_lists')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('movie_id', movie.id)
+          .maybeSingle();
+        
+        if (fav) {
+          isFavorite = true;
         }
       }
-    } catch (e) {
-      console.error('Error parsing online history for API:', e);
-    }
-  }
-
-  // Fetch real favorite status
-  let isFavorite = false;
-  const user = await verifyUserFromRequest(request, cookies);
-  if (user) {
-    const { data: fav } = await supabase
-      .from('watch_lists')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('movie_id', movie.id)
-      .maybeSingle();
-    
-    if (fav) {
-      isFavorite = true;
-    }
-  }
+    } catch (_) {}
 
   // Check and flag unreleased episodes
   const nowTime = Date.now();
@@ -170,4 +173,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
   };
 
   return apiResponse(responsePayload, 'success', '', 200, request);
+  } catch (err: any) {
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
+  }
 };
