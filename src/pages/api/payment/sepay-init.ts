@@ -5,11 +5,24 @@ import { SettingService } from '@services/SettingService';
 function generateSepaySignature(fields: Record<string, any>, secretKey: string): string {
   try {
     const crypto = require('crypto');
-    // Sort keys alphabetically as per SePay PG standard SDK requirement
-    const sortedKeys = Object.keys(fields).sort();
+    // Predefined field order according to official SePay developer documentation
+    const orderedKeys = [
+      'order_amount',
+      'merchant',
+      'currency',
+      'operation',
+      'order_description',
+      'order_invoice_number',
+      'customer_id',
+      'payment_method',
+      'success_url',
+      'error_url',
+      'cancel_url'
+    ];
+    
     const signed: string[] = [];
-    for (const key of sortedKeys) {
-      if (fields[key] !== undefined && fields[key] !== null && key !== 'signature') {
+    for (const key of orderedKeys) {
+      if (fields[key] !== undefined && fields[key] !== null) {
         signed.push(`${key}=${fields[key]}`);
       }
     }
@@ -48,21 +61,28 @@ export const POST: APIRoute = async ({ request }) => {
     const checkoutUrl = isSandbox ? 'https://pgapi-sandbox.sepay.vn/v1/checkout/init' : 'https://pay.sepay.vn/v1/checkout/init';
 
     const rawFields: Record<string, any> = {
-      merchant: merchantId,
-      operation: 'PURCHASE',
-      order_invoice_number: String(txid),
       order_amount: Number(totalAmount),
+      merchant: merchantId,
       currency: 'VND',
+      operation: 'PURCHASE',
       order_description: `Thanh toan don hang ${txid}`,
+      order_invoice_number: String(txid),
       success_url: `${cleanSiteUrl}/checkout/success?txid=${txid}&packageTitle=${encodeURIComponent(packageTitle || 'VIP')}`,
       error_url: `${cleanSiteUrl}/checkout/failed?txid=${txid}`,
       cancel_url: `${cleanSiteUrl}/checkout/failed?txid=${txid}`
     };
 
-    const sortedKeys = Object.keys(rawFields).sort();
+    const orderedKeys = [
+      'order_amount', 'merchant', 'currency', 'operation',
+      'order_description', 'order_invoice_number', 'customer_id',
+      'payment_method', 'success_url', 'error_url', 'cancel_url'
+    ];
+
     const fields: Record<string, any> = {};
-    for (const key of sortedKeys) {
-      fields[key] = rawFields[key];
+    for (const key of orderedKeys) {
+      if (rawFields[key] !== undefined && rawFields[key] !== null) {
+        fields[key] = rawFields[key];
+      }
     }
 
     fields.signature = generateSepaySignature(fields, secretKey);
