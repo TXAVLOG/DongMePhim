@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Test SePay Checkout PG</title>
+  <style>
+    body { font-family: sans-serif; background: #09090b; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #18181b; padding: 2rem; border-radius: 1rem; border: 1px solid #27272a; text-align: center; max-w: 400px; }
+    button { background: #6366f1; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 0.5rem; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 1rem; }
+    button:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Kiểm tra Cổng SePay PG</h2>
+    <p>Nhấn vào nút bên dưới để gửi yêu cầu test thanh toán 10.000đ tới pay.sepay.vn</p>
+    <button id="btn-test">Gửi giao dịch test SePay</button>
+  </div>
+
+  <script>
+    document.getElementById('btn-test').onclick = async function() {
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Đang khởi tạo...';
+      try {
+        const txid = 'TXATEST' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const res = await fetch('/api/payment/sepay-init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ txid: txid, totalAmount: 10000, packageTitle: 'Test VIP' })
+        });
+        const result = await res.json();
+        if (res.ok && result.data) {
+          const { checkoutUrl, fields } = result.data;
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = checkoutUrl;
+          for (const [key, value] of Object.entries(fields)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = String(value);
+            form.appendChild(input);
+          }
+          document.body.appendChild(form);
+          form.submit();
+        } else {
+          alert('Lỗi: ' + (result.message || 'Không thể tạo đơn test'));
+          btn.disabled = false;
+          btn.textContent = 'Gửi giao dịch test SePay';
+        }
+      } catch(e) {
+        alert('Lỗi kết nối API');
+        btn.disabled = false;
+        btn.textContent = 'Gửi giao dịch test SePay';
+      }
+    };
+  </script>
+</body>
+</html>
