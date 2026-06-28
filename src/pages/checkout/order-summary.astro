@@ -184,9 +184,10 @@ import MainLayout from '@layouts/MainLayout.astro';
 
     function getBypassDynamicPrice(basePrice = 49000) {
       const count = getWatchedCount();
-      if (count <= 0) return basePrice;
-      const discount = Math.min(basePrice - 10000, count * 3000);
-      return Math.max(10000, basePrice - discount);
+      const welcomeDiscount = 20000; // Ưu đãi chào mừng giảm ngay 20k cho người dùng mới
+      const countDiscount = count * 3000;
+      const totalDiscount = Math.min(basePrice - 10000, welcomeDiscount + countDiscount);
+      return Math.max(10000, basePrice - totalDiscount);
     }
 
     function formatMonthsToYearsAndMonths(months) {
@@ -391,6 +392,15 @@ import MainLayout from '@layouts/MainLayout.astro';
             recalculatePrice();
           }
         });
+      }
+
+      // Tự động điền và áp dụng mã giảm giá nếu người dùng đi qua link có tham số ?promo=... hoặc &promo=... (hoặc ?coupon=...)
+      const urlPromo = urlParams.get('promo') || urlParams.get('coupon');
+      if (urlPromo && promoInput && applyBtn) {
+        promoInput.value = urlPromo.trim().toUpperCase();
+        setTimeout(() => {
+          applyBtn.click();
+        }, 300);
       }
     }
 
