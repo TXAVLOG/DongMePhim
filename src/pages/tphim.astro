@@ -983,19 +983,19 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       </div>
 
       <!-- Phim Bộ Mới -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=series&limit=12" data-grid-id="series-grid" data-aspect="aspect-[2/3]" data-title="Phim Bộ Mới" data-more-url="/phim-bo"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=series&limit=12" data-grid-id="series-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Bộ Mới" data-more-url="/phim-bo"></section>
 
       <!-- Phim Hoạt Hình Mới -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=hoathinh&limit=12" data-grid-id="anime-grid" data-aspect="aspect-[2/3]" data-title="Phim Hoạt Hình Mới" data-more-url="/the-loai/hoat-hinh"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=hoathinh&limit=12" data-grid-id="anime-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Hoạt Hình Mới" data-more-url="/the-loai/hoat-hinh"></section>
 
       <!-- Tôi Sợ Con Người Em Rồi Đó, nhưng Không Bằng Sợ Ma -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=toi-so-con-nguoi-em-roi-do&limit=12" data-grid-id="kinhdi-grid" data-aspect="aspect-[2/3]" data-title="Tôi Sợ Con Người Em Rồi Đó, Nhưng Không Bằng Sợ Ma" data-icon="skull" data-icon-color="text-rose-500" data-more-url="/c/toi-so-con-nguoi-em-roi-do"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=toi-so-con-nguoi-em-roi-do&limit=12" data-grid-id="kinhdi-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Tôi Sợ Con Người Em Rồi Đó, Nhưng Không Bằng Sợ Ma" data-icon="skull" data-icon-color="text-rose-500" data-more-url="/c/toi-so-con-nguoi-em-roi-do"></section>
 
       <!-- Phim Thái New: Không Drama Đời Không Nể -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=phim-thai-new&limit=12" data-grid-id="thai-grid" data-aspect="aspect-[2/3]" data-title="Phim Thái New: Drama Đỉnh Cao" data-icon="bolt" data-icon-color="text-amber-400" data-more-url="/c/phim-thai-new"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=phim-thai-new&limit=12" data-grid-id="thai-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Thái New: Drama Đỉnh Cao" data-icon="bolt" data-icon-color="text-amber-400" data-more-url="/c/phim-thai-new"></section>
 
       <!-- Châu Tinh Trì – Xem Là Phải Cười -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=chau-tinh-tri-xem-la-cuoi&limit=12" data-grid-id="chautinhtri-grid" data-aspect="aspect-[2/3]" data-title="Tuyển Tập Châu Tinh Trì - Cười Bể Bụng" data-icon="sentiment_very_satisfied" data-icon-color="text-yellow-400" data-more-url="/c/chau-tinh-tri-xem-la-cuoi"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=chau-tinh-tri-xem-la-cuoi&limit=12" data-grid-id="chautinhtri-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Tuyển Tập Châu Tinh Trì - Cười Bể Bụng" data-icon="sentiment_very_satisfied" data-icon-color="text-yellow-400" data-more-url="/c/chau-tinh-tri-xem-la-cuoi"></section>
 
       <!-- Phim Điện Ảnh Mới Coóng -->
       <section class="fade-in-section opacity-0 transition-all duration-700 min-h-[150px] space-y-6">
@@ -1609,7 +1609,36 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             const layout = section.getAttribute('data-layout');
             const gridId = section.getAttribute('data-grid-id');
 
+            const isSlider = layout === 'slider';
+            const aspectAttr = section.getAttribute('data-aspect');
+            const isPortraitSlider = (isSlider && aspectAttr === 'aspect-[2/3]');
+
             if (title && !section.querySelector('.section-header')) {
+              const innerContainerHTML = isSlider
+                ? `
+                  <div class="relative w-full min-w-0">
+                    <div id="${gridId}" class="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+                      <div class="flex items-center justify-center gap-3 py-16 w-full select-none pointer-events-none">
+                        <div class="w-3.5 h-3.5 bg-primary rounded-sm animate-bounce shadow-[0_0_12px_rgba(124,58,237,0.5)]" style="animation-delay: 0s; animation-duration: 0.8s;"></div>
+                        <div class="w-3.5 h-3.5 bg-amber-400 rounded-sm animate-bounce shadow-[0_0_12px_rgba(245,158,11,0.5)]" style="animation-delay: 0.15s; animation-duration: 0.8s;"></div>
+                        <div class="w-3.5 h-3.5 bg-secondary rounded-sm animate-bounce shadow-[0_0_12px_rgba(236,72,153,0.5)]" style="animation-delay: 0.3s; animation-duration: 0.8s;"></div>
+                      </div>
+                    </div>
+                    <button class="absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all shadow-md hidden md:flex cursor-pointer slider-next-btn" data-txatooltip="Xem thêm">
+                      <span class="material-symbols-outlined text-sm font-bold">chevron_right</span>
+                    </button>
+                  </div>
+                `
+                : `
+                  <div id="${gridId}" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 min-h-[280px]">
+                    <div class="flex items-center justify-center gap-3 py-16 w-full col-span-full select-none pointer-events-none">
+                      <div class="w-3.5 h-3.5 bg-primary rounded-sm animate-bounce shadow-[0_0_12px_rgba(124,58,237,0.5)]" style="animation-delay: 0s; animation-duration: 0.8s;"></div>
+                      <div class="w-3.5 h-3.5 bg-amber-400 rounded-sm animate-bounce shadow-[0_0_12px_rgba(245,158,11,0.5)]" style="animation-delay: 0.15s; animation-duration: 0.8s;"></div>
+                      <div class="w-3.5 h-3.5 bg-secondary rounded-sm animate-bounce shadow-[0_0_12px_rgba(236,72,153,0.5)]" style="animation-delay: 0.3s; animation-duration: 0.8s;"></div>
+                    </div>
+                  </div>
+                `;
+
               section.innerHTML = `
                 <div class="section-header flex items-center gap-3 mb-6">
                   <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
@@ -1621,13 +1650,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                     <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
                   </a>
                 </div>
-                <div id="${gridId}" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 min-h-[280px]">
-                  <div class="flex items-center justify-center gap-3 py-16 w-full col-span-full select-none pointer-events-none">
-                    <div class="w-3.5 h-3.5 bg-primary rounded-sm animate-bounce shadow-[0_0_12px_rgba(124,58,237,0.5)]" style="animation-delay: 0s; animation-duration: 0.8s;"></div>
-                    <div class="w-3.5 h-3.5 bg-amber-400 rounded-sm animate-bounce shadow-[0_0_12px_rgba(245,158,11,0.5)]" style="animation-delay: 0.15s; animation-duration: 0.8s;"></div>
-                    <div class="w-3.5 h-3.5 bg-secondary rounded-sm animate-bounce shadow-[0_0_12px_rgba(236,72,153,0.5)]" style="animation-delay: 0.3s; animation-duration: 0.8s;"></div>
-                  </div>
-                </div>
+                ${innerContainerHTML}
               `;
             }
 
@@ -1636,6 +1659,16 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             section.classList.add('opacity-100', 'scale-100', 'translate-y-0');
 
             const grid = document.getElementById(gridId);
+            
+            // Bind listener for dynamically created sliders
+            if (isSlider && grid) {
+              const nextBtn = section.querySelector('.slider-next-btn');
+              if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                  grid.scrollBy({ left: grid.clientWidth * 0.85, behavior: 'smooth' });
+                });
+              }
+            }
 
             if (endpoint && grid) {
               fetch(endpoint)
@@ -1645,8 +1678,16 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                   if (moviesList.length > 0) {
                     let html = '';
                     moviesList.forEach((m) => {
-                      if (layout === 'slider') {
-                        html += createMovieSliderCardHTML(m);
+                      if (isSlider) {
+                        if (isPortraitSlider) {
+                          html += `
+                            <div class="flex-shrink-0 w-[140px] sm:w-[170px] snap-center">
+                              ${createMovieCardHTML(m, aspect)}
+                            </div>
+                          `;
+                        } else {
+                          html += createMovieSliderCardHTML(m);
+                        }
                       } else {
                         html += createMovieCardHTML(m, aspect);
                       }

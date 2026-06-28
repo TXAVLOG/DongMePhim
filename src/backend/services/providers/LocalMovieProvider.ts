@@ -741,6 +741,7 @@ export class LocalMovieProvider implements IMovieProvider {
       } else {
         result = result.filter(m => 
           m.category === category || 
+          m.country === category || 
           (Array.isArray(m.genres) && m.genres.includes(category))
         );
       }

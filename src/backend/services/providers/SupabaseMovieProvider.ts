@@ -92,6 +92,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
         } else {
           result = result.filter(m => {
             if (m.category === cat || (m.category && slugify(m.category) === catSlug)) return true;
+            if (m.country === cat || (m.country && slugify(m.country) === catSlug)) return true;
             if (Array.isArray(m.genres)) {
               return m.genres.some((g: string) => g === cat || slugify(g) === catSlug);
             }
