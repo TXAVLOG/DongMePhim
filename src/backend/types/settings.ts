@@ -129,6 +129,7 @@ export interface PaymentSettings {
   sepay_api_key: string;
   sepay_merchant_id?: string;
   sepay_secret_key?: string;
+  sepay_ipn_secret_key?: string;
   sepay_sandbox_merchant_id?: string;
   sepay_sandbox_secret_key?: string;
   sepay_integration_type?: 'vietqr' | 'gateway';

@@ -3,21 +3,13 @@ import { apiResponse } from '@lib/api/response';
 import { SettingService } from '@services/SettingService';
 
 function generateSepaySignature(fields: Record<string, any>, secretKey: string): string {
-  // Try using Node crypto if available
   try {
     const crypto = require('crypto');
-    const signedKeys = [
-      'merchant', 'env', 'operation', 'payment_method',
-      'order_amount', 'currency', 'order_invoice_number',
-      'order_description', 'customer_id', 'agreement_id',
-      'agreement_name', 'agreement_type', 'agreement_payment_frequency',
-      'agreement_amount_per_payment', 'success_url', 'error_url',
-      'cancel_url', 'order_id'
-    ];
-    
+    // Sort keys alphabetically as per SePay PG standard SDK requirement
+    const sortedKeys = Object.keys(fields).sort();
     const signed: string[] = [];
-    for (const key of signedKeys) {
-      if (fields[key] !== undefined && fields[key] !== null) {
+    for (const key of sortedKeys) {
+      if (fields[key] !== undefined && fields[key] !== null && key !== 'signature') {
         signed.push(`${key}=${fields[key]}`);
       }
     }
@@ -43,14 +35,19 @@ export const POST: APIRoute = async ({ request }) => {
     const isSandbox = payments.sepay_sandbox_mode && payments.sepay_sandbox_merchant_id;
     
     const merchantId = (isSandbox ? payments.sepay_sandbox_merchant_id : payments.sepay_merchant_id) || payments.sepay_merchant_id || 'SP-LIVE-TX5B9345';
-    const secretKey = (isSandbox ? payments.sepay_sandbox_secret_key : payments.sepay_secret_key) || payments.sepay_secret_key || 'spsk_live_xdFNcCKmERhi2Y3teu8YRN8bLKSbNQxQ';
+    let secretKey = (isSandbox ? payments.sepay_sandbox_secret_key : payments.sepay_secret_key) || payments.sepay_secret_key || 'spsk_live_xdFNcCKmERhi2Y3teu8YRN8bLKSbNQxQ';
+
+    // If secret key was mistakenly set to the IPN secret key, use the correct PG secret key
+    if (!secretKey || secretKey === 'TPHIMX_SECRET_999') {
+      secretKey = 'spsk_live_xdFNcCKmERhi2Y3teu8YRN8bLKSbNQxQ';
+    }
 
     const siteUrl = settings.general?.site_url || 'https://dongmephim.online';
     const cleanSiteUrl = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl;
 
     const checkoutUrl = isSandbox ? 'https://pgapi-sandbox.sepay.vn/v1/checkout/init' : 'https://pay.sepay.vn/v1/checkout/init';
 
-    const fields: Record<string, any> = {
+    const rawFields: Record<string, any> = {
       merchant: merchantId,
       operation: 'PURCHASE',
       order_invoice_number: String(txid),
@@ -61,6 +58,12 @@ export const POST: APIRoute = async ({ request }) => {
       error_url: `${cleanSiteUrl}/checkout/failed?txid=${txid}`,
       cancel_url: `${cleanSiteUrl}/checkout/failed?txid=${txid}`
     };
+
+    const sortedKeys = Object.keys(rawFields).sort();
+    const fields: Record<string, any> = {};
+    for (const key of sortedKeys) {
+      fields[key] = rawFields[key];
+    }
 
     fields.signature = generateSepaySignature(fields, secretKey);
 
