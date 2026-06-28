@@ -25,7 +25,7 @@ export async function createSession(userId: string, request: Request, cookies: A
 
   if (error || !session) {
     console.error('Failed to create session:', error);
-    return false;
+    return null;
   }
 
   // Set cookie
@@ -37,10 +37,49 @@ export async function createSession(userId: string, request: Request, cookies: A
     expires: expiresAt
   });
 
-  return true;
+  return session.session_token;
 }
 
-export async function verifySession(request: Request, cookies: AstroCookies) {
+export async function verifyUserFromRequest(request: Request, cookies?: AstroCookies): Promise<any> {
+  const authHeader = request.headers.get('Authorization') || request.headers.get('authorization');
+  let sessionToken: string | null = null;
+  
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    sessionToken = authHeader.substring(7).trim();
+  }
+  
+  if (!sessionToken && cookies) {
+    sessionToken = cookies.get(SESSION_COOKIE_NAME)?.value || null;
+  }
+  
+  if (!sessionToken) {
+    return null;
+  }
+
+  const { data: session, error } = await supabase
+    .from('txa_user_sessions')
+    .select('expires_at, users(*)')
+    .eq('session_token', sessionToken)
+    .maybeSingle();
+
+  if (error || !session) {
+    return null;
+  }
+
+  const now = new Date();
+  const expiresAt = new Date(session.expires_at);
+
+  if (now > expiresAt) {
+    // Session expired
+    await supabase.from('txa_user_sessions').delete().eq('session_token', sessionToken);
+    return null;
+  }
+
+  const user = Array.isArray(session.users) ? session.users[0] : session.users;
+  return user as any;
+}
+
+export async function verifySession(request: Request, cookies: AstroCookies): Promise<any> {
   const sessionToken = cookies.get(SESSION_COOKIE_NAME)?.value;
   
   if (!sessionToken) {
@@ -84,7 +123,8 @@ export async function verifySession(request: Request, cookies: AstroCookies) {
   */
 
   // Return the user object
-  return session.users;
+  const user = Array.isArray(session.users) ? session.users[0] : session.users;
+  return user as any;
 }
 
 export async function destroySession(cookies: AstroCookies) {

@@ -1,0 +1,132 @@
+import type { APIRoute } from 'astro';
+import { apiResponse } from '@lib/api/response';
+import { supabase } from '@lib/supabase';
+import { mapKKPhimToMovieDetail } from '@services/providers/LocalMovieProvider';
+
+export const GET: APIRoute = async ({ request }) => {
+  try {
+    const url = new URL(request.url);
+    const secret = url.searchParams.get('secret') || request.headers.get('x-cron-secret');
+    const expectedSecret = import.meta.env.CRON_SECRET || 'txa-cron-kkphim-2026-secure';
+
+    if (secret !== expectedSecret && import.meta.env.PROD) {
+      return apiResponse(null, 'error', 'Unauthorized cron trigger', 401, request);
+    }
+
+    // 1. Fetch all ongoing movies from Supabase that have source = 'kkphim' or slug exists
+    const { data: movies, error: fetchErr } = await supabase
+      .from('movies')
+      .select('id, title, slug, episodes, poster_url, episode_current')
+      .eq('status', 'ongoing')
+      .limit(20); // Limit to 20 per cron run to avoid timeouts
+
+    if (fetchErr) {
+      throw fetchErr;
+    }
+
+    if (!movies || movies.length === 0) {
+      return apiResponse({ updated: 0, message: "No ongoing movies to sync" }, 'success', '', 200, request);
+    }
+
+    let updatedCount = 0;
+    const notificationsToInsert: any[] = [];
+
+    // 2. Scan each movie
+    for (const movie of movies) {
+      try {
+        const slug = movie.slug;
+        const res = await fetch(`https://phimapi.com/phim/${slug}`);
+        if (!res.ok) continue;
+
+        const data = await res.json() as any;
+        if (!data || !data.movie || !data.episodes) continue;
+
+        // Parse new episodes list
+        const detailedMovie = mapKKPhimToMovieDetail(data);
+        if (!detailedMovie || !detailedMovie.episodes) continue;
+
+        const newEpisodes = detailedMovie.episodes;
+        const oldEpisodes = movie.episodes || [];
+
+        // Count episodes comparison
+        const getEpCount = (eps: any[]) => {
+          let count = 0;
+          eps.forEach(server => {
+            const dataList = server.serverData || server.server_data || [];
+            count += dataList.length;
+          });
+          return count;
+        };
+
+        const newCount = getEpCount(newEpisodes);
+        const oldCount = getEpCount(oldEpisodes);
+
+        if (newCount > oldCount) {
+          // Dynamic episode current text
+          const latestServer = newEpisodes[0] || {};
+          const latestServerData = latestServer.serverData || [];
+          const latestEp = latestServerData[latestServerData.length - 1] || {};
+          const latestEpName = latestEp.name ? `Tập ${latestEp.name}` : `Tập ${newCount}`;
+
+          // Update database
+          const { error: updateErr } = await supabase
+            .from('movies')
+            .update({
+              episodes: newEpisodes,
+              episode_current: latestEpName,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', movie.id);
+
+          if (updateErr) {
+            console.error(`Error updating movie ${movie.title}:`, updateErr);
+            continue;
+          }
+
+          updatedCount++;
+
+          // 3. Find users who favorited this movie
+          const { data: watchlists } = await supabase
+            .from('watch_lists')
+            .select('user_id')
+            .eq('movie_id', movie.id);
+
+          if (watchlists && watchlists.length > 0) {
+            const uniqueUserIds = [...new Set(watchlists.map(w => w.user_id))];
+            uniqueUserIds.forEach(userId => {
+              notificationsToInsert.push({
+                user_id: userId,
+                title: `Tập mới: ${movie.title}`,
+                body: `${latestEpName} đã được cập nhật thành công. Xem ngay thôi!`,
+                image_url: movie.poster_url || "",
+                is_read: false,
+                created_at: new Date().toISOString()
+              });
+            });
+          }
+        }
+      } catch (movieErr) {
+        console.error(`Error syncing movie ${movie.title || movie.slug}:`, movieErr);
+      }
+    }
+
+    // 4. Batch insert notifications
+    if (notificationsToInsert.length > 0) {
+      const { error: notifErr } = await supabase
+        .from('notifications')
+        .insert(notificationsToInsert);
+      
+      if (notifErr) {
+        console.error('Error inserting cron notifications:', notifErr);
+      }
+    }
+
+    return apiResponse({
+      updated: updatedCount,
+      notifications_sent: notificationsToInsert.length,
+      message: `Successfully synchronized ongoing movies. Updated ${updatedCount} movies.`
+    }, 'success', '', 200, request);
+  } catch (err: any) {
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
+  }
+};

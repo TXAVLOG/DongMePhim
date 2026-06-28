@@ -1,0 +1,334 @@
+---
+// src/pages/cast.astro
+// TV-optimized Cast Receiver Page
+---
+
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TV Cast Receiver | DongMePhim</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest" is:inline></script>
+    
+    <style>
+        :root {
+            --neon-blue: #00e3fd;
+            --neon-pink: #d2bbff;
+            --bg-noir: #05070f;
+        }
+
+        body {
+            background-color: var(--bg-noir);
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #ffffff;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ambient-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 227, 253, 0.15) 0%, rgba(210, 187, 255, 0.05) 50%, transparent 100%);
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+            animation: floatGlow 15s infinite alternate ease-in-out;
+        }
+
+        @keyframes floatGlow {
+            0% { transform: translate(-20%, -20%) scale(1); }
+            100% { transform: translate(20%, 20%) scale(1.2); }
+        }
+
+        .cast-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .player-wrapper {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .overlay-ui {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0) 75%, rgba(0, 0, 0, 0.85) 100%);
+            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            opacity: 1;
+        }
+
+        .overlay-ui.hidden {
+            opacity: 0;
+        }
+
+        .movie-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .casting-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px border rgba(255, 255, 255, 0.15);
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .casting-icon {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-blue);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.3; transform: scale(0.8); }
+        }
+
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--neon-blue);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .control-hint {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .remote-key {
+            background: #27272a;
+            border: 1px solid #3f3f46;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            color: #ffffff;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+
+    <div class="cast-container">
+        <!-- Loader / Connecting state -->
+        <div id="loading-overlay" class="absolute inset-0 z-20 bg-zinc-950 flex flex-col items-center justify-center gap-6">
+            <div class="loader"></div>
+            <div class="text-center">
+                <h3 class="text-xl font-bold text-white tracking-wide uppercase">Đang kết nối TV Cast</h3>
+                <p id="loading-status" class="text-sm text-zinc-400 mt-2">Đang tải luồng truyền phát phim...</p>
+            </div>
+        </div>
+
+        <!-- Video Player -->
+        <div class="player-wrapper">
+            <video id="tv-video" controls autoplay playsinline></video>
+        </div>
+
+        <!-- Overlay UI (Appears on activity) -->
+        <div id="overlay-ui" class="overlay-ui">
+            <!-- Top section -->
+            <div class="flex justify-between items-start w-full">
+                <div class="casting-badge">
+                    <span class="casting-icon"></span>
+                    <span>Đang chiếu lên TV</span>
+                </div>
+            </div>
+
+            <!-- Bottom section -->
+            <div class="flex justify-between items-end w-full">
+                <div>
+                    <h2 id="cast-title" class="movie-title">Tên Phim Trình Chiếu</h2>
+                    <p class="text-zinc-400 mt-2 text-sm">DongMePhim Cinema Experience</p>
+                </div>
+                <div class="control-hint">
+                    <span>Sử dụng điều khiển hoặc ấn <span class="remote-key">OK</span> / <span class="remote-key">Space</span> để Tạm dừng</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const streamUrl = params.get('url');
+            const movieTitle = params.get('title') || 'Đang trình chiếu phim';
+            const posterUrl = params.get('poster');
+
+            const video = document.getElementById('tv-video');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingStatus = document.getElementById('loading-status');
+            const titleEl = document.getElementById('cast-title');
+            const overlayUi = document.getElementById('overlay-ui');
+
+            // Apply title
+            titleEl.textContent = decodeURIComponent(movieTitle);
+
+            // Apply poster
+            if (posterUrl) {
+                video.poster = decodeURIComponent(posterUrl);
+            }
+
+            if (!streamUrl) {
+                loadingOverlay.innerHTML = `
+                    <div style="font-size: 3rem; color: #ef4444;">⚠️</div>
+                    <h3 style="font-size: 1.5rem; font-weight: bold; color: #ffffff;">Lỗi kết nối Cast</h3>
+                    <p style="color: #a1a1aa; font-size: 1rem; margin-top: 10px;">Thiếu đường dẫn phát video (url parameter)</p>
+                `;
+                return;
+            }
+
+            const decodedUrl = decodeURIComponent(streamUrl);
+
+            // Initialize playback
+            if (decodedUrl.includes('.m3u8')) {
+                if (Hls.isSupported()) {
+                    const hls = new Hls({
+                        maxMaxBufferLength: 30,
+                        enableWorker: true
+                    });
+                    hls.loadSource(decodedUrl);
+                    hls.attachMedia(video);
+                    
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        video.play().catch(err => {
+                            console.log("Autoplay blocked, showing control prompt", err);
+                            loadingStatus.textContent = "Nhấn nút Phát trên điều khiển để bắt đầu";
+                        });
+                        loadingOverlay.style.display = 'none';
+                    });
+
+                    hls.on(Hls.Events.ERROR, (event, data) => {
+                        if (data.fatal) {
+                            console.error('Fatal HLS error:', data);
+                            loadingStatus.textContent = "Lỗi giải mã luồng truyền phát HLS.";
+                        }
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Fallback for native Safari/AppleTV HLS
+                    video.src = decodedUrl;
+                    video.addEventListener('loadedmetadata', () => {
+                        video.play().catch(err => {
+                            console.log("Autoplay blocked, showing control prompt", err);
+                        });
+                        loadingOverlay.style.display = 'none';
+                    });
+                } else {
+                    loadingOverlay.innerHTML = `
+                        <div style="font-size: 3rem; color: #ef4444;">⚠️</div>
+                        <h3 style="font-size: 1.5rem; font-weight: bold;">Không hỗ trợ HLS</h3>
+                        <p style="color: #a1a1aa; font-size: 1rem; margin-top: 10px;">Trình duyệt TV này không hỗ trợ phát luồng m3u8</p>
+                    `;
+                }
+            } else {
+                // Direct MP4
+                video.src = decodedUrl;
+                video.addEventListener('loadedmetadata', () => {
+                    video.play().catch(err => {
+                        console.log("Autoplay blocked", err);
+                    });
+                    loadingOverlay.style.display = 'none';
+                });
+            }
+
+            // UI Hide Timer
+            let uiTimer;
+            const resetUiTimer = () => {
+                overlayUi.classList.remove('hidden');
+                clearTimeout(uiTimer);
+                uiTimer = setTimeout(() => {
+                    if (!video.paused) {
+                        overlayUi.classList.add('hidden');
+                    }
+                }, 4000);
+            };
+
+            // Keyboard/Remote interaction
+            document.addEventListener('keydown', (e) => {
+                resetUiTimer();
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    if (video.paused) {
+                        video.play();
+                    } else {
+                        video.pause();
+                    }
+                }
+            });
+
+            // Activity triggers
+            video.addEventListener('play', resetUiTimer);
+            video.addEventListener('pause', () => {
+                overlayUi.classList.remove('hidden');
+                clearTimeout(uiTimer);
+            });
+            document.addEventListener('mousemove', resetUiTimer);
+            document.addEventListener('click', resetUiTimer);
+            document.addEventListener('touchstart', resetUiTimer);
+
+            resetUiTimer();
+        });
+    </script>
+</body>
+</html>

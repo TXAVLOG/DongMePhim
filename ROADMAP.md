@@ -10,11 +10,11 @@ Tài liệu này theo dõi lộ trình phát triển và tiến độ thực hi�
 |---|---|---|---|---|
 | **Phase 0** | Project Governance & Plan | ✅ Hoàn thành | 100% | Không |
 | **Phase 1** | Frontend Foundation & Theme | ✅ Hoàn thành | 100% | Phase 0 |
-| **Phase 2** | Database Design & Migrations | ⏳ Chờ bắt đầu | 0% | Phase 0 |
+| **Phase 2** | Database Design & Migrations | ✅ Hoàn thành | 100% | Phase 0 |
 | **Phase 3** | Authentication System | ✅ Hoàn thành | 100% (Mock & Turnstile & SMTP) | Phase 1, Phase 2 |
 | **Phase 4** | Movie System & Routing | ✅ Hoàn thành | 100% | Phase 1, Phase 2, Phase 7 |
 | **Phase 5** | Player & Watch History | ✅ Hoàn thành | 100% | Phase 1, Phase 3, Phase 4 |
-| **Phase 6** | Progressive Web App (PWA) | ⏳ Chờ bắt đầu | 0% | Phase 1 |
+| **Phase 6** | Progressive Web App (PWA) | 🔄 Đang thực hiện | 50% | Phase 1 |
 | **Phase 7** | Mock Data & Abstraction | ✅ Hoàn thành | 100% | Phase 0 |
 | **Phase 8** | UI/UX, Bug Fixes & Cloudflare Prep | ✅ Hoàn thành | 100% | Phase 1, 3, 4, 5, 7 |
 
@@ -61,7 +61,7 @@ Tài liệu này theo dõi lộ trình phát triển và tiến độ thực hi�
 * **Tiêu chí hoàn thành**:
   - Thiết kế file Migration SQL chuẩn cho Supabase.
   - Thiết lập đầy đủ chính sách RLS cho phép truy cập public đối với phim/diễn viên, và chỉ chủ sở hữu được xem/sửa watch_history/watch_list.
-* **Tỷ lệ hoàn thành**: 0%
+* **Tỷ lệ hoàn thành**: 100% (Đã tạo schema `init.sql` 597 dòng đầy đủ bảng, RLS, triggers & seed data)
 
 ---
 
@@ -125,7 +125,7 @@ Tài liệu này theo dõi lộ trình phát triển và tiến độ thực hi�
 * **Tiêu chí hoàn thành**:
   - Ứng dụng đạt chuẩn PWA trên công cụ kiểm tra Lighthouse.
   - Cài đặt thành công trên môi trường Android và Desktop.
-* **Tỷ lệ hoàn thành**: 0%
+* **Tỷ lệ hoàn thành**: 50% (Đã tạo `sw.js` và đăng ký Service Worker trong `MainLayout.astro`)
 
 ---
 

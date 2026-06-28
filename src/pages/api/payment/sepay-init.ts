@@ -112,7 +112,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     fields.signature = await generateSepaySignature(fields, secretKey);
 
-    return apiResponse({ checkoutUrl, fields }, 'success', 'Khởi tạo cổng thanh toán SePay thành công', 200, request);
+    const appHeader = request.headers.get('x-txc-client') || request.headers.get('X-TXC-Client');
+    const appKeyHeader = request.headers.get('x-txa-api-key') || request.headers.get('X-TXA-API-KEY');
+    const userAgent = request.headers.get('user-agent') || '';
+    const isMobileClient = appHeader === 'TPhimX-App' || appKeyHeader === 'tphimx-mobile-2026-secure' || userAgent.startsWith('TPhimX-App');
+
+    return apiResponse({ checkoutUrl, fields }, 'success', 'Khởi tạo cổng thanh toán SePay thành công', 200, request, isMobileClient);
   } catch (err: any) {
     console.error('Error initiating SePay PG:', err);
     return apiResponse(null, 'error', err.message || 'Lỗi khởi tạo cổng thanh toán SePay', 500, request);

@@ -724,6 +724,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           const checkedCheckboxes = Array.from(document.querySelectorAll('input[name="movie-genres"]:checked'));
           const selectedGenreNames = checkedCheckboxes.map((cb) => cb.value);
           const categoryVal = selectedGenreNames.join(", ") || "Khác";
+          const countryVal = document.getElementById("movieCountry").value.trim() || "Khác";
 
           const scheduleDate = document.getElementById("scheduleDate").value;
           const scheduleTime = document.getElementById("scheduleTime").value;
@@ -749,6 +750,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               lang: langVal,
               imdbScore: 8.0,
               category: categoryVal,
+              country: countryVal,
               genres: selectedGenreNames.length > 0 ? selectedGenreNames : ["Khác"],
               actors: actorsStr ? actorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],
               directors: directorsStr ? directorsStr.split(",").map(s => s.trim()).filter(Boolean) : [],

@@ -5,9 +5,9 @@ import { SettingService } from '@services/SettingService';
 export const GET: APIRoute = async ({ request }) => {
   try {
     const settings = await SettingService.getSettings();
-    const changelogs = settings.app?.app_changelogs || [];
+    const packagesList = settings.packages || [];
 
-    return apiResponse(changelogs, 'success', '', 200, request);
+    return apiResponse(packagesList, 'success', '', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }

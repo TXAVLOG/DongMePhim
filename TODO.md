@@ -30,19 +30,19 @@ Danh sách chi tiết các công việc cần làm cho dự án WebFilm, chia th
 
 ---
 
-## Phase 2: Database Design (0%)
-- [ ] Sử dụng **Supabase MCP** (`execute_sql`) để tạo các bảng dữ liệu trên database thật.
-- [ ] Thiết kế cấu trúc bảng `movies` chỉ lưu trữ metadata (Tên, Tên gốc, Slug, Năm, Poster, Banner, Loại, Trạng thái, Số tập hiện có, Tổng số tập, Chất lượng, Ngôn ngữ) - **Tuyệt đối không lưu link tập phim hay stream URL**.
-- [ ] Tạo các bảng `actors`, `genres`, `countries`.
-- [ ] Tạo các bảng quan hệ nhiều-nhiều: `movie_actors`, `movie_genres`, `movie_countries`.
-- [ ] Tạo bảng `users` (đồng bộ tự động từ `auth.users`).
-- [ ] Tạo bảng `watch_history` (lưu vị trí xem theo `episode_slug` và `episode_name`, không lưu link phát).
-- [ ] Tạo bảng `watch_lists` (danh sách yêu thích) và `schedules` (lịch chiếu phim).
-- [ ] Tạo bảng `settings` (lưu trữ Key-Value cấu hình SMTP, Telegram, PWA và danh sách sự kiện vòng quay `lucky_draw_events`).
-- [ ] Tạo bảng `notifications`, `hot_searches`, `client_errors`.
-- [ ] Viết PostgreSQL Function và Trigger để tự động đồng bộ user khi có tài khoản mới đăng ký.
-- [ ] Thiết lập chỉ mục (Indexes) tối ưu hóa hiệu suất truy vấn (đặc biệt cho slug phim và views/clicks).
-- [ ] Kích hoạt RLS (Row Level Security) và định nghĩa chính sách bảo mật cho từng bảng.
+## Phase 2: Database Design (100% - Đã tạo file SQL Schema & RLS trong init.sql)
+- [x] Sử dụng **Supabase MCP** (`execute_sql`) / Script SQL (`init.sql`) để tạo các bảng dữ liệu trên database thật.
+- [x] Thiết kế cấu trúc bảng `movies` chỉ lưu trữ metadata (Tên, Tên gốc, Slug, Năm, Poster, Banner, Loại, Trạng thái, Số tập hiện có, Tổng số tập, Chất lượng, Ngôn ngữ) - **Tuyệt đối không lưu link tập phim hay stream URL**.
+- [x] Tạo các bảng `actors`, `genres`, `countries`.
+- [x] Tạo các bảng quan hệ nhiều-nhiều: `movie_actors`, `movie_genres`, `movie_countries`.
+- [x] Tạo bảng `users` (đồng bộ tự động từ `auth.users`).
+- [x] Tạo bảng `watch_history` (lưu vị trí xem theo `episode_slug` và `episode_name`, không lưu link phát).
+- [x] Tạo bảng `watch_lists` (danh sách yêu thích) và `schedules` (lịch chiếu phim).
+- [x] Tạo bảng `settings` (lưu trữ Key-Value cấu hình SMTP, Telegram, PWA và danh sách sự kiện vòng quay `lucky_draw_events`).
+- [x] Tạo bảng `notifications`, `hot_searches`, `client_errors`.
+- [x] Viết PostgreSQL Function và Trigger để tự động đồng bộ user khi có tài khoản mới đăng ký.
+- [x] Thiết lập chỉ mục (Indexes) tối ưu hóa hiệu suất truy vấn (đặc biệt cho slug phim và views/clicks).
+- [x] Kích hoạt RLS (Row Level Security) và định nghĩa chính sách bảo mật cho từng bảng.
 
 ---
 
@@ -84,10 +84,10 @@ Danh sách chi tiết các công việc cần làm cho dự án WebFilm, chia th
 
 ---
 
-## Phase 6: PWA (0%)
+## Phase 6: PWA (50%)
 - [ ] Tạo file `public/manifest.json` chứa thông tin ứng dụng PWA.
-- [ ] Tạo file Service Worker `public/sw.js` để cache shell và xử lý offline mode.
-- [ ] Viết script đăng ký Service Worker trong `MainLayout.astro`.
+- [x] Tạo file Service Worker `public/sw.js` để cache shell và xử lý offline mode.
+- [x] Viết script đăng ký Service Worker trong `MainLayout.astro`.
 - [ ] Thiết kế banner / nút mời gọi cài đặt ứng dụng trên thiết bị di động.
 
 ---

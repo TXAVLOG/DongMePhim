@@ -2,11 +2,18 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 
+import { verifyUserFromRequest } from '@lib/auth';
+
 // GET: Lấy lịch sử giao dịch thanh toán
-export const GET: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = async ({ request, cookies, url }) => {
   try {
-    const username = url.searchParams.get('username');
+    let username = url.searchParams.get('username');
     const txid = url.searchParams.get('txid');
+
+    const user = await verifyUserFromRequest(request, cookies);
+    if (user) {
+      username = user.username;
+    }
 
     // 1. Nếu lấy theo mã giao dịch cụ thể
     if (txid) {
@@ -86,11 +93,17 @@ export const GET: APIRoute = async ({ request, url }) => {
 };
 
 // POST: Lưu hoặc cập nhật lịch sử thanh toán
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const body = (await request.json()) as any;
-    const { txid, username, email, packageTitle, price, cycle, method, status, receiptImg, note, clientInfo } = body;
+    let { txid, username, email, packageTitle, price, cycle, method, status, receiptImg, note, clientInfo } = body;
     const clientNote = note || clientInfo || null;
+
+    const user = await verifyUserFromRequest(request, cookies);
+    if (user) {
+      username = user.username;
+      email = user.email;
+    }
 
     if (!txid || !username || !packageTitle) {
       return apiResponse(null, 'error', 'Missing txid, username or packageTitle', 400, request);
@@ -285,10 +298,15 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 // DELETE: Xóa đơn hàng chưa thanh toán (pending) khi người dùng hủy hoặc quay lại
-export const DELETE: APIRoute = async ({ request, url }) => {
+export const DELETE: APIRoute = async ({ request, cookies, url }) => {
   try {
     const txid = url.searchParams.get('txid');
-    const username = url.searchParams.get('username');
+    let username = url.searchParams.get('username');
+
+    const user = await verifyUserFromRequest(request, cookies);
+    if (user) {
+      username = user.username;
+    }
 
     if (!txid && !username) {
       return apiResponse(null, 'error', 'Missing txid or username', 400, request);

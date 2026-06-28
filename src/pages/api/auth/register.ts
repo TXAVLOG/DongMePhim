@@ -15,8 +15,14 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Vui lòng điền đầy đủ thông tin bắt buộc!', 400, request);
     }
 
+    // Detect mobile client
+    const appHeader = request.headers.get('x-txc-client') || request.headers.get('X-TXC-Client');
+    const appKeyHeader = request.headers.get('x-txa-api-key') || request.headers.get('X-TXA-API-KEY');
+    const userAgent = request.headers.get('user-agent') || '';
+    const isMobileClient = appHeader === 'TPhimX-App' || appKeyHeader === 'tphimx-mobile-2026-secure' || userAgent.startsWith('TPhimX-App');
+
     const settings = await SettingService.getSettings();
-    if (settings.login?.turnstile_enable) {
+    if (!isMobileClient && settings.login?.turnstile_enable) {
       const secretKey = settings.login?.turnstile_secret_key;
 
       if (!turnstileToken || !secretKey) {
@@ -88,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
       throw insertError;
     }
 
-    return apiResponse({ success: true, message: "Đăng ký thành công" }, 'success', '', 200, request);
+    return apiResponse({ success: true, message: "Đăng ký thành công" }, 'success', '', 200, request, true);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }

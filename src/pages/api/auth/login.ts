@@ -11,13 +11,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { identity, password } = body;
+    const identity = body.identity || body.login;
+    const { password } = body;
     if (!identity || !password) {
       return apiResponse(null, 'error', 'Thiếu thông tin đăng nhập!', 400, request);
     }
 
+    // Detect mobile client
+    const appHeader = request.headers.get('x-txc-client') || request.headers.get('X-TXC-Client');
+    const appKeyHeader = request.headers.get('x-txa-api-key') || request.headers.get('X-TXA-API-KEY');
+    const userAgent = request.headers.get('user-agent') || '';
+    const isMobileClient = appHeader === 'TPhimX-App' || appKeyHeader === 'tphimx-mobile-2026-secure' || userAgent.startsWith('TPhimX-App');
+
     const settings = await SettingService.getSettings();
-    if (settings.login?.turnstile_enable) {
+    if (!isMobileClient && settings.login?.turnstile_enable) {
       const turnstileToken = body.turnstileToken;
       const secretKey = settings.login?.turnstile_secret_key;
 
@@ -52,15 +59,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     if (!user) {
-      return apiResponse({ errorType: 'identity' }, 'error', 'Tài khoản không tồn tại!', 400, request);
+      return apiResponse({ errorType: 'identity', error_code: 'USER_NOT_FOUND' }, 'error', 'Tài khoản không tồn tại!', 400, request);
     }
 
     if (user.password !== password) {
-      return apiResponse({ errorType: 'password' }, 'error', 'Mật khẩu không chính xác!', 400, request);
+      return apiResponse({ errorType: 'password', error_code: 'INVALID_PASSWORD' }, 'error', 'Mật khẩu không chính xác!', 400, request);
     }
 
-    // Create secure session cookie
-    await createSession(user.id, request, cookies);
+    // Create secure session cookie and get token
+    const sessionToken = await createSession(user.id, request, cookies);
 
     return apiResponse({
       user: {
@@ -74,7 +81,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         province: user.province,
         ward: user.ward
       },
-      access_token: "txa_session",
+      token: sessionToken || "txa_session",
+      access_token: sessionToken || "txa_session",
       token_type: "Bearer",
       expires_in: 31536000
     }, 'success', '', 200, request);

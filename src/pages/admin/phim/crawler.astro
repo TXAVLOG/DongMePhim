@@ -1244,8 +1244,13 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       const genres = Array.isArray(m.category) ? m.category.map(c => c.name) : [];
       
       let category = "Khác";
+      if (Array.isArray(m.category) && m.category.length > 0) {
+        category = m.category[0].name;
+      }
+
+      let country = "Khác";
       if (Array.isArray(m.country) && m.country.length > 0) {
-        category = m.country[0].name;
+        country = m.country[0].name;
       }
 
       let type = 'series';
@@ -1299,6 +1304,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         lang: m.lang || 'Vietsub',
         imdbScore: 8.0,
         category: category,
+        country: country,
         ageRating: type === 'movie' ? 'T16' : 'T13',
         genres: genres,
         seasons: type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1',

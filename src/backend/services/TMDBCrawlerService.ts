@@ -128,7 +128,8 @@ export class TMDBCrawlerService {
         trailerUrl,
         tmdbScore: data.vote_average,
         quality: 'HD',
-        country: data.production_countries?.[0]?.name || 'Quốc tế',
+        country: this.mapTMDBCountryToVietnamese(data),
+        category: data.genres?.[0]?.name || 'Khác',
         status: data.status || 'Released',
         seasons: tmdbType === 'tv' ? data.number_of_seasons : 1,
         // Note: TMDB doesn't provide actual streaming links, so episodes will be empty
@@ -138,6 +139,21 @@ export class TMDBCrawlerService {
       console.error('Error getting TMDB movie detail:', error);
       throw error;
     }
+  }
+
+  static mapTMDBCountryToVietnamese(data: any): string {
+    const iso = (data.origin_country?.[0] || data.production_countries?.[0]?.iso_3166_1 || '').toUpperCase();
+    const name = (data.production_countries?.[0]?.name || '').toLowerCase();
+
+    if (iso === 'KR' || name.includes('korea')) return 'Hàn Quốc';
+    if (iso === 'CN' || iso === 'HK' || iso === 'TW' || name.includes('china') || name.includes('hong kong') || name.includes('taiwan')) return 'Trung Quốc';
+    if (iso === 'JP' || name.includes('japan')) return 'Nhật Bản';
+    if (iso === 'TH' || name.includes('thailand')) return 'Thái Lan';
+    if (iso === 'VN' || name.includes('vietnam') || name.includes('viet nam')) return 'Việt Nam';
+    if (iso === 'IN' || name.includes('india')) return 'Ấn Độ';
+    if (['US', 'GB', 'CA', 'FR', 'DE', 'ES', 'IT', 'AU', 'RU', 'SE', 'NO', 'DK', 'NL', 'PL', 'BR', 'MX'].includes(iso) || name.includes('united states') || name.includes('united kingdom') || name.includes('canada') || name.includes('america')) return 'Âu Mỹ';
+
+    return data.production_countries?.[0]?.name || 'Âu Mỹ';
   }
 
   static async discoverMovies(options: { genre?: string; country?: string; page?: number; limit?: number }): Promise<any[]> {

@@ -144,7 +144,7 @@ const settings = await SettingService.getSettings();
         if (categoryName === 'Lồng Tiếng' || catSlug === 'long-tieng') {
           return m.lang === 'Lồng Tiếng' || m.lang === 'Thuyết Minh' || (m.lang && m.lang.toLowerCase().includes('lồng tiếng')) || (m.lang && m.lang.toLowerCase().includes('thuyết minh')) || m.category === 'Lồng Tiếng';
         }
-        if (m.category === categoryName || (m.category && slugifyClient(m.category) === catSlug)) return true;
+        if (m.country === categoryName || m.category === categoryName || (m.country && slugifyClient(m.country) === catSlug) || (m.category && slugifyClient(m.category) === catSlug)) return true;
         if (Array.isArray(m.genres)) {
           return m.genres.some(g => g === categoryName || slugifyClient(g) === catSlug);
         }
@@ -403,7 +403,7 @@ const settings = await SettingService.getSettings();
         }
 
         if (country !== 'all') {
-          filtered = filtered.filter(m => m.category === country);
+          filtered = filtered.filter(m => m.country === country || m.category === country);
         }
 
         if (yearVal !== 'all') {

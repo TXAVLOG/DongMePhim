@@ -1,26 +1,30 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
+import { verifyUserFromRequest } from '@lib/auth';
 
-export const GET: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = async ({ request, cookies, url }) => {
   try {
-    const username = url.searchParams.get('username');
-    if (!username) {
-      return apiResponse(null, 'error', 'Thiếu tên tài khoản (username)!', 400, request);
-    }
+    let user = await verifyUserFromRequest(request, cookies);
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .or(`username.eq.${username},email.eq.${username}`)
-      .maybeSingle();
+    if (!user) {
+      const username = url.searchParams.get('username');
+      if (username) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .or(`username.eq.${username},email.eq.${username}`)
+          .maybeSingle();
 
-    if (error) {
-      throw error;
+        if (error) {
+          throw error;
+        }
+        user = data;
+      }
     }
 
     if (!user) {
-      return apiResponse(null, 'error', 'Tài khoản không tồn tại!', 404, request);
+      return apiResponse(null, 'error', 'Tài khoản không tồn tại hoặc phiên đăng nhập hết hạn!', 404, request);
     }
 
     return apiResponse({

@@ -31,6 +31,7 @@ export interface Movie {
   views?: number;
   commentCount?: number;
   category?: string;
+  country?: string;
   ageRating?: string;
   genres?: string[];
   seasons?: string;

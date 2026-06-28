@@ -1,8 +1,10 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { MovieService } from '@services/MovieService';
+import { supabase } from '@lib/supabase';
+import { verifyUserFromRequest } from '@lib/auth';
 
-export const GET: APIRoute = async ({ params, cookies }) => {
+export const GET: APIRoute = async ({ params, cookies, request }) => {
   const { slug } = params;
   if (!slug) {
     return apiResponse(null, 'error', 'Missing slug parameter', 400);
@@ -37,45 +39,53 @@ export const GET: APIRoute = async ({ params, cookies }) => {
     }
   }
 
-  // Apply unreleased episode filtering logic
-  let filteredServers = movie.episodes || [];
-  if (movie.status === 'ongoing' && filteredServers.length > 0) {
-    const firstServer = filteredServers[0];
-    const allEps = firstServer.serverData || [];
-    let firstUnreleasedIdx = -1;
-    const nowTime = Date.now();
-
-    for (let i = 0; i < allEps.length; i++) {
-      const ep = allEps[i];
-      if (ep.airDate) {
-        let airDateTimeStr = `${ep.airDate}T00:00:00`;
-        if (ep.airTime) {
-          const parts = ep.airTime.split(':');
-          if (parts.length === 2) {
-            airDateTimeStr = `${ep.airDate}T${ep.airTime}:00`;
-          } else {
-            airDateTimeStr = `${ep.airDate}T${ep.airTime}`;
-          }
-        }
-        try {
-          const airDateObj = new Date(airDateTimeStr);
-          if (nowTime < airDateObj.getTime()) {
-            firstUnreleasedIdx = i;
-            break;
-          }
-        } catch (e) {
-          console.error('Error parsing air date in API:', e);
-        }
-      }
-    }
-
-    if (firstUnreleasedIdx !== -1) {
-      filteredServers = filteredServers.map((server: any) => ({
-        serverName: server.serverName,
-        serverData: (server.serverData || []).slice(0, firstUnreleasedIdx)
-      }));
+  // Fetch real favorite status
+  let isFavorite = false;
+  const user = await verifyUserFromRequest(request, cookies);
+  if (user) {
+    const { data: fav } = await supabase
+      .from('watch_lists')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('movie_id', movie.id)
+      .maybeSingle();
+    
+    if (fav) {
+      isFavorite = true;
     }
   }
+
+  // Check and flag unreleased episodes
+  const nowTime = Date.now();
+  const rawServers = movie.episodes || [];
+  const filteredServers = rawServers.map((server: any) => {
+    const srvData = server.serverData || server.server_data || [];
+    return {
+      serverName: server.serverName,
+      serverData: srvData.map((ep: any) => {
+        let isUnreleased = false;
+        if (movie.status === 'ongoing' && ep.airDate) {
+          let airDateTimeStr = `${ep.airDate}T00:00:00`;
+          if (ep.airTime) {
+            const parts = ep.airTime.split(':');
+            airDateTimeStr = parts.length === 2 ? `${ep.airDate}T${ep.airTime}:00` : `${ep.airDate}T${ep.airTime}`;
+          }
+          try {
+            const airDateObj = new Date(airDateTimeStr);
+            if (nowTime < airDateObj.getTime()) {
+              isUnreleased = true;
+            }
+          } catch (e) {
+            console.error('Error parsing air date:', e);
+          }
+        }
+        return {
+          ...ep,
+          is_unreleased: isUnreleased
+        };
+      })
+    };
+  });
 
   const cleanId = (id: any) => {
     const parsed = parseInt(String(id), 10);
@@ -84,7 +94,7 @@ export const GET: APIRoute = async ({ params, cookies }) => {
 
   const responsePayload = {
     movie: {
-      id: cleanId(movie.id),
+      id: cleanId(movie.movie_id_seq || movie.id),
       name: movie.title,
       origin_name: movie.originalTitle || "",
       slug: movie.slug,
@@ -98,7 +108,7 @@ export const GET: APIRoute = async ({ params, cookies }) => {
       tmdb_score: (movie as any).tmdbScore ? String((movie as any).tmdbScore) : "",
       status: movie.status,
       broadcast_at: movie.broadcastSchedule?.notice || "",
-      is_favorite: false,
+      is_favorite: isFavorite,
       categories: movie.genres?.map((g: string) => ({ name: g })) || (movie.category ? [{ name: movie.category }] : []),
       actors: movie.actors?.map((a: string) => ({ name: a, role: "" })) || []
     },
@@ -133,12 +143,15 @@ export const GET: APIRoute = async ({ params, cookies }) => {
           skip_markers: {
             intro,
             outro
-          }
+          },
+          is_unreleased: ep.is_unreleased || false,
+          air_date: ep.airDate || "",
+          air_time: ep.airTime || ""
         };
       })
     })),
     related: relatedMovies.map((m: any) => ({
-      id: cleanId(m.id),
+      id: cleanId(m.movie_id_seq || m.id),
       name: m.title,
       slug: m.slug,
       thumb_url: m.bannerUrl,
@@ -146,5 +159,5 @@ export const GET: APIRoute = async ({ params, cookies }) => {
     }))
   };
 
-  return apiResponse(responsePayload);
+  return apiResponse(responsePayload, 'success', '', 200, request);
 };

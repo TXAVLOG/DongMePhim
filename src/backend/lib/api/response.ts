@@ -6,22 +6,25 @@ export async function apiResponse(
     status: 'success' | 'error' = 'success', 
     message: string = '', 
     code: number = 200,
-    request?: Request
+    request?: Request,
+    raw: boolean = false
 ) {
     // If data already matches the envelope, don't wrap it again (for direct mocks matching the spec exactly)
     let rawPayload = data;
     
     // Auto wrap if it's not already wrapped with "data" property and we didn't explicitly pass a raw envelope
-    if (data && typeof data === 'object' && !('data' in data && 'status' in data)) {
+    if (!raw && data && typeof data === 'object' && !('data' in data && 'status' in data)) {
         rawPayload = {
             status,
+            success: status === 'success',
             data,
             message,
             code
         };
-    } else if (data === null || data === undefined) {
+    } else if (!raw && (data === null || data === undefined)) {
         rawPayload = {
             status,
+            success: status === 'success',
             data: {},
             message,
             code
@@ -32,7 +35,14 @@ export async function apiResponse(
     if (request) {
         try {
             const url = new URL(request.url);
-            if (!url.pathname.startsWith('/api/app/') && !url.pathname.startsWith('/api/auth/zalo-') && !url.pathname.startsWith('/api/payment') && !url.pathname.startsWith('/api/user/payments')) {
+            
+            // Check headers from Flutter app
+            const appHeader = request.headers.get('x-txc-client') || request.headers.get('X-TXC-Client');
+            const appKeyHeader = request.headers.get('x-txa-api-key') || request.headers.get('X-TXA-API-KEY');
+            const userAgent = request.headers.get('user-agent') || '';
+            const isMobileClient = appHeader === 'TPhimX-App' || appKeyHeader === 'tphimx-mobile-2026-secure' || userAgent.startsWith('TPhimX-App');
+
+            if (!isMobileClient && !url.pathname.startsWith('/api/app/') && !url.pathname.startsWith('/api/auth/zalo-') && !url.pathname.startsWith('/api/payment') && !url.pathname.startsWith('/api/user/payments')) {
                 isApp = false;
             }
         } catch (e) {

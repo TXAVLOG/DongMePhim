@@ -450,8 +450,12 @@ export function mapKKPhimToMovieDetail(data: any): MovieDetail {
   const genres = Array.isArray(m.category) ? m.category.map((c: any) => c.name) : [];
   
   let category = "Khác";
+  if (Array.isArray(m.category) && m.category.length > 0) {
+    category = m.category[0].name;
+  }
+  let country = "Khác";
   if (Array.isArray(m.country) && m.country.length > 0) {
-    category = m.country[0].name;
+    country = m.country[0].name;
   }
 
   let type: 'movie' | 'series' | 'hoathinh' | 'tvshows' = 'series';
@@ -511,6 +515,7 @@ export function mapKKPhimToMovieDetail(data: any): MovieDetail {
     views: Math.floor(Math.random() * 5000) + 100,
     commentCount: Math.floor(Math.random() * 200) + 10,
     category: category,
+    country: country,
     ageRating: type === 'movie' ? 'T16' : 'T13',
     genres: genres,
     seasons: type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1',
@@ -540,6 +545,20 @@ export function mapKKPhimSearchItemToMovie(item: any, cdnDomain: string = "https
     type = 'tvshows';
   }
 
+  let category = "Khác";
+  if (Array.isArray(item.category) && item.category.length > 0) {
+    category = item.category[0].name;
+  } else if (typeof item.category === 'string') {
+    category = item.category;
+  }
+
+  let country = "Khác";
+  if (Array.isArray(item.country) && item.country.length > 0) {
+    country = item.country[0].name;
+  } else if (typeof item.country === 'string') {
+    country = item.country;
+  }
+
   return {
     id: item._id || item.id || `kk-${item.slug}`,
     title: item.name,
@@ -559,7 +578,8 @@ export function mapKKPhimSearchItemToMovie(item: any, cdnDomain: string = "https
     imdbScore: 8.0,
     views: Math.floor(Math.random() * 5000) + 100,
     commentCount: Math.floor(Math.random() * 200) + 10,
-    category: 'Khác',
+    category: category,
+    country: country,
     genres: []
   };
 }

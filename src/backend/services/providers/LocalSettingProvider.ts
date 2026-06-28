@@ -33,14 +33,14 @@ export const seedSettings: SiteSettings = {
     telegram_notify_luckydraw: true,
   },
   app: {
-    app_version: "4.6.0",
-    app_release_notes: "- 🔄 [API] Bổ sung tự động map và decorate chi tiết thông tin phim, server, tập phim khi lấy danh sách lịch sử xem tại API /watch-history\n- 📊 [UI] Tích hợp tự động trả về lịch sử xem gần nhất của phim này (trường history) trong API chi tiết phim /movie/:slug\n- 📱 [FIX] Khắc phục lỗi phát tiếp: Đọc server_index từ lịch sử để khởi tạo trình phát chạy đúng Server đã xem thay vì luôn mặc định Server 0\n- 🎬 [APP] Nâng cấp thuật toán tự động quét và fallback server thông minh: Tự động chuyển đổi server và tập phim phù hợp trong trình phát nếu tập phim được yêu cầu không tồn tại ở server hiện tại\n- ⚡ [APP] Đồng bộ trường server_index lên API và hàng đợi ngoại tuyến khi cập nhật lịch sử xem từ trình phát\n- 🎨 [UI] Sửa lỗi hiển thị Card rỗng và mốc thời gian rỗng ở phần \"Đang xem\" tại trang cá nhân và màn hình lịch sử\n- ⬆️ [SYS] Nâng cấp phiên bản ứng dụng lên v4.6.0 (Build 460) tương thích hoàn hảo với cú pháp map null-aware của Dart 3.0",
+    app_version: "4.7.0",
+    app_release_notes: "- 🚀 [v4.7.0] Chuẩn hóa toàn bộ các Mobile API Adapter cho di động\n- 💎 [VIP] Phát triển tính năng chọn và đăng ký nâng cấp gói cước trực tiếp trên Flutter app tích hợp cổng SePay / VietQR\n- 📺 [CAST] Tích hợp trang chiếu lên TV (/cast) độc lập tối ưu cho màn hình TV\n- ⭐️ [RATING] Hệ thống đánh giá phim 1-10 sao đồng bộ giữa Web và Mobile App\n- 🔄 [CRON] Cron Job tự động quét và cập nhật tập phim mới từ nguồn KKPhim, tự động thông báo tới người dùng có phim trong danh sách Yêu thích",
     app_changelogs: [
       {
-        version: "4.6.0",
-        date: "2026-06-14",
-        title: "UPDATE APP LÊN v4.6.0",
-        content: "- 🔄 [API] Bổ sung tự động map và decorate chi tiết thông tin phim, server, tập phim khi lấy danh sách lịch sử xem tại API /watch-history\n- 📊 [UI] Tích hợp tự động trả về lịch sử xem gần nhất của phim này (trường history) trong API chi tiết phim /movie/:slug\n- 📱 [FIX] Khắc phục lỗi phát tiếp: Đọc server_index từ lịch sử để khởi tạo trình phát chạy đúng Server đã xem thay vì luôn mặc định Server 0\n- 🎬 [APP] Nâng cấp thuật toán tự động quét và fallback server thông minh: Tự động chuyển đổi server và tập phim phù hợp trong trình phát nếu tập phim được yêu cầu không tồn tại ở server hiện tại\n- ⚡ [APP] Đồng bộ trường server_index lên API và hàng đợi ngoại tuyến khi cập nhật lịch sử xem từ trình phát\n- 🎨 [UI] Sửa lỗi hiển thị Card rỗng và mốc thời gian rỗng ở phần \"Đang xem\" tại trang cá nhân và màn hình lịch sử\n- ⬆️ [SYS] Nâng cấp phiên bản ứng dụng lên v4.6.0 (Build 460) tương thích hoàn hảo với cú pháp map null-aware của Dart 3.0"
+        version: "4.7.0",
+        date: "2026-06-28",
+        title: "🚀 v4.7.0 - Mobile API Adapter & Subscriptions",
+        content: "- 🚀 [v4.7.0] Chuẩn hóa toàn bộ các Mobile API Adapter cho di động\n- 💎 [VIP] Phát triển tính năng chọn và đăng ký nâng cấp gói cước trực tiếp trên Flutter app tích hợp cổng SePay / VietQR\n- 📺 [CAST] Tích hợp trang chiếu lên TV (/cast) độc lập tối ưu cho màn hình TV\n- ⭐️ [RATING] Hệ thống đánh giá phim 1-10 sao đồng bộ giữa Web và Mobile App\n- 🔄 [CRON] Cron Job tự động quét và cập nhật tập phim mới từ nguồn KKPhim, tự động thông báo tới người dùng có phim trong danh sách Yêu thích"
       },
       {
         version: "4.5.0",
@@ -68,7 +68,7 @@ export const seedSettings: SiteSettings = {
     app_ios_direct_install_enable: false,
     app_ios_download_url: "/ios-access",
     app_ios_ipa_download_enable: true,
-    app_ios_ipa_url: "https://github.com/TXAVLOG/tphimx-setup/releases/download/v4.6.0_460/TPHIMX-Premium-v4.6.0+460.ipa",
+    app_ios_ipa_url: "https://github.com/TXAVLOG/tphimx-setup/releases/download/v4.7.0_470/TPHIMX-Premium-v4.7.0+470.ipa",
     app_google_play_enable: false,
     app_google_play_url: "",
     app_app_store_enable: false,

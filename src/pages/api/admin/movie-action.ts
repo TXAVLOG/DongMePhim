@@ -162,7 +162,7 @@ export const POST: APIRoute = async ({ request }) => {
         lang: m.lang || 'Vietsub',
         imdb_score: Number(m.imdbScore || m.imdb_score) || 8.0,
         views: Number(m.views) || Number(m.view) || Math.floor(Math.random() * 4000) + 1000,
-        broadcast_at: m.category || m.broadcast_at || 'Khác',
+        broadcast_at: m.country || m.country_name || m.category || m.broadcast_at || 'Khác',
         genres: Array.isArray(m.genres) ? m.genres : [],
         actors: Array.isArray(m.actors) ? m.actors : (Array.isArray(m.actor) ? m.actor : []),
         directors: Array.isArray(m.directors) ? m.directors : (Array.isArray(m.director) ? m.director : []),
