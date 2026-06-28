@@ -192,8 +192,10 @@ export const PromoCodeService = {
       discountAmount = val;
     }
 
-    if (discountAmount > currentPrice) {
-      discountAmount = currentPrice;
+    // Đảm bảo số tiền giảm giá không làm tổng tiền thanh toán xuống dưới 2,000đ (2k)
+    const maxDiscountAllowed = Math.max(0, currentPrice - 2000);
+    if (discountAmount > maxDiscountAllowed) {
+      discountAmount = maxDiscountAllowed;
     }
 
     return {

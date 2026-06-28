@@ -19,7 +19,7 @@ const settings = await SettingService.getSettings();
         <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
           <span class="material-symbols-outlined text-4xl animate-bounce font-bold">check_circle</span>
         </div>
-        <h2 class="text-2xl font-black text-white">Nâng cấp VIP thành công!</h2>
+        <h2 class="text-2xl font-black text-white" id="success-title">Thanh toán thành công!</h2>
         <p class="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Cảm ơn bạn đã lựa chọn dịch vụ</p>
       </div>
 
@@ -33,7 +33,7 @@ const settings = await SettingService.getSettings();
         </div>
         <div class="flex justify-between">
           <span class="text-zinc-500">Gói cước:</span>
-          <span class="font-bold text-white">Premium VIP</span>
+          <span class="font-bold text-white text-right" id="tx-pkg-title">-</span>
         </div>
         <div class="flex justify-between">
           <span class="text-zinc-500">Kỳ hạn:</span>
@@ -72,12 +72,37 @@ const settings = await SettingService.getSettings();
       const cycle = urlParams.get('cycle') || 'monthly';
       const price = Number(urlParams.get('price')) || 69000;
       const packageId = urlParams.get('packageId') || '';
-      const packageTitle = urlParams.get('packageTitle') || '';
+      let packageTitle = urlParams.get('packageTitle') || '';
       const username = (window.APP_USER ? window.APP_USER.username : null) || 'anonymous';
+
+      if (!packageTitle) {
+        try {
+          const resLog = await fetch(`/api/user/payments?txid=${encodeURIComponent(txid)}`);
+          if (resLog.ok) {
+            const logData = await resLog.json();
+            if (logData.data && logData.data.packageTitle) {
+              packageTitle = logData.data.packageTitle;
+            }
+          }
+        } catch (e) {}
+      }
+      if (!packageTitle) packageTitle = 'Gói Dịch Vụ VIP';
 
       // Populate details
       document.getElementById('tx-id-val').textContent = txid;
-      document.getElementById('tx-cycle-val').textContent = cycle === 'annual' ? 'Hàng năm (-15%)' : 'Hàng tháng';
+      const pkgTitleEl = document.getElementById('tx-pkg-title');
+      if (pkgTitleEl) pkgTitleEl.textContent = packageTitle;
+
+      const titleEl = document.getElementById('success-title');
+      if (titleEl) {
+        if (packageTitle.toLowerCase().includes('bypass') || packageTitle.toLowerCase().includes('zalo') || packageTitle.toLowerCase().includes('key')) {
+          titleEl.textContent = 'Nhận mã Key Bypass Zalo thành công!';
+        } else {
+          titleEl.textContent = 'Nâng cấp VIP thành công!';
+        }
+      }
+
+      document.getElementById('tx-cycle-val').textContent = cycle === 'annual' ? 'Hàng năm' : (cycle === '6months' ? '6 tháng' : (cycle === '3months' ? '3 tháng' : 'Hàng tháng'));
       document.getElementById('tx-price-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
       
       // Update view invoice link

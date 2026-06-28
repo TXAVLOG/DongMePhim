@@ -237,7 +237,7 @@ const accountName = payments.manual_account_name || 'HỆ THỐNG RẠP PHIM';
 
         if (window.showGlobalToast) window.showGlobalToast('Đã lưu thông tin chuyển khoản! Vui lòng chờ đối soát.', 'success');
         setTimeout(() => {
-          window.location.href = `/checkout/success?method=manual&cycle=${cycle}&price=${price}&txid=${txid}&packageTitle=${encodeURIComponent(packageTitle)}`;
+          window.location.href = `/checkout/pending?method=manual&cycle=${cycle}&price=${price}&txid=${txid}&packageTitle=${encodeURIComponent(packageTitle)}`;
         }, 1200);
       });
     }

@@ -1,0 +1,90 @@
+---
+import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
+
+const settings = await SettingService.getSettings();
+---
+
+<MainLayout title="Xác nhận thanh toán - Đang chờ duyệt">
+  <main class="max-w-md mx-auto px-4 py-8 pt-24 min-h-[80vh] flex flex-col justify-center relative overflow-hidden" id="pending-main">
+    
+    <!-- Pending Status Card -->
+    <div class="glass-panel border border-amber-500/20 rounded-3xl p-8 relative overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-950 to-amber-950/10 shadow-[0_0_50px_rgba(245,158,11,0.08)] text-center space-y-6 z-10">
+      
+      <!-- Icon & Title -->
+      <div class="flex flex-col items-center gap-3">
+        <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          <span class="material-symbols-outlined text-4xl animate-spin font-bold">hourglass_top</span>
+        </div>
+        <h2 class="text-2xl font-black text-white">Đã gửi thông tin thanh toán!</h2>
+        <p class="text-xs text-amber-400 font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          Đang chờ Admin đối soát & phê duyệt
+        </p>
+      </div>
+
+      <!-- Notice box -->
+      <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 text-xs text-amber-200 text-left font-body-main space-y-1.5">
+        <div class="font-bold flex items-center gap-1 text-amber-300">
+          <span class="material-symbols-outlined text-base">info</span>
+          Lưu ý quan trọng:
+        </div>
+        <p class="leading-relaxed">Hệ thống đã lưu nhận ký chuyển khoản của bạn. Admin sẽ đối soát giao dịch ngân hàng và kích hoạt dịch vụ cho bạn trong thời gian sớm nhất (thường từ 3 - 15 phút).</p>
+      </div>
+
+      <!-- Transaction details box -->
+      <div class="bg-white/5 border border-glass-stroke/40 rounded-2xl p-5 text-left text-xs space-y-3">
+        <h3 class="font-bold text-zinc-400 uppercase tracking-wider text-[9px] border-b border-glass-stroke pb-2">CHI TIẾT ĐƠN HÀNG CHỜ DUYỆT</h3>
+        
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-500">Mã giao dịch:</span>
+          <span class="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-xs" id="tx-id-val">-</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-500">Gói cước:</span>
+          <span class="font-bold text-white text-right" id="tx-pkg-title">-</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-500">Kỳ hạn:</span>
+          <span class="font-bold text-zinc-300" id="tx-cycle-val">-</span>
+        </div>
+        <div class="flex justify-between items-center border-t border-glass-stroke/40 pt-2.5">
+          <span class="text-zinc-400 font-bold">Số tiền thanh toán:</span>
+          <span class="text-base font-black text-primary" id="tx-price-val">-</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col gap-3 pt-2">
+        <a href="/tphim" class="w-full py-3.5 bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-slate-950 font-black rounded-xl text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+          <span class="material-symbols-outlined text-sm font-bold">home</span>
+          Quay lại Trang Chủ
+        </a>
+      </div>
+
+      <p class="text-[10px] text-zinc-500 leading-normal font-body-main">Bạn có thể truy cập lại trang phim bất cứ lúc nào. Khi Admin phê duyệt xong, tài khoản của bạn sẽ tự động được kích hoạt.</p>
+
+    </div>
+
+  </main>
+</MainLayout>
+
+<script is:inline>
+  (function() {
+    function initPendingPage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const txid = urlParams.get('txid') || urlParams.get('session_id') || 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
+      const cycle = urlParams.get('cycle') || 'monthly';
+      const price = Number(urlParams.get('price')) || 0;
+      const packageTitle = urlParams.get('packageTitle') || 'Gói Dịch Vụ';
+
+      document.getElementById('tx-id-val').textContent = txid;
+      document.getElementById('tx-pkg-title').textContent = packageTitle;
+      document.getElementById('tx-cycle-val').textContent = cycle === 'annual' ? 'Hàng năm' : (cycle === '6months' ? '6 tháng' : (cycle === '3months' ? '3 tháng' : 'Hàng tháng'));
+      document.getElementById('tx-price-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    }
+
+    initPendingPage();
+    document.addEventListener('astro:page-load', initPendingPage);
+  })();
+</script>

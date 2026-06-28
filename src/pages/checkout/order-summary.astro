@@ -486,7 +486,7 @@ const serverSettings = await SettingService.getSettings();
 
       let calcTotal = Math.round(baseMonthlyPrice * numMonths * (1 - discountRate));
 
-      // Calculate promo discount if applied
+      // Calculate promo discount if applied (Đảm bảo giá tổng không bao giờ dưới 2,000đ)
       let promoDiscountVal = 0;
       if (appliedPromo) {
         if (appliedPromo.discountType === 'percent') {
@@ -494,10 +494,13 @@ const serverSettings = await SettingService.getSettings();
         } else {
           promoDiscountVal = appliedPromo.discountValue;
         }
-        if (promoDiscountVal > calcTotal) promoDiscountVal = calcTotal;
+        const maxDiscountAllowed = Math.max(0, calcTotal - 2000);
+        if (promoDiscountVal > maxDiscountAllowed) {
+          promoDiscountVal = maxDiscountAllowed;
+        }
       }
 
-      const finalTotalBeforeVat = Math.max(0, calcTotal - promoDiscountVal);
+      const finalTotalBeforeVat = Math.max(calcTotal >= 2000 ? 2000 : calcTotal, calcTotal - promoDiscountVal);
       totalAmount = Math.round(finalTotalBeforeVat);
       subtotal = Math.round(totalAmount / (1 + vatRate / 100));
       vatAmount = totalAmount - subtotal;
