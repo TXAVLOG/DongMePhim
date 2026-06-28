@@ -20,6 +20,22 @@ export const GET: APIRoute = async ({ request, url }) => {
       if (!log) {
         return apiResponse(null, 'success', 'No record found', 200, request);
       }
+      let keyCode = null;
+      if (log.status === 'approved' && log.package_title && (log.package_title.toLowerCase().includes('bypass') || log.package_title.toLowerCase().includes('zalo') || log.package_title.toLowerCase().includes('key'))) {
+        try {
+          const { data: keyData } = await supabase
+            .from('txa_zalo_bypass_keys')
+            .select('key_code')
+            .eq('note', log.txid)
+            .maybeSingle();
+          if (keyData) {
+            keyCode = keyData.key_code;
+          }
+        } catch (e) {
+          console.error('Error fetching key_code for txid:', e);
+        }
+      }
+
       const mappedLog = {
         txid: log.txid,
         username: log.username,
@@ -31,7 +47,8 @@ export const GET: APIRoute = async ({ request, url }) => {
         status: log.status,
         receiptImg: log.receipt_img || '',
         note: log.note || log.client_info || '',
-        date: log.created_at
+        date: log.created_at,
+        keyCode: keyCode
       };
       return apiResponse(mappedLog, 'success', '', 200, request);
     }
@@ -188,6 +205,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Nếu trạng thái là 'approved' và đây là gói Key Bypass Zalo -> Tự động sinh mã Key và gửi Email cho khách
+    let generatedKeyCode: string | null = null;
     if (status === 'approved' && (packageTitle.toLowerCase().includes('bypass') || packageTitle.toLowerCase().includes('zalo') || packageTitle.toLowerCase().includes('key'))) {
       try {
         const { ZaloService } = await import('@services/ZaloService');
@@ -213,9 +231,13 @@ export const POST: APIRoute = async ({ request }) => {
           packageTitle: packageTitle,
           durationMonths: durationMonths,
           email: email || null,
-          note: clientNote || null,
+          note: txid, // Store txid as note to link it
           maxDevices: 15
         });
+
+        if (keyRecord && keyRecord.key_code) {
+          generatedKeyCode = keyRecord.key_code;
+        }
 
         // Gửi Mail cho người dùng nếu có cấu hình SMTP và email người nhận
         if (email) {
@@ -256,7 +278,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    return apiResponse({ success: true }, 'success', 'Lưu nhật ký giao dịch thành công!', 200, request);
+    return apiResponse({ success: true, keyCode: generatedKeyCode }, 'success', 'Lưu nhật ký giao dịch thành công!', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
