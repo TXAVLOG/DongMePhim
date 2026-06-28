@@ -69,11 +69,53 @@ import MainLayout from '@layouts/MainLayout.astro';
             <p class="text-[10px] text-zinc-500 font-body-main">Mã Key DP 8 ký tự sẽ được gửi tự động về địa chỉ email này ngay sau khi thanh toán thành công.</p>
           </div>
 
+          <!-- Promo Code Input Container -->
+          <div class="border-t border-glass-stroke/40 pt-4 space-y-2">
+            <label class="text-[11px] font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-purple-400">confirmation_number</span>
+              Mã giảm giá / Khuyến mãi (Voucher)
+            </label>
+
+            <!-- Input state (shown by default) -->
+            <div id="promo-input-container" class="flex gap-2">
+              <input type="text" id="promo-code-input" placeholder="Enter promo code" class="flex-1 bg-zinc-900 border border-glass-stroke focus:border-purple-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none uppercase font-mono font-bold" />
+              <button type="button" id="btn-apply-promo" class="px-4 py-2.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border border-purple-500/30 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-1">
+                <span>Áp dụng</span>
+              </button>
+            </div>
+
+            <!-- Ticket transform state (hidden by default) -->
+            <div id="promo-ticket-container" class="hidden relative bg-gradient-to-r from-purple-950/60 to-indigo-950/60 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between shadow-lg">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-purple-500/20 rounded-lg text-purple-300">
+                  <span class="material-symbols-outlined text-lg">local_activity</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span id="ticket-code-text" class="font-mono font-black text-purple-300 text-sm uppercase tracking-wide">KM100</span>
+                    <span id="ticket-badge-text" class="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[9px] font-bold uppercase">Giảm 100%</span>
+                  </div>
+                  <p id="ticket-desc-text" class="text-[10px] text-zinc-400 font-body-main mt-0.5">Đã áp dụng ưu đãi vào tổng tiền thanh toán</p>
+                </div>
+              </div>
+              <button type="button" id="btn-remove-promo" class="p-1.5 bg-white/5 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 rounded-lg transition-all cursor-pointer" data-txatooltip="Bỏ mã giảm giá">
+                <span class="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Invoice Price Calculation Table -->
           <div class="border-t border-glass-stroke/40 pt-6 space-y-3 text-xs">
             <div class="flex justify-between items-center text-zinc-400">
               <span>Giá gốc dịch vụ (Tạm tính)</span>
               <span id="summary-subtotal-val" class="font-mono font-semibold text-white">0đ</span>
+            </div>
+            <div id="summary-discount-row" class="hidden flex justify-between items-center text-emerald-400">
+              <div>
+                <span class="font-bold block">Khuyến mãi</span>
+                <span id="summary-discount-subtext" class="text-[10px] text-zinc-400 font-normal block">-</span>
+              </div>
+              <span id="summary-discount-val" class="font-mono font-black text-sm">-0đ</span>
             </div>
             <div class="flex justify-between items-center text-zinc-400">
               <span class="flex items-center gap-1">
@@ -123,6 +165,7 @@ import MainLayout from '@layouts/MainLayout.astro';
     let vatAmount = 0;
     let totalAmount = 0;
     let vatRate = 8;
+    let appliedPromo = null;
 
     const urlParams = new URLSearchParams(window.location.search);
     const pkgId = urlParams.get('packageId') || 'vip';
@@ -251,11 +294,104 @@ import MainLayout from '@layouts/MainLayout.astro';
       // Render Duration / Cycle selection buttons
       renderDurationOptions();
 
+      // Setup Promo Code handlers
+      setupPromoCodeHandlers();
+
       // Calculate initial Price & VAT
       recalculatePrice();
 
       // Render Payment Methods
       renderPaymentMethods(payments);
+    }
+
+    function setupPromoCodeHandlers() {
+      const applyBtn = document.getElementById('btn-apply-promo');
+      const removeBtn = document.getElementById('btn-remove-promo');
+      const promoInput = document.getElementById('promo-code-input');
+
+      if (applyBtn && promoInput) {
+        applyBtn.addEventListener('click', async () => {
+          const code = promoInput.value.trim().toUpperCase();
+          if (!code) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập mã giảm giá!', 'error');
+            return;
+          }
+
+          applyBtn.disabled = true;
+          applyBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">autorenew</span>';
+
+          const username = (window.APP_USER ? window.APP_USER.username : null) || 'guest';
+          try {
+            const res = await fetch('/api/user/verify-promo', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                code: code,
+                packageTitle: selectedPackage ? selectedPackage.title : '',
+                username: username,
+                currentPrice: totalAmount
+              })
+            });
+            const result = await res.json();
+
+            if (res.ok && result.status === 'success') {
+              appliedPromo = {
+                code: code,
+                discountAmount: result.data.discountAmount,
+                discountType: result.data.discountType,
+                discountValue: result.data.discountValue
+              };
+
+              if (window.showGlobalToast) window.showGlobalToast('Áp dụng mã giảm giá thành công!', 'success');
+              
+              // Transform input to Ticket UI
+              document.getElementById('promo-input-container')?.classList.add('hidden');
+              const ticketBox = document.getElementById('promo-ticket-container');
+              if (ticketBox) {
+                document.getElementById('ticket-code-text').textContent = code;
+                document.getElementById('ticket-badge-text').textContent = result.data.discountType === 'percent' ? `Giảm ${result.data.discountValue}%` : `Giảm ${result.data.discountValue.toLocaleString('vi-VN')}đ`;
+                ticketBox.classList.remove('hidden');
+              }
+
+              recalculatePrice();
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast(result.message || 'Mã không hợp lệ!', 'error');
+            }
+          } catch (e) {
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi kiểm tra mã giảm giá!', 'error');
+          } finally {
+            applyBtn.disabled = false;
+            applyBtn.innerHTML = '<span>Áp dụng</span>';
+          }
+        });
+      }
+
+      if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: '🎟️ Bỏ sử dụng mã giảm giá?',
+              content: '<p class="text-xs text-zinc-300 pt-2">Bạn có chắc chắn muốn bỏ áp dụng mã giảm giá này cho đơn hàng?</p>',
+              confirmText: 'Bỏ mã',
+              cancelText: 'Giữ lại',
+              onConfirm: () => {
+                appliedPromo = null;
+                document.getElementById('promo-ticket-container')?.classList.add('hidden');
+                document.getElementById('promo-input-container')?.classList.remove('hidden');
+                if (promoInput) promoInput.value = '';
+                recalculatePrice();
+                if (window.showGlobalToast) window.showGlobalToast('Đã bỏ mã giảm giá.', 'info');
+              }
+            });
+          } else {
+            appliedPromo = null;
+            document.getElementById('promo-ticket-container')?.classList.add('hidden');
+            document.getElementById('promo-input-container')?.classList.remove('hidden');
+            if (promoInput) promoInput.value = '';
+            recalculatePrice();
+          }
+        });
+      }
     }
 
     function renderDurationOptions() {
@@ -338,7 +474,19 @@ import MainLayout from '@layouts/MainLayout.astro';
 
       let calcTotal = Math.round(baseMonthlyPrice * numMonths * (1 - discountRate));
 
-      totalAmount = calcTotal;
+      // Calculate promo discount if applied
+      let promoDiscountVal = 0;
+      if (appliedPromo) {
+        if (appliedPromo.discountType === 'percent') {
+          promoDiscountVal = Math.round((calcTotal * appliedPromo.discountValue) / 100);
+        } else {
+          promoDiscountVal = appliedPromo.discountValue;
+        }
+        if (promoDiscountVal > calcTotal) promoDiscountVal = calcTotal;
+      }
+
+      const finalTotalBeforeVat = Math.max(0, calcTotal - promoDiscountVal);
+      totalAmount = Math.round(finalTotalBeforeVat);
       subtotal = Math.round(totalAmount / (1 + vatRate / 100));
       vatAmount = totalAmount - subtotal;
 
@@ -350,6 +498,19 @@ import MainLayout from '@layouts/MainLayout.astro';
           subtotalEl.innerHTML = `<span class="line-through text-zinc-500 mr-2 font-normal">${fmt(rawOriginalSubtotal)}</span><span class="text-white font-semibold">${fmt(subtotal)}</span>`;
         } else {
           subtotalEl.innerHTML = `<span class="font-semibold text-white">${fmt(subtotal)}</span>`;
+        }
+      }
+
+      // Display Promo Discount Row in breakdown table
+      const discountRow = document.getElementById('summary-discount-row');
+      if (discountRow) {
+        if (appliedPromo && promoDiscountVal > 0) {
+          discountRow.classList.remove('hidden');
+          const subtext = appliedPromo.discountType === 'percent' ? `giảm ${appliedPromo.discountValue}% trong ${formatMonthsToYearsAndMonths(numMonths)}` : `giảm trực tiếp ${fmt(appliedPromo.discountValue)}`;
+          document.getElementById('summary-discount-subtext').textContent = subtext;
+          document.getElementById('summary-discount-val').textContent = `-${fmt(promoDiscountVal)}`;
+        } else {
+          discountRow.classList.add('hidden');
         }
       }
 
@@ -476,7 +637,7 @@ import MainLayout from '@layouts/MainLayout.astro';
         const username = (window.APP_USER ? window.APP_USER.username : null) || 'guest_' + Math.random().toString(36).substring(2, 8);
         const txid = 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
 
-        // Save initial pending payment record with clientInfo
+        // Save initial pending payment record with clientInfo and promoCode
         try {
           await fetch('/api/user/payments', {
             method: 'POST',
@@ -490,6 +651,7 @@ import MainLayout from '@layouts/MainLayout.astro';
               cycle: finalCycleStr,
               method: selectedMethod,
               status: 'pending',
+              promoCode: appliedPromo ? appliedPromo.code : null,
               note: clientInfo
             })
           });

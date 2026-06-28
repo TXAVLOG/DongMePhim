@@ -560,3 +560,37 @@ CREATE POLICY "all_txa_movie_ratings" ON public.txa_movie_ratings FOR ALL TO pub
 CREATE POLICY "all_txa_payment_logs" ON public.txa_payment_logs FOR ALL TO public USING (true);
 CREATE POLICY "all_txa_zalo_bypass_keys" ON public.txa_zalo_bypass_keys FOR ALL TO public USING (true);
 CREATE POLICY "all_txa_zalo_key_logs" ON public.txa_zalo_key_logs FOR ALL TO public USING (true);
+
+-- Table: public.txa_promo_codes
+CREATE TABLE IF NOT EXISTS public.txa_promo_codes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  code character varying NOT NULL UNIQUE,
+  discount_type character varying NOT NULL DEFAULT 'percent'::character varying,
+  discount_value numeric NOT NULL DEFAULT 0,
+  package_scope character varying NOT NULL DEFAULT 'all'::character varying,
+  max_uses integer NOT NULL DEFAULT 100,
+  used_count integer NOT NULL DEFAULT 0,
+  expiry_date timestamp with time zone NOT NULL,
+  status character varying NOT NULL DEFAULT 'active'::character varying,
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
+
+ALTER TABLE public.txa_promo_codes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_txa_promo_codes" ON public.txa_promo_codes FOR ALL TO public USING (true);
+
+-- Table: public.txa_promo_code_uses
+CREATE TABLE IF NOT EXISTS public.txa_promo_code_uses (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  code character varying NOT NULL,
+  username character varying NOT NULL,
+  email character varying,
+  ip character varying,
+  user_agent text,
+  txid character varying,
+  used_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
+
+ALTER TABLE public.txa_promo_code_uses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_txa_promo_code_uses" ON public.txa_promo_code_uses FOR ALL TO public USING (true);

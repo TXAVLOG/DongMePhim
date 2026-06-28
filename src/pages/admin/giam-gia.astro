@@ -1,0 +1,296 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
+import { PromoCodeService } from '@services/PromoCodeService';
+
+const settings = await SettingService.getSettings();
+const packages = settings.packages || [];
+const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
+---
+
+<AdminLayout title="Quản lý Mã giảm giá">
+  <div class="space-y-6">
+    
+    <!-- Top Header & Actions Bar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-6 rounded-2xl">
+      <div>
+        <h1 class="text-2xl font-black text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-purple-400 text-3xl">confirmation_number</span>
+          Quản lý Mã Giảm Giá (Promo Codes)
+        </h1>
+        <p class="text-xs text-zinc-400 mt-1">Tạo và quản lý các mã ưu đãi thanh toán cho người dùng</p>
+      </div>
+      <button 
+        type="button" 
+        onclick="openCreatePromoModal()"
+        class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white rounded-xl font-bold text-xs shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
+        data-txatooltip="Tạo mã giảm giá mới cho hệ thống"
+      >
+        <span class="material-symbols-outlined text-base">add_circle</span>
+        <span>Thêm Mã Giảm Giá Mới</span>
+      </button>
+    </div>
+
+    <!-- Promo Codes Grid / Table Container -->
+    <div class="glass-panel rounded-2xl overflow-hidden p-6">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-glass-stroke/40 text-[11px] text-zinc-400 uppercase tracking-wider font-bold">
+              <th class="py-3.5 px-4">Mã Khuyến Mãi</th>
+              <th class="py-3.5 px-4">Mức Giảm</th>
+              <th class="py-3.5 px-4">Phạm Vi Áp Dụng</th>
+              <th class="py-3.5 px-4">Lượt Dùng</th>
+              <th class="py-3.5 px-4">Thời Hạn</th>
+              <th class="py-3.5 px-4">Trạng Thái</th>
+              <th class="py-3.5 px-4 text-right">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="promo-codes-tbody" class="divide-y divide-glass-stroke/30 text-xs font-body-main">
+            {initialPromoCodes.length === 0 ? (
+              <tr>
+                <td colspan="7" class="py-12 text-center text-zinc-500 font-bold">
+                  Chưa có mã giảm giá nào. Hãy bấm "Thêm Mã Giảm Giá Mới" để tạo!
+                </td>
+              </tr>
+            ) : (
+              initialPromoCodes.map((item) => {
+                const isExpired = new Date(item.expiry_date).getTime() < Date.now();
+                const expStr = new Date(item.expiry_date).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+                return (
+                  <tr class="hover:bg-white/5 transition-all">
+                    <td class="py-4 px-4 font-mono font-black text-purple-400 text-sm">
+                      <span class="bg-purple-500/10 px-2.5 py-1 rounded border border-purple-500/20">{item.code}</span>
+                    </td>
+                    <td class="py-4 px-4 font-bold text-emerald-400">
+                      {item.discount_type === 'percent' ? `Giảm ${item.discount_value}%` : `Giảm ${item.discount_value.toLocaleString('vi-VN')} đ`}
+                    </td>
+                    <td class="py-4 px-4 text-zinc-300 font-semibold">
+                      {item.package_scope === 'all' ? (
+                        <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 text-[11px]">Tất cả các gói</span>
+                      ) : (
+                        <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[11px]">{item.package_scope}</span>
+                      )}
+                    </td>
+                    <td class="py-4 px-4 font-mono font-bold text-zinc-300">
+                      {item.used_count} / {item.max_uses} lượt
+                    </td>
+                    <td class="py-4 px-4 text-zinc-400">
+                      {expStr} {isExpired ? <span class="text-red-400 font-bold text-[10px] uppercase ml-1">(Hết hạn)</span> : ''}
+                    </td>
+                    <td class="py-4 px-4">
+                      {item.status === 'active' && !isExpired ? (
+                        <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase">Hoạt động</span>
+                      ) : (
+                        <span class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold uppercase">Khóa / Hết hạn</span>
+                      )}
+                    </td>
+                    <td class="py-4 px-4 text-right space-x-2">
+                      <button 
+                        type="button" 
+                        onclick={`viewPromoUsers('${item.code}')`}
+                        class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all cursor-pointer"
+                        data-txatooltip="Xem danh sách người dùng đã áp dụng mã này"
+                      >
+                        <span class="material-symbols-outlined text-base">group</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        onclick={`deletePromoCode('${item.id}', '${item.code}')`}
+                        class="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-400 transition-all cursor-pointer"
+                        data-txatooltip="Xóa mã giảm giá này"
+                      >
+                        <span class="material-symbols-outlined text-base">delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</AdminLayout>
+
+<script is:inline define:vars={{ packages }}>
+  (function() {
+    window.openCreatePromoModal = function() {
+      const pkgOptionsHtml = `
+        <option value="all">🌐 Tất cả các gói cước</option>
+        ${packages.map(p => `<option value="${p.title}">📦 ${p.title}</option>`).join('')}
+      `;
+
+      const content = `
+        <div class="space-y-4 text-xs text-left pt-2">
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Mã Giảm Giá (Viết hoa không dấu)</label>
+            <input type="text" id="modal-promo-code" placeholder="VÍ DỤ: TRIAN100, KHUYENMAI50K" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-purple-500 font-mono font-bold uppercase" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-zinc-400 font-bold mb-1">Loại Giảm Giá</label>
+              <select id="modal-promo-type" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none font-bold">
+                <option value="percent">Phần trăm (%)</option>
+                <option value="fixed">Số tiền cố định (VNĐ)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-zinc-400 font-bold mb-1">Giá Trị Giảm</label>
+              <input type="number" id="modal-promo-value" placeholder="Nhập 10 cho 10% hoặc 50000 cho 50k" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-purple-500 font-bold" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-zinc-400 font-bold mb-1">Phạm Vi Áp Dụng Cho Gói Cước Cụ Thể</label>
+            <select id="modal-promo-scope" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none font-bold">
+              ${pkgOptionsHtml}
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-zinc-400 font-bold mb-1">Số Lượt Dùng Tối Đa</label>
+              <input type="number" id="modal-promo-max-uses" value="100" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none font-bold" />
+            </div>
+            <div>
+              <label class="block text-zinc-400 font-bold mb-1">Ngày Hết Hạn</label>
+              <input type="date" id="modal-promo-expiry" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none font-bold" />
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: '🎟️ Tạo Mã Giảm Giá Mới',
+          content: content,
+          confirmText: 'Lưu Mã Giảm Giá',
+          cancelText: 'Hủy bỏ',
+          onConfirm: async () => {
+            const code = document.getElementById('modal-promo-code').value.trim().toUpperCase();
+            const discount_type = document.getElementById('modal-promo-type').value;
+            const discount_value = Number(document.getElementById('modal-promo-value').value);
+            const package_scope = document.getElementById('modal-promo-scope').value;
+            const max_uses = Number(document.getElementById('modal-promo-max-uses').value);
+            const expiry = document.getElementById('modal-promo-expiry').value;
+
+            if (!code || !discount_value || !expiry) {
+              if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền đầy đủ Mã, Giá trị giảm và Ngày hết hạn!', 'error');
+              return;
+            }
+
+            const expiry_date = new Date(expiry + 'T23:59:59Z').toISOString();
+
+            try {
+              const res = await fetch('/api/admin/promo-codes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'create',
+                  promoData: { code, discount_type, discount_value, package_scope, max_uses, expiry_date, status: 'active' }
+                })
+              });
+              const result = await res.json();
+              if (res.ok && result.status === 'success') {
+                if (window.showGlobalToast) window.showGlobalToast('Tạo mã giảm giá thành công!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi khi tạo mã!', 'error');
+              }
+            } catch (e) {
+              if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối máy chủ!', 'error');
+            }
+          }
+        });
+      }
+    };
+
+    window.deletePromoCode = function(id, code) {
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: '⚠️ Xác nhận xóa mã giảm giá',
+          content: `<p class="text-xs text-zinc-300 pt-2">Bạn có chắc chắn muốn xóa mã giảm giá <strong class="text-purple-400 font-mono">${code}</strong>? Thao tác này không thể hoàn tác!</p>`,
+          confirmText: 'Xóa vĩnh viễn',
+          cancelText: 'Hủy',
+          onConfirm: async () => {
+            try {
+              const res = await fetch('/api/admin/promo-codes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', id: id })
+              });
+              if (res.ok) {
+                if (window.showGlobalToast) window.showGlobalToast('Đã xóa mã giảm giá!', 'success');
+                setTimeout(() => window.location.reload(), 800);
+              }
+            } catch (e) {}
+          }
+        });
+      }
+    };
+
+    window.viewPromoUsers = async function(code) {
+      try {
+        const res = await fetch(`/api/admin/promo-codes?code=${encodeURIComponent(code)}`);
+        const result = await res.json();
+        const users = result.data || [];
+
+        let rowsHtml = '';
+        if (users.length === 0) {
+          rowsHtml = '<tr><td colspan="4" class="py-6 text-center text-zinc-500 font-bold">Chưa có lượt sử dụng nào cho mã này.</td></tr>';
+        } else {
+          rowsHtml = users.map(u => {
+            const timeStr = new Date(u.used_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+            return `
+              <tr class="border-b border-zinc-800/60">
+                <td class="py-2.5 px-3 font-bold text-purple-300">${u.username}</td>
+                <td class="py-2.5 px-3 text-zinc-300">${u.email || 'N/A'}</td>
+                <td class="py-2.5 px-3 font-mono text-[11px] text-zinc-400" title="${u.user_agent || ''}">${u.ip || 'N/A'}</td>
+                <td class="py-2.5 px-3 text-zinc-400 text-[11px] text-right">${timeStr}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        const content = `
+          <div class="pt-2 text-xs space-y-3">
+            <p class="text-zinc-400">Danh sách tài khoản & thiết bị đã dùng mã <strong class="text-purple-400 font-mono">${code}</strong> (${users.length} lượt):</p>
+            <div class="max-h-64 overflow-y-auto border border-zinc-800 rounded-xl bg-zinc-950">
+              <table class="w-full text-left">
+                <thead class="bg-zinc-900 text-[10px] text-zinc-400 uppercase font-bold sticky top-0">
+                  <tr>
+                    <th class="py-2 px-3">Username</th>
+                    <th class="py-2 px-3">Email</th>
+                    <th class="py-2 px-3">IP / Thiết Bị</th>
+                    <th class="py-2 px-3 text-right">Thời Gian</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-800/40">
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+
+        if (window.txamodal) {
+          window.txamodal.show({
+            title: `👥 Người Dùng Mã ${code}`,
+            content: content,
+            confirmText: 'Đóng',
+            cancelText: '',
+            onConfirm: () => {}
+          });
+        }
+      } catch (e) {}
+    };
+
+    // Auto highlight active nav item
+    const navItem = document.getElementById('nav-promo');
+    if (navItem) navItem.classList.add('sidebar-active');
+  })();
+</script>

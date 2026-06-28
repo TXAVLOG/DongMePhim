@@ -168,6 +168,25 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (error) throw error;
 
+    // Ghi nhận lượt dùng mã giảm giá nếu có
+    if (body.promoCode) {
+      try {
+        const { PromoCodeService } = await import('@services/PromoCodeService');
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || null;
+        const userAgent = request.headers.get('user-agent') || null;
+        await PromoCodeService.recordPromoUsage({
+          code: body.promoCode,
+          username: username,
+          email: email || null,
+          ip: clientIp,
+          user_agent: userAgent,
+          txid: txid
+        });
+      } catch (promoErr) {
+        console.error('Lỗi khi ghi nhận mã giảm giá:', promoErr);
+      }
+    }
+
     // Nếu trạng thái là 'approved' và đây là gói Key Bypass Zalo -> Tự động sinh mã Key và gửi Email cho khách
     if (status === 'approved' && (packageTitle.toLowerCase().includes('bypass') || packageTitle.toLowerCase().includes('zalo') || packageTitle.toLowerCase().includes('key'))) {
       try {
