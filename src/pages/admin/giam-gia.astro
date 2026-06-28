@@ -85,7 +85,15 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
                         <span class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold uppercase">Khóa / Hết hạn</span>
                       )}
                     </td>
-                    <td class="py-4 px-4 text-right space-x-2">
+                    <td class="py-4 px-4 text-right space-x-1.5">
+                      <button 
+                        type="button" 
+                        onclick={`copyPromoLink('${item.code}', '${item.package_scope.replace(/'/g, "\\'")}')`}
+                        class="p-2 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg text-purple-400 transition-all cursor-pointer"
+                        data-txatooltip="Sao chép đường link mua hàng kèm mã này"
+                      >
+                        <span class="material-symbols-outlined text-base">link</span>
+                      </button>
                       <button 
                         type="button" 
                         onclick={`viewPromoUsers('${item.code}')`}
@@ -117,6 +125,22 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
 
 <script is:inline define:vars={{ packages }}>
   (function() {
+    window.copyPromoLink = function(code, scope) {
+      let pkgIdParam = 'vip';
+      if (scope && scope !== 'all') {
+        if (scope.toLowerCase().includes('bypass') || scope.toLowerCase().includes('zalo')) {
+          pkgIdParam = 'bypass_zalo';
+        } else {
+          const found = packages.find(p => (p.title || '').toLowerCase() === scope.toLowerCase());
+          if (found && found.id) pkgIdParam = found.id;
+        }
+      }
+      const fullUrl = `${window.location.origin}/checkout/order-summary?packageId=${encodeURIComponent(pkgIdParam)}&promo=${encodeURIComponent(code)}`;
+      navigator.clipboard.writeText(fullUrl).then(() => {
+        if (window.showGlobalToast) window.showGlobalToast(`Đã sao chép link khuyến mãi cho mã ${code}!`, 'success');
+      });
+    };
+
     window.openCreatePromoModal = function() {
       const pkgOptionsHtml = `
         <option value="all">🌐 Tất cả các gói cước</option>
