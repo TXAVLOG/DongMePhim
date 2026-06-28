@@ -150,8 +150,12 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
       const content = `
         <div class="space-y-4 text-xs text-left pt-2">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">Mã Giảm Giá (Viết hoa không dấu)</label>
-            <input type="text" id="modal-promo-code" placeholder="VÍ DỤ: TRIAN100, KHUYENMAI50K" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-purple-500 font-mono font-bold uppercase" />
+            <label class="block text-zinc-400 font-bold mb-1">Hậu tố Mã Giảm Giá (Để trống sẽ tự tạo ngẫu nhiên)</label>
+            <div class="flex items-center">
+              <span class="px-3 py-2.5 bg-purple-600 text-white font-mono font-black text-xs rounded-l-xl border border-purple-500">TX-</span>
+              <input type="text" id="modal-promo-code" placeholder="TRIAN100, VIP50K... (Hoặc để trống)" class="flex-1 bg-zinc-900 border border-zinc-800 rounded-r-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-purple-500 font-mono font-bold uppercase" />
+            </div>
+            <p class="text-[10px] text-zinc-500 mt-1 font-body-main">Mã tạo ra sẽ luôn có định dạng <strong>TX-[TÊN_MÃ]</strong> (Ví dụ: TX-TRIAN100 hoặc TX-8K9W2P).</p>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -195,15 +199,15 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
           confirmText: 'Lưu Mã Giảm Giá',
           cancelText: 'Hủy bỏ',
           onConfirm: async () => {
-            const code = document.getElementById('modal-promo-code').value.trim().toUpperCase();
+            const rawInput = document.getElementById('modal-promo-code').value.trim().toUpperCase();
             const discount_type = document.getElementById('modal-promo-type').value;
             const discount_value = Number(document.getElementById('modal-promo-value').value);
             const package_scope = document.getElementById('modal-promo-scope').value;
             const max_uses = Number(document.getElementById('modal-promo-max-uses').value);
             const expiry = document.getElementById('modal-promo-expiry').value;
 
-            if (!code || !discount_value || !expiry) {
-              if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền đầy đủ Mã, Giá trị giảm và Ngày hết hạn!', 'error');
+            if (!discount_value || !expiry) {
+              if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền đầy đủ Giá trị giảm và Ngày hết hạn!', 'error');
               return;
             }
 
@@ -215,7 +219,7 @@ const initialPromoCodes = await PromoCodeService.getAllPromoCodes();
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   action: 'create',
-                  promoData: { code, discount_type, discount_value, package_scope, max_uses, expiry_date, status: 'active' }
+                  promoData: { code: rawInput, discount_type, discount_value, package_scope, max_uses, expiry_date, status: 'active' }
                 })
               });
               const result = await res.json();

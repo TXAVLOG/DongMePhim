@@ -54,13 +54,23 @@ export const PromoCodeService = {
 
   // 2. Tạo mới mã giảm giá (Admin)
   async createPromoCode(promo: PromoCode): Promise<PromoCode> {
-    const cleanCode = (promo.code || '').trim().toUpperCase();
-    if (!cleanCode) throw new Error('Mã giảm giá không được để trống!');
+    let rawCode = (promo.code || '').trim().toUpperCase();
+    
+    if (rawCode.startsWith('TX-')) {
+      rawCode = rawCode.substring(3).trim();
+    }
+
+    if (!rawCode) {
+      // Tạo mã ngẫu nhiên 6 ký tự
+      rawCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    const finalCode = `TX-${rawCode}`;
 
     const { data, error } = await supabase
       .from('txa_promo_codes')
       .insert({
-        code: cleanCode,
+        code: finalCode,
         discount_type: promo.discount_type || 'percent',
         discount_value: Number(promo.discount_value) || 0,
         package_scope: promo.package_scope || 'all',
@@ -111,9 +121,12 @@ export const PromoCodeService = {
     username: string,
     currentPrice: number
   ): Promise<{ success: boolean; message: string; discountAmount?: number; discountType?: string; discountValue?: number; codeObj?: PromoCode }> {
-    const cleanCode = (code || '').trim().toUpperCase();
+    let cleanCode = (code || '').trim().toUpperCase();
     if (!cleanCode) {
       return { success: false, message: 'Vui lòng nhập mã giảm giá!' };
+    }
+    if (!cleanCode.startsWith('TX-')) {
+      cleanCode = `TX-${cleanCode}`;
     }
 
     // Lấy thông tin mã từ DB
