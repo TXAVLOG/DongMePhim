@@ -94,7 +94,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
           return `
             <tr class="hover:bg-white/5 transition-colors">
-              <td class="px-6 py-4 font-mono font-black text-purple-400 text-sm tracking-widest">${k.key_code}</td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-black text-purple-400 text-sm tracking-widest">${k.key_code}</span>
+                  <button onclick="copyAdminBypassKey(this, '${k.key_code}')" class="p-1 hover:bg-white/10 text-zinc-400 hover:text-white rounded transition-all cursor-pointer border-none flex items-center justify-center active:scale-90" title="Sao chép">
+                    <span class="material-symbols-outlined text-sm font-bold">content_copy</span>
+                  </button>
+                </div>
+              </td>
               <td class="px-6 py-4">
                 <div class="font-bold text-white">${k.package_title || 'Key Bypass Zalo'}</div>
                 <div class="text-[10px] text-zinc-500 mt-0.5">${k.note || 'Không có ghi chú'}</div>
@@ -131,6 +138,32 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-rose-400 font-body-main">Lỗi: ${e.message}</td></tr>`;
       }
     }
+
+    window.copyAdminBypassKey = async function(btn, code) {
+      try {
+        await navigator.clipboard.writeText(code);
+        
+        // Visual feedback
+        const icon = btn.querySelector('.material-symbols-outlined');
+        btn.classList.add('text-emerald-400', 'scale-110');
+        btn.classList.remove('text-zinc-400');
+        if (icon) icon.textContent = 'check';
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Đã sao chép mã Key thành công!', 'success');
+        } else if (window.showToast) {
+          window.showToast('Đã sao chép mã Key thành công!', 'success');
+        }
+
+        setTimeout(() => {
+          btn.classList.remove('text-emerald-400', 'scale-110');
+          btn.classList.add('text-zinc-400');
+          if (icon) icon.textContent = 'content_copy';
+        }, 1500);
+      } catch (err) {
+        console.error('Lỗi sao chép:', err);
+      }
+    };
 
     window.openCreateKeyModal = function() {
       const content = `
