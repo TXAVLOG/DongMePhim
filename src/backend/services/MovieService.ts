@@ -94,8 +94,16 @@ export const MovieService = {
   },
 
   getGenresAndCountries: async () => {
-    const countries = ["Trung Quốc", "Hàn Quốc", "Nhật Bản", "Mỹ", "Hồng Kông", "Đài Loan", "Thái Lan", "Âu Mỹ", "Việt Nam", "Ấn Độ", "Anh", "Pháp", "Đức", "Tây Ban Nha"];
-    const genres = ["Hành Động", "Viễn Tưởng", "Kinh Dị", "Tình Cảm", "Hài Hước", "Cổ Trang", "Võ Thuật", "Hình Sự", "Phiêu Lưu", "Tâm Lý", "Học Đường", "Chính Kịch", "Gia Đình", "Chiến Tranh", "Hoạt Hình", "Âm Nhạc", "Thể Thao", "Tài Liệu"];
+    const countries = [
+      "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Mỹ", "Hồng Kông", "Đài Loan", "Thái Lan", "Âu Mỹ", "Việt Nam", 
+      "Ấn Độ", "Anh", "Pháp", "Đức", "Ý", "Tây Ban Nha", "Nga", "Canada", "Úc", "Brazil", "Mexico", 
+      "Indonesia", "Malaysia", "Singapore", "Philippines", "Thổ Nhĩ Kỳ"
+    ];
+    const genres = [
+      "Hành Động", "Phiêu Lưu", "Viễn Tưởng", "Kinh Dị", "Tình Cảm", "Hài Hước", "Cổ Trang", "Võ Thuật", 
+      "Hình Sự", "Tội Phạm", "Bí Ẩn", "Giật Gân", "Tâm Lý", "Học Đường", "Chính Kịch", "Gia Đình", 
+      "Chiến Tranh", "Hoạt Hình", "Âm Nhạc", "Thể Thao", "Tài Liệu", "Lịch Sử", "Viễn Tây", "Thần Thoại"
+    ];
     return { countries, genres };
   },
 
