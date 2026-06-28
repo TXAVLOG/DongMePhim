@@ -92,6 +92,14 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
     return isNaN(parsed) ? id : parsed;
   };
 
+  const settings = await SettingService.getSettings();
+  const ads = {
+    pre_roll_enable: settings.ads?.pre_roll_enable ?? false,
+    pre_roll_type: settings.ads?.pre_roll_type || 'video',
+    pre_roll_url: settings.ads?.pre_roll_url || '',
+    pre_roll_skip_seconds: settings.ads?.pre_roll_skip_seconds ?? 5,
+  };
+
   const responsePayload = {
     movie: {
       id: cleanId(movie.movie_id_seq || movie.id),
@@ -112,6 +120,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       categories: movie.genres?.map((g: string) => ({ name: g })) || (movie.category ? [{ name: movie.category }] : []),
       actors: movie.actors?.map((a: string) => ({ name: a, role: "" })) || []
     },
+    ads,
     history: historyData,
     servers: filteredServers.map((srv: any) => ({
       server_name: srv.serverName,
