@@ -94,17 +94,47 @@ export const MovieService = {
   },
 
   getGenresAndCountries: async () => {
-    const countries = [
+    const cacheKey = 'genres_countries_merged';
+    const cached = movieCache.get(cacheKey);
+    if (cached) return cached;
+
+    let countries = [
       "Trung Quốc", "Hàn Quốc", "Nhật Bản", "Mỹ", "Hồng Kông", "Đài Loan", "Thái Lan", "Âu Mỹ", "Việt Nam", 
       "Ấn Độ", "Anh", "Pháp", "Đức", "Ý", "Tây Ban Nha", "Nga", "Canada", "Úc", "Brazil", "Mexico", 
       "Indonesia", "Malaysia", "Singapore", "Philippines", "Thổ Nhĩ Kỳ"
     ];
-    const genres = [
+    let genres = [
       "Hành Động", "Phiêu Lưu", "Viễn Tưởng", "Kinh Dị", "Tình Cảm", "Hài Hước", "Cổ Trang", "Võ Thuật", 
       "Hình Sự", "Tội Phạm", "Bí Ẩn", "Giật Gân", "Tâm Lý", "Học Đường", "Chính Kịch", "Gia Đình", 
       "Chiến Tranh", "Hoạt Hình", "Âm Nhạc", "Thể Thao", "Tài Liệu", "Lịch Sử", "Viễn Tây", "Thần Thoại"
     ];
-    return { countries, genres };
+
+    try {
+      if (providerType === 'supabase') {
+        const { supabase } = await import('@lib/supabase');
+        const { data, error } = await supabase
+          .from('movies')
+          .select('genres, broadcast_at');
+        
+        if (!error && data) {
+          const dbGenres = [...new Set(data.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
+          if (dbGenres.length > 0) {
+            genres = [...new Set([...genres, ...dbGenres])];
+          }
+          const dbCountries = [...new Set(data.map((m: any) => m.broadcast_at).filter(Boolean))] as string[];
+          if (dbCountries.length > 0) {
+            countries = [...new Set([...countries, ...dbCountries])];
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Lỗi khi đọc genres/countries từ DB:", e);
+    }
+
+    const result = { countries, genres };
+    // Cache kết quả hợp nhất trong 1 giờ
+    movieCache.set(cacheKey, result, 60 * 60 * 1000);
+    return result;
   },
 
   // Helper để xóa cache khi admin cào phim mới hoặc đồng bộ
