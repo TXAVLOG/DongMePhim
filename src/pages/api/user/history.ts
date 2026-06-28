@@ -111,6 +111,13 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (upsertError) throw upsertError;
 
+    // 4. Tăng lượt xem (views) của phim lên 1
+    try {
+      await supabase.rpc('increment_movie_views', { movie_slug: slug });
+    } catch (viewsErr) {
+      console.error('Lỗi khi tăng views của phim:', viewsErr);
+    }
+
     return apiResponse({ success: true }, 'success', '', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
