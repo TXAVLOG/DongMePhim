@@ -154,7 +154,7 @@ const accountName = payments.manual_account_name || 'HỆ THỐNG RẠP PHIM';
     }
 
     window.addEventListener('popstate', cleanupOrderOnBack);
-    window.addEventListener('pagehide', cleanupOrderOnBack);
+    // CHÚ Ý: Không lắng nghe event 'pagehide' vì sẽ làm xóa nhầm đơn hàng khi người dùng mở app ngân hàng
 
     function initManualCheckout() {
       const urlParams = new URLSearchParams(window.location.search);

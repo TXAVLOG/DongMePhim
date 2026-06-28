@@ -53,10 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // 2. Gọi SePay API để đối soát
     // Sandbox và live dùng cùng endpoint, chỉ khác API key
-    const expectedMemo = actionType === 'renew' ? `TXA_GH_${txid}` : `TXA_UP_${txid}`;
-
-    // Lọc theo số tiền để giảm tải, lấy tối đa 50 giao dịch gần nhất
-    const sepayUrl = `https://my.sepay.vn/userapi/transactions/list?limit=50&amount_in=${log.price}`;
+    const sepayUrl = `https://my.sepay.vn/userapi/transactions/list?limit=50`;
 
     const sepayRes = await fetch(sepayUrl, {
       method: 'GET',
@@ -75,7 +72,7 @@ export const POST: APIRoute = async ({ request }) => {
     const sepayData = await sepayRes.json() as any;
     const transactions: any[] = sepayData.transactions || [];
 
-    // Tìm giao dịch khớp: nội dung CK có chứa mã txid và số tiền >= giá
+    // Tìm giao dịch khớp: nội dung CK có chứa mã txid và số tiền >= giá (cho phép chênh lệch nhỏ do làm tròn)
     const matchedTx = transactions.find((t: any) => {
       // Chuẩn hóa nội dung chuyển khoản từ SePay (loại bỏ khoảng trắng, dấu gạch dưới, gạch ngang)
       const content = (t.transaction_content || '').toUpperCase().replace(/[\s_-]+/g, '');
@@ -83,7 +80,7 @@ export const POST: APIRoute = async ({ request }) => {
       const amountIn = Number(t.amount_in || 0);
       
       const hasCode = content.includes(cleanTxid);
-      const hasAmount = amountIn >= log.price;
+      const hasAmount = amountIn >= Math.floor(log.price - 10);
       return hasCode && hasAmount;
     });
 

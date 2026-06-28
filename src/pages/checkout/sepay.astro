@@ -102,12 +102,17 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
         </div>
       </div>
 
-      <!-- Action Button -->
-      <div class="pt-2">
+      <!-- Action Buttons -->
+      <div class="pt-2 space-y-3">
         <button type="button" id="btn-check-sepay-now" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 border-none">
           <span class="material-symbols-outlined text-base">verified</span>
           <span>Tôi đã chuyển khoản - Kiểm tra ngay</span>
         </button>
+
+        <a id="btn-open-sepay-gateway" href="#" target="_blank" class="w-full py-3.5 bg-white/5 hover:bg-white/10 border border-glass-stroke/60 text-zinc-300 hover:text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 no-underline">
+          <span class="material-symbols-outlined text-base text-emerald-400">open_in_new</span>
+          <span>Chuyển sang Cổng Cổng Thanh Toán SePay (pay.sepay.vn)</span>
+        </a>
       </div>
 
     </div>
@@ -123,6 +128,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
     let email = '';
     let pollInterval = null;
     let isApproved = false;
+    let isChecking = false;
 
     window.copyInfo = function(text, label, evt) {
       if (evt) evt.stopPropagation();
@@ -166,12 +172,14 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
       }
     }
 
-    window.addEventListener('popstate', cleanupOrderOnBack);
-    window.addEventListener('pagehide', cleanupOrderOnBack);
+    // CHÚ Ý: Không lắng nghe event 'pagehide' vì sẽ làm xóa nhầm đơn hàng khi chuyển tab/ứng dụng ngân hàng
 
-    async function checkPaymentStatus() {
-      if (!txid) return;
+    async function checkPaymentStatus(isManualClick = false) {
+      if (!txid || isApproved || isChecking) return;
+      isChecking = true;
+
       try {
+        // 1. Kiểm tra trạng thái local DB trước
         const res = await fetch(`/api/user/payments?txid=${encodeURIComponent(txid)}`);
         if (res.ok) {
           const result = await res.json();
@@ -183,8 +191,63 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
             setTimeout(() => {
               window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageTitle=${encodeURIComponent(packageTitle)}`;
             }, 1000);
+            isChecking = false;
+            return;
           }
         }
+
+        // 2. Chủ động đối soát với cổng SePay (gọi API sepay-verify)
+        const verifyRes = await fetch('/api/payment/sepay-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ txid })
+        });
+
+        if (verifyRes.ok) {
+          const verifyResult = await verifyRes.json();
+          if (verifyResult.data && verifyResult.data.success) {
+            isApproved = true;
+            if (pollInterval) clearInterval(pollInterval);
+            if (window.showGlobalToast) window.showGlobalToast('Thanh toán thành công! Đang kích hoạt gói cước...', 'success');
+            setTimeout(() => {
+              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageTitle=${encodeURIComponent(packageTitle)}`;
+            }, 1000);
+            isChecking = false;
+            return;
+          } else if (isManualClick) {
+            if (window.showGlobalToast) window.showGlobalToast(verifyResult.message || 'Hệ thống chưa tìm thấy giao dịch ngân hàng khớp. Vui lòng đợi 10-30s nếu vừa chuyển!', 'info', 4000);
+          }
+        } else if (isManualClick) {
+          const errData = await verifyRes.json().catch(() => ({}));
+          if (window.showGlobalToast) window.showGlobalToast(errData.message || 'Chưa nhận được giao dịch từ ngân hàng.', 'info', 4000);
+        }
+      } catch (e) {
+        if (isManualClick && window.showGlobalToast) {
+          window.showGlobalToast('Không thể kết nối đến máy chủ kiểm tra thanh toán.', 'error');
+        }
+      } finally {
+        isChecking = false;
+      }
+    }
+
+    async function ensurePendingLogExists() {
+      if (!txid) return;
+      try {
+        const username = (window.APP_USER ? window.APP_USER.username : null) || 'guest_' + Math.random().toString(36).substring(2, 8);
+        await fetch('/api/user/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            txid: txid,
+            username: username,
+            email: email,
+            packageTitle: packageTitle,
+            price: price,
+            cycle: cycle,
+            method: 'sepay',
+            status: 'pending'
+          })
+        });
       } catch (e) {}
     }
 
@@ -223,17 +286,40 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
         copyMemoBtn.onclick = (e) => copyInfo(txid, 'Nội dung chuyển khoản', e);
       }
 
+      // Đặt URL cho nút mở Cổng thanh toán SePay (pay.sepay.vn)
+      const gatewayBtn = document.getElementById('btn-open-sepay-gateway');
+      if (gatewayBtn) {
+        gatewayBtn.href = `https://pay.sepay.vn/checkout?acc=${encodeURIComponent(accountNo)}&bank=${encodeURIComponent(bankName)}&amount=${price}&des=${encodeURIComponent(txid)}`;
+      }
+
       const checkNowBtn = document.getElementById('btn-check-sepay-now');
       if (checkNowBtn) {
         checkNowBtn.onclick = async () => {
-          if (window.showGlobalToast) window.showGlobalToast('Đang kiểm tra kết quả giao dịch từ ngân hàng...', 'info');
-          await checkPaymentStatus();
+          if (isChecking) return;
+          if (window.showGlobalToast) window.showGlobalToast('Đang kết nối đến ngân hàng để đối soát giao dịch...', 'info');
+          
+          checkNowBtn.disabled = true;
+          const origText = checkNowBtn.innerHTML;
+          checkNowBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-base">autorenew</span> <span>Đang kiểm tra với ngân hàng...</span>';
+          
+          await checkPaymentStatus(true);
+          
+          setTimeout(() => {
+            checkNowBtn.disabled = false;
+            checkNowBtn.innerHTML = origText;
+          }, 2000);
         };
       }
 
-      // Start automatic polling every 3.5s
+      // Đảm bảo thông tin đơn hàng pending đã ghi vào DB
+      ensurePendingLogExists();
+
+      // Thực hiện kiểm tra ngay lần đầu
+      checkPaymentStatus(false);
+
+      // Bắt đầu tự động kiểm tra sao kê mỗi 4 giây
       if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(checkPaymentStatus, 3500);
+      pollInterval = setInterval(() => checkPaymentStatus(false), 4000);
     }
 
     initSepayCheckout();
