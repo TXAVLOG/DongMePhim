@@ -419,6 +419,11 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
       <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${settings.ads.google_ads_client_id}`} crossorigin="anonymous"></script>
     )}
 
+    {/* Offerwall Script Integration */}
+    {settings.ads?.offerwall_enable && settings.ads?.offerwall_script && (
+      <Fragment set:html={settings.ads.offerwall_script} />
+    )}
+
     <!-- Cấu hình bảo mật cổng ngụy trang & Zalo (Fast Bypass) -->
     <style is:inline>
       #main-app-container, #decoy-container, #zalo-container {

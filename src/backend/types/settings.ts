@@ -183,6 +183,8 @@ export interface AdSettings {
   click_ad_threshold: number;
   google_ads_enable?: boolean;
   google_ads_client_id?: string;
+  offerwall_enable?: boolean;
+  offerwall_script?: string;
 }
 
 export interface SiteSettings {

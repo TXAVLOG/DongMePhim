@@ -37,6 +37,11 @@ const {
     
     <!-- Hls.js for m3u8 streaming -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js" is:inline></script>
+
+    {/* Offerwall Script Integration */}
+    {settings.ads?.offerwall_enable && settings.ads?.offerwall_script && (
+      <Fragment set:html={settings.ads.offerwall_script} />
+    )}
   </head>
   <body class="bg-black text-white antialiased overflow-x-hidden">
     <!-- Minimal Header for Watch Page -->

@@ -172,7 +172,9 @@ export const seedSettings: SiteSettings = {
     click_ad_code: "https://shope.ee",
     click_ad_threshold: 5,
     google_ads_enable: false,
-    google_ads_client_id: "ca-pub-123456789"
+    google_ads_client_id: "ca-pub-123456789",
+    offerwall_enable: false,
+    offerwall_script: ""
   }
 };
 
@@ -222,6 +224,19 @@ export class LocalSettingProvider implements ISettingProvider {
           if (!parsed.ads) {
             parsed.ads = { ...seedSettings.ads };
             changed = true;
+          } else {
+            let adsChanged = false;
+            if (parsed.ads.offerwall_enable === undefined) {
+              parsed.ads.offerwall_enable = false;
+              adsChanged = true;
+            }
+            if (parsed.ads.offerwall_script === undefined) {
+              parsed.ads.offerwall_script = "";
+              adsChanged = true;
+            }
+            if (adsChanged) {
+              changed = true;
+            }
           }
           if (parsed.social) {
             if (parsed.social.social_fb_url === "https://facebook.com/dongmephim") {

@@ -137,7 +137,10 @@ const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;
             transform: scale(1);
         }
     </style>
-
+    {/* Offerwall Script Integration */}
+    {settings.ads?.offerwall_enable && settings.ads?.offerwall_script && (
+      <Fragment set:html={settings.ads.offerwall_script} />
+    )}
 </head>
 <body data-decoy-enable={String(decoyEnable)} class="bg-[#030303] min-h-screen flex items-center justify-center relative select-none overflow-hidden">
     <script is:inline>
