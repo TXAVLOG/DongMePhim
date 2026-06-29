@@ -724,7 +724,10 @@ export class LocalMovieProvider implements IMovieProvider {
         result = result.filter(m => m.lang === 'Lồng Tiếng' || m.lang === 'Thuyết Minh');
       } else if (category === 'Châu Tinh Trì' || category === 'chau-tinh-tri' || category === 'chau-tinh-tri-xem-la-cuoi') {
         result = result.filter(m => 
-          (Array.isArray(m.actors) && m.actors.some((a: any) => (typeof a === 'string' ? a : a?.name || '').toLowerCase().includes('châu tinh trì'))) ||
+          (Array.isArray(m.actors) && m.actors.some((a: any) => {
+            const lower = (typeof a === 'string' ? a : a?.name || '').toLowerCase();
+            return lower.includes('châu tinh trì') || lower.includes('stephen chow');
+          })) ||
           (m.title && m.title.toLowerCase().includes('châu tinh trì'))
         );
       } else if (category === 'toi-so-con-nguoi-em-roi-do') {
@@ -736,7 +739,9 @@ export class LocalMovieProvider implements IMovieProvider {
         );
       } else if (category === 'phim-thai-new') {
         result = result.filter(m => 
-          m.category === 'Thái Lan' || (Array.isArray(m.genres) && m.genres.some((g: string) => (g || '').toLowerCase().includes('thái')))
+          m.category === 'Thái Lan' || 
+          m.country === 'Thái Lan' || 
+          (Array.isArray(m.genres) && m.genres.some((g: string) => (g || '').toLowerCase().includes('thái')))
         );
       } else {
         result = result.filter(m => 

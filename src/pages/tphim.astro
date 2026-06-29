@@ -21,10 +21,10 @@ const assignedSlugs = [
   ...top10PhimBoSlugs
 ];
 
-// Lấy phim theo các slugs được gán và 100 phim mới nhất để làm fallback/sidebar
+// Lấy phim theo các slugs được gán và 300 phim mới nhất để làm fallback/sidebar
 const [assignedMovies, latestMovies] = await Promise.all([
   assignedSlugs.length > 0 ? MovieService.getMovies({ slugs: assignedSlugs }) : Promise.resolve([]),
-  MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' })
+  MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' })
 ]);
 
 // Gộp và loại bỏ trùng lặp
@@ -85,7 +85,7 @@ const phimDienAnhList = [...allMoviesForServer]
     
     return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
   })
-  .slice(0, 6);
+  .slice(0, 18);
 
 // Filter lists for Sidebar ranking (server-side)
 const soiNoiMovies = [...allMoviesForServer]

@@ -344,7 +344,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     </div>
   </div>
 
-  <script is:inline>
+  <script is:inline data-astro-rerun>
     (function() {
       // State
       let activeTab = 'standard'; // 'standard' | 'advanced'
@@ -2140,6 +2140,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         renderCrawledList();
       }
     });
+
+      document.addEventListener('astro:before-swap', () => {
+        stopCountdownTimer();
+      }, { once: true });
 
       // Initial runs
       (async () => {
