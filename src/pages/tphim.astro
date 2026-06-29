@@ -335,7 +335,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             <div class="swiper-wrapper">
               {topAnimeList.map((movie: any) => (
                 <div class="swiper-slide relative bg-[#0a0b10]">
-                  <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="anime-slide-img" />
+                  <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="anime-slide-img" onerror="this.src='/favicon.png'" />
                   <div class="absolute inset-0 bg-gradient-to-r from-[#0a0b10] via-[#0a0b10]/60 to-transparent"></div>
                   <div class="anime-slide-content">
                     <div class="max-w-md md:max-w-lg space-y-4 text-left">
@@ -363,9 +363,9 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           <div class="swiper anime-thumbs-swiper">
             <div class="swiper-wrapper">
               {topAnimeList.map((movie: any) => (
-                <div class="swiper-slide min-w-[130px] sm:min-w-[160px]">
+                <div class="swiper-slide w-[150px]">
                   <div class="v-thumbnail aspect-video overflow-hidden">
-                    <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" />
+                    <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
                   </div>
                   <p class="thumb-title text-[10px] text-zinc-400 font-bold truncate mt-1 text-center font-outfit">{movie.title}</p>
                 </div>
@@ -2298,6 +2298,47 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     } catch (e) {
       console.error('Error during client-side hydration:', e);
     }
+
+    // Initialize Swiper Sliders for Top Anime & Top 10
+    try {
+      if (typeof window.Swiper !== 'undefined') {
+        const animeThumbs = new window.Swiper('.anime-thumbs-swiper', {
+          spaceBetween: 12,
+          slidesPerView: 'auto',
+          freeMode: true,
+          watchSlidesProgress: true,
+        });
+
+        new window.Swiper('.anime-main-swiper', {
+          spaceBetween: 10,
+          loop: true,
+          autoplay: {
+            delay: 5000,
+            disableOnInteraction: false,
+          },
+          navigation: {
+            nextEl: '#anime-next-btn',
+            prevEl: '#anime-prev-btn',
+          },
+          thumbs: {
+            swiper: animeThumbs,
+          },
+        });
+
+        new window.Swiper('.top10-swiper', {
+          slidesPerView: 2,
+          spaceBetween: 16,
+          breakpoints: {
+            640: { slidesPerView: 3, spaceBetween: 20 },
+            768: { slidesPerView: 4, spaceBetween: 20 },
+            1024: { slidesPerView: 5, spaceBetween: 24 },
+            1280: { slidesPerView: 6, spaceBetween: 24 },
+          }
+        });
+      }
+    } catch(swiperErr) {
+      console.error('Error initializing Swiper:', swiperErr);
+    }
   });
 </script>
 
@@ -2362,9 +2403,11 @@ const getMovieProgressBadgesSSR = (movie: any) => {
   }
 
   .anime-thumbs-swiper .swiper-slide {
-    width: auto;
+    width: 150px !important;
+    max-width: 150px !important;
+    flex-shrink: 0 !important;
     height: 100%;
-    opacity: 0.4;
+    opacity: 0.5;
     cursor: pointer;
     transition: all 0.3s;
   }

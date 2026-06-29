@@ -932,37 +932,6 @@ if (movie && movie.actors && movie.actors.length > 0) {
     const toggleBtn = document.getElementById('toggle-compact-detail');
     const toggleCircle = document.getElementById('toggle-compact-circle');
     
-    function updateToggleUI() {
-      if (!toggleBtn || !toggleCircle) return;
-      if (isCompact) {
-        toggleBtn.classList.remove('bg-zinc-800');
-        toggleBtn.classList.add('bg-amber-400');
-        toggleCircle.classList.add('translate-x-3.5');
-      } else {
-        toggleBtn.classList.remove('bg-amber-400');
-        toggleBtn.classList.add('bg-zinc-800');
-        toggleCircle.classList.remove('translate-x-3.5');
-      }
-    }
-    
-    updateToggleUI();
-    
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => {
-        isCompact = !isCompact;
-        try {
-          const stored = localStorage.getItem('tsettings');
-          const parsed = stored ? JSON.parse(stored) : {};
-          parsed.isCompact = isCompact;
-          localStorage.setItem('tsettings', JSON.stringify(parsed));
-        } catch (e) {
-          console.warn('Error saving tsettings:', e);
-        }
-        updateToggleUI();
-        renderEpisodes(activeServerIdx, activeEpisodeSlug);
-      });
-    }
-
     // Helper: Bind events to episode list page tabs
     function bindTabEvents() {
       if (!tabsContainer || !episodesContainer) return;
@@ -1106,6 +1075,38 @@ if (movie && movie.actors && movie.actors.length > 0) {
       episodesContainer.innerHTML = epsHtml;
 
       bindTabEvents();
+    }
+
+    function updateToggleUI() {
+      if (!toggleBtn || !toggleCircle) return;
+      if (isCompact) {
+        toggleBtn.classList.remove('bg-zinc-800');
+        toggleBtn.classList.add('bg-amber-400');
+        toggleCircle.classList.add('translate-x-3.5');
+      } else {
+        toggleBtn.classList.remove('bg-amber-400');
+        toggleBtn.classList.add('bg-zinc-800');
+        toggleCircle.classList.remove('translate-x-3.5');
+      }
+    }
+    
+    updateToggleUI();
+    renderEpisodes(activeServerIdx, activeEpisodeSlug);
+    
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        isCompact = !isCompact;
+        try {
+          const stored = localStorage.getItem('tsettings');
+          const parsed = stored ? JSON.parse(stored) : {};
+          parsed.isCompact = isCompact;
+          localStorage.setItem('tsettings', JSON.stringify(parsed));
+        } catch (e) {
+          console.warn('Error saving tsettings:', e);
+        }
+        updateToggleUI();
+        renderEpisodes(activeServerIdx, activeEpisodeSlug);
+      });
     }
 
     // Load History to configure Watch Button link
