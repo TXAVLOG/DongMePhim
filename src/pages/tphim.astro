@@ -2369,21 +2369,21 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     // Cyber-Anime Spotlight Deck Logic
     const deckCards = document.querySelectorAll('.anime-deck-card');
     const spotlightBg = document.getElementById('anime-spotlight-bg');
-    const spotlightPoster = document.getElementById('anime-spotlight-poster') as HTMLImageElement;
+    const spotlightPoster = document.getElementById('anime-spotlight-poster');
     const spotlightQuality = document.getElementById('anime-spotlight-quality');
     const spotlightYear = document.getElementById('anime-spotlight-year');
     const spotlightLang = document.getElementById('anime-spotlight-lang');
     const spotlightImdb = document.getElementById('anime-spotlight-imdb');
     const spotlightTitle = document.getElementById('anime-spotlight-title');
     const spotlightDesc = document.getElementById('anime-spotlight-desc');
-    const spotlightLink = document.getElementById('anime-spotlight-link') as HTMLAnchorElement;
-    const spotlightInfoLink = document.getElementById('anime-spotlight-info-link') as HTMLAnchorElement;
+    const spotlightLink = document.getElementById('anime-spotlight-link');
+    const spotlightInfoLink = document.getElementById('anime-spotlight-info-link');
 
     if (deckCards.length > 0 && spotlightBg && spotlightTitle) {
       let currentIdx = 0;
-      let autoPlayTimer: any = null;
+      let autoPlayTimer = null;
 
-      const activateCard = (idx: number) => {
+      const activateCard = (idx) => {
         const card = deckCards[idx];
         if (!card) return;
         currentIdx = idx;
