@@ -237,8 +237,8 @@ let activeTab = "quang-cao";
               google_ads_client_id: document.getElementById("google-ads-client-id")?.value || "",
               offerwall_script: document.getElementById("offerwall-script")?.value || "",
               ad_provider: providerVal,
-              google_ads_enable: providerVal === "google_ads" || providerVal === "both",
-              offerwall_enable: providerVal === "offerwall" || providerVal === "both"
+              google_ads_enable: providerVal !== "none",
+              offerwall_enable: false
             }
           };
 
