@@ -32,6 +32,23 @@ let activeTab = "quang-cao";
     <div class="lg:col-span-3 glass-panel rounded-3xl p-8">
       <div id="tab-quang-cao" class="space-y-8">
         
+        <!-- SECTION 0: Active Ad Provider Selection -->
+        <div class="space-y-4 pb-6 border-b border-glass-stroke">
+          <h3 class="text-title-md pb-2 mb-2 text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">ad_group</span>
+            Nhà cung cấp quảng cáo chính
+          </h3>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Chọn nhà cung cấp hiển thị</label>
+            <select id="ad-provider-select" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-bold">
+              <option value="none">❌ Tắt quảng cáo mạng (Không hiển thị)</option>
+              <option value="google_ads">🌐 Chỉ chạy Google AdSense</option>
+              <option value="offerwall">🧱 Chỉ chạy Monetag Offerwall</option>
+              <option value="both">⚡ Chạy song song cả hai (AdSense & Monetag)</option>
+            </select>
+          </div>
+        </div>
+
         <!-- SECTION 1: Pre-roll Video Ads -->
         <div class="space-y-6">
           <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
@@ -97,21 +114,13 @@ let activeTab = "quang-cao";
         </div>
 
         <!-- SECTION 3: Google Ads (AdSense) -->
-        <div class="space-y-6 pt-6 border-t border-glass-stroke">
+        <div id="google-ads-config-section" class="space-y-6 pt-6 border-t border-glass-stroke transition-all duration-300">
           <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">public</span>
-            Quảng cáo Google (AdSense API)
+            Cấu hình Google AdSense
           </h3>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <label class="text-xs font-label-caps text-text-dim">Trạng thái Google Ads</label>
-              <select id="google-ads-enable" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white">
-                <option value="false">Tắt quảng cáo Google</option>
-                <option value="true">Bật quảng cáo Google</option>
-              </select>
-            </div>
-
+          <div class="grid grid-cols-1 gap-6">
             <div class="space-y-2">
               <label class="text-xs font-label-caps text-text-dim">Google AdSense Client ID (ca-pub-xxx)</label>
               <input type="text" id="google-ads-client-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-pub-123456789" />
@@ -120,21 +129,13 @@ let activeTab = "quang-cao";
         </div>
 
         <!-- SECTION 4: Offerwall Integration -->
-        <div class="space-y-6 pt-6 border-t border-glass-stroke">
+        <div id="offerwall-config-section" class="space-y-6 pt-6 border-t border-glass-stroke transition-all duration-300">
           <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">gavel</span>
-            Tích hợp Offerwall (Monetag / PropellerAds)
+            Cấu hình Offerwall (Monetag / PropellerAds)
           </h3>
 
           <div class="grid grid-cols-1 gap-6">
-            <div class="space-y-2">
-              <label class="text-xs font-label-caps text-text-dim">Trạng thái Offerwall</label>
-              <select id="offerwall-enable" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white">
-                <option value="false">Tắt Offerwall</option>
-                <option value="true">Bật Offerwall trên toàn hệ thống</option>
-              </select>
-            </div>
-
             <div class="space-y-2">
               <label class="text-xs font-label-caps text-text-dim">Mã script tích hợp Offerwall (Nhập thẻ &lt;script&gt;)</label>
               <textarea id="offerwall-script" rows="4" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="Ví dụ: <script src='https://alwingulla.com/act/files/micro.tag.js?p=12345' data-cfasync='false' async></script>"></textarea>
@@ -148,14 +149,35 @@ let activeTab = "quang-cao";
 
   <script is:inline define:vars={{ serverSettings: settings }}>
     (function () {
+      function updateSectionVisibility() {
+        const provider = document.getElementById("ad-provider-select")?.value;
+        const googleSection = document.getElementById("google-ads-config-section");
+        const offerwallSection = document.getElementById("offerwall-config-section");
+
+        if (googleSection) {
+          googleSection.classList.toggle("hidden", provider !== "google_ads" && provider !== "both");
+        }
+        if (offerwallSection) {
+          offerwallSection.classList.toggle("hidden", provider !== "offerwall" && provider !== "both");
+        }
+      }
+
       function hydrateFromLocalStorage() {
         const stored = serverSettings;
         if (!stored) return;
 
         const s = stored;
+        const ads = s.ads || {};
+        
+        // Hydrate Ad Provider Selector
+        const provider = ads.ad_provider || (
+          (ads.google_ads_enable && ads.offerwall_enable) ? "both" :
+          ads.google_ads_enable ? "google_ads" :
+          ads.offerwall_enable ? "offerwall" : "none"
+        );
+        setSelect("ad-provider-select", provider);
         
         // Hydrate Ads Settings
-        const ads = s.ads || {};
         setSelect("pre-roll-enable", ads.pre_roll_enable ? "true" : "false");
         setSelect("pre-roll-type", ads.pre_roll_type || "video");
         setVal("pre-roll-url", ads.pre_roll_url || "");
@@ -165,11 +187,10 @@ let activeTab = "quang-cao";
         setVal("click-ad-threshold", ads.click_ad_threshold !== undefined ? ads.click_ad_threshold : 5);
         setVal("click-ad-code", ads.click_ad_code || "");
 
-        setSelect("google-ads-enable", ads.google_ads_enable ? "true" : "false");
         setVal("google-ads-client-id", ads.google_ads_client_id || "");
-
-        setSelect("offerwall-enable", ads.offerwall_enable ? "true" : "false");
         setVal("offerwall-script", ads.offerwall_script || "");
+
+        updateSectionVisibility();
       }
 
       function setVal(id, val) {
@@ -180,6 +201,15 @@ let activeTab = "quang-cao";
         const el = document.getElementById(id);
         if (el && val !== undefined && val !== null) el.value = val;
       }
+
+      // Add event listener for ad provider select
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("ad-provider-select")?.addEventListener("change", updateSectionVisibility);
+      });
+      // Fallback event registration
+      setTimeout(() => {
+        document.getElementById("ad-provider-select")?.addEventListener("change", updateSectionVisibility);
+      }, 500);
 
       // Save handler
       document.getElementById("save-settings-btn")?.addEventListener("click", async () => {
@@ -192,6 +222,7 @@ let activeTab = "quang-cao";
           btn.disabled = true;
 
           const current = serverSettings;
+          const providerVal = document.getElementById("ad-provider-select")?.value || "none";
 
           const updatedSettings = {
             ...current,
@@ -203,10 +234,11 @@ let activeTab = "quang-cao";
               click_ad_enable: document.getElementById("click-ad-enable")?.value === "true",
               click_ad_threshold: parseInt(document.getElementById("click-ad-threshold")?.value) || 5,
               click_ad_code: document.getElementById("click-ad-code")?.value || "",
-              google_ads_enable: document.getElementById("google-ads-enable")?.value === "true",
               google_ads_client_id: document.getElementById("google-ads-client-id")?.value || "",
-              offerwall_enable: document.getElementById("offerwall-enable")?.value === "true",
-              offerwall_script: document.getElementById("offerwall-script")?.value || ""
+              offerwall_script: document.getElementById("offerwall-script")?.value || "",
+              ad_provider: providerVal,
+              google_ads_enable: providerVal === "google_ads" || providerVal === "both",
+              offerwall_enable: providerVal === "offerwall" || providerVal === "both"
             }
           };
 
@@ -233,7 +265,10 @@ let activeTab = "quang-cao";
 
       // Init
       hydrateFromLocalStorage();
-      document.addEventListener("astro:page-load", hydrateFromLocalStorage);
+      document.addEventListener("astro:page-load", () => {
+        hydrateFromLocalStorage();
+        document.getElementById("ad-provider-select")?.addEventListener("change", updateSectionVisibility);
+      });
     })();
   </script>
 </AdminLayout>

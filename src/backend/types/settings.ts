@@ -185,6 +185,7 @@ export interface AdSettings {
   google_ads_client_id?: string;
   offerwall_enable?: boolean;
   offerwall_script?: string;
+  ad_provider?: 'none' | 'google_ads' | 'offerwall' | 'both';
 }
 
 export interface SiteSettings {

@@ -174,7 +174,8 @@ export const seedSettings: SiteSettings = {
     google_ads_enable: false,
     google_ads_client_id: "ca-pub-123456789",
     offerwall_enable: false,
-    offerwall_script: ""
+    offerwall_script: "",
+    ad_provider: "none"
   }
 };
 
@@ -232,6 +233,18 @@ export class LocalSettingProvider implements ISettingProvider {
             }
             if (parsed.ads.offerwall_script === undefined) {
               parsed.ads.offerwall_script = "";
+              adsChanged = true;
+            }
+            if (parsed.ads.ad_provider === undefined) {
+              if (parsed.ads.google_ads_enable && parsed.ads.offerwall_enable) {
+                parsed.ads.ad_provider = "both";
+              } else if (parsed.ads.google_ads_enable) {
+                parsed.ads.ad_provider = "google_ads";
+              } else if (parsed.ads.offerwall_enable) {
+                parsed.ads.ad_provider = "offerwall";
+              } else {
+                parsed.ads.ad_provider = "none";
+              }
               adsChanged = true;
             }
             if (adsChanged) {
