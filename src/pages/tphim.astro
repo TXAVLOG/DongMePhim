@@ -321,7 +321,15 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         </div>
 
         <!-- Synced Swiper Container -->
-        <div class="relative">
+        <div class="relative group/anime-nav">
+          <!-- Navigation Buttons -->
+          <button id="anime-prev-btn" class="absolute left-4 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-white/10 bg-black/60 backdrop-blur-md text-white flex items-center justify-center hover:bg-amber-500/20 hover:border-amber-500 transition-all duration-300 cursor-pointer shadow-lg opacity-0 group-hover/anime-nav:opacity-100">
+            <span class="material-symbols-outlined text-xl font-bold">chevron_left</span>
+          </button>
+          <button id="anime-next-btn" class="absolute right-4 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-white/10 bg-black/60 backdrop-blur-md text-white flex items-center justify-center hover:bg-amber-500/20 hover:border-amber-500 transition-all duration-300 cursor-pointer shadow-lg opacity-0 group-hover/anime-nav:opacity-100">
+            <span class="material-symbols-outlined text-xl font-bold">chevron_right</span>
+          </button>
+
           <!-- Main Swiper -->
           <div class="swiper anime-main-swiper">
             <div class="swiper-wrapper">
@@ -355,7 +363,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           <div class="swiper anime-thumbs-swiper">
             <div class="swiper-wrapper">
               {topAnimeList.map((movie: any) => (
-                <div class="swiper-slide">
+                <div class="swiper-slide min-w-[130px] sm:min-w-[160px]">
                   <div class="v-thumbnail aspect-video overflow-hidden">
                     <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" />
                   </div>
@@ -1522,8 +1530,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       }
       
       const animeThumbs = new Swiper('.anime-thumbs-swiper', {
-        spaceBetween: 10,
-        slidesPerView: 4,
+        spaceBetween: 12,
+        slidesPerView: 'auto',
         freeMode: true,
         watchSlidesProgress: true,
       });
@@ -1536,6 +1544,10 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         },
         thumbs: {
           swiper: animeThumbs,
+        },
+        navigation: {
+          nextEl: '#anime-next-btn',
+          prevEl: '#anime-prev-btn',
         },
         autoplay: {
           delay: 5000,
@@ -2350,7 +2362,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
   }
 
   .anime-thumbs-swiper .swiper-slide {
-    width: 25%;
+    width: auto;
     height: 100%;
     opacity: 0.4;
     cursor: pointer;

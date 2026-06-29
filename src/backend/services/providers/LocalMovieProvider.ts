@@ -710,8 +710,17 @@ export class LocalMovieProvider implements IMovieProvider {
     let result = combined;
 
     if (params?.slugs && Array.isArray(params.slugs)) {
-      const slugSet = new Set(params.slugs);
-      result = result.filter(m => slugSet.has(m.slug));
+      const foundMap = new Map<string, Movie>();
+      combined.forEach(m => foundMap.set(m.slug, m));
+      
+      const missingSlugs = params.slugs.filter(s => !foundMap.has(s));
+      if (missingSlugs.length > 0) {
+        const fetchedMissing = await Promise.all(missingSlugs.map(s => this.getMovieBySlug(s)));
+        fetchedMissing.forEach(m => {
+          if (m) foundMap.set(m.slug, m as Movie);
+        });
+      }
+      return params.slugs.map(s => foundMap.get(s)).filter(Boolean) as Movie[];
     }
 
     if (params?.type) {

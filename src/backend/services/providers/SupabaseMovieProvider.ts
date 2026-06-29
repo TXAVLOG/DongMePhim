@@ -67,6 +67,20 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
       let result = combined;
 
+      if (params?.slugs && Array.isArray(params.slugs)) {
+        const foundMap = new Map<string, Movie>();
+        result.forEach(m => foundMap.set(m.slug, m));
+        
+        const missingSlugs = params.slugs.filter(s => !foundMap.has(s) && !deletedSlugs.has(s));
+        if (missingSlugs.length > 0) {
+          const fetchedMissing = await Promise.all(missingSlugs.map(s => this.getMovieBySlug(s)));
+          fetchedMissing.forEach(m => {
+            if (m) foundMap.set(m.slug, m as Movie);
+          });
+        }
+        return params.slugs.map(s => foundMap.get(s)).filter(Boolean) as Movie[];
+      }
+
       // Lọc theo category
       if (params?.category) {
         const cat = params.category;
