@@ -62,7 +62,7 @@ async function generateSepaySignature(fields: Record<string, any>, secretKey: st
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json() as any;
-    const { txid, totalAmount, packageTitle } = body;
+    const { txid, totalAmount, packageTitle, cycle, packageId } = body;
 
     if (!txid || !totalAmount) {
       return apiResponse(null, 'error', 'Thiếu thông tin đơn hàng.', 400, request);
@@ -92,7 +92,7 @@ export const POST: APIRoute = async ({ request }) => {
       operation: 'PURCHASE',
       order_description: String(txid),
       order_invoice_number: String(txid),
-      success_url: `${cleanSiteUrl}/checkout/success?txid=${txid}&packageTitle=${encodeURIComponent(packageTitle || 'VIP')}`,
+      success_url: `${cleanSiteUrl}/checkout/success?txid=${txid}&method=sepay&cycle=${encodeURIComponent(cycle || 'monthly')}&price=${totalAmount}&packageId=${encodeURIComponent(packageId || '')}&packageTitle=${encodeURIComponent(packageTitle || 'VIP')}`,
       error_url: `${cleanSiteUrl}/checkout/failed?txid=${txid}`,
       cancel_url: `${cleanSiteUrl}/checkout/failed?txid=${txid}`
     };

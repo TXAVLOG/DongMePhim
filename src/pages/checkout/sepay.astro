@@ -118,6 +118,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
   (function() {
     let txid = '';
     let packageTitle = '';
+    let packageId = '';
     let price = 0;
     let cycle = 'monthly';
     let email = '';
@@ -184,7 +185,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
             if (pollInterval) clearInterval(pollInterval);
             if (window.showGlobalToast) window.showGlobalToast('Thanh toán thành công! Đang kích hoạt gói cước...', 'success');
             setTimeout(() => {
-              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageTitle=${encodeURIComponent(packageTitle)}`;
+              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId || '')}&packageTitle=${encodeURIComponent(packageTitle)}`;
             }, 1000);
             isChecking = false;
             return;
@@ -205,7 +206,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
             if (pollInterval) clearInterval(pollInterval);
             if (window.showGlobalToast) window.showGlobalToast('Thanh toán thành công! Đang kích hoạt gói cước...', 'success');
             setTimeout(() => {
-              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageTitle=${encodeURIComponent(packageTitle)}`;
+              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId || '')}&packageTitle=${encodeURIComponent(packageTitle)}`;
             }, 1000);
             isChecking = false;
             return;
@@ -250,6 +251,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
       const urlParams = new URLSearchParams(window.location.search);
       txid = urlParams.get('txid') || ('TXA' + Math.random().toString(36).substring(2, 10).toUpperCase());
       packageTitle = urlParams.get('packageTitle') || 'Gói Dịch Vụ';
+      packageId = urlParams.get('packageId') || '';
       price = Number(urlParams.get('price')) || 0;
       cycle = urlParams.get('cycle') || 'monthly';
       email = urlParams.get('email') || '';

@@ -452,7 +452,15 @@ import MainLayout from '@layouts/MainLayout.astro';
             const approvedInvoices = userInvoices.filter(inv => inv.status === 'approved');
             const lastApproved = approvedInvoices.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime())[0];
             const userCycle = lastApproved?.cycle || 'monthly';
-            planCycleVal.textContent = userCycle === 'annual' ? 'Hàng năm' : 'Hàng tháng';
+            const formatCycleText = (c) => {
+              if (!c || c === 'monthly') return 'Hàng tháng';
+              if (c === 'annual') return 'Hàng năm';
+              if (c === '6months') return '6 tháng';
+              if (c === '3months') return '3 tháng';
+              if (c.startsWith('custom_')) { const p = c.split('_'); return `${p[1] || 1} tháng`; }
+              return 'Hàng tháng';
+            };
+            planCycleVal.textContent = formatCycleText(userCycle);
             planCycleDiv.classList.remove('hidden');
             
             remDays = Math.ceil((expDate.getTime() - Date.now()) / (3600 * 1000 * 24));
@@ -685,13 +693,20 @@ import MainLayout from '@layouts/MainLayout.astro';
             statusBadge = '<span class="px-2.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase text-[9px] animate-pulse">Chờ duyệt</span>';
           }
 
-          const methodLabel = item.method === 'manual' ? 'VietQR (Thủ công)' : item.method.toUpperCase();
+          const cycleText = (c) => {
+            if (!c || c === 'monthly') return 'Hàng tháng';
+            if (c === 'annual') return 'Hàng năm';
+            if (c === '6months') return '6 tháng';
+            if (c === '3months') return '3 tháng';
+            if (c.startsWith('custom_')) { const p = c.split('_'); return `${p[1] || 1} tháng`; }
+            return 'Hàng tháng';
+          };
 
           return `
             <tr class="hover:bg-white/5 transition-colors">
               <td class="px-6 py-4 font-mono text-zinc-400">${(item.txid || '').substring(0, 10)}...</td>
               <td class="px-6 py-4 text-zinc-300">${dateStr}</td>
-              <td class="px-6 py-4 text-zinc-200 font-bold">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
+              <td class="px-6 py-4 text-zinc-200 font-bold">${item.packageTitle} (${cycleText(item.cycle)})</td>
               <td class="px-6 py-4 text-white font-bold">${formattedPrice}</td>
               <td class="px-6 py-4 font-bold text-zinc-400">${methodLabel}</td>
               <td class="px-6 py-4">${statusBadge}</td>

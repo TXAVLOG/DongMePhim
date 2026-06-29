@@ -110,10 +110,26 @@ export const POST: APIRoute = async ({ request }) => {
     if (updateLogErr) throw updateLogErr;
 
     // 6. Resolve package id and update user
+    const calculateCycleDays = (c?: string): number => {
+      if (!c) return 30;
+      if (c === 'annual') return 365;
+      if (c === '6months') return 180;
+      if (c === '3months') return 90;
+      if (c.startsWith('custom_')) {
+        const parts = c.split('_');
+        const months = parseInt(parts[1]) || 1;
+        return months * 30;
+      }
+      return 30;
+    };
+
     const allPkgs = settings.packages || [];
-    const resolvedPkg = allPkgs.find((p: any) => p.title === log.package_title) || allPkgs.find((p: any) => p.id === log.package_title) || allPkgs.find((p: any) => p.id === 'free');
-    const pkgId = resolvedPkg?.id || 'free';
-    const cycleDays = log.cycle === 'annual' ? 365 : 30;
+    const logTitle = log.package_title || '';
+    const resolvedPkg = allPkgs.find((p: any) => p.title === logTitle) ||
+                        allPkgs.find((p: any) => p.id === logTitle) ||
+                        allPkgs.find((p: any) => p.id && logTitle.toLowerCase().includes(p.id.toLowerCase()));
+    const pkgId = resolvedPkg?.id || resolvedPkg?.title || logTitle || 'vip';
+    const cycleDays = calculateCycleDays(log.cycle);
     const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
 
     const { error: updateUserErr } = await supabase

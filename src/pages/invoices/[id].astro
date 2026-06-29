@@ -211,11 +211,26 @@ const settings = await SettingService.getSettings();
         }
 
         // Check ownership or admin role
-        const currentLoggedIn = localStorage.getItem('tlogged_in_as') || '';
-        if (tx.username !== 'anonymous' && tx.username !== 'guest' && tx.username !== currentLoggedIn && currentLoggedIn !== 'admin') {
+        const currentLoggedIn = (window.APP_USER ? window.APP_USER.username : null) || localStorage.getItem('tlogged_in_as') || '';
+        const currentUserRole = (window.APP_USER ? (window.APP_USER.role || window.APP_USER.roles) : null) || '';
+        const isAdmin = currentLoggedIn === 'admin' || currentUserRole === 'admin';
+
+        if (tx.username !== 'anonymous' && tx.username !== 'guest' && currentLoggedIn && tx.username !== currentLoggedIn && !isAdmin) {
           loader.classList.add('hidden');
           err.classList.remove('hidden');
           return;
+        }
+
+        function formatInvoiceCycle(c) {
+          if (!c || c === 'monthly') return 'Hàng tháng';
+          if (c === 'annual') return 'Hàng năm (-15%)';
+          if (c === '6months') return '6 tháng (-5%)';
+          if (c === '3months') return '3 tháng';
+          if (c.startsWith('custom_')) {
+            const parts = c.split('_');
+            return `${parts[1] || 1} tháng`;
+          }
+          return 'Hàng tháng';
         }
 
         // Populate elements
@@ -230,7 +245,7 @@ const settings = await SettingService.getSettings();
         document.getElementById('invoice-method-val').textContent = methodLabel;
         
         document.getElementById('invoice-tier-title').textContent = tx.packageTitle;
-        document.getElementById('invoice-cycle-val').textContent = tx.cycle === 'annual' ? 'Hàng năm (-15%)' : 'Hàng tháng';
+        document.getElementById('invoice-cycle-val').textContent = formatInvoiceCycle(tx.cycle);
         
         const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.price);
         document.getElementById('invoice-price-val').textContent = formattedPrice;

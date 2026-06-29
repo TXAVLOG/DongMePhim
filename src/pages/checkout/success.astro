@@ -84,27 +84,53 @@ const settings = await SettingService.getSettings();
     async function initSuccessPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const txid = urlParams.get('txid') || urlParams.get('session_id') || 'TXA' + Math.random().toString(36).substring(2, 10).toUpperCase();
-      const cycle = urlParams.get('cycle') || 'monthly';
-      const price = Number(urlParams.get('price')) || 69000;
-      const packageId = urlParams.get('packageId') || '';
+      let cycle = urlParams.get('cycle');
+      let price = Number(urlParams.get('price'));
+      let packageId = urlParams.get('packageId') || '';
       let packageTitle = urlParams.get('packageTitle') || '';
       let keyCode = null;
+
       try {
         const resLog = await fetch(`/api/user/payments?txid=${encodeURIComponent(txid)}`);
         if (resLog.ok) {
           const logData = await resLog.json();
           if (logData.data) {
-            if (logData.data.packageTitle) {
-              packageTitle = logData.data.packageTitle;
-            }
-            if (logData.data.keyCode) {
-              keyCode = logData.data.keyCode;
-            }
+            if (!packageTitle && logData.data.packageTitle) packageTitle = logData.data.packageTitle;
+            if (!cycle && logData.data.cycle) cycle = logData.data.cycle;
+            if (!price && logData.data.price) price = Number(logData.data.price);
+            if (logData.data.keyCode) keyCode = logData.data.keyCode;
           }
         }
       } catch (e) {}
 
+      cycle = cycle || 'monthly';
+      price = price || 69000;
       if (!packageTitle) packageTitle = 'Gói Dịch Vụ VIP';
+
+      function getCycleDays(c) {
+        if (!c || c === 'monthly') return 30;
+        if (c === 'annual') return 365;
+        if (c === '6months') return 180;
+        if (c === '3months') return 90;
+        if (c.startsWith('custom_')) {
+          const parts = c.split('_');
+          const months = parseInt(parts[1]) || 1;
+          return months * 30;
+        }
+        return 30;
+      }
+
+      function formatCycleLabel(c) {
+        if (!c || c === 'monthly') return 'Hàng tháng';
+        if (c === 'annual') return 'Hàng năm';
+        if (c === '6months') return '6 tháng';
+        if (c === '3months') return '3 tháng';
+        if (c.startsWith('custom_')) {
+          const parts = c.split('_');
+          return `${parts[1] || 1} tháng`;
+        }
+        return 'Hàng tháng';
+      }
 
       // Populate details
       document.getElementById('tx-id-val').textContent = txid;
@@ -120,7 +146,7 @@ const settings = await SettingService.getSettings();
         }
       }
 
-      document.getElementById('tx-cycle-val').textContent = cycle === 'annual' ? 'Hàng năm' : (cycle === '6months' ? '6 tháng' : (cycle === '3months' ? '3 tháng' : 'Hàng tháng'));
+      document.getElementById('tx-cycle-val').textContent = formatCycleLabel(cycle);
       document.getElementById('tx-price-val').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
       
       // Update view invoice link
@@ -158,28 +184,28 @@ const settings = await SettingService.getSettings();
           }
         }
 
-        // 2. Update user subscription package details (only if packageId is provided)
-        const cycleDays = cycle === 'annual' ? 365 : 30;
+        // 2. Update user subscription package details
+        const cycleDays = getCycleDays(cycle);
         const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
-        if (packageId) {
-          await fetch('/api/admin/members', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'edit',
-              username: window.APP_USER ? window.APP_USER.username : 'anonymous',
-              package: packageId,
-              joinDate: new Date().toISOString(),
-              expiryDate: expiryDate,
-              status: 'active'
-            })
-          });
-        }
+        const targetPackage = packageId || packageTitle || 'vip';
+        
+        await fetch('/api/admin/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'edit',
+            username: window.APP_USER ? window.APP_USER.username : 'anonymous',
+            package: targetPackage,
+            joinDate: new Date().toISOString(),
+            expiryDate: expiryDate,
+            status: 'active'
+          })
+        });
 
         // 3. Keep in localStorage for client auth-bypassing layout checking
         localStorage.setItem('txa_user_subscription', JSON.stringify({
           username: window.APP_USER ? window.APP_USER.username : 'anonymous',
-          tier: packageTitle || packageId,
+          tier: targetPackage,
           status: 'active',
           price: price,
           cycle: cycle,

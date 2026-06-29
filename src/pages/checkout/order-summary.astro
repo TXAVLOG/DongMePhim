@@ -678,7 +678,7 @@ const serverSettings = await SettingService.getSettings();
         const encodedInfo = encodeURIComponent(clientInfo);
         const payments = loadedSettings.payments || {};
         if (selectedMethod === 'manual') {
-          window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
+          window.location.href = `/checkout/manual?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&packageId=${encodeURIComponent(selectedPackage.id || '')}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
         } else if (selectedMethod === 'sepay') {
           const integrationType = payments.sepay_integration_type || 'gateway';
           
@@ -687,7 +687,7 @@ const serverSettings = await SettingService.getSettings();
               const initRes = await fetch('/api/payment/sepay-init', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ txid, totalAmount, packageTitle: selectedPackage.title })
+                body: JSON.stringify({ txid, totalAmount, packageTitle: selectedPackage.title, cycle: finalCycleStr, packageId: selectedPackage.id || '' })
               });
               const initData = await initRes.json();
               if (initRes.ok && initData.data) {
@@ -712,9 +712,9 @@ const serverSettings = await SettingService.getSettings();
               console.error('Error initiating SePay PG checkout:', err);
             }
             // Fallback if API init fails
-            window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
+            window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&packageId=${encodeURIComponent(selectedPackage.id || '')}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
           } else {
-            window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
+            window.location.href = `/checkout/sepay?txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&packageId=${encodeURIComponent(selectedPackage.id || '')}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
           }
         } else {
           window.location.href = `/checkout/gateway?method=${selectedMethod}&txid=${txid}&packageTitle=${encodeURIComponent(selectedPackage.title)}&price=${totalAmount}&cycle=${finalCycleStr}&email=${encodeURIComponent(recipientEmail)}&clientInfo=${encodedInfo}`;
