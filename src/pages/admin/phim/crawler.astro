@@ -117,115 +117,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           <div id="filterCountryPanel">
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Quốc gia</label>
             <select id="selectedCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary mb-3">
-              <optgroup label="KKPhim">
-                <option value="trung-quoc">Trung Quốc</option>
-                <option value="han-quoc">Hàn Quốc</option>
-                <option value="nhat-ban">Nhật Bản</option>
-                <option value="au-my">Âu Mỹ</option>
-                <option value="thai-lan">Thái Lan</option>
-                <option value="viet-nam">Việt Nam</option>
-              </optgroup>
-              <optgroup label="TMDB (Asia)">
-                <option value="HK">Hong Kong</option>
-                <option value="CN">Trung Quốc</option>
-                <option value="JP">Nhật Bản</option>
-                <option value="KR">Hàn Quốc</option>
-                <option value="TW">Đài Loan</option>
-                <option value="TH">Thái Lan</option>
-                <option value="VN">Việt Nam</option>
-                <option value="ID">Indonesia</option>
-                <option value="MY">Malaysia</option>
-                <option value="SG">Singapore</option>
-                <option value="PH">Philippines</option>
-                <option value="IN">Ấn Độ</option>
-              </optgroup>
-              <optgroup label="TMDB (Europe)">
-                <option value="US">Mỹ</option>
-                <option value="GB">Anh</option>
-                <option value="FR">Pháp</option>
-                <option value="DE">Đức</option>
-                <option value="IT">Ý</option>
-                <option value="ES">Tây Ban Nha</option>
-                <option value="RU">Nga</option>
-                <option value="UA">Ukraine</option>
-                <option value="PL">Ba Lan</option>
-                <option value="NL">Hà Lan</option>
-                <option value="SE">Thụy Điển</option>
-                <option value="NO">Na Uy</option>
-                <option value="DK">Đan Mạch</option>
-              </optgroup>
-              <optgroup label="TMDB (Others)">
-                <option value="CA">Canada</option>
-                <option value="AU">Úc</option>
-                <option value="BR">Brazil</option>
-                <option value="MX">Mexico</option>
-                <option value="AR">Argentina</option>
-                <option value="ZA">Nam Phi</option>
-                <option value="EG">Ai Cập</option>
-                <option value="TR">Thổ Nhĩ Kỳ</option>
-                <option value="IL">Israel</option>
-                <option value="SA">Ả Rập Xê Út</option>
-              </optgroup>
+              <!-- Populated dynamically -->
             </select>
           </div>
 
           <div id="filterGenrePanel" class="hidden">
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Thể loại</label>
             <select id="selectedGenre" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary mb-3">
-              <optgroup label="KKPhim">
-                <option value="hanh-dong">Hành Động</option>
-                <option value="phieu-luu">Phiêu Lưu</option>
-                <option value="tinh-cam">Tình Cảm</option>
-                <option value="hoat-hinh">Hoạt Hình</option>
-                <option value="khoa-hoc">Khoa Học</option>
-                <option value="kinh-di">Kinh Dị</option>
-                <option value="hai-huoc">Hài Hước</option>
-              </optgroup>
-              <optgroup label="TMDB (Action & Adventure)">
-                <option value="28">Hành Động (Action)</option>
-                <option value="12">Phiêu Lưu (Adventure)</option>
-                <option value="10752">Chiến Tranh (War)</option>
-                <option value="37">Viễn Tây (Western)</option>
-              </optgroup>
-              <optgroup label="TMDB (Comedy & Drama)">
-                <option value="35">Hài Hước (Comedy)</option>
-                <option value="18">Tình Cảm (Drama)</option>
-                <option value="10749">Lãng Mạn (Romance)</option>
-                <option value="10402">Âm Nhạc (Music)</option>
-              </optgroup>
-              <optgroup label="TMDB (Horror & Thriller)">
-                <option value="27">Kinh Dị (Horror)</option>
-                <option value="53">Giật Gân (Thriller)</option>
-                <option value="9648">Bí Ẩn (Mystery)</option>
-                <option value="80">Tội Phạm (Crime)</option>
-              </optgroup>
-              <optgroup label="TMDB (Sci-Fi & Fantasy)">
-                <option value="878">Khoa Học Viễn Tưởng (Sci-Fi)</option>
-                <option value="14">Giả Tưởng (Fantasy)</option>
-                <option value="10770">TV Movie</option>
-              </optgroup>
-              <optgroup label="TMDB (Animation & Family)">
-                <option value="16">Hoạt Hình (Animation)</option>
-                <option value="10751">Gia Đình (Family)</option>
-              </optgroup>
-              <optgroup label="TMDB (Documentary & History)">
-                <option value="99">Tài Liệu (Documentary)</option>
-                <option value="36">Lịch Sử (History)</option>
-              </optgroup>
-              <optgroup label="TMDB (Others)">
-                <option value="10751">Gia Đình (Family)</option>
-                <option value="14">Giả Tưởng (Fantasy)</option>
-                <option value="36">Lịch Sử (History)</option>
-                <option value="27">Kinh Dị (Horror)</option>
-                <option value="10402">Âm Nhạc (Music)</option>
-                <option value="9648">Bí Ẩn (Mystery)</option>
-                <option value="10749">Lãng Mạn (Romance)</option>
-                <option value="878">Khoa Học Viễn Tưởng (Sci-Fi)</option>
-                <option value="10770">TV Movie</option>
-                <option value="53">Giật Gân (Thriller)</option>
-                <option value="10752">Chiến Tranh (War)</option>
-                <option value="37">Viễn Tây (Western)</option>
-              </optgroup>
+              <!-- Populated dynamically -->
             </select>
           </div>
 
@@ -462,6 +361,169 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       let existingMoviesMap = {};
       let crawledCurrentPage = 1;
       const crawledLimit = 10;
+
+      // Cache for fetched metadata
+      let kkphimGenres = [];
+      let kkphimCountries = [];
+      let tmdbGenres = [];
+      let tmdbCountries = [];
+
+      async function fetchFilterMetadata() {
+        addLog('⏳ Đang đồng bộ danh sách Quốc gia và Thể loại...');
+        
+        try {
+          // 1. Fetch KKPhim metadata
+          const [kkGenresRes, kkCountriesRes] = await Promise.all([
+            fetch('https://phimapi.com/the-loai').then(r => r.json().catch(() => [])),
+            fetch('https://phimapi.com/quoc-gia').then(r => r.json().catch(() => []))
+          ]);
+
+          kkphimGenres = Array.isArray(kkGenresRes) ? kkGenresRes : [];
+          kkphimCountries = Array.isArray(kkCountriesRes) ? kkCountriesRes : [];
+
+          // 2. Fetch TMDB metadata
+          const [tmdbMovieGenresRes, tmdbTvGenresRes, tmdbCountriesRes] = await Promise.all([
+            fetch('/api/tmdb-proxy?path=/3/genre/movie/list&language=vi-VN').then(r => r.json().catch(() => ({ genres: [] }))),
+            fetch('/api/tmdb-proxy?path=/3/genre/tv/list&language=vi-VN').then(r => r.json().catch(() => ({ genres: [] }))),
+            fetch('/api/tmdb-proxy?path=/3/configuration/countries&language=vi-VN').then(r => r.json().catch(() => []))
+          ]);
+
+          // Combine TMDB movie & tv genres, avoid duplicates
+          const genreMap = new Map();
+          if (tmdbMovieGenresRes && Array.isArray(tmdbMovieGenresRes.genres)) {
+            tmdbMovieGenresRes.genres.forEach(g => genreMap.set(g.id, g.name));
+          }
+          if (tmdbTvGenresRes && Array.isArray(tmdbTvGenresRes.genres)) {
+            tmdbTvGenresRes.genres.forEach(g => {
+              if (!genreMap.has(g.id)) {
+                genreMap.set(g.id, g.name);
+              } else {
+                const existing = genreMap.get(g.id);
+                if (existing !== g.name && !existing.includes(g.name)) {
+                  genreMap.set(g.id, `${existing} / ${g.name}`);
+                }
+              }
+            });
+          }
+          tmdbGenres = Array.from(genreMap.entries()).map(([id, name]) => ({ id, name }));
+
+          // Format TMDB countries: use native_name or english_name
+          tmdbCountries = Array.isArray(tmdbCountriesRes) 
+            ? tmdbCountriesRes.map(c => ({
+                code: c.iso_3166_1,
+                name: c.native_name || c.english_name
+              })).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+            : [];
+
+          addLog(`✓ Đồng bộ thành công: KKPhim (${kkphimCountries.length} quốc gia, ${kkphimGenres.length} thể loại), TMDB (${tmdbCountries.length} quốc gia, ${tmdbGenres.length} thể loại).`, 'success');
+          
+          populateFilterDropdowns();
+        } catch (e) {
+          console.error(e);
+          addLog(`⚠️ Không thể tự động đồng bộ danh sách đầy đủ: ${e.message}. Sử dụng danh sách dự phòng.`, 'warning');
+          useFallbackFilters();
+        }
+      }
+
+      function useFallbackFilters() {
+        kkphimCountries = [
+          { name: 'Trung Quốc', slug: 'trung-quoc' },
+          { name: 'Hàn Quốc', slug: 'han-quoc' },
+          { name: 'Nhật Bản', slug: 'nhat-ban' },
+          { name: 'Âu Mỹ', slug: 'au-my' },
+          { name: 'Thái Lan', slug: 'thai-lan' },
+          { name: 'Việt Nam', slug: 'viet-nam' },
+          { name: 'Hồng Kông', slug: 'hong-kong' },
+          { name: 'Ấn Độ', slug: 'an-do' }
+        ];
+
+        kkphimGenres = [
+          { name: 'Hành Động', slug: 'hanh-dong' },
+          { name: 'Phiêu Lưu', slug: 'phieu-luu' },
+          { name: 'Tình Cảm', slug: 'tinh-cam' },
+          { name: 'Hoạt Hình', slug: 'hoat-hinh' },
+          { name: 'Khoa Học', slug: 'khoa-hoc' },
+          { name: 'Kinh Dị', slug: 'kinh-di' },
+          { name: 'Hài Hước', slug: 'hai-huoc' },
+          { name: 'Hình Sự', slug: 'hinh-su' },
+          { name: 'Võ Thuật', slug: 'vo-thuat' },
+          { name: 'Chính Kịch', slug: 'chinh-kich' }
+        ];
+
+        tmdbCountries = [
+          { code: 'US', name: 'Mỹ' },
+          { code: 'KR', name: 'Hàn Quốc' },
+          { code: 'CN', name: 'Trung Quốc' },
+          { code: 'JP', name: 'Nhật Bản' },
+          { code: 'HK', name: 'Hồng Kông' },
+          { code: 'TW', name: 'Đài Loan' },
+          { code: 'TH', name: 'Thái Lan' },
+          { code: 'VN', name: 'Việt Nam' },
+          { code: 'GB', name: 'Anh' },
+          { code: 'FR', name: 'Pháp' },
+          { code: 'DE', name: 'Đức' },
+          { code: 'IN', name: 'Ấn Độ' }
+        ];
+
+        tmdbGenres = [
+          { id: 28, name: 'Hành Động (Action)' },
+          { id: 12, name: 'Phiêu Lưu (Adventure)' },
+          { id: 35, name: 'Hài Hước (Comedy)' },
+          { id: 18, name: 'Tình Cảm / Chính Kịch (Drama)' },
+          { id: 10749, name: 'Lãng Mạn (Romance)' },
+          { id: 27, name: 'Kinh Dị (Horror)' },
+          { id: 53, name: 'Giật Gân / Gây Cấn (Thriller)' },
+          { id: 16, name: 'Hoạt Hình (Animation)' },
+          { id: 878, name: 'Khoa Học Viễn Tưởng (Sci-Fi)' }
+        ];
+
+        populateFilterDropdowns();
+      }
+
+      function populateFilterDropdowns() {
+        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
+        const countrySelect = document.getElementById('selectedCountry');
+        const genreSelect = document.getElementById('selectedGenre');
+
+        if (!countrySelect || !genreSelect) return;
+
+        countrySelect.innerHTML = '';
+        genreSelect.innerHTML = '';
+
+        if (crawlSource === 'tmdb') {
+          tmdbCountries.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.code;
+            opt.textContent = `${c.name} (${c.code})`;
+            countrySelect.appendChild(opt);
+          });
+
+          tmdbGenres.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id.toString();
+            opt.textContent = g.name;
+            genreSelect.appendChild(opt);
+          });
+        } else {
+          kkphimCountries.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.slug;
+            opt.textContent = c.name;
+            countrySelect.appendChild(opt);
+          });
+
+          kkphimGenres.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.slug;
+            opt.textContent = g.name;
+            genreSelect.appendChild(opt);
+          });
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('crawlSource')?.addEventListener('change', populateFilterDropdowns);
+      });
 
     // Elements
     const tabStandardBtn = document.getElementById('tabStandardBtn');
@@ -2084,6 +2146,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         await loadExistingMoviesDict();
         renderCrawledList();
         checkAndRestoreCrawlSession();
+        await fetchFilterMetadata();
       })();
     })();
   </script>

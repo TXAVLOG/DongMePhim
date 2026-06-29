@@ -809,7 +809,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-secondary/5 blur-[120px] rounded-full pointer-events-none"></div>
 
         <!-- Điện Ảnh Hồng Kông ở Chỗ Này Này -->
-        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay">
+        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Hồng Kông&limit=10" data-grid-id="hongkong-grid" data-layout="slider" data-more-url="/c/dahk-o-cho-nay-nay" data-disable-hover="true">
           <div class="flex flex-col md:flex-row gap-6 items-stretch">
             <!-- Mobile Section Header -->
             <div class="flex md:hidden justify-between items-center w-full mb-1">
@@ -853,7 +853,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         <div class="border-t border-glass-stroke/40 my-6"></div>
 
         <!-- Phim Hàn Quốc Mới -->
-        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Hàn Quốc&limit=10" data-grid-id="korean-grid" data-layout="slider" data-more-url="/quoc-gia/han-quoc">
+        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Hàn Quốc&limit=10" data-grid-id="korean-grid" data-layout="slider" data-more-url="/quoc-gia/han-quoc" data-disable-hover="true">
           <div class="flex flex-col md:flex-row gap-6 items-stretch">
             <!-- Mobile Section Header -->
             <div class="flex md:hidden justify-between items-center w-full mb-1">
@@ -897,7 +897,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         <div class="border-t border-glass-stroke/40 my-6"></div>
 
         <!-- Phim Trung Quốc Mới -->
-        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Trung Quốc&limit=10" data-grid-id="chinese-grid" data-layout="slider" data-more-url="/quoc-gia/trung-quoc">
+        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Trung Quốc&limit=10" data-grid-id="chinese-grid" data-layout="slider" data-more-url="/quoc-gia/trung-quoc" data-disable-hover="true">
           <div class="flex flex-col md:flex-row gap-6 items-stretch">
             <!-- Mobile Section Header -->
             <div class="flex md:hidden justify-between items-center w-full mb-1">
@@ -941,7 +941,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         <div class="border-t border-glass-stroke/40 my-6"></div>
 
         <!-- Phim US-UK Mới -->
-        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my">
+        <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[250px] relative" data-endpoint="/api/movies?category=Âu Mỹ&limit=10" data-grid-id="western-grid" data-layout="slider" data-more-url="/quoc-gia/au-my" data-disable-hover="true">
           <div class="flex flex-col md:flex-row gap-6 items-stretch">
             <!-- Mobile Section Header -->
             <div class="flex md:hidden justify-between items-center w-full mb-1">
@@ -983,19 +983,19 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       </div>
 
       <!-- Phim Bộ Mới -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=series&limit=12" data-grid-id="series-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Bộ Mới" data-more-url="/phim-bo"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=series&limit=12" data-grid-id="series-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Bộ Mới" data-more-url="/phim-bo" data-disable-hover="true"></section>
 
       <!-- Phim Hoạt Hình Mới -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=hoathinh&limit=12" data-grid-id="anime-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Hoạt Hình Mới" data-more-url="/the-loai/hoat-hinh"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?type=hoathinh&limit=12" data-grid-id="anime-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Hoạt Hình Mới" data-more-url="/the-loai/hoat-hinh" data-disable-hover="true"></section>
 
       <!-- Tôi Sợ Con Người Em Rồi Đó, nhưng Không Bằng Sợ Ma -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=toi-so-con-nguoi-em-roi-do&limit=12" data-grid-id="kinhdi-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Tôi Sợ Con Người Em Rồi Đó, Nhưng Không Bằng Sợ Ma" data-icon="skull" data-icon-color="text-rose-500" data-more-url="/c/toi-so-con-nguoi-em-roi-do"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=toi-so-con-nguoi-em-roi-do&limit=12" data-grid-id="kinhdi-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Tôi Sợ Con Người Em Rồi Đó, Nhưng Không Bằng Sợ Ma" data-icon="skull" data-icon-color="text-rose-500" data-more-url="/c/toi-so-con-nguoi-em-roi-do" data-disable-hover="true"></section>
 
       <!-- Phim Thái New: Không Drama Đời Không Nể -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=phim-thai-new&limit=12" data-grid-id="thai-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Thái New: Drama Đỉnh Cao" data-icon="bolt" data-icon-color="text-amber-400" data-more-url="/c/phim-thai-new"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=phim-thai-new&limit=12" data-grid-id="thai-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Phim Thái New: Drama Đỉnh Cao" data-icon="bolt" data-icon-color="text-amber-400" data-more-url="/c/phim-thai-new" data-disable-hover="true"></section>
 
       <!-- Châu Tinh Trì – Xem Là Phải Cười -->
-      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=chau-tinh-tri-xem-la-cuoi&limit=12" data-grid-id="chautinhtri-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Tuyển Tập Châu Tinh Trì - Cười Bể Bụng" data-icon="sentiment_very_satisfied" data-icon-color="text-yellow-400" data-more-url="/c/chau-tinh-tri-xem-la-cuoi"></section>
+      <section class="lazy-section opacity-0 invisible scale-[0.98] translate-y-4 transition-all duration-700 min-h-[350px] relative" data-endpoint="/api/movies?category=chau-tinh-tri-xem-la-cuoi&limit=12" data-grid-id="chautinhtri-grid" data-layout="slider" data-aspect="aspect-[2/3]" data-title="Tuyển Tập Châu Tinh Trì - Cười Bể Bụng" data-icon="sentiment_very_satisfied" data-icon-color="text-yellow-400" data-more-url="/c/chau-tinh-tri-xem-la-cuoi" data-disable-hover="true"></section>
 
       <!-- Phim Điện Ảnh Mới Coóng -->
       <section class="fade-in-section opacity-0 transition-all duration-700 min-h-[150px] space-y-6">
@@ -1011,7 +1011,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {phimDienAnhList.map((movie: any) => (
-            <Card movie={movie} title={movie.title} slug={movie.slug} poster={movie.posterUrl} year={movie.releaseYear} quality={movie.quality} status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'} />
+            <Card movie={movie} title={movie.title} slug={movie.slug} poster={movie.posterUrl} year={movie.releaseYear} quality={movie.quality} status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'} disableHover={true} />
           ))}
         </div>
       </section>
@@ -1334,7 +1334,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
   }
 
   // Helper function to create movie cards dynamically
-  function createMovieCardHTML(movie, aspect = "aspect-[2/3]") {
+  function createMovieCardHTML(movie, aspect = "aspect-[2/3]", disableHover = false) {
     const title = movie.title || '';
     const slug = movie.slug || '';
     const poster = movie.posterUrl || movie.poster || '';
@@ -1384,6 +1384,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         </div>
 
         <!-- Hover Popover details card (Netflix style, desktop only) -->
+        ${!disableHover ? `
         <div class="hover-details-popover hidden">
           <div class="relative w-full aspect-video bg-black/40">
             <img src="${movie.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
@@ -1418,12 +1419,13 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             ${genresHTML ? `<div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">${genresHTML}</div>` : ''}
           </div>
         </div>
+        ` : ''}
       </div>
     `;
   }
 
   // Helper function to create movie slider cards with 16:9 aspect ratio and bottom-left badges
-  function createMovieSliderCardHTML(movie) {
+  function createMovieSliderCardHTML(movie, disableHover = false) {
     const title = movie.title || '';
     const slug = movie.slug || '';
     const poster = movie.posterUrl || movie.poster || '';
@@ -1467,6 +1469,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         </div>
 
         <!-- Hover Popover details card (Netflix style, desktop only) -->
+        ${!disableHover ? `
         <div class="hover-details-popover hidden">
           <div class="relative w-full aspect-video bg-black/40">
             <img src="${movie.bannerUrl || poster}" alt="${title}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
@@ -1501,6 +1504,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             ${genresHTML ? `<div class="text-[10px] text-zinc-400 font-medium border-t border-glass-stroke pt-2 flex flex-wrap gap-x-1.5 gap-y-0.5">${genresHTML}</div>` : ''}
           </div>
         </div>
+        ` : ''}
       </div>
     `;
   }
@@ -1608,6 +1612,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             const aspect = section.getAttribute('data-aspect') || 'aspect-[2/3]';
             const layout = section.getAttribute('data-layout');
             const gridId = section.getAttribute('data-grid-id');
+            const disableHover = section.getAttribute('data-disable-hover') === 'true';
 
             const isSlider = layout === 'slider';
             const aspectAttr = section.getAttribute('data-aspect');
@@ -1682,14 +1687,14 @@ const getMovieProgressBadgesSSR = (movie: any) => {
                         if (isPortraitSlider) {
                           html += `
                             <div class="flex-shrink-0 w-[140px] sm:w-[170px] snap-center">
-                              ${createMovieCardHTML(m, aspect)}
+                              ${createMovieCardHTML(m, aspect, disableHover)}
                             </div>
                           `;
                         } else {
-                          html += createMovieSliderCardHTML(m);
+                          html += createMovieSliderCardHTML(m, disableHover);
                         }
                       } else {
-                        html += createMovieCardHTML(m, aspect);
+                        html += createMovieCardHTML(m, aspect, disableHover);
                       }
                     });
                     grid.innerHTML = html;
@@ -1737,6 +1742,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         const aspect = section.getAttribute('data-aspect') || 'aspect-[2/3]';
         const layout = section.getAttribute('data-layout');
         const grid = document.getElementById(gridId);
+        const disableHover = section.getAttribute('data-disable-hover') === 'true';
         if (endpoint && grid) {
           fetch(endpoint)
             .then(res => res.json())
@@ -1745,9 +1751,9 @@ const getMovieProgressBadgesSSR = (movie: any) => {
               let html = '';
               moviesList.forEach(m => {
                 if (layout === 'slider') {
-                  html += createMovieSliderCardHTML(m);
+                  html += createMovieSliderCardHTML(m, disableHover);
                 } else {
-                  html += createMovieCardHTML(m, aspect);
+                  html += createMovieCardHTML(m, aspect, disableHover);
                 }
               });
               grid.innerHTML = html;
