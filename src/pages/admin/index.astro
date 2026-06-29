@@ -353,8 +353,18 @@ const brokenDiff = 0;
           localStorage.setItem('tregistered_users', JSON.stringify(getInitialUsers()));
         }
 
-        const now = new Date();
-        const historyList = JSON.parse(localStorage.getItem('thistory') || '[]');
+        let historyList = [];
+        try {
+          const stored = localStorage.getItem('thistory');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              historyList = parsed;
+            } else if (parsed && typeof parsed === 'object') {
+              historyList = Object.keys(parsed).map(k => parsed[k]);
+            }
+          }
+        } catch(e) {}
 
         function loadDashboardStats() {
           let staticMovies = [];
