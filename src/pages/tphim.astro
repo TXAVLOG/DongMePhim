@@ -303,72 +303,139 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <script is:inline src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-    <!-- Top Anime đáng xem mùa hè này (Image 1 Style) -->
+    <!-- Top Anime Đáng Xem Mùa Hè Này (Cyber-Anime Spotlight Deck) -->
     {topAnimeList.length > 0 && (
-      <section class="space-y-6">
-        <div class="flex items-center justify-between mb-2">
+      <section class="space-y-6 relative py-4">
+        <!-- Ambient Glow Background -->
+        <div class="absolute -top-10 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute top-20 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
-            <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+            <div class="flex items-center gap-2.5 mb-1.5">
+              <span class="px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-gradient-to-r from-amber-500/20 to-rose-500/20 text-amber-300 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.25)] font-outfit">
+                🔥 Hot Season 2026
+              </span>
+              <span class="text-xs text-zinc-400 font-medium font-outfit">• Tuyển tập phim siêu đỉnh</span>
+            </div>
+            <h2 class="font-display-hero text-2xl md:text-4xl font-black text-white tracking-tight flex items-center gap-3 font-outfit">
               Top Anime Đáng Xem Mùa Hè Này
-              <span class="material-symbols-outlined text-transparent bg-clip-text bg-gradient-to-tr from-primary to-secondary" style="font-variation-settings: 'FILL' 1;">star</span>
+              <span class="material-symbols-outlined text-amber-400 animate-pulse text-2xl" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
             </h2>
-            <p class="text-on-surface-variant font-body-main mt-1 text-sm">Những tác phẩm anime siêu đỉnh không thể bỏ qua</p>
           </div>
-          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-amber-500/50 hover:w-auto hover:px-3.5 hover:py-1 hover:gap-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] font-outfit" href="/c/top-anime-he">
-            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[120px] transition-all duration-300 ease-out whitespace-nowrap">Xem tất cả</span>
-            <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+          <a class="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800 hover:border-amber-500/50 text-xs font-bold text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-300 shadow-lg font-outfit self-start md:self-auto" href="/c/top-anime-he">
+            <span>Khám Phá Tất Cả</span>
+            <span class="material-symbols-outlined text-sm transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </a>
         </div>
 
-        <!-- Synced Swiper Container -->
-        <div class="relative group/anime-nav">
-          <!-- Navigation Buttons -->
-          <button id="anime-prev-btn" class="absolute left-4 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-white/10 bg-black/60 backdrop-blur-md text-white flex items-center justify-center hover:bg-amber-500/20 hover:border-amber-500 transition-all duration-300 cursor-pointer shadow-lg opacity-0 group-hover/anime-nav:opacity-100">
-            <span class="material-symbols-outlined text-xl font-bold">chevron_left</span>
-          </button>
-          <button id="anime-next-btn" class="absolute right-4 top-[40%] -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-white/10 bg-black/60 backdrop-blur-md text-white flex items-center justify-center hover:bg-amber-500/20 hover:border-amber-500 transition-all duration-300 cursor-pointer shadow-lg opacity-0 group-hover/anime-nav:opacity-100">
-            <span class="material-symbols-outlined text-xl font-bold">chevron_right</span>
-          </button>
+        <!-- Main Spotlight Showcase Card -->
+        <div id="anime-spotlight-wrapper" class="relative rounded-3xl bg-[#0b0c13] border border-white/10 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] transition-all duration-500">
+          <!-- Background Banner Image with Dual Gradients -->
+          <div id="anime-spotlight-bg" class="absolute inset-0 bg-cover bg-center transition-all duration-700 scale-105" style={`background-image: url('${topAnimeList[0].bannerUrl || topAnimeList[0].posterUrl}');`}>
+            <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#0b0c13] via-[#0b0c13]/85 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0b0c13] via-transparent to-transparent md:hidden"></div>
+          </div>
 
-          <!-- Main Swiper -->
-          <div class="swiper anime-main-swiper">
-            <div class="swiper-wrapper">
-              {topAnimeList.map((movie: any) => (
-                <div class="swiper-slide relative bg-[#0a0b10]">
-                  <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="anime-slide-img" onerror="this.src='/favicon.png'" />
-                  <div class="absolute inset-0 bg-gradient-to-r from-[#0a0b10] via-[#0a0b10]/60 to-transparent"></div>
-                  <div class="anime-slide-content">
-                    <div class="max-w-md md:max-w-lg space-y-4 text-left">
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <span class="bg-primary/20 text-primary font-bold text-[10px] px-2 py-0.5 rounded border border-primary/20">{movie.quality}</span>
-                        <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded border border-white/10">{movie.releaseYear}</span>
-                        <span class="bg-secondary/15 text-secondary text-[10px] font-bold px-2 py-0.5 rounded border border-secondary/20">{movie.lang}</span>
-                      </div>
-                      <h3 class="text-2xl md:text-4xl font-extrabold text-white leading-tight font-outfit line-clamp-2">{movie.title}</h3>
-                      <p class="text-xs md:text-sm text-zinc-400 font-sans leading-relaxed line-clamp-3 md:line-clamp-4">{movie.description?.replace(/<[^>]*>/g, '')}</p>
-                      <div class="pt-2 flex gap-3">
-                        <a href={`/phim/${movie.slug}`} class="px-6 py-2.5 bg-gradient-to-br from-primary-container to-secondary-container hover:brightness-110 text-white rounded-xl text-xs font-bold transition-all shadow-[0_4px_15px_rgba(124,58,237,0.3)] inline-flex items-center gap-1.5 active:scale-95 no-underline">
-                          <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                          Xem ngay
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          <!-- Showcase Content Layout -->
+          <div class="relative z-10 p-6 md:p-10 flex flex-col md:flex-row gap-6 md:gap-10 items-center min-h-[420px] md:min-h-[460px]">
+            <!-- Poster Frame (Desktop) -->
+            <div class="hidden md:block shrink-0 relative group/poster">
+              <div class="w-48 h-72 rounded-2xl overflow-hidden border-2 border-white/15 shadow-[0_15px_35px_rgba(0,0,0,0.6)] group-hover/poster:border-amber-400/80 transition-all duration-500 group-hover/poster:scale-105 relative z-10">
+                <img id="anime-spotlight-poster" src={topAnimeList[0].posterUrl || topAnimeList[0].bannerUrl} alt={topAnimeList[0].title} class="w-full h-full object-cover transition-transform duration-700" onerror="this.src='/favicon.png'" />
+              </div>
+              <div class="absolute -inset-2 bg-gradient-to-r from-amber-500 to-purple-600 rounded-3xl blur-xl opacity-30 group-hover/poster:opacity-70 transition-opacity duration-500 -z-0"></div>
+            </div>
+
+            <!-- Details Text Block -->
+            <div class="flex-1 space-y-4 text-left max-w-2xl">
+              <!-- Metadata Badges -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="anime-spotlight-quality" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-black text-xs border border-amber-500/30 uppercase tracking-wider font-outfit shadow-sm">
+                  {topAnimeList[0].quality || 'FHD'}
+                </span>
+                <span id="anime-spotlight-year" class="px-2.5 py-1 rounded-lg bg-white/10 text-zinc-200 font-bold text-xs border border-white/10 font-outfit">
+                  {topAnimeList[0].releaseYear || '2026'}
+                </span>
+                <span id="anime-spotlight-lang" class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 font-bold text-xs border border-purple-500/30 font-outfit">
+                  {topAnimeList[0].lang || 'Vietsub'}
+                </span>
+                <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 font-bold text-xs border border-rose-500/30 flex items-center gap-1 font-outfit">
+                  <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                  <span id="anime-spotlight-imdb">{topAnimeList[0].imdbScore || '8.8'}</span> IMDb
+                </span>
+              </div>
+
+              <!-- Title -->
+              <h3 id="anime-spotlight-title" class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight font-outfit tracking-tight drop-shadow-md line-clamp-2">
+                {topAnimeList[0].title}
+              </h3>
+
+              <!-- Description -->
+              <p id="anime-spotlight-desc" class="text-xs sm:text-sm text-zinc-300 font-sans leading-relaxed line-clamp-3 md:line-clamp-4 max-w-xl opacity-90">
+                {topAnimeList[0].description?.replace(/<[^>]*>/g, '') || 'Tuyển tập phim anime hành động kịch tính hấp dẫn nhất mùa hè này.'}
+              </p>
+
+              <!-- CTA Actions -->
+              <div class="pt-3 flex items-center gap-3.5 flex-wrap">
+                <a id="anime-spotlight-link" href={`/phim/${topAnimeList[0].slug}`} class="px-7 py-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:brightness-110 text-white rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:shadow-[0_0_35px_rgba(245,158,11,0.6)] active:scale-95 inline-flex items-center gap-2 no-underline font-outfit tracking-wider uppercase">
+                  <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                  Xem Ngay
+                </a>
+                <a id="anime-spotlight-info-link" href={`/phim/${topAnimeList[0].slug}`} class="px-5 py-3.5 bg-white/10 hover:bg-white/20 border border-white/15 text-white rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 backdrop-blur-md inline-flex items-center gap-2 no-underline font-outfit">
+                  <span class="material-symbols-outlined text-base">info</span>
+                  Chi Tiết
+                </a>
+              </div>
             </div>
           </div>
 
-          <!-- Thumbnails Swiper (Desktop) / Pagination dots (Mobile) -->
-          <div class="swiper anime-thumbs-swiper">
-            <div class="swiper-wrapper">
-              {topAnimeList.map((movie: any) => (
-                <div class="swiper-slide w-[150px]">
-                  <div class="v-thumbnail aspect-video overflow-hidden">
-                    <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
+          <!-- Bottom Interactive Deck Selector (Card Carousel) -->
+          <div class="relative bg-black/60 backdrop-blur-xl border-t border-white/10 p-3 sm:p-4">
+            <div class="flex items-center justify-between mb-2 px-1">
+              <span class="text-[11px] font-extrabold text-zinc-400 uppercase tracking-widest font-outfit flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                Danh Sách Chọn Anime ({topAnimeList.length})
+              </span>
+              <div class="flex gap-1.5">
+                <button id="anime-deck-prev" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-400 text-zinc-400 border border-white/10 flex items-center justify-center transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                <button id="anime-deck-next" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-amber-500/20 hover:text-amber-400 text-zinc-400 border border-white/10 flex items-center justify-center transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="anime-deck-scroll" class="flex gap-3 overflow-x-auto pb-1 pt-1 scrollbar-thin scrollbar-thumb-amber-500/30 scrollbar-track-transparent snap-x scroll-smooth">
+              {topAnimeList.map((movie: any, idx: number) => (
+                <button 
+                  data-idx={idx}
+                  data-slug={movie.slug}
+                  data-title={movie.title}
+                  data-desc={movie.description?.replace(/<[^>]*>/g, '')}
+                  data-poster={movie.posterUrl || movie.bannerUrl}
+                  data-banner={movie.bannerUrl || movie.posterUrl}
+                  data-quality={movie.quality || 'FHD'}
+                  data-year={movie.releaseYear || '2026'}
+                  data-lang={movie.lang || 'Vietsub'}
+                  data-imdb={movie.imdbScore || '8.8'}
+                  class={`anime-deck-card group/card shrink-0 text-left cursor-pointer transition-all duration-300 snap-start relative rounded-xl overflow-hidden border-2 p-1.5 w-[140px] sm:w-[170px] ${idx === 0 ? 'border-amber-400 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.3)] scale-[1.02]' : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'}`}
+                >
+                  <div class="relative aspect-[16/10] rounded-lg overflow-hidden mb-1.5 bg-zinc-900">
+                    <img src={movie.bannerUrl || movie.posterUrl} alt={movie.title} class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" onerror="this.src='/favicon.png'" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                    <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-amber-400 font-black text-[9px] font-outfit border border-amber-400/30">
+                      #{idx + 1}
+                    </span>
                   </div>
-                  <p class="thumb-title text-[10px] text-zinc-400 font-bold truncate mt-1 text-center font-outfit">{movie.title}</p>
-                </div>
+                  <h4 class="text-xs font-bold text-white truncate font-outfit px-0.5 group-hover/card:text-amber-300 transition-colors">
+                    {movie.title}
+                  </h4>
+                  <p class="text-[10px] text-zinc-400 font-medium truncate px-0.5 mt-0.5 font-outfit">
+                    {movie.releaseYear} • {movie.lang}
+                  </p>
+                </button>
               ))}
             </div>
           </div>
@@ -2299,35 +2366,109 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       console.error('Error during client-side hydration:', e);
     }
 
-    // Initialize Swiper Sliders for Top Anime & Top 10
+    // Cyber-Anime Spotlight Deck Logic
+    const deckCards = document.querySelectorAll('.anime-deck-card');
+    const spotlightBg = document.getElementById('anime-spotlight-bg');
+    const spotlightPoster = document.getElementById('anime-spotlight-poster') as HTMLImageElement;
+    const spotlightQuality = document.getElementById('anime-spotlight-quality');
+    const spotlightYear = document.getElementById('anime-spotlight-year');
+    const spotlightLang = document.getElementById('anime-spotlight-lang');
+    const spotlightImdb = document.getElementById('anime-spotlight-imdb');
+    const spotlightTitle = document.getElementById('anime-spotlight-title');
+    const spotlightDesc = document.getElementById('anime-spotlight-desc');
+    const spotlightLink = document.getElementById('anime-spotlight-link') as HTMLAnchorElement;
+    const spotlightInfoLink = document.getElementById('anime-spotlight-info-link') as HTMLAnchorElement;
+
+    if (deckCards.length > 0 && spotlightBg && spotlightTitle) {
+      let currentIdx = 0;
+      let autoPlayTimer: any = null;
+
+      const activateCard = (idx: number) => {
+        const card = deckCards[idx];
+        if (!card) return;
+        currentIdx = idx;
+
+        deckCards.forEach((c, i) => {
+          if (i === idx) {
+            c.classList.add('border-amber-400', 'bg-amber-500/10', 'shadow-[0_0_15px_rgba(245,158,11,0.3)]', 'scale-[1.02]');
+            c.classList.remove('border-white/10', 'bg-white/5');
+            c.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          } else {
+            c.classList.remove('border-amber-400', 'bg-amber-500/10', 'shadow-[0_0_15px_rgba(245,158,11,0.3)]', 'scale-[1.02]');
+            c.classList.add('border-white/10', 'bg-white/5');
+          }
+        });
+
+        const slug = card.getAttribute('data-slug') || '';
+        const title = card.getAttribute('data-title') || '';
+        const desc = card.getAttribute('data-desc') || '';
+        const poster = card.getAttribute('data-poster') || '';
+        const banner = card.getAttribute('data-banner') || '';
+        const quality = card.getAttribute('data-quality') || 'FHD';
+        const year = card.getAttribute('data-year') || '2026';
+        const lang = card.getAttribute('data-lang') || 'Vietsub';
+        const imdb = card.getAttribute('data-imdb') || '8.8';
+
+        const wrapper = document.getElementById('anime-spotlight-wrapper');
+        if (wrapper) {
+          wrapper.style.opacity = '0.75';
+          setTimeout(() => { wrapper.style.opacity = '1'; }, 150);
+        }
+
+        spotlightBg.style.backgroundImage = `url('${banner}')`;
+        if (spotlightPoster) spotlightPoster.src = poster;
+        if (spotlightQuality) spotlightQuality.textContent = quality;
+        if (spotlightYear) spotlightYear.textContent = year;
+        if (spotlightLang) spotlightLang.textContent = lang;
+        if (spotlightImdb) spotlightImdb.textContent = imdb;
+        if (spotlightTitle) spotlightTitle.textContent = title;
+        if (spotlightDesc) spotlightDesc.textContent = desc || 'Tuyển tập phim anime hành động kịch tính hấp dẫn nhất mùa hè này.';
+        if (spotlightLink) spotlightLink.href = `/phim/${slug}`;
+        if (spotlightInfoLink) spotlightInfoLink.href = `/phim/${slug}`;
+      };
+
+      deckCards.forEach((card, idx) => {
+        card.addEventListener('click', () => {
+          activateCard(idx);
+          resetAutoPlay();
+        });
+      });
+
+      const btnPrev = document.getElementById('anime-deck-prev');
+      const btnNext = document.getElementById('anime-deck-next');
+      if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+          const prevIdx = (currentIdx - 1 + deckCards.length) % deckCards.length;
+          activateCard(prevIdx);
+          resetAutoPlay();
+        });
+      }
+      if (btnNext) {
+        btnNext.addEventListener('click', () => {
+          const nextIdx = (currentIdx + 1) % deckCards.length;
+          activateCard(nextIdx);
+          resetAutoPlay();
+        });
+      }
+
+      const startAutoPlay = () => {
+        autoPlayTimer = setInterval(() => {
+          const nextIdx = (currentIdx + 1) % deckCards.length;
+          activateCard(nextIdx);
+        }, 6000);
+      };
+
+      const resetAutoPlay = () => {
+        if (autoPlayTimer) clearInterval(autoPlayTimer);
+        startAutoPlay();
+      };
+
+      startAutoPlay();
+    }
+
+    // Initialize Swiper for Top 10
     try {
       if (typeof window.Swiper !== 'undefined') {
-        const animeThumbs = new window.Swiper('.anime-thumbs-swiper', {
-          spaceBetween: 12,
-          slidesPerView: 'auto',
-          freeMode: true,
-          watchSlidesProgress: true,
-        });
-
-        new window.Swiper('.anime-main-swiper', {
-          spaceBetween: 0,
-          effect: 'fade',
-          fadeEffect: {
-            crossFade: true
-          },
-          autoplay: {
-            delay: 5000,
-            disableOnInteraction: false,
-          },
-          navigation: {
-            nextEl: '#anime-next-btn',
-            prevEl: '#anime-prev-btn',
-          },
-          thumbs: {
-            swiper: animeThumbs,
-          },
-        });
-
         new window.Swiper('.top10-swiper', {
           slidesPerView: 2,
           spaceBetween: 16,
