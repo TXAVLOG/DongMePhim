@@ -112,23 +112,20 @@ export const ZaloService = {
   // 4. Cập nhật trạng thái yêu cầu duyệt Zalo (Admin)
   async updateZaloAccessStatus(idOrToken: string, status: 'approved' | 'rejected' | 'pending'): Promise<void> {
     try {
-      const { error } = await supabase
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrToken);
+      
+      const query = supabase
         .from('zalo_access')
         .update({
           status,
           updated_at: new Date().toISOString()
-        })
-        .eq('token', idOrToken);
+        });
 
-      if (error) {
-        await supabase
-          .from('zalo_access')
-          .update({
-            status,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', idOrToken);
-      }
+      const { error } = await (isUuid 
+        ? query.eq('id', idOrToken) 
+        : query.eq('token', idOrToken));
+
+      if (error) throw error;
     } catch (e) {
       console.error('Lỗi khi cập nhật trạng thái Zalo trên Supabase:', e);
     }
