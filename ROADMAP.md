@@ -14,7 +14,7 @@ Tài liệu này theo dõi lộ trình phát triển và tiến độ thực hi�
 | **Phase 3** | Authentication System | ✅ Hoàn thành | 100% (Mock & Turnstile & SMTP) | Phase 1, Phase 2 |
 | **Phase 4** | Movie System & Routing | ✅ Hoàn thành | 100% | Phase 1, Phase 2, Phase 7 |
 | **Phase 5** | Player & Watch History | ✅ Hoàn thành | 100% | Phase 1, Phase 3, Phase 4 |
-| **Phase 6** | Progressive Web App (PWA) | 🔄 Đang thực hiện | 50% | Phase 1 |
+| **Phase 6** | Progressive Web App (PWA) | ✅ Hoàn thành | 100% | Phase 1 |
 | **Phase 7** | Mock Data & Abstraction | ✅ Hoàn thành | 100% | Phase 0 |
 | **Phase 8** | UI/UX, Bug Fixes & Cloudflare Prep | ✅ Hoàn thành | 100% | Phase 1, 3, 4, 5, 7 |
 
@@ -125,7 +125,7 @@ Tài liệu này theo dõi lộ trình phát triển và tiến độ thực hi�
 * **Tiêu chí hoàn thành**:
   - Ứng dụng đạt chuẩn PWA trên công cụ kiểm tra Lighthouse.
   - Cài đặt thành công trên môi trường Android và Desktop.
-* **Tỷ lệ hoàn thành**: 50% (Đã tạo `sw.js` và đăng ký Service Worker trong `MainLayout.astro`)
+* **Tỷ lệ hoàn thành**: 100% (Đã tạo `sw.js` và đăng ký Service Worker, thiết lập file `manifest.json` đầy đủ icon chuẩn PWA, và tích hợp giao diện Floating Install Banner mời gọi cài đặt trên toàn bộ các layouts chính)
 
 ---
 
