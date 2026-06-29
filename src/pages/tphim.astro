@@ -2310,8 +2310,11 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         });
 
         new window.Swiper('.anime-main-swiper', {
-          spaceBetween: 10,
-          loop: true,
+          spaceBetween: 0,
+          effect: 'fade',
+          fadeEffect: {
+            crossFade: true
+          },
           autoplay: {
             delay: 5000,
             disableOnInteraction: false,
