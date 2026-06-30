@@ -23,11 +23,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   email_verified boolean DEFAULT true,
   expiry_date timestamp with time zone,
   join_date timestamp with time zone,
-  PRIMARY KEY (id),
-  CONSTRAINT txa_user_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT watch_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT watch_lists_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+  PRIMARY KEY (id)
 );
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -52,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.movies (
   lang character varying,
   imdb_score numeric DEFAULT 0,
   tmdb_score numeric DEFAULT 0,
-  broadcast_at character varying,
+  country character varying,
   views bigint DEFAULT 0,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
@@ -67,13 +63,7 @@ CREATE TABLE IF NOT EXISTS public.movies (
   rating_count integer DEFAULT 0,
   pinned boolean NOT NULL DEFAULT false,
   source character varying DEFAULT 'manual'::character varying,
-  PRIMARY KEY (id),
-  CONSTRAINT watch_history_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
-  CONSTRAINT schedules_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
-  CONSTRAINT watch_lists_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
-  CONSTRAINT movie_actors_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
-  CONSTRAINT movie_countries_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
-  CONSTRAINT movie_genres_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id)
+  PRIMARY KEY (id)
 );
 
 ALTER TABLE public.movies ENABLE ROW LEVEL SECURITY;
@@ -88,8 +78,7 @@ CREATE TABLE IF NOT EXISTS public.actors (
   tmdb_id integer,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  PRIMARY KEY (id),
-  CONSTRAINT movie_actors_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES public.actors(id)
+  PRIMARY KEY (id)
 );
 
 ALTER TABLE public.actors ENABLE ROW LEVEL SECURITY;
@@ -101,8 +90,7 @@ CREATE TABLE IF NOT EXISTS public.genres (
   slug character varying NOT NULL UNIQUE,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  PRIMARY KEY (id),
-  CONSTRAINT movie_genres_genre_id_fkey FOREIGN KEY (genre_id) REFERENCES public.genres(id)
+  PRIMARY KEY (id)
 );
 
 ALTER TABLE public.genres ENABLE ROW LEVEL SECURITY;
@@ -114,8 +102,7 @@ CREATE TABLE IF NOT EXISTS public.countries (
   slug character varying NOT NULL UNIQUE,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  PRIMARY KEY (id),
-  CONSTRAINT movie_countries_country_id_fkey FOREIGN KEY (country_id) REFERENCES public.countries(id)
+  PRIMARY KEY (id)
 );
 
 ALTER TABLE public.countries ENABLE ROW LEVEL SECURITY;
