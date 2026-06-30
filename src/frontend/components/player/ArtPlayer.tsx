@@ -1,5 +1,900 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Artplayer from 'artplayer';
+
+export interface SubtitleCue {
+  id: string;
+  startTime: number;
+  endTime: number;
+  text: string;
+}
+
+const proxySubtitleUrl = (u: string) => {
+  if (!u) return '';
+  if (u.startsWith('/') || u.startsWith('blob:') || u.startsWith('data:')) {
+    return u;
+  }
+  try {
+    const parsed = new URL(u, window.location.origin);
+    if (parsed.origin === window.location.origin) {
+      return u;
+    }
+  } catch {
+    return u;
+  }
+  return `/api/proxy-subtitle?url=${encodeURIComponent(u)}`;
+};
+
+export function parseSubtitles(text: string): SubtitleCue[] {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const cues: SubtitleCue[] = [];
+  const timeRegex = /(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/;
+
+  let currentCue: Partial<SubtitleCue> | null = null;
+  let textBuffer: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const match = line.match(timeRegex);
+
+    if (match) {
+      if (currentCue && currentCue.startTime !== undefined && currentCue.endTime !== undefined) {
+        currentCue.text = textBuffer.join('\n').trim();
+        cues.push(currentCue as SubtitleCue);
+      }
+
+      const startSec = 
+        parseInt(match[1]) * 3600 +
+        parseInt(match[2]) * 60 +
+        parseInt(match[3]) +
+        parseInt(match[4]) / 1000;
+
+      const endSec = 
+        parseInt(match[5]) * 3600 +
+        parseInt(match[6]) * 60 +
+        parseInt(match[7]) +
+        parseInt(match[8]) / 1000;
+
+      let id = '';
+      if (i > 0) {
+        const prevLine = lines[i - 1].trim();
+        if (prevLine && !prevLine.match(timeRegex) && isNaN(Number(prevLine)) === false) {
+          id = prevLine;
+        }
+      }
+
+      currentCue = {
+        id: id || String(cues.length + 1),
+        startTime: startSec,
+        endTime: endSec,
+        text: ''
+      };
+      textBuffer = [];
+    } else {
+      if (currentCue) {
+        const nextLine = lines[i + 1]?.trim();
+        if (line === '' && nextLine && nextLine.match(timeRegex)) {
+          currentCue.text = textBuffer.join('\n').trim();
+          cues.push(currentCue as SubtitleCue);
+          currentCue = null;
+          textBuffer = [];
+        } else if (line !== '') {
+          if (!isNaN(Number(line)) && nextLine && nextLine.match(timeRegex)) {
+            currentCue.text = textBuffer.join('\n').trim();
+            cues.push(currentCue as SubtitleCue);
+            currentCue = null;
+            textBuffer = [];
+          } else {
+            textBuffer.push(line);
+          }
+        }
+      }
+    }
+  }
+
+  if (currentCue && currentCue.startTime !== undefined && currentCue.endTime !== undefined) {
+    currentCue.text = textBuffer.join('\n').trim();
+    cues.push(currentCue as SubtitleCue);
+  }
+
+  return cues;
+}
+
+const CustomSubtitleSystem: React.FC<{
+  art: Artplayer;
+  subtitles: Subtitle[];
+}> = ({ art, subtitles }) => {
+  const [mode, setMode] = useState<'on' | 'bilingual' | 'off'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('txa_sub_mode') as any) || 'on';
+    }
+    return 'on';
+  });
+
+  const [primaryIdx, setPrimaryIdx] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const idxStr = localStorage.getItem('txa_sub_primary_idx');
+      return idxStr ? parseInt(idxStr) : 0;
+    }
+    return 0;
+  });
+
+  const [secondaryIdx, setSecondaryIdx] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const idxStr = localStorage.getItem('txa_sub_secondary_idx');
+      return idxStr ? parseInt(idxStr) : 1;
+    }
+    return 1;
+  });
+
+  const [tracks, setTracks] = useState<any[]>(subtitles);
+  const [primaryCues, setPrimaryCues] = useState<SubtitleCue[]>([]);
+  const [secondaryCues, setSecondaryCues] = useState<SubtitleCue[]>([]);
+
+  const [activePrimaryCue, setActivePrimaryCue] = useState<SubtitleCue | null>(null);
+  const [activeSecondaryCue, setActiveSecondaryCue] = useState<SubtitleCue | null>(null);
+
+  const [showPanel, setShowPanel] = useState(false);
+  const [panelView, setPanelView] = useState<'main' | 'custom' | 'select-option'>('main');
+  const [selectedSetting, setSelectedSetting] = useState<string | null>(null);
+  const [bottomOffset, setBottomOffset] = useState(80);
+
+  const fetchedCuesRef = useRef<Record<string, SubtitleCue[]>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [primaryColor, setPrimaryColor] = useState(() => localStorage.getItem('txa_sub_primary_color') || '#ffffff');
+  const [primarySize, setPrimarySize] = useState(() => localStorage.getItem('txa_sub_primary_size') || '14pt');
+  const [primaryOpacity, setPrimaryOpacity] = useState(() => localStorage.getItem('txa_sub_primary_opacity') || '100%');
+  const [primaryFont, setPrimaryFont] = useState(() => localStorage.getItem('txa_sub_primary_font') || 'Arial');
+  const [primaryBorder, setPrimaryBorder] = useState(() => localStorage.getItem('txa_sub_primary_border') || 'Bóng đổ');
+  const [primaryBgColor, setPrimaryBgColor] = useState(() => localStorage.getItem('txa_sub_primary_bg_color') || 'Đen');
+  const [primaryBgOpacity, setPrimaryBgOpacity] = useState(() => localStorage.getItem('txa_sub_primary_bg_opacity') || '0%');
+
+  const [secondaryColor, setSecondaryColor] = useState(() => localStorage.getItem('txa_sub_secondary_color') || '#ffeb3b');
+  const [secondarySize, setSecondarySize] = useState(() => localStorage.getItem('txa_sub_secondary_size') || '70%');
+  const [secondaryOpacity, setSecondaryOpacity] = useState(() => localStorage.getItem('txa_sub_secondary_opacity') || '100%');
+  const [secondaryFont, setSecondaryFont] = useState(() => localStorage.getItem('txa_sub_secondary_font') || 'Arial');
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (text) {
+        const cues = parseSubtitles(text);
+        if (cues.length > 0) {
+          const newTrack = {
+            label: file.name.substring(0, 15) || 'Tải lên',
+            file: `uploaded-${Date.now()}`,
+            cues: cues
+          };
+          setTracks(prev => [...prev, newTrack]);
+          setPrimaryIdx(tracks.length);
+          if (mode === 'off') {
+            setMode('on');
+            localStorage.setItem('txa_sub_mode', 'on');
+          }
+          if (art.notice) {
+            art.notice.show = `Đã tải phụ đề: ${file.name}`;
+          }
+        } else {
+          alert('Không thể phân tích cú pháp tệp phụ đề này. Vui lòng kiểm tra lại định dạng SRT hoặc VTT!');
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  useEffect(() => {
+    const loadCues = async (track: any, setCues: (cues: SubtitleCue[]) => void) => {
+      if (!track) {
+        setCues([]);
+        return;
+      }
+      if (track.cues) {
+        setCues(track.cues);
+        return;
+      }
+      if (fetchedCuesRef.current[track.file]) {
+        setCues(fetchedCuesRef.current[track.file]);
+        return;
+      }
+      try {
+        const proxied = proxySubtitleUrl(track.file);
+        const res = await fetch(proxied);
+        if (res.ok) {
+          const text = await res.text();
+          const cues = parseSubtitles(text);
+          fetchedCuesRef.current[track.file] = cues;
+          setCues(cues);
+        }
+      } catch (e) {
+        console.error('Error loading subtitles:', e);
+      }
+    };
+
+    const pTrack = tracks[primaryIdx];
+    const sTrack = tracks[secondaryIdx];
+
+    loadCues(pTrack, setPrimaryCues);
+    loadCues(sTrack, setSecondaryCues);
+  }, [tracks, primaryIdx, secondaryIdx]);
+
+  useEffect(() => {
+    const updateActiveCues = () => {
+      const time = art.video.currentTime;
+
+      if (mode !== 'off' && primaryCues.length > 0) {
+        const cue = primaryCues.find(c => time >= c.startTime && time <= c.endTime);
+        setActivePrimaryCue(cue || null);
+      } else {
+        setActivePrimaryCue(null);
+      }
+
+      if (mode === 'bilingual' && secondaryCues.length > 0) {
+        const cue = secondaryCues.find(c => time >= c.startTime && time <= c.endTime);
+        setActiveSecondaryCue(cue || null);
+      } else {
+        setActiveSecondaryCue(null);
+      }
+    };
+
+    art.on('video:timeupdate', updateActiveCues);
+    art.on('video:seeked', updateActiveCues);
+
+    const handleControlState = (visible: boolean) => {
+      setBottomOffset(visible ? 80 : 30);
+    };
+    art.on('control', handleControlState);
+
+    const handleTogglePanel = () => {
+      setShowPanel(prev => !prev);
+      setPanelView('main');
+    };
+    window.addEventListener('txa-toggle-subtitle-panel', handleTogglePanel);
+
+    return () => {
+      art.off('video:timeupdate', updateActiveCues);
+      art.off('video:seeked', updateActiveCues);
+      art.off('control', handleControlState);
+      window.removeEventListener('txa-toggle-subtitle-panel', handleTogglePanel);
+    };
+  }, [art, primaryCues, secondaryCues, mode]);
+
+  const getSubStyle = (isPrimary: boolean) => {
+    const color = isPrimary ? primaryColor : secondaryColor;
+    const size = isPrimary ? primarySize : secondarySize;
+    const opacityVal = isPrimary ? primaryOpacity : secondaryOpacity;
+    const font = isPrimary ? primaryFont : secondaryFont;
+    
+    const op = parseFloat(opacityVal) / 100;
+    const fontFamily = font === 'Sans-Serif' ? 'sans-serif' : `'${font}', sans-serif`;
+
+    let textShadow = 'none';
+    if (isPrimary) {
+      if (primaryBorder === 'Bóng đổ') {
+        textShadow = '0 2px 4px rgba(0,0,0,0.9)';
+      } else if (primaryBorder === 'Viền mỏng') {
+        textShadow = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
+      } else if (primaryBorder === 'Viền dày') {
+        textShadow = '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000';
+      }
+    } else {
+      textShadow = '0 2px 4px rgba(0,0,0,0.9)';
+    }
+
+    let background = 'transparent';
+    let padding = '0';
+    let borderRadius = '0';
+    if (isPrimary && primaryBgOpacity !== '0%') {
+      const bgOp = parseFloat(primaryBgOpacity) / 100;
+      let rgb = '0,0,0';
+      if (primaryBgColor === 'Xám') rgb = '85,85,85';
+      else if (primaryBgColor === 'Đỏ') rgb = '244,67,54';
+      else if (primaryBgColor === 'Xanh') rgb = '76,175,80';
+      else if (primaryBgColor === 'Trắng') rgb = '255,255,255';
+      background = `rgba(${rgb}, ${bgOp})`;
+      padding = '4px 10px';
+      borderRadius = '6px';
+    }
+
+    return {
+      color,
+      fontSize: size,
+      opacity: op,
+      fontFamily,
+      textShadow,
+      background,
+      padding,
+      borderRadius,
+      margin: '4px 0',
+      lineHeight: '1.4',
+      whiteSpace: 'pre-wrap' as const,
+      display: 'inline-block',
+      textAlign: 'center' as const
+    };
+  };
+
+  const formatCueText = (text: string) => {
+    let html = text.replace(/\n/g, '<br />');
+    return { __html: html };
+  };
+
+  const settingsConfig = [
+    {
+      key: 'primaryColor',
+      label: 'Màu chữ',
+      section: 'Phụ đề chính',
+      value: primaryColor,
+      displayValue: primaryColor === '#ffffff' ? 'Trắng' : primaryColor === '#ffeb3b' ? 'Vàng' : primaryColor === '#4caf50' ? 'Xanh lá' : primaryColor === '#2196f3' ? 'Xanh dương' : 'Đỏ',
+      options: [
+        { label: 'Trắng', value: '#ffffff' },
+        { label: 'Vàng', value: '#ffeb3b' },
+        { label: 'Xanh lá', value: '#4caf50' },
+        { label: 'Xanh dương', value: '#2196f3' },
+        { label: 'Đỏ', value: '#f44336' }
+      ],
+      setter: (val: string) => {
+        setPrimaryColor(val);
+        localStorage.setItem('txa_sub_primary_color', val);
+      }
+    },
+    {
+      key: 'primarySize',
+      label: 'Cỡ chữ',
+      section: 'Phụ đề chính',
+      value: primarySize,
+      displayValue: primarySize,
+      options: [
+        { label: '12pt', value: '12pt' },
+        { label: '14pt', value: '14pt' },
+        { label: '16pt', value: '16pt' },
+        { label: '18pt', value: '18pt' },
+        { label: '20pt', value: '20pt' },
+        { label: '24pt', value: '24pt' },
+        { label: '28pt', value: '28pt' }
+      ],
+      setter: (val: string) => {
+        setPrimarySize(val);
+        localStorage.setItem('txa_sub_primary_size', val);
+      }
+    },
+    {
+      key: 'primaryOpacity',
+      label: 'Độ trong',
+      section: 'Phụ đề chính',
+      value: primaryOpacity,
+      displayValue: primaryOpacity,
+      options: [
+        { label: '25%', value: '25%' },
+        { label: '50%', value: '50%' },
+        { label: '75%', value: '75%' },
+        { label: '100%', value: '100%' }
+      ],
+      setter: (val: string) => {
+        setPrimaryOpacity(val);
+        localStorage.setItem('txa_sub_primary_opacity', val);
+      }
+    },
+    {
+      key: 'primaryFont',
+      label: 'Font chữ',
+      section: 'Phụ đề chính',
+      value: primaryFont,
+      displayValue: primaryFont,
+      options: [
+        { label: 'Arial', value: 'Arial' },
+        { label: 'Outfit', value: 'Outfit' },
+        { label: 'Inter', value: 'Inter' },
+        { label: 'Roboto', value: 'Roboto' },
+        { label: 'Sans-Serif', value: 'Sans-Serif' }
+      ],
+      setter: (val: string) => {
+        setPrimaryFont(val);
+        localStorage.setItem('txa_sub_primary_font', val);
+      }
+    },
+    {
+      key: 'primaryBorder',
+      label: 'Viền chữ',
+      section: 'Phụ đề chính',
+      value: primaryBorder,
+      displayValue: primaryBorder,
+      options: [
+        { label: 'Không viền', value: 'Không viền' },
+        { label: 'Bóng đổ', value: 'Bóng đổ' },
+        { label: 'Viền mỏng', value: 'Viền mỏng' },
+        { label: 'Viền dày', value: 'Viền dày' }
+      ],
+      setter: (val: string) => {
+        setPrimaryBorder(val);
+        localStorage.setItem('txa_sub_primary_border', val);
+      }
+    },
+    {
+      key: 'primaryBgColor',
+      label: 'Màu nền',
+      section: 'Phụ đề chính',
+      value: primaryBgColor,
+      displayValue: primaryBgColor,
+      options: [
+        { label: 'Đen', value: 'Đen' },
+        { label: 'Xám', value: 'Xám' },
+        { label: 'Đỏ', value: 'Đỏ' },
+        { label: 'Xanh', value: 'Xanh' },
+        { label: 'Trắng', value: 'Trắng' }
+      ],
+      setter: (val: string) => {
+        setPrimaryBgColor(val);
+        localStorage.setItem('txa_sub_primary_bg_color', val);
+      }
+    },
+    {
+      key: 'primaryBgOpacity',
+      label: 'Độ trong nền',
+      section: 'Phụ đề chính',
+      value: primaryBgOpacity,
+      displayValue: primaryBgOpacity,
+      options: [
+        { label: '0%', value: '0%' },
+        { label: '25%', value: '25%' },
+        { label: '50%', value: '50%' },
+        { label: '75%', value: '75%' },
+        { label: '100%', value: '100%' }
+      ],
+      setter: (val: string) => {
+        setPrimaryBgOpacity(val);
+        localStorage.setItem('txa_sub_primary_bg_opacity', val);
+      }
+    },
+    // Secondary
+    {
+      key: 'secondaryColor',
+      label: 'Màu chữ',
+      section: 'Song ngữ',
+      value: secondaryColor,
+      displayValue: secondaryColor === '#ffffff' ? 'Trắng' : secondaryColor === '#ffeb3b' ? 'Vàng' : secondaryColor === '#4caf50' ? 'Xanh lá' : secondaryColor === '#2196f3' ? 'Xanh dương' : 'Đỏ',
+      options: [
+        { label: 'Trắng', value: '#ffffff' },
+        { label: 'Vàng', value: '#ffeb3b' },
+        { label: 'Xanh lá', value: '#4caf50' },
+        { label: 'Xanh dương', value: '#2196f3' },
+        { label: 'Đỏ', value: '#f44336' }
+      ],
+      setter: (val: string) => {
+        setSecondaryColor(val);
+        localStorage.setItem('txa_sub_secondary_color', val);
+      }
+    },
+    {
+      key: 'secondarySize',
+      label: 'Cỡ chữ',
+      section: 'Song ngữ',
+      value: secondarySize,
+      displayValue: secondarySize,
+      options: [
+        { label: '50%', value: '50%' },
+        { label: '60%', value: '60%' },
+        { label: '70%', value: '70%' },
+        { label: '80%', value: '80%' },
+        { label: '90%', value: '90%' },
+        { label: '100%', value: '100%' }
+      ],
+      setter: (val: string) => {
+        setSecondarySize(val);
+        localStorage.setItem('txa_sub_secondary_size', val);
+      }
+    },
+    {
+      key: 'secondaryOpacity',
+      label: 'Độ trong',
+      section: 'Song ngữ',
+      value: secondaryOpacity,
+      displayValue: secondaryOpacity,
+      options: [
+        { label: '25%', value: '25%' },
+        { label: '50%', value: '50%' },
+        { label: '75%', value: '75%' },
+        { label: '100%', value: '100%' }
+      ],
+      setter: (val: string) => {
+        setSecondaryOpacity(val);
+        localStorage.setItem('txa_sub_secondary_opacity', val);
+      }
+    },
+    {
+      key: 'secondaryFont',
+      label: 'Font chữ',
+      section: 'Song ngữ',
+      value: secondaryFont,
+      displayValue: secondaryFont,
+      options: [
+        { label: 'Arial', value: 'Arial' },
+        { label: 'Outfit', value: 'Outfit' },
+        { label: 'Inter', value: 'Inter' },
+        { label: 'Roboto', value: 'Roboto' },
+        { label: 'Sans-Serif', value: 'Sans-Serif' }
+      ],
+      setter: (val: string) => {
+        setSecondaryFont(val);
+        localStorage.setItem('txa_sub_secondary_font', val);
+      }
+    }
+  ];
+
+  const currentActiveSettingObj = settingsConfig.find(s => s.key === selectedSetting);
+
+  return (
+    <>
+      <div 
+        className="txa-subtitles-container" 
+        style={{
+          position: 'absolute',
+          bottom: `${bottomOffset}px`,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '85%',
+          pointerEvents: 'none',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          zIndex: 35,
+          transition: 'bottom 0.3s ease'
+        }}
+      >
+        {mode === 'bilingual' && activeSecondaryCue && (
+          <div 
+            style={getSubStyle(false)}
+            dangerouslySetInnerHTML={formatCueText(activeSecondaryCue.text)}
+          />
+        )}
+        {mode !== 'off' && activePrimaryCue && (
+          <div 
+            style={getSubStyle(true)}
+            dangerouslySetInnerHTML={formatCueText(activePrimaryCue.text)}
+          />
+        )}
+      </div>
+
+      {showPanel && (
+        <div 
+          className="txa-sub-control-panel-wrapper"
+          style={{
+            position: 'absolute',
+            bottom: '80px',
+            right: '20px',
+            width: '380px',
+            backgroundColor: 'rgba(15, 15, 20, 0.92)',
+            backdropFilter: 'blur(16px)',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#ffffff',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6)',
+            padding: '16px',
+            zIndex: 1000,
+            pointerEvents: 'auto',
+            fontFamily: "'Outfit', sans-serif",
+            userSelect: 'none'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {panelView === 'main' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <span style={{ fontSize: '15px', fontWeight: 700 }}>Phụ đề</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '2px' }}>
+                    {(['on', 'bilingual', 'off'] as const).map(m => {
+                      const label = m === 'on' ? 'Bật' : m === 'bilingual' ? 'Song ngữ' : 'Tắt';
+                      const isActive = mode === m;
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            setMode(m);
+                            localStorage.setItem('txa_sub_mode', m);
+                          }}
+                          style={{
+                            border: 'none',
+                            outline: 'none',
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            backgroundColor: isActive ? '#ffffff' : 'transparent',
+                            color: isActive ? '#0b0a0c' : '#ffffff',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button 
+                    onClick={handleUploadClick}
+                    style={{
+                      border: 'none',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      color: '#ffffff',
+                      borderRadius: '50%',
+                      width: '26px',
+                      height: '26px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s'
+                    }}
+                    title="Tải phụ đề local lên"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>upload</span>
+                  </button>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    style={{ display: 'none' }} 
+                    accept=".srt,.vtt" 
+                    onChange={handleFileUpload} 
+                  />
+
+                  <button 
+                    onClick={() => setPanelView('custom')}
+                    style={{
+                      border: 'none',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      color: '#ffffff',
+                      borderRadius: '50%',
+                      width: '26px',
+                      height: '26px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s'
+                    }}
+                    title="Tuỳ chỉnh kiểu dáng"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>settings</span>
+                  </button>
+                </div>
+              </div>
+
+              {mode !== 'off' ? (
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                  <div style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.25)', borderRadius: '10px', padding: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 700, paddingBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phụ đề chính</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflowY: 'auto' }}>
+                      {tracks.map((t, idx) => {
+                        const isSelected = primaryIdx === idx;
+                        return (
+                          <div 
+                            key={t.file} 
+                            onClick={() => {
+                              setPrimaryIdx(idx);
+                              localStorage.setItem('txa_sub_primary_idx', String(idx));
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              backgroundColor: isSelected ? 'rgba(255,255,255,0.08)' : 'transparent',
+                              fontWeight: isSelected ? 600 : 400
+                            }}
+                          >
+                            <span style={{ color: isSelected ? '#ffeb3b' : '#ffffff' }}>{t.label}</span>
+                            {isSelected && <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#ffeb3b' }}>check</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div 
+                    style={{ 
+                      flex: 1, 
+                      backgroundColor: 'rgba(0, 0, 0, 0.25)', 
+                      borderRadius: '10px', 
+                      padding: '8px', 
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      opacity: mode === 'bilingual' ? 1 : 0.35,
+                      pointerEvents: mode === 'bilingual' ? 'auto' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 700, paddingBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Song ngữ</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflowY: 'auto' }}>
+                      {tracks.map((t, idx) => {
+                        const isSelected = secondaryIdx === idx;
+                        return (
+                          <div 
+                            key={t.file} 
+                            onClick={() => {
+                              setSecondaryIdx(idx);
+                              localStorage.setItem('txa_sub_secondary_idx', String(idx));
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              backgroundColor: isSelected ? 'rgba(255,255,255,0.08)' : 'transparent',
+                              fontWeight: isSelected ? 600 : 400
+                            }}
+                          >
+                            <span style={{ color: isSelected ? '#ffeb3b' : '#ffffff' }}>{t.label}</span>
+                            {isSelected && <span className="material-symbols-outlined" style={{ fontSize: '14px', color: '#ffeb3b' }}>check</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '24px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
+                  Phụ đề đã bị tắt. Vui lòng chọn "Bật" hoặc "Song ngữ" để kích hoạt.
+                </div>
+              )}
+            </div>
+          )}
+
+          {panelView === 'custom' && (
+            <div>
+              <div 
+                onClick={() => setPanelView('main')}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  fontSize: '14px', 
+                  fontWeight: 700, 
+                  cursor: 'pointer', 
+                  marginBottom: '14px',
+                  color: '#ffffff'
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>chevron_left</span>
+                <span>Tuỳ chỉnh</span>
+              </div>
+
+              <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '4px' }}>
+                <div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 700, paddingBottom: '6px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '6px' }}>Phụ đề chính</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {settingsConfig.filter(s => s.section === 'Phụ đề chính').map(item => (
+                      <div 
+                        key={item.key}
+                        onClick={() => {
+                          setSelectedSetting(item.key);
+                          setPanelView('select-option');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 0',
+                          cursor: 'pointer',
+                          fontSize: '13px'
+                        }}
+                      >
+                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#1e88e5', fontWeight: 600 }}>
+                          <span>{item.displayValue}</span>
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>chevron_right</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 700, paddingBottom: '6px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '6px' }}>Song ngữ</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {settingsConfig.filter(s => s.section === 'Song ngữ').map(item => (
+                      <div 
+                        key={item.key}
+                        onClick={() => {
+                          setSelectedSetting(item.key);
+                          setPanelView('select-option');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 0',
+                          cursor: 'pointer',
+                          fontSize: '13px'
+                        }}
+                      >
+                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#1e88e5', fontWeight: 600 }}>
+                          <span>{item.displayValue}</span>
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>chevron_right</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {panelView === 'select-option' && currentActiveSettingObj && (
+            <div>
+              <div 
+                onClick={() => setPanelView('custom')}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  fontSize: '14px', 
+                  fontWeight: 700, 
+                  cursor: 'pointer', 
+                  marginBottom: '14px',
+                  color: '#ffffff'
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>chevron_left</span>
+                <span>{currentActiveSettingObj.label}</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '260px', overflowY: 'auto' }}>
+                {currentActiveSettingObj.options.map(opt => {
+                  const isChecked = currentActiveSettingObj.value === opt.value;
+                  return (
+                    <div 
+                      key={opt.value}
+                      onClick={() => {
+                        currentActiveSettingObj.setter(opt.value);
+                        setPanelView('custom');
+                        if (art.notice) {
+                          art.notice.show = `Đã cập nhật ${currentActiveSettingObj.label}: ${opt.label}`;
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        backgroundColor: isChecked ? 'rgba(255,255,255,0.06)' : 'transparent',
+                        fontWeight: isChecked ? 600 : 400
+                      }}
+                    >
+                      <span style={{ color: isChecked ? '#1e88e5' : '#ffffff' }}>{opt.label}</span>
+                      {isChecked && <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#1e88e5' }}>check</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+};
+
 
 // Override HTMLVideoElement.prototype.requestPictureInPicture to prevent InvalidStateError before metadata is loaded
 if (typeof window !== 'undefined' && typeof HTMLVideoElement !== 'undefined' && HTMLVideoElement.prototype.requestPictureInPicture) {
@@ -128,6 +1023,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   const playerInstanceRef = useRef<Artplayer | null>(null);
   const [isOffline, setIsOffline] = useState(typeof window !== 'undefined' ? !navigator.onLine : false);
   const [connectionRestored, setConnectionRestored] = useState(false);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const handleOffline = () => {
@@ -289,18 +1185,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             click: () => { art.pip = !art.pip; }
           }
         ],
-        ...(validDefaultSub ? {
-          subtitle: {
-            url: proxySubtitleUrl(validDefaultSub.file),
-            type: validDefaultSub.file.includes('.srt') ? 'srt' : 'vtt',
-            encoding: 'utf-8',
-            style: {
-              color: '#fff',
-              fontSize: '20px',
-              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
-            }
-          }
-        } : {}),
         highlight: [
           ...(timeIntroStart > 0 ? [{ time: timeIntroStart, text: 'Bắt đầu Intro' }] : []),
           ...(timeIntroEnd > 0 ? [{ time: timeIntroEnd, text: 'Kết thúc Intro' }] : []),
@@ -471,6 +1355,17 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                 }
               }
             }
+          },
+          // Custom subtitles portal layer
+          {
+            name: 'txa-subtitles-portal',
+            html: '',
+            style: {
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              zIndex: '45',
+            }
           }
         ],
         controls: [
@@ -500,6 +1395,17 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               }
             },
           },
+          // Custom Subtitles toggle button
+          {
+            name: 'custom-subtitles',
+            position: 'right',
+            index: 10,
+            html: `<button class="art-icon" style="display: flex; align-items: center; justify-center: center; opacity: 0.95; transition: opacity 0.2s;" title="Phụ đề"><span class="material-symbols-outlined" style="font-size: 20px; color: #ffffff;">subtitles</span></button>`,
+            click: function (art) {
+              const event = new CustomEvent('txa-toggle-subtitle-panel');
+              window.dispatchEvent(event);
+            }
+          }
         ],
       });
 
@@ -520,35 +1426,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         });
       }
 
-      const validSubs = (subtitles || []).filter(s => isValidSubUrl(s.file));
-      if (validSubs.length > 0) {
-        art.setting.add({
-          width: 200,
-          html: 'Phụ đề',
-          tooltip: validDefaultSub ? validDefaultSub.label : 'Tắt',
-          selector: [
-            {
-              html: 'Tắt phụ đề',
-              url: '',
-            },
-            ...validSubs.map(sub => ({
-              html: sub.label,
-              url: proxySubtitleUrl(sub.file),
-              default: sub.file === validDefaultSub?.file
-            }))
-          ],
-          onSelect: function (item: any) {
-            if (item.url) {
-              art.subtitle.url = item.url;
-              art.notice.show = `Đã bật phụ đề: ${item.html}`;
-            } else {
-              art.subtitle.url = '';
-              art.notice.show = 'Đã tắt phụ đề';
-            }
-            return item.html;
-          },
-        });
-      }
+      // Native subtitle settings menu removed in favor of custom two-column CC panel.
 
       // Sửa lỗi toggle update dom ngay lập tức
       art.setting.add({
@@ -671,6 +1549,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
       art.on('ready', () => {
         (art as any).isFocus = true;
+
+        // Set the portal container element for custom subtitles React render
+        const portalEl = art.template.$container.querySelector('.art-layer-txa-subtitles-portal') as HTMLElement;
+        if (portalEl) {
+          setPortalContainer(portalEl);
+        }
 
         if (currentTime > 0) {
           art.currentTime = currentTime;
@@ -944,6 +1828,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
     }
 
     return () => {
+      setPortalContainer(null);
       if (playerInstanceRef.current) {
         playerInstanceRef.current.destroy(false);
       }
@@ -1017,6 +1902,10 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke" 
           style={{ minHeight: '350px' }}
         />
+      )}
+      {portalContainer && playerInstanceRef.current && createPortal(
+        <CustomSubtitleSystem art={playerInstanceRef.current} subtitles={subtitles} />,
+        portalContainer
       )}
     </>
   );
