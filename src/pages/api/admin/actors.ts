@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
+import { SettingService } from '@services/SettingService';
 
 const slugify = (text: string) => {
   return text
@@ -28,7 +29,8 @@ export const GET: APIRoute = async ({ request }) => {
       name: a.name,
       image: a.avatar_url && a.avatar_url !== '' && !a.avatar_url.includes('logo-decoy') ? a.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200&q=80',
       slug: a.slug,
-      bio: a.bio
+      bio: a.bio,
+      tmdb_id: a.tmdb_id
     }));
 
     return apiResponse(formattedActors, 'success', 'Lấy danh sách diễn viên thành công!', 200, request);
@@ -62,7 +64,8 @@ export const POST: APIRoute = async ({ request }) => {
           name: actor.name,
           slug: slug,
           avatar_url: actor.image || '',
-          bio: actor.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.'
+          bio: actor.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.',
+          tmdb_id: actor.tmdb_id ? Number(actor.tmdb_id) : null
         })
         .select('*')
         .single();
@@ -95,6 +98,7 @@ export const POST: APIRoute = async ({ request }) => {
           name: newName,
           avatar_url: actor.image || '',
           bio: actor.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.',
+          tmdb_id: actor.tmdb_id ? Number(actor.tmdb_id) : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', actor.id)
@@ -145,6 +149,210 @@ export const POST: APIRoute = async ({ request }) => {
       if (error) throw error;
 
       return apiResponse({ success: true }, 'success', 'Xóa diễn viên thành công!', 200, request);
+    }
+
+    if (action === 'fetch-tmdb-info') {
+      const { name, tmdb_id } = actor || {};
+      if (!name && !tmdb_id) {
+        return apiResponse(null, 'error', 'Thiếu tên hoặc TMDB ID để tìm kiếm!', 400, request);
+      }
+
+      const settings = await SettingService.getSettings();
+      const apiKey = (settings.general as any).tmdb_api_key || '211be8d45c0d31404f644ecdcf9caad5';
+
+      let bestMatchId = tmdb_id ? Number(tmdb_id) : null;
+
+      if (!bestMatchId && name) {
+        const searchUrl = `https://api.themoviedb.org/3/search/person?api_key=${apiKey}&query=${encodeURIComponent(name)}&language=vi-VN`;
+        const res = await fetch(searchUrl);
+        if (res.ok) {
+          const searchData = await res.json() as any;
+          bestMatchId = searchData.results?.[0]?.id;
+        }
+      }
+
+      if (!bestMatchId) {
+        return apiResponse(null, 'error', 'Không tìm thấy diễn viên trên TMDB!', 404, request);
+      }
+
+      const detailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=vi-VN`;
+      const detailRes = await fetch(detailUrl);
+      if (!detailRes.ok) {
+        return apiResponse(null, 'error', 'Lỗi khi lấy chi tiết từ TMDB!', 500, request);
+      }
+      let detailData = await detailRes.json() as any;
+
+      if (!detailData.biography) {
+        const enDetailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=en-US`;
+        const enRes = await fetch(enDetailUrl);
+        if (enRes.ok) {
+          const enData = await enRes.json() as any;
+          if (enData.biography) {
+            detailData = enData;
+          }
+        }
+      }
+
+      return apiResponse({
+        name: detailData.name || name,
+        tmdb_id: bestMatchId,
+        avatar_url: detailData.profile_path ? `https://image.tmdb.org/t/p/h632${detailData.profile_path}` : '',
+        bio: detailData.biography || ''
+      }, 'success', 'Lấy thông tin TMDB thành công!', 200, request);
+    }
+
+    if (action === 'sync-single') {
+      if (!actor || !actor.id) {
+        return apiResponse(null, 'error', 'Thiếu ID diễn viên để đồng bộ!', 400, request);
+      }
+
+      const { data: dbActor, error: dbError } = await supabase
+        .from('actors')
+        .select('*')
+        .eq('id', actor.id)
+        .single();
+
+      if (dbError || !dbActor) {
+        return apiResponse(null, 'error', 'Không tìm thấy diễn viên trong DB!', 404, request);
+      }
+
+      const settings = await SettingService.getSettings();
+      const apiKey = (settings.general as any).tmdb_api_key;
+      if (!apiKey) {
+        return apiResponse(null, 'error', 'Chưa cấu hình TMDB API Key!', 400, request);
+      }
+
+      let bestMatchId = dbActor.tmdb_id;
+
+      if (!bestMatchId) {
+        const searchUrl = `https://api.themoviedb.org/3/search/person?api_key=${apiKey}&query=${encodeURIComponent(dbActor.name)}&language=vi-VN`;
+        const res = await fetch(searchUrl);
+        if (res.ok) {
+          const searchData = await res.json() as any;
+          bestMatchId = searchData.results?.[0]?.id;
+        }
+      }
+
+      if (!bestMatchId) {
+        return apiResponse(null, 'error', 'Không tìm thấy diễn viên trên TMDB!', 404, request);
+      }
+
+      const detailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=vi-VN`;
+      const detailRes = await fetch(detailUrl);
+      if (!detailRes.ok) {
+        return apiResponse(null, 'error', 'Lỗi khi lấy chi tiết từ TMDB!', 500, request);
+      }
+      let detailData = await detailRes.json() as any;
+
+      if (!detailData.biography) {
+        const enDetailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=en-US`;
+        const enRes = await fetch(enDetailUrl);
+        if (enRes.ok) {
+          const enData = await enRes.json() as any;
+          if (enData.biography) {
+            detailData = enData;
+          }
+        }
+      }
+
+      const avatarUrl = detailData.profile_path ? `https://image.tmdb.org/t/p/h632${detailData.profile_path}` : dbActor.avatar_url;
+      const bio = detailData.biography || dbActor.bio;
+
+      const { data: updated, error: updateErr } = await supabase
+        .from('actors')
+        .update({
+          tmdb_id: bestMatchId,
+          avatar_url: avatarUrl,
+          bio: bio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', actor.id)
+        .select('*')
+        .single();
+
+      if (updateErr) throw updateErr;
+
+      return apiResponse({
+        id: updated.id,
+        name: updated.name,
+        image: updated.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200&q=80',
+        slug: updated.slug,
+        bio: updated.bio,
+        tmdb_id: updated.tmdb_id
+      }, 'success', 'Đồng bộ diễn viên thành công!', 200, request);
+    }
+
+    if (action === 'sync-batch') {
+      const settings = await SettingService.getSettings();
+      const apiKey = (settings.general as any).tmdb_api_key;
+      if (!apiKey) {
+        return apiResponse(null, 'error', 'Chưa cấu hình TMDB API Key!', 400, request);
+      }
+
+      const { data: actorsToSync, error: dbError } = await supabase
+        .from('actors')
+        .select('*')
+        .or('tmdb_id.is.null,bio.eq.Thông tin về nghệ sĩ này đang được cập nhật.,bio.is.null,avatar_url.eq.,avatar_url.like.%unsplash%')
+        .limit(30);
+
+      if (dbError) throw dbError;
+
+      if (!actorsToSync || actorsToSync.length === 0) {
+        return apiResponse({ count: 0 }, 'success', 'Không tìm thấy diễn viên nào cần đồng bộ.', 200, request);
+      }
+
+      let count = 0;
+      for (const a of actorsToSync) {
+        try {
+          let bestMatchId = a.tmdb_id;
+          if (!bestMatchId) {
+            const searchUrl = `https://api.themoviedb.org/3/search/person?api_key=${apiKey}&query=${encodeURIComponent(a.name)}&language=vi-VN`;
+            const res = await fetch(searchUrl);
+            if (res.ok) {
+              const searchData = await res.json() as any;
+              bestMatchId = searchData.results?.[0]?.id;
+            }
+          }
+
+          if (!bestMatchId) continue;
+
+          const detailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=vi-VN`;
+          const detailRes = await fetch(detailUrl);
+          if (!detailRes.ok) continue;
+          let detailData = await detailRes.json() as any;
+
+          if (!detailData.biography) {
+            const enDetailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=en-US`;
+            const enRes = await fetch(enDetailUrl);
+            if (enRes.ok) {
+              const enData = await enRes.json() as any;
+              if (enData.biography) {
+                detailData = enData;
+              }
+            }
+          }
+
+          const avatarUrl = detailData.profile_path ? `https://image.tmdb.org/t/p/h632${detailData.profile_path}` : a.avatar_url;
+          const bio = detailData.biography || a.bio;
+
+          await supabase
+            .from('actors')
+            .update({
+              tmdb_id: bestMatchId,
+              avatar_url: avatarUrl,
+              bio: bio,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', a.id);
+
+          count++;
+          await new Promise(resolve => setTimeout(resolve, 250));
+        } catch (e) {
+          console.error(`Lỗi khi đồng bộ diễn viên ${a.name}:`, e);
+        }
+      }
+
+      return apiResponse({ count }, 'success', `Đồng bộ thành công ${count} diễn viên!`, 200, request);
     }
 
     return apiResponse(null, 'error', 'Hành động không hợp lệ!', 400, request);

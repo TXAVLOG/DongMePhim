@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS public.actors (
   slug character varying NOT NULL UNIQUE,
   avatar_url character varying,
   bio text,
+  tmdb_id integer,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (id),

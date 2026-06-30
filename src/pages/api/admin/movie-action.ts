@@ -79,7 +79,8 @@ async function fetchActorFromTMDB(actorName: string) {
 
     return {
       avatarUrl,
-      bio
+      bio,
+      tmdbId: bestMatch.id
     };
   } catch (e) {
     console.error(`Lỗi khi lấy thông tin diễn viên ${actorName} từ TMDB:`, e);
@@ -195,22 +196,62 @@ export const POST: APIRoute = async ({ request }) => {
         const movieId = savedMovie.id;
         // Take top 6 actors to keep worker CPU execution ultra light & fast
         const topActors = validActors.slice(0, 6);
-        const actorPayloads = topActors.map((actorName: string) => ({
-          name: actorName,
-          slug: slugify(actorName),
-          bio: 'Thông tin về nghệ sĩ này đang được cập nhật.'
-        }));
+        const actorSlugs = topActors.map((a: string) => slugify(a));
 
-        // Batch upsert actors in 1 fast DB operation
+        // 1. Quét các diễn viên đã tồn tại trong DB để tránh gọi trùng lặp TMDB API
+        const { data: existingActors } = await supabase
+          .from('actors')
+          .select('slug, tmdb_id, avatar_url, bio')
+          .in('slug', actorSlugs);
+
+        const existingMap = new Map(
+          (existingActors || []).map((a: any) => [a.slug, a])
+        );
+
+        // 2. Chuẩn bị payloads diễn viên (chỉ cào TMDB cho những ai chưa có metadata hoàn chỉnh)
+        const actorPayloads = [];
+        const settings = await SettingService.getSettings();
+        const hasKey = !!(settings.general as any).tmdb_api_key;
+
+        for (const actorName of topActors) {
+          const slug = slugify(actorName);
+          const existing = existingMap.get(slug);
+
+          if (existing && existing.tmdb_id && existing.bio && existing.bio !== 'Thông tin về nghệ sĩ này đang được cập nhật.') {
+            actorPayloads.push({
+              name: actorName,
+              slug: slug,
+              avatar_url: existing.avatar_url,
+              bio: existing.bio,
+              tmdb_id: existing.tmdb_id
+            });
+            continue;
+          }
+
+          let tmdbInfo = null;
+          if (hasKey) {
+            tmdbInfo = await fetchActorFromTMDB(actorName);
+          }
+
+          actorPayloads.push({
+            name: actorName,
+            slug: slug,
+            avatar_url: tmdbInfo?.avatarUrl || existing?.avatar_url || '',
+            bio: tmdbInfo?.bio || existing?.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.',
+            tmdb_id: tmdbInfo?.tmdbId || existing?.tmdb_id || null
+          });
+        }
+
+        // Batch upsert actors in 1 fast DB operation (no ignoreDuplicates so we update placeholder actors with TMDB data)
         await supabase
           .from('actors')
-          .upsert(actorPayloads, { onConflict: 'slug', ignoreDuplicates: true });
+          .upsert(actorPayloads, { onConflict: 'slug' });
 
         // Retrieve actor IDs for mapping
         const { data: dbActors } = await supabase
           .from('actors')
           .select('id, slug')
-          .in('slug', topActors.map((a: string) => slugify(a)));
+          .in('slug', actorSlugs);
 
         if (dbActors && dbActors.length > 0) {
           const actorIds = dbActors.map((a: any) => a.id);

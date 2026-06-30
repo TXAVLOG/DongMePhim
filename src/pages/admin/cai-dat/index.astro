@@ -47,6 +47,10 @@ let activeTab = 'general';
             <input type="text" id="general-site-keywords" value={settings.general.site_keywords} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
           </div>
           <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">TMDB API Key</label>
+            <input type="text" id="general-tmdb-key" value={settings.general.tmdb_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Nhập TMDB API Key..." />
+          </div>
+          <div class="space-y-2 md:col-span-2">
             <label class="text-xs font-label-caps text-text-dim">Thông điệp bảo trì</label>
             <input type="text" id="general-maintenance-msg" value={settings.general.maintenance_message} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
           </div>
@@ -74,6 +78,7 @@ let activeTab = 'general';
         setVal('general-site-url', s.general?.site_url);
         setTextarea('general-site-desc', s.general?.site_description);
         setVal('general-site-keywords', s.general?.site_keywords);
+        setVal('general-tmdb-key', s.general?.tmdb_api_key);
         setVal('general-maintenance-msg', s.general?.maintenance_message);
         setChecked('general-maintenance-enable', s.general?.maintenance_enable);
       }
@@ -102,6 +107,7 @@ let activeTab = 'general';
               site_url: document.getElementById('general-site-url')?.value || '',
               site_description: document.getElementById('general-site-desc')?.value || '',
               site_keywords: document.getElementById('general-site-keywords')?.value || '',
+              tmdb_api_key: document.getElementById('general-tmdb-key')?.value || '',
               maintenance_message: document.getElementById('general-maintenance-msg')?.value || '',
               maintenance_enable: document.getElementById('general-maintenance-enable')?.checked || false,
             }

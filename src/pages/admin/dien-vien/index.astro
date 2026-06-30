@@ -1,8 +1,11 @@
 ---
 import AdminLayout from '@layouts/AdminLayout.astro';
 import { MovieService } from '@services/MovieService';
+import { SettingService } from '@services/SettingService';
 
 const staticMovies = await MovieService.getMovies();
+const settings = await SettingService.getSettings();
+const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
 ---
 
 <AdminLayout title="Quản lý Diễn viên">
@@ -15,6 +18,12 @@ const staticMovies = await MovieService.getMovies();
       </div>
     </div>
     <div class="flex items-center gap-4 ml-4">
+      {hasTmdbKey && (
+        <button id="btn-sync-actors" class="bg-surface-container-high text-white px-6 py-2.5 rounded-full font-title-md text-sm font-bold flex items-center gap-2 hover:bg-surface-container-highest active:scale-95 transition-all border border-glass-stroke cursor-pointer whitespace-nowrap">
+          <span class="material-symbols-outlined text-lg">sync</span>
+          Đồng bộ hàng loạt
+        </button>
+      )}
       <button id="btn-add-actor" class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-full font-title-md text-sm font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/20 cursor-pointer whitespace-nowrap border-none">
         <span class="material-symbols-outlined text-lg">add</span>
         Thêm diễn viên
@@ -46,7 +55,7 @@ const staticMovies = await MovieService.getMovies();
     </div>
   </div>
 
-  <script is:inline define:vars={{ staticMovies }}>
+  <script is:inline define:vars={{ staticMovies, hasTmdbKey }}>
     (function() {
       let actorsState = [];
       let allMovies = [];
@@ -81,6 +90,8 @@ const staticMovies = await MovieService.getMovies();
         currentPage = 1;
         filterAndRender();
 
+        setupBulkSyncButton();
+
         // Bind events
         const searchInput = document.getElementById('actor-search');
         if (searchInput) {
@@ -96,14 +107,31 @@ const staticMovies = await MovieService.getMovies();
         if (btnAddActor) {
           btnAddActor.onclick = () => {
             const html = `
-              <div style="display:flex;flex-direction:column;gap:12px;min-width:320px">
+              <div style="display:flex;flex-direction:column;gap:12px;min-width:320px;max-width:500px">
                 <div style="display:flex;flex-direction:column;gap:4px">
                   <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tên diễn viên</label>
                   <input type="text" id="actor-modal-name" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: Tom Cruise" />
                 </div>
+                <div style="display:flex;gap:12px;width:100%">
+                  <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+                    <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">TMDB ID (Số)</label>
+                    <input type="number" id="actor-modal-tmdb-id" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: 287" />
+                  </div>
+                  ${hasTmdbKey ? `
+                  <div style="display:flex;align-items:flex-end">
+                    <button type="button" id="btn-fetch-tmdb" style="padding:10px 16px;border-radius:12px;border:1px solid #3b82f6;background:rgba(59,130,246,0.1);color:#3b82f6;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:4px;height:42px" class="hover:bg-primary hover:text-slate-950 transition-all">
+                      <span class="material-symbols-outlined text-[16px]">sync</span> Lấy tin TMDB
+                    </button>
+                  </div>
+                  ` : ''}
+                </div>
                 <div style="display:flex;flex-direction:column;gap:4px">
                   <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Link ảnh đại diện (URL)</label>
                   <input type="text" id="actor-modal-image" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Dán link ảnh đại diện..." />
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tiểu sử / Bio</label>
+                  <textarea id="actor-modal-bio" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px;min-height:100px" placeholder="Nhập tiểu sử diễn viên..."></textarea>
                 </div>
               </div>
             `;
@@ -117,6 +145,8 @@ const staticMovies = await MovieService.getMovies();
                 onConfirm: async () => {
                   const name = document.getElementById('actor-modal-name')?.value.trim();
                   let image = document.getElementById('actor-modal-image')?.value.trim();
+                  const tmdbId = document.getElementById('actor-modal-tmdb-id')?.value.trim();
+                  const bio = document.getElementById('actor-modal-bio')?.value.trim();
                   if (!name) {
                     if (window.showGlobalToast) window.showGlobalToast('Tên diễn viên không được để trống!', 'error');
                     return;
@@ -135,7 +165,7 @@ const staticMovies = await MovieService.getMovies();
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         action: 'create',
-                        actor: { name, image }
+                        actor: { name, image, tmdb_id: tmdbId, bio }
                       })
                     });
                     const json = await res.json();
@@ -154,6 +184,49 @@ const staticMovies = await MovieService.getMovies();
                   }
                 }
               });
+
+              // Bind TMDB fetch event
+              setTimeout(() => {
+                const btnFetch = document.getElementById('btn-fetch-tmdb');
+                if (btnFetch) {
+                  btnFetch.onclick = async () => {
+                    const name = document.getElementById('actor-modal-name')?.value.trim();
+                    const tmdbId = document.getElementById('actor-modal-tmdb-id')?.value.trim();
+                    if (!name && !tmdbId) {
+                      if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập Tên hoặc TMDB ID để tìm kiếm!', 'error');
+                      return;
+                    }
+                    btnFetch.disabled = true;
+                    btnFetch.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lấy...';
+                    try {
+                      const res = await fetch('/api/admin/actors', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          action: 'fetch-tmdb-info',
+                          actor: { name, tmdb_id: tmdbId }
+                        })
+                      });
+                      const json = await res.json();
+                      if (json.status === 'success') {
+                        const data = json.data;
+                        if (document.getElementById('actor-modal-name')) document.getElementById('actor-modal-name').value = data.name;
+                        if (document.getElementById('actor-modal-tmdb-id')) document.getElementById('actor-modal-tmdb-id').value = data.tmdb_id;
+                        if (document.getElementById('actor-modal-image')) document.getElementById('actor-modal-image').value = data.avatar_url;
+                        if (document.getElementById('actor-modal-bio')) document.getElementById('actor-modal-bio').value = data.bio;
+                        if (window.showGlobalToast) window.showGlobalToast('Đã lấy thông tin diễn viên thành công!', 'success');
+                      } else {
+                        throw new Error(json.message);
+                      }
+                    } catch (err) {
+                      if (window.showGlobalToast) window.showGlobalToast(err.message || 'Không tìm thấy diễn viên trên TMDB!', 'error');
+                    } finally {
+                      btnFetch.disabled = false;
+                      btnFetch.innerHTML = '<span class="material-symbols-outlined text-[16px]">sync</span> Lấy tin TMDB';
+                    }
+                  };
+                }
+              }, 50);
             }
           };
         }
@@ -268,10 +341,16 @@ const staticMovies = await MovieService.getMovies();
               <div class="absolute bottom-0 left-0 right-0 p-3 z-20">
                 <h3 class="text-xs md:text-sm font-bold truncate text-white m-0">${actor.name}</h3>
                 <p class="text-primary text-[9px] font-mono tracking-wider mt-0.5">${moviesCount} phim</p>
+                ${actor.tmdb_id ? `<span class="absolute top-2 right-2 px-1.5 py-0.5 text-[8px] bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded font-mono font-bold">TMDB</span>` : ''}
               </div>
               
               <!-- Action Hover Overlay -->
               <div class="action-overlay absolute inset-0 bg-surface-deep/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex items-center justify-center gap-2">
+                ${hasTmdbKey ? `
+                <button onclick="quickSyncActor(${originalIndex})" class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Đồng bộ TMDB">
+                  <span class="material-symbols-outlined text-[16px]">sync</span>
+                </button>
+                ` : ''}
                 <button onclick="editActor(${originalIndex})" class="w-8 h-8 rounded-full bg-primary text-slate-950 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Chỉnh sửa">
                   <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">edit</span>
                 </button>
@@ -290,14 +369,31 @@ const staticMovies = await MovieService.getMovies();
         const actor = actorsState[index];
         if (!actor) return;
         const html = `
-          <div style="display:flex;flex-direction:column;gap:12px;min-width:320px">
+          <div style="display:flex;flex-direction:column;gap:12px;min-width:320px;max-width:500px">
             <div style="display:flex;flex-direction:column;gap:4px">
               <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tên diễn viên</label>
               <input type="text" id="actor-modal-name" value="${actor.name.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" />
             </div>
+            <div style="display:flex;gap:12px;width:100%">
+              <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+                <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">TMDB ID (Số)</label>
+                <input type="number" id="actor-modal-tmdb-id" value="${actor.tmdb_id || ''}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: 287" />
+              </div>
+              ${hasTmdbKey ? `
+              <div style="display:flex;align-items:flex-end">
+                <button type="button" id="btn-fetch-tmdb" style="padding:10px 16px;border-radius:12px;border:1px solid #3b82f6;background:rgba(59,130,246,0.1);color:#3b82f6;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:4px;height:42px" class="hover:bg-primary hover:text-slate-950 transition-all">
+                  <span class="material-symbols-outlined text-[16px]">sync</span> Lấy tin TMDB
+                </button>
+              </div>
+              ` : ''}
+            </div>
             <div style="display:flex;flex-direction:column;gap:4px">
               <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Link ảnh đại diện (URL)</label>
               <input type="text" id="actor-modal-image" value="${actor.image.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tiểu sử / Bio</label>
+              <textarea id="actor-modal-bio" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px;min-height:100px" placeholder="Nhập tiểu sử diễn viên...">${(actor.bio || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
             </div>
           </div>
         `;
@@ -311,6 +407,8 @@ const staticMovies = await MovieService.getMovies();
             onConfirm: async () => {
               const name = document.getElementById('actor-modal-name')?.value.trim();
               const image = document.getElementById('actor-modal-image')?.value.trim();
+              const tmdbId = document.getElementById('actor-modal-tmdb-id')?.value.trim();
+              const bio = document.getElementById('actor-modal-bio')?.value.trim();
               if (!name) {
                 if (window.showGlobalToast) window.showGlobalToast('Tên diễn viên không được để trống!', 'error');
                 return;
@@ -322,7 +420,7 @@ const staticMovies = await MovieService.getMovies();
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     action: 'update',
-                    actor: { id: actor.id, name, image: image || '/favicon.png' }
+                    actor: { id: actor.id, name, image: image || '/favicon.png', tmdb_id: tmdbId, bio }
                   })
                 });
                 const json = await res.json();
@@ -341,6 +439,49 @@ const staticMovies = await MovieService.getMovies();
               }
             }
           });
+
+          // Bind TMDB fetch event
+          setTimeout(() => {
+            const btnFetch = document.getElementById('btn-fetch-tmdb');
+            if (btnFetch) {
+              btnFetch.onclick = async () => {
+                const name = document.getElementById('actor-modal-name')?.value.trim();
+                const tmdbId = document.getElementById('actor-modal-tmdb-id')?.value.trim();
+                if (!name && !tmdbId) {
+                  if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập Tên hoặc TMDB ID để tìm kiếm!', 'error');
+                  return;
+                }
+                btnFetch.disabled = true;
+                btnFetch.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lấy...';
+                try {
+                  const res = await fetch('/api/admin/actors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      action: 'fetch-tmdb-info',
+                      actor: { name, tmdb_id: tmdbId }
+                    })
+                  });
+                  const json = await res.json();
+                  if (json.status === 'success') {
+                    const data = json.data;
+                    if (document.getElementById('actor-modal-name')) document.getElementById('actor-modal-name').value = data.name;
+                    if (document.getElementById('actor-modal-tmdb-id')) document.getElementById('actor-modal-tmdb-id').value = data.tmdb_id;
+                    if (document.getElementById('actor-modal-image')) document.getElementById('actor-modal-image').value = data.avatar_url;
+                    if (document.getElementById('actor-modal-bio')) document.getElementById('actor-modal-bio').value = data.bio;
+                    if (window.showGlobalToast) window.showGlobalToast('Đã lấy thông tin diễn viên thành công!', 'success');
+                  } else {
+                    throw new Error(json.message);
+                  }
+                } catch (err) {
+                  if (window.showGlobalToast) window.showGlobalToast(err.message || 'Không tìm thấy diễn viên trên TMDB!', 'error');
+                } finally {
+                  btnFetch.disabled = false;
+                  btnFetch.innerHTML = '<span class="material-symbols-outlined text-[16px]">sync</span> Lấy tin TMDB';
+                }
+              };
+            }
+          }, 50);
         }
       };
 
@@ -386,6 +527,154 @@ const staticMovies = await MovieService.getMovies();
           doDelete();
         }
       };
+
+      // Helper sync functions
+      window.quickSyncActor = async function(index) {
+        const actor = actorsState[index];
+        if (!actor) return;
+        if (window.showGlobalToast) window.showGlobalToast('Đang đồng bộ thông tin từ TMDB...', 'info');
+        
+        try {
+          const res = await fetch('/api/admin/actors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync-single',
+              actor: { id: actor.id }
+            })
+          });
+          const json = await res.json();
+          if (json.status === 'success') {
+            const updated = json.data;
+            actorsState[index] = updated;
+            const currentQ = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+            currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(currentQ));
+            filterAndRender();
+            if (window.showGlobalToast) window.showGlobalToast(`Đã đồng bộ diễn viên ${actor.name} thành công!`, 'success');
+          } else {
+            throw new Error(json.message);
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast(e.message || 'Lỗi khi đồng bộ diễn viên!', 'error');
+        }
+      };
+
+      let cancelSync = false;
+      async function runBulkSyncLoop() {
+        cancelSync = false;
+        const statusEl = document.getElementById('sync-status');
+        const progressEl = document.getElementById('sync-progress');
+        const logEl = document.getElementById('sync-logs');
+        const modalBoxCancel = document.getElementById('txa-modal-cancel');
+        
+        const addLog = (msg) => {
+          if (logEl) {
+            logEl.innerHTML += `<div style="margin-bottom:2px">> ${msg}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+          }
+        };
+
+        addLog('Đang khởi chạy tiến trình quét...');
+        let totalUpdated = 0;
+        let isRunning = true;
+        let iteration = 0;
+
+        while (isRunning && !cancelSync) {
+          iteration++;
+          addLog(`Đang chạy lô thứ ${iteration}...`);
+          try {
+            const res = await fetch('/api/admin/actors', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'sync-batch' })
+            });
+            const json = await res.json();
+            if (json.status === 'success') {
+              const count = json.data.count;
+              totalUpdated += count;
+              addLog(`Đồng bộ thành công ${count} diễn viên trong lô này.`);
+              if (progressEl) {
+                progressEl.style.width = '100%';
+                setTimeout(() => { if (progressEl) progressEl.style.width = '20%'; }, 500);
+              }
+              if (count === 0) {
+                isRunning = false;
+                if (statusEl) statusEl.textContent = `Hoàn thành!`;
+                addLog(`Đồng bộ kết thúc. Tổng số diễn viên cập nhật: ${totalUpdated}`);
+                if (modalBoxCancel) {
+                  modalBoxCancel.textContent = 'Hoàn tất';
+                  modalBoxCancel.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition-all';
+                }
+                await loadActors();
+                const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+                currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+                filterAndRender();
+              } else {
+                if (statusEl) statusEl.textContent = `Đang xử lý... (Tổng cộng đã đồng bộ: ${totalUpdated})`;
+              }
+            } else {
+              throw new Error(json.message);
+            }
+          } catch (e) {
+            addLog(`Gặp lỗi: ${e.message}`);
+            isRunning = false;
+            if (statusEl) statusEl.textContent = 'Bị lỗi!';
+            if (modalBoxCancel) modalBoxCancel.textContent = 'Đóng';
+          }
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        if (cancelSync) {
+          addLog('Tiến trình bị hủy bởi người dùng.');
+          if (statusEl) statusEl.textContent = 'Đã dừng';
+          if (modalBoxCancel) modalBoxCancel.textContent = 'Đóng';
+          await loadActors();
+          const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+          currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+          filterAndRender();
+        }
+      }
+
+      function setupBulkSyncButton() {
+        const btnSync = document.getElementById('btn-sync-actors');
+        if (btnSync) {
+          btnSync.onclick = () => {
+            if (window.txamodal) {
+              window.txamodal.show({
+                title: 'Đồng bộ Diễn viên hàng loạt',
+                message: 'Hệ thống sẽ quét toàn bộ diễn viên trong cơ sở dữ liệu chưa có TMDB ID hoặc tiểu sử/ảnh đại diện và thực hiện tìm kiếm, đồng bộ thông tin từ TMDB.<br><br>Quá trình này được chia thành nhiều đợt (30 diễn viên/lần) để đảm bảo không bị quá tải. Bạn có muốn bắt đầu không?',
+                confirmText: 'Bắt đầu',
+                cancelText: 'Hủy',
+                onConfirm: () => {
+                  const syncHtml = `
+                    <div style="display:flex;flex-direction:column;gap:12px;min-width:320px;max-width:500px">
+                      <p style="font-size:13px;color:#cbd5e1;font-weight:600" id="sync-status">Đang quét diễn viên cần đồng bộ...</p>
+                      <div style="width:100%;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden">
+                        <div id="sync-progress" style="width:10%;height:100%;background:#3b82f6;transition:width 0.4s"></div>
+                      </div>
+                      <div id="sync-logs" style="max-height:150px;overflow-y:auto;font-family:monospace;font-size:11px;color:#94a3b8;background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);min-height:100px;text-align:left"></div>
+                    </div>
+                  `;
+
+                  setTimeout(() => {
+                    window.txamodal.show({
+                      title: 'Đang đồng bộ từ TMDB',
+                      message: syncHtml,
+                      confirmText: '',
+                      cancelText: 'Dừng / Hủy',
+                      onCancel: () => {
+                        cancelSync = true;
+                      }
+                    });
+                    
+                    setTimeout(runBulkSyncLoop, 100);
+                  }, 100);
+                }
+              });
+            }
+          };
+        }
+      }
 
       // Init
       initActors();

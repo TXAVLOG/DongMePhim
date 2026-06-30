@@ -11,6 +11,7 @@ export const seedSettings: SiteSettings = {
     maintenance_end_time: new Date(Date.now() + 3600 * 1000 * 2).toISOString(),
     api_encrypt_enable: true,
     api_encrypt_pass: "tphimx",
+    tmdb_api_key: "",
   },
   smtp: {
     smtp_host: "smtp.gmail.com",

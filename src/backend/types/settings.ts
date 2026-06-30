@@ -13,6 +13,7 @@ export interface GeneralSettings {
   decoy_enable?: boolean;
   zalo_lock_enable?: boolean;
   decoy_passcode?: string;
+  tmdb_api_key?: string;
 }
 
 export interface SMTPSettings {
