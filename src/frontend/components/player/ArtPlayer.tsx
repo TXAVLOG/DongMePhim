@@ -191,6 +191,17 @@ const CustomSubtitleSystem: React.FC<{
     reader.readAsText(file);
   };
 
+  // Prevent primary and secondary tracks from being the same
+  useEffect(() => {
+    if (primaryIdx === secondaryIdx) {
+      const nextSecondaryIdx = tracks.findIndex((_, idx) => idx !== primaryIdx);
+      if (nextSecondaryIdx !== -1) {
+        setSecondaryIdx(nextSecondaryIdx);
+        localStorage.setItem('txa_sub_secondary_idx', String(nextSecondaryIdx));
+      }
+    }
+  }, [primaryIdx, secondaryIdx, tracks]);
+
   useEffect(() => {
     const loadCues = async (track: any, setCues: (cues: SubtitleCue[]) => void) => {
       if (!track) {
@@ -724,6 +735,7 @@ const CustomSubtitleSystem: React.FC<{
                     <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 700, paddingBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Song ngữ</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflowY: 'auto' }}>
                       {tracks.map((t, idx) => {
+                        if (idx === primaryIdx) return null;
                         const isSelected = secondaryIdx === idx;
                         return (
                           <div 
