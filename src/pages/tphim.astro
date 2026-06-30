@@ -2392,7 +2392,16 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           if (i === idx) {
             c.classList.add('border-amber-400', 'bg-amber-500/10', 'shadow-[0_0_15px_rgba(245,158,11,0.3)]', 'scale-[1.02]');
             c.classList.remove('border-white/10', 'bg-white/5');
-            c.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            const scrollContainer = document.getElementById('anime-deck-scroll');
+            if (scrollContainer) {
+              const cardOffset = (c as HTMLElement).offsetLeft;
+              const cardWidth = (c as HTMLElement).clientWidth;
+              const containerWidth = scrollContainer.clientWidth;
+              scrollContainer.scrollTo({
+                left: cardOffset - (containerWidth / 2) + (cardWidth / 2),
+                behavior: 'smooth'
+              });
+            }
           } else {
             c.classList.remove('border-amber-400', 'bg-amber-500/10', 'shadow-[0_0_15px_rgba(245,158,11,0.3)]', 'scale-[1.02]');
             c.classList.add('border-white/10', 'bg-white/5');
