@@ -2394,8 +2394,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             c.classList.remove('border-white/10', 'bg-white/5');
             const scrollContainer = document.getElementById('anime-deck-scroll');
             if (scrollContainer) {
-              const cardOffset = (c as HTMLElement).offsetLeft;
-              const cardWidth = (c as HTMLElement).clientWidth;
+              const cardOffset = c.offsetLeft;
+              const cardWidth = c.clientWidth;
               const containerWidth = scrollContainer.clientWidth;
               scrollContainer.scrollTo({
                 left: cardOffset - (containerWidth / 2) + (cardWidth / 2),
