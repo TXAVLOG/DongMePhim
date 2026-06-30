@@ -1,0 +1,277 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { MovieService } from '@services/MovieService';
+
+const staticMovies = await MovieService.getMovies();
+---
+
+<AdminLayout title="Quản lý Quốc gia">
+  <!-- Actions Bar -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 mt-4">
+    <div>
+      <h3 class="font-headline-lg-mobile md:text-headline-lg font-headline-lg text-primary tracking-tight">Danh sách Quốc gia</h3>
+      <p class="text-on-surface-variant text-body-main opacity-80">Quản lý các quốc gia và vùng lãnh thổ sản xuất phim trên toàn hệ thống.</p>
+    </div>
+  </div>
+
+  <!-- Stats Overview (Bento Grid Style) -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="glass-panel p-6 rounded-2xl">
+      <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">TỔNG QUỐC GIA</p>
+      <div class="flex items-end justify-between">
+        <span class="text-3xl font-display-hero text-primary" id="totalCountries">0</span>
+        <span class="text-secondary text-xs flex items-center bg-secondary-container/10 px-2 py-1 rounded-full">Kích hoạt</span>
+      </div>
+    </div>
+    <div class="glass-panel p-6 rounded-2xl">
+      <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">PHỔ BIẾN NHẤT</p>
+      <div class="flex items-end justify-between">
+        <span class="text-lg font-bold text-primary truncate max-w-[150px]" id="popularCountry">Chưa có</span>
+        <span class="text-outline text-xs italic" id="popularCountryCount">0 phim</span>
+      </div>
+    </div>
+    <div class="glass-panel p-6 rounded-2xl">
+      <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">CHƯA CÓ PHIM</p>
+      <div class="flex items-end justify-between">
+        <span class="text-3xl font-display-hero text-primary" id="unusedCountries">0</span>
+        <span class="text-error text-xs flex items-center bg-error-container/10 px-2 py-1 rounded-full">Cần kiểm tra</span>
+      </div>
+    </div>
+    <div class="glass-panel p-6 rounded-2xl">
+      <p class="text-label-caps font-label-caps text-on-surface-variant opacity-60 mb-1">TRẠNG THÁI HỆ THỐNG</p>
+      <div class="flex items-end justify-between">
+        <span class="text-3xl font-display-hero text-secondary-fixed-dim">Ổn định</span>
+        <div class="w-3 h-3 bg-secondary-fixed-dim rounded-full animate-pulse mb-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countries Table Section -->
+  <div class="glass-panel rounded-2xl overflow-hidden border border-glass-stroke">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/50 border-b border-glass-stroke">
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Thứ tự</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Tên quốc gia</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider">Slug</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider text-center">Số lượng phim</th>
+            <th class="px-6 py-4 font-label-caps text-label-caps text-outline uppercase tracking-wider text-right">Hành động</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-glass-stroke" id="countriesTableBody">
+          <!-- Rendered via Client JavaScript -->
+          <tr>
+            <td colspan="5" class="px-6 py-8 text-center text-on-surface-variant opacity-60">
+              <div class="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto mb-2"></div>
+              Đang tải danh sách quốc gia...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Pagination Footer -->
+    <div class="px-6 py-4 border-t border-glass-stroke flex items-center justify-between bg-surface-container-low/30">
+      <p class="text-xs text-on-surface-variant" id="paginationText">Hiển thị 0 quốc gia</p>
+    </div>
+  </div>
+
+  <!-- Help Tip -->
+  <div class="mt-6 mb-10 flex items-center gap-3 p-4 bg-surface-container-low rounded-xl border border-glass-stroke w-fit">
+    <span class="material-symbols-outlined text-secondary">info</span>
+    <p class="text-sm text-on-surface-variant">Thay đổi tên quốc gia sẽ cập nhật toàn bộ phim thuộc quốc gia đó trong cơ sở dữ liệu.</p>
+  </div>
+
+  <script id="staticMoviesData" type="application/json" set:html={JSON.stringify(staticMovies).replace(/</g, '\\u003c')}></script>
+  <script is:inline>
+    (function() {
+      let allMovies = [];
+      try {
+        allMovies = JSON.parse(document.getElementById('staticMoviesData').textContent);
+      } catch(e) {}
+
+      let countries = [];
+
+      async function loadData() {
+        try {
+          const res = await fetch('/api/admin/countries');
+          if (res.ok) {
+            const json = await res.json();
+            countries = json.data || [];
+          }
+        } catch (e) {
+          console.error("Lỗi khi tải danh sách quốc gia:", e);
+        }
+
+        renderTable();
+        updateStats();
+      }
+
+      function countMoviesInCountry(countryName) {
+        const slug = countryName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+        return allMovies.filter(m => 
+          (m.category && m.category.normalize('NFC').trim() === countryName.normalize('NFC').trim()) ||
+          (m.category && m.category.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-') === slug)
+        ).length;
+      }
+
+      function renderTable() {
+        const tbody = document.getElementById('countriesTableBody');
+        if (!tbody) return;
+
+        if (countries.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="px-6 py-8 text-center text-on-surface-variant opacity-60">
+                Chưa có quốc gia nào trong hệ thống.
+              </td>
+            </tr>
+          `;
+          document.getElementById('paginationText').textContent = "Hiển thị 0 quốc gia";
+          return;
+        }
+
+        tbody.innerHTML = countries.map((country, index) => {
+          const movieCount = countMoviesInCountry(country.name);
+          return `
+            <tr class="hover:bg-primary/5 transition-colors group">
+              <td class="px-6 py-4">
+                <span class="bg-surface-container-high w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-glass-stroke">${index + 1}</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined opacity-50">public</span>
+                  </div>
+                  <span class="font-title-md text-sm text-on-surface font-semibold">${country.name}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <code class="text-xs bg-surface-container text-secondary px-2 py-1 rounded">${country.slug}</code>
+              </td>
+              <td class="px-6 py-4 text-center font-bold text-on-surface">${movieCount}</td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-all cursor-pointer border-none bg-transparent" onclick="editCountry('${country.name}')">
+                    <span class="material-symbols-outlined text-[20px]">edit</span>
+                  </button>
+                  <button class="p-2 hover:bg-error-container/20 rounded-lg text-outline hover:text-error transition-all cursor-pointer border-none bg-transparent" onclick="deleteCountry('${country.name}')">
+                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('paginationText').textContent = `Hiển thị ${countries.length} quốc gia`;
+      }
+
+      function updateStats() {
+        document.getElementById('totalCountries').textContent = countries.length;
+        
+        let popular = "Chưa có";
+        let maxCount = -1;
+        let unusedCount = 0;
+
+        countries.forEach(c => {
+          const count = countMoviesInCountry(c.name);
+          if (count > maxCount) {
+            maxCount = count;
+            popular = c.name;
+          }
+          if (count === 0) {
+            unusedCount++;
+          }
+        });
+
+        document.getElementById('popularCountry').textContent = popular;
+        document.getElementById('popularCountryCount').textContent = `${maxCount >= 0 ? maxCount : 0} phim`;
+        document.getElementById('unusedCountries').textContent = unusedCount;
+      }
+
+      // Edit Country
+      window.editCountry = (name) => {
+        if (!window.txamodal) return;
+
+        window.txamodal.show({
+          title: "Chỉnh sửa Quốc gia",
+          content: `
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-label-caps text-outline uppercase mb-2">Tên quốc gia</label>
+                <input type="text" id="modal-country-name" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl text-white py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm" value="${name}" required />
+              </div>
+            </div>
+          `,
+          confirmText: "Lưu thay đổi",
+          cancelText: "Hủy",
+          onConfirm: async () => {
+            const newName = document.getElementById('modal-country-name')?.value.trim();
+            
+            if (!newName) {
+              if (window.showGlobalToast) window.showGlobalToast("Tên quốc gia không được bỏ trống!", "error");
+              return;
+            }
+
+            if (newName === name) return;
+
+            try {
+              const res = await fetch('/api/admin/countries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'update', oldName: name, newName: newName })
+              });
+
+              if (res.ok) {
+                if (window.showGlobalToast) window.showGlobalToast("Cập nhật quốc gia thành công!", "success");
+                setTimeout(() => window.location.reload(), 800);
+              } else {
+                const err = await res.json();
+                if (window.showGlobalToast) window.showGlobalToast(err.message || "Lỗi cập nhật quốc gia", "error");
+              }
+            } catch (e) {
+              if (window.showGlobalToast) window.showGlobalToast("Lỗi kết nối", "error");
+            }
+          }
+        });
+      };
+
+      // Delete Country
+      window.deleteCountry = (name) => {
+        if (!window.txamodal) return;
+
+        window.txamodal.show({
+          title: "Xóa Quốc gia",
+          message: `Bạn có chắc chắn muốn xóa quốc gia "<strong>${name}</strong>"? Hành động này sẽ chuyển toàn bộ phim thuộc quốc gia này sang nhóm "<strong>Khác</strong>".`,
+          type: "danger",
+          confirmText: "Xóa",
+          cancelText: "Hủy",
+          onConfirm: async () => {
+            try {
+              const res = await fetch('/api/admin/countries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', oldName: name })
+              });
+
+              if (res.ok) {
+                if (window.showGlobalToast) window.showGlobalToast("Xóa quốc gia thành công!", "success");
+                setTimeout(() => window.location.reload(), 800);
+              } else {
+                const err = await res.json();
+                if (window.showGlobalToast) window.showGlobalToast(err.message || "Lỗi xóa quốc gia", "error");
+              }
+            } catch (e) {
+              if (window.showGlobalToast) window.showGlobalToast("Lỗi kết nối", "error");
+            }
+          }
+        });
+      };
+
+      // Bind events and boot
+      loadData();
+      document.addEventListener('astro:page-load', loadData);
+    })();
+  </script>
+</AdminLayout>
