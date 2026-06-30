@@ -9,49 +9,56 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
 ---
 
 <AdminLayout title="Quản lý Diễn viên">
-  <!-- Top Toolbar -->
-  <header class="h-20 glass-panel sticky top-0 flex items-center justify-between px-margin-mobile md:px-gutter z-40 rounded-b-xl mb-6">
-    <div class="flex items-center gap-4 w-full max-w-xl">
-      <div class="relative w-full">
-        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-        <input id="actor-search" class="w-full bg-surface-container-low border border-glass-stroke rounded-full py-2.5 pl-12 pr-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-on-surface-variant/50 transition-all text-white" placeholder="Tìm kiếm diễn viên..." type="text"/>
+  <div class="actors-admin-root font-[var(--font-body)]">
+
+    <!-- Top Toolbar -->
+    <header class="h-20 sticky top-0 flex items-center justify-between px-margin-mobile md:px-gutter z-40 rounded-b-2xl mb-8 ac-toolbar">
+      <div class="flex items-center gap-4 w-full max-w-xl">
+        <div class="relative w-full">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ac-gold)]/70 text-[20px]">search</span>
+          <input id="actor-search" class="ac-search w-full rounded-full py-2.5 pl-12 pr-4 text-[var(--ac-text)] placeholder:text-[var(--ac-text-muted)] transition-all text-sm" placeholder="Tìm kiếm diễn viên theo tên..." type="text"/>
+        </div>
       </div>
-    </div>
-    <div class="flex items-center gap-4 ml-4">
-      {hasTmdbKey && (
-        <button id="btn-sync-actors" class="bg-surface-container-high text-white px-6 py-2.5 rounded-full font-title-md text-sm font-bold flex items-center gap-2 hover:bg-surface-container-highest active:scale-95 transition-all border border-glass-stroke cursor-pointer whitespace-nowrap">
-          <span class="material-symbols-outlined text-lg">sync</span>
-          Đồng bộ hàng loạt
+      <div class="flex items-center gap-3 ml-4">
+        {hasTmdbKey && (
+          <button id="btn-sync-actors" class="ac-btn-ghost px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 active:scale-95 transition-all cursor-pointer whitespace-nowrap">
+            <span class="material-symbols-outlined text-lg">sync</span>
+            Đồng bộ hàng loạt
+          </button>
+        )}
+        <button id="btn-add-actor" class="ac-btn-gold px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 active:scale-95 transition-all cursor-pointer whitespace-nowrap">
+          <span class="material-symbols-outlined text-lg">add</span>
+          Thêm diễn viên
         </button>
-      )}
-      <button id="btn-add-actor" class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-full font-title-md text-sm font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/20 cursor-pointer whitespace-nowrap border-none">
-        <span class="material-symbols-outlined text-lg">add</span>
-        Thêm diễn viên
-      </button>
-    </div>
-  </header>
+      </div>
+    </header>
 
-  <!-- Content Area -->
-  <div class="w-full">
-    <div class="mb-8">
-      <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface text-2xl font-bold">Danh sách Diễn viên</h2>
-      <p id="actor-summary-text" class="text-on-surface-variant font-body-main mt-1">Đang tải thông tin diễn viên...</p>
-    </div>
+    <!-- Content Area -->
+    <div class="w-full">
+      <div class="mb-8 flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <span class="ac-eyebrow">Quản trị nội dung</span>
+          <h2 class="ac-headline text-3xl md:text-4xl text-[var(--ac-text)]">Diễn viên</h2>
+          <p id="actor-summary-text" class="text-[var(--ac-text-muted)] text-sm mt-1.5">Đang tải thông tin diễn viên...</p>
+        </div>
+      </div>
 
-    <!-- Bento Grid of Actors -->
-    <div id="actors-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-      <!-- Dynamic list via JS client-side -->
-    </div>
+      <!-- Bento Grid of Actors -->
+      <div id="actors-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-5">
+        <!-- Dynamic list via JS client-side -->
+      </div>
 
-    <!-- Empty State -->
-    <div id="actors-empty" class="hidden text-center py-16 glass-panel rounded-2xl border border-glass-stroke">
-      <span class="material-symbols-outlined text-5xl text-zinc-600 mb-2">theater_comedy</span>
-      <p class="text-sm text-zinc-400 italic">Không tìm thấy diễn viên nào phù hợp.</p>
-    </div>
+      <!-- Empty State -->
+      <div id="actors-empty" class="hidden text-center py-20 ac-panel rounded-2xl">
+        <span class="material-symbols-outlined text-5xl text-[var(--ac-gold)]/40 mb-3">theater_comedy</span>
+        <p class="text-sm text-[var(--ac-text-muted)]">Chưa có diễn viên nào khớp với tìm kiếm này.</p>
+        <p class="text-xs text-[var(--ac-text-muted)]/70 mt-1">Thử một từ khóa khác, hoặc thêm diễn viên mới ở góc trên bên phải.</p>
+      </div>
 
-    <!-- Pagination Container -->
-    <div id="pagination-container" class="mt-12 flex items-center justify-center gap-2 pb-10">
-      <!-- Dynamically generated page buttons -->
+      <!-- Pagination Container -->
+      <div id="pagination-container" class="mt-14 flex items-center justify-center gap-2 pb-10">
+        <!-- Dynamically generated page buttons -->
+      </div>
     </div>
   </div>
 
@@ -120,29 +127,29 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
             const html = `
               <div style="display:flex;flex-direction:column;gap:12px;min-width:320px;max-width:500px">
                 <div style="display:flex;flex-direction:column;gap:4px">
-                  <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tên diễn viên</label>
-                  <input type="text" id="actor-modal-name" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: Tom Cruise" />
+                  <label style="font-size:10px;color:#9C97A6;font-weight:800;text-transform:uppercase;letter-spacing:0.06em">Tên diễn viên</label>
+                  <input type="text" id="actor-modal-name" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(232,178,62,0.18);background:rgba(255,255,255,0.03);color:#F4F1EA;font-size:13px" placeholder="Ví dụ: Tom Cruise" />
                 </div>
                 <div style="display:flex;gap:12px;width:100%">
                   <div style="display:flex;flex-direction:column;gap:4px;flex:1">
-                    <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">TMDB ID (Số)</label>
-                    <input type="number" id="actor-modal-tmdb-id" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: 287" />
+                    <label style="font-size:10px;color:#9C97A6;font-weight:800;text-transform:uppercase;letter-spacing:0.06em">TMDB ID (Số)</label>
+                    <input type="number" id="actor-modal-tmdb-id" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(232,178,62,0.18);background:rgba(255,255,255,0.03);color:#F4F1EA;font-size:13px" placeholder="Ví dụ: 287" />
                   </div>
                   ${hasTmdbKey ? `
                   <div style="display:flex;align-items:flex-end">
-                    <button type="button" id="btn-fetch-tmdb" style="padding:10px 16px;border-radius:12px;border:1px solid #3b82f6;background:rgba(59,130,246,0.1);color:#3b82f6;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:4px;height:42px" class="hover:bg-primary hover:text-slate-950 transition-all">
+                    <button type="button" id="btn-fetch-tmdb" style="padding:10px 16px;border-radius:10px;border:1px solid #E8B23E;background:rgba(232,178,62,0.1);color:#E8B23E;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:4px;height:42px" class="hover:bg-[#E8B23E] hover:text-[#1a1208] transition-all">
                       <span class="material-symbols-outlined text-[16px]">sync</span> Lấy tin TMDB
                     </button>
                   </div>
                   ` : ''}
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px">
-                  <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Link ảnh đại diện (URL)</label>
-                  <input type="text" id="actor-modal-image" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Dán link ảnh đại diện..." />
+                  <label style="font-size:10px;color:#9C97A6;font-weight:800;text-transform:uppercase;letter-spacing:0.06em">Link ảnh đại diện (URL)</label>
+                  <input type="text" id="actor-modal-image" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(232,178,62,0.18);background:rgba(255,255,255,0.03);color:#F4F1EA;font-size:13px" placeholder="Dán link ảnh đại diện..." />
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px">
-                  <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tiểu sử / Bio</label>
-                  <textarea id="actor-modal-bio" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px;min-height:100px" placeholder="Nhập tiểu sử diễn viên..."></textarea>
+                  <label style="font-size:10px;color:#9C97A6;font-weight:800;text-transform:uppercase;letter-spacing:0.06em">Tiểu sử / Bio</label>
+                  <textarea id="actor-modal-bio" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(232,178,62,0.18);background:rgba(255,255,255,0.03);color:#F4F1EA;font-size:13px;min-height:100px" placeholder="Nhập tiểu sử diễn viên..."></textarea>
                 </div>
               </div>
             `;
@@ -169,7 +176,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                   if (!image) {
                     image = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200&q=80'; // default avatar
                   }
-                  
+
                   try {
                     const res = await fetch('/api/admin/actors', {
                       method: 'POST',
@@ -261,10 +268,10 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
         }
 
         let html = '';
-        
+
         // Prev button
         html += `
-          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2.5 rounded-xl border border-glass-stroke bg-surface-container hover:bg-surface-container-high disabled:opacity-30 disabled:pointer-events-none text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
+          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="ac-ticket px-4 py-2.5 disabled:opacity-30 disabled:pointer-events-none text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
             <span class="material-symbols-outlined text-sm">chevron_left</span> Trước
           </button>
         `;
@@ -273,22 +280,22 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
         const maxVisible = 5;
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-        
+
         if (endPage - startPage < maxVisible - 1) {
           startPage = Math.max(1, endPage - maxVisible + 1);
         }
 
         if (startPage > 1) {
-          html += `<button onclick="changePage(1)" class="w-10 h-10 rounded-xl border border-glass-stroke bg-surface-container hover:bg-surface-container-high text-white text-xs font-bold transition-all cursor-pointer">1</button>`;
+          html += `<button onclick="changePage(1)" class="ac-ticket w-10 h-10 text-xs font-bold transition-all cursor-pointer">1</button>`;
           if (startPage > 2) {
-            html += `<span class="text-zinc-600 px-1">...</span>`;
+            html += `<span class="text-[var(--ac-text-muted)]/60 px-1">···</span>`;
           }
         }
 
         for (let p = startPage; p <= endPage; p++) {
           const isActive = p === currentPage;
           html += `
-            <button onclick="changePage(${p})" class="w-10 h-10 rounded-xl border ${isActive ? 'border-primary bg-primary text-slate-950' : 'border-glass-stroke bg-surface-container hover:bg-surface-container-high text-white'} text-xs font-bold transition-all cursor-pointer">
+            <button onclick="changePage(${p})" class="ac-ticket ${isActive ? 'ac-ticket-active' : ''} w-10 h-10 text-xs font-bold transition-all cursor-pointer">
               ${p}
             </button>
           `;
@@ -296,14 +303,14 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
 
         if (endPage < totalPages) {
           if (endPage < totalPages - 1) {
-            html += `<span class="text-zinc-600 px-1">...</span>`;
+            html += `<span class="text-[var(--ac-text-muted)]/60 px-1">···</span>`;
           }
-          html += `<button onclick="changePage(${totalPages})" class="w-10 h-10 rounded-xl border border-glass-stroke bg-surface-container hover:bg-surface-container-high text-white text-xs font-bold transition-all cursor-pointer">${totalPages}</button>`;
+          html += `<button onclick="changePage(${totalPages})" class="ac-ticket w-10 h-10 text-xs font-bold transition-all cursor-pointer">${totalPages}</button>`;
         }
 
         // Next button
         html += `
-          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2.5 rounded-xl border border-glass-stroke bg-surface-container hover:bg-surface-container-high disabled:opacity-30 disabled:pointer-events-none text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
+          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="ac-ticket px-4 py-2.5 disabled:opacity-30 disabled:pointer-events-none text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
             Sau <span class="material-symbols-outlined text-sm">chevron_right</span>
           </button>
         `;
@@ -336,7 +343,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
         }
 
         emptyState?.classList.add('hidden');
-        
+
         const totalPages = Math.ceil(currentFiltered.length / itemsPerPage);
         if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
 
@@ -346,26 +353,26 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
           const originalIndex = actorsState.findIndex(a => a.name === actor.name);
           const moviesCount = countActorMovies(actor.name);
           return `
-            <div class="actor-card group relative overflow-hidden rounded-xl bg-surface-container aspect-[3/4] border border-glass-stroke transition-all duration-300 hover:scale-[1.03] hover:border-primary">
-              <div class="absolute inset-0 bg-gradient-to-t from-surface-deep/90 via-surface-deep/30 to-transparent z-10"></div>
+            <div class="actor-card group relative overflow-hidden ac-film-card aspect-[3/4] transition-all duration-300 hover:-translate-y-1">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent z-10"></div>
               <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('${actor.image}')"></div>
               <div class="absolute bottom-0 left-0 right-0 p-3 z-20">
-                <h3 class="text-xs md:text-sm font-bold truncate text-white m-0">${actor.name}</h3>
-                <p class="text-primary text-[9px] font-mono tracking-wider mt-0.5">${moviesCount} phim</p>
-                ${actor.tmdb_id ? `<span class="absolute top-2 right-2 px-1.5 py-0.5 text-[8px] bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded font-mono font-bold">TMDB</span>` : ''}
+                <h3 class="text-xs md:text-sm font-bold truncate text-[var(--ac-text)] m-0">${actor.name}</h3>
+                <p class="text-[var(--ac-gold)] text-[9px] font-[var(--font-mono)] tracking-wider mt-0.5">${moviesCount} phim</p>
+                ${actor.tmdb_id ? `<span class="absolute top-3 right-0 px-1.5 py-0.5 text-[8px] bg-[var(--ac-blue)]/15 text-[var(--ac-blue)] border border-[var(--ac-blue)]/30 rounded-l font-[var(--font-mono)] font-bold">TMDB</span>` : ''}
               </div>
-              
+
               <!-- Action Hover Overlay -->
-              <div class="action-overlay absolute inset-0 bg-surface-deep/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex items-center justify-center gap-2">
+              <div class="action-overlay absolute inset-0 bg-black/65 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex items-center justify-center gap-2">
                 ${hasTmdbKey ? `
-                <button onclick="quickSyncActor(${originalIndex})" class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Đồng bộ TMDB">
+                <button onclick="quickSyncActor(${originalIndex})" class="w-8 h-8 rounded-full bg-[var(--ac-blue)] text-white flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Đồng bộ TMDB">
                   <span class="material-symbols-outlined text-[16px]">sync</span>
                 </button>
                 ` : ''}
-                <button onclick="editActor(${originalIndex})" class="w-8 h-8 rounded-full bg-primary text-slate-950 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Chỉnh sửa">
+                <button onclick="editActor(${originalIndex})" class="w-8 h-8 rounded-full bg-[var(--ac-gold)] text-[#1a1208] flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Chỉnh sửa">
                   <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">edit</span>
                 </button>
-                <button onclick="deleteActor(${originalIndex})" class="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Xóa">
+                <button onclick="deleteActor(${originalIndex})" class="w-8 h-8 rounded-full bg-[var(--ac-rose)] text-white flex items-center justify-center hover:scale-110 transition-transform cursor-pointer border-none" data-txatooltip="Xóa">
                   <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">delete</span>
                 </button>
               </div>
@@ -382,29 +389,29 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
         const html = `
           <div style="display:flex;flex-direction:column;gap:12px;min-width:320px;max-width:500px">
             <div style="display:flex;flex-direction:column;gap:4px">
-              <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tên diễn viên</label>
-              <input type="text" id="actor-modal-name" value="${actor.name.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" />
+              <label style="font-size:10px;color:#9C97A6;font-weight:800;text-transform:uppercase;letter-spacing:0.06em">Tên diễn viên</label>
+              <input type="text" id="actor-modal-name" value="${actor.name.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(232,178,62,0.18);background:rgba(255,255,255,0.03);color:#F4F1EA;font-size:13px" />
             </div>
             <div style="display:flex;gap:12px;width:100%">
               <div style="display:flex;flex-direction:column;gap:4px;flex:1">
-                <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">TMDB ID (Số)</label>
-                <input type="number" id="actor-modal-tmdb-id" value="${actor.tmdb_id || ''}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: 287" />
+                <label style="font-size:10px;color:#9C97A6;font-weight:800;text-transform:uppercase;letter-spacing:0.06em">TMDB ID (Số)</label>
+                <input type="number" id="actor-modal-tmdb-id" value="${actor.tmdb_id || ''}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(232,178,62,0.18);background:rgba(255,255,255,0.03);color:#F4F1EA;font-size:13px" placeholder="Ví dụ: 287" />
               </div>
               ${hasTmdbKey ? `
               <div style="display:flex;align-items:flex-end">
-                <button type="button" id="btn-fetch-tmdb" style="padding:10px 16px;border-radius:12px;border:1px solid #3b82f6;background:rgba(59,130,246,0.1);color:#3b82f6;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:4px;height:42px" class="hover:bg-primary hover:text-slate-950 transition-all">
+                <button type="button" id="btn-fetch-tmdb" style="padding:10px 16px;border-radius:10px;border:1px solid #E8B23E;background:rgba(232,178,62,0.1);color:#E8B23E;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:4px;height:42px" class="hover:bg-[#E8B23E] hover:text-[#1a1208] transition-all">
                   <span class="material-symbols-outlined text-[16px]">sync</span> Lấy tin TMDB
                 </button>
               </div>
               ` : ''}
             </div>
             <div style="display:flex;flex-direction:column;gap:4px">
-              <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Link ảnh đại diện (URL)</label>
-              <input type="text" id="actor-modal-image" value="${actor.image.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" />
+              <label style="font-size:10px;color:#9C97A6;font-weight:800;text-transform:uppercase;letter-spacing:0.06em">Link ảnh đại diện (URL)</label>
+              <input type="text" id="actor-modal-image" value="${actor.image.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(232,178,62,0.18);background:rgba(255,255,255,0.03);color:#F4F1EA;font-size:13px" />
             </div>
             <div style="display:flex;flex-direction:column;gap:4px">
-              <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Tiểu sử / Bio</label>
-              <textarea id="actor-modal-bio" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px;min-height:100px" placeholder="Nhập tiểu sử diễn viên...">${(actor.bio || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+              <label style="font-size:10px;color:#9C97A6;font-weight:800;text-transform:uppercase;letter-spacing:0.06em">Tiểu sử / Bio</label>
+              <textarea id="actor-modal-bio" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(232,178,62,0.18);background:rgba(255,255,255,0.03);color:#F4F1EA;font-size:13px;min-height:100px" placeholder="Nhập tiểu sử diễn viên...">${(actor.bio || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
             </div>
           </div>
         `;
@@ -424,7 +431,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                 if (window.showGlobalToast) window.showGlobalToast('Tên diễn viên không được để trống!', 'error');
                 return;
               }
-              
+
               try {
                 const res = await fetch('/api/admin/actors', {
                   method: 'POST',
@@ -528,7 +535,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
         if (window.txamodal) {
           window.txamodal.show({
             title: 'Xóa Diễn viên',
-            message: `Bạn có chắc chắn muốn xóa diễn viên <span class="text-white font-bold">"${actor.name}"</span> khỏi hệ thống? Hành động này không thể hoàn tác.`,
+            message: `Bạn có chắc chắn muốn xóa diễn viên <span class="text-[#F4F1EA] font-bold">"${actor.name}"</span> khỏi hệ thống? Hành động này không thể hoàn tác.`,
             type: 'danger',
             confirmText: 'Xóa diễn viên',
             cancelText: 'Hủy bỏ',
@@ -543,7 +550,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
         const actor = actorsState[index];
         if (!actor) return;
         if (window.showGlobalToast) window.showGlobalToast('Đang đồng bộ thông tin từ TMDB...', 'info');
-        
+
         try {
           const res = await fetch('/api/admin/actors', {
             method: 'POST',
@@ -591,14 +598,14 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
       async function runBulkSyncLoop() {
         cancelSync = false;
         pauseSync = false;
-        
+
         const statusEl = document.getElementById('sync-status');
         const progressEl = document.getElementById('sync-progress');
         const logEl = document.getElementById('sync-logs');
         const btnPause = document.getElementById('btn-sync-pause');
         const btnCancel = document.getElementById('btn-sync-cancel');
         const btnComplete = document.getElementById('btn-sync-complete');
-        
+
         const addLog = (msg) => {
           if (logEl) {
             logEl.innerHTML += `<div style="margin-bottom:2px">> ${msg}</div>`;
@@ -612,9 +619,9 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
             pauseSync = !pauseSync;
             if (pauseSync) {
               btnPause.textContent = 'Tiếp tục';
-              btnPause.style.borderColor = 'rgba(59,130,246,0.3)';
-              btnPause.style.background = 'rgba(59,130,246,0.1)';
-              btnPause.style.color = '#3b82f6';
+              btnPause.style.borderColor = 'rgba(232,178,62,0.3)';
+              btnPause.style.background = 'rgba(232,178,62,0.1)';
+              btnPause.style.color = '#E8B23E';
               addLog('Tiến trình đã được TẠM DỪNG.');
               if (statusEl) statusEl.textContent = 'Đang tạm dừng...';
             } else {
@@ -675,12 +682,12 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                 if (d.status === 'success') {
                   addLog(`Thành công: [${d.source}] ${d.name}`);
                 } else {
-                  addLog(`<span style="color:#f43f5e">Thất bại: ${d.name} (${d.reason})</span>`);
+                  addLog(`<span style="color:#F2545B">Thất bại: ${d.name} (${d.reason})</span>`);
                 }
               });
 
               addLog(`Đồng bộ thành công ${count} diễn viên trong lô này.`);
-              
+
               if (progressEl) {
                 progressEl.style.width = '100%';
                 setTimeout(() => { if (progressEl) progressEl.style.width = '20%'; }, 500);
@@ -690,7 +697,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                 isRunning = false;
                 if (statusEl) statusEl.textContent = `Hoàn thành!`;
                 addLog(`Đồng bộ kết thúc. Tổng số diễn viên cập nhật thành công: ${totalUpdated}`);
-                
+
                 if (btnCancel) btnCancel.style.display = 'none';
                 if (btnPause) btnPause.style.display = 'none';
                 if (btnComplete) btnComplete.style.display = 'block';
@@ -701,7 +708,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
               throw new Error(json.message);
             }
           } catch (e) {
-            addLog(`<span style="color:#f43f5e">Gặp lỗi: ${e.message}</span>`);
+            addLog(`<span style="color:#F2545B">Gặp lỗi: ${e.message}</span>`);
             isRunning = false;
             if (statusEl) statusEl.textContent = 'Bị lỗi!';
             if (btnCancel) btnCancel.style.display = 'none';
@@ -735,15 +742,15 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                     <div style="display:flex;flex-direction:column;gap:12px;min-width:320px;max-width:500px">
                       <p style="font-size:13px;color:#cbd5e1;font-weight:600" id="sync-status">Đang quét diễn viên cần đồng bộ...</p>
                       <div style="width:100%;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden">
-                        <div id="sync-progress" style="width:10%;height:100%;background:#3b82f6;transition:width 0.4s"></div>
+                        <div id="sync-progress" style="width:10%;height:100%;background:#E8B23E;transition:width 0.4s"></div>
                       </div>
-                      <div id="sync-logs" style="max-height:150px;overflow-y:auto;font-family:monospace;font-size:11px;color:#94a3b8;background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);min-height:100px;text-align:left"></div>
-                      
+                      <div id="sync-logs" style="max-height:150px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#9C97A6;background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);min-height:100px;text-align:left"></div>
+
                       <!-- Custom Action Buttons inside the HTML body -->
                       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
                         <button type="button" id="btn-sync-pause" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:12px;font-weight:600;cursor:pointer" class="hover:bg-white/10 transition-all">Tạm dừng</button>
-                        <button type="button" id="btn-sync-cancel" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);color:#ef4444;font-size:12px;font-weight:600;cursor:pointer" class="hover:bg-red-500/20 transition-all">Hủy</button>
-                        <button type="button" id="btn-sync-complete" style="padding:8px 14px;border-radius:8px;border:none;background:#10b981;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:none" class="hover:bg-emerald-500 transition-all">Hoàn tất</button>
+                        <button type="button" id="btn-sync-cancel" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(242,84,91,0.3);background:rgba(242,84,91,0.1);color:#F2545B;font-size:12px;font-weight:600;cursor:pointer" class="hover:bg-red-500/20 transition-all">Hủy</button>
+                        <button type="button" id="btn-sync-complete" style="padding:8px 14px;border-radius:8px;border:none;background:#34D399;color:#0E0D12;font-size:12px;font-weight:700;cursor:pointer;display:none" class="hover:brightness-110 transition-all">Hoàn tất</button>
                       </div>
                     </div>
                   `;
@@ -755,7 +762,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                       confirmText: '',
                       cancelText: ''
                     });
-                    
+
                     setTimeout(runBulkSyncLoop, 100);
                   }, 100);
                 }
@@ -771,3 +778,143 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
     })();
   </script>
 </AdminLayout>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  .actors-admin-root {
+    --ac-bg: #0E0D12;
+    --ac-panel: #18161F;
+    --ac-panel-soft: #211D29;
+    --ac-stroke: rgba(232, 178, 62, 0.18);
+    --ac-stroke-soft: rgba(255, 255, 255, 0.06);
+    --ac-gold: #E8B23E;
+    --ac-gold-dim: rgba(232, 178, 62, 0.14);
+    --ac-text: #F4F1EA;
+    --ac-text-muted: #9C97A6;
+    --ac-blue: #4FA8E0;
+    --ac-rose: #F2545B;
+    --ac-green: #34D399;
+    --font-display: 'Bebas Neue', 'Oswald', sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  /* Eyebrow + headline: marquee identity */
+  .ac-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ac-gold);
+    opacity: 0.8;
+    margin-bottom: 2px;
+  }
+
+  .ac-headline {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1;
+    position: relative;
+    display: inline-block;
+  }
+
+  .ac-headline::after {
+    content: "";
+    display: block;
+    width: 46px;
+    height: 3px;
+    margin-top: 10px;
+    background: linear-gradient(90deg, var(--ac-gold), transparent);
+    border-radius: 2px;
+  }
+
+  /* Toolbar */
+  .ac-toolbar {
+    background: linear-gradient(180deg, rgba(24, 22, 31, 0.92), rgba(14, 13, 18, 0.85));
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--ac-stroke-soft);
+  }
+
+  .ac-search {
+    background: var(--ac-panel);
+    border: 1px solid var(--ac-stroke-soft);
+    outline: none;
+  }
+  .ac-search:focus {
+    border-color: var(--ac-gold);
+    box-shadow: 0 0 0 3px var(--ac-gold-dim);
+  }
+
+  .ac-btn-gold {
+    background: linear-gradient(180deg, #F0C160, var(--ac-gold));
+    color: #1A1208;
+    border: none;
+    box-shadow: 0 6px 18px rgba(232, 178, 62, 0.25);
+  }
+  .ac-btn-gold:hover { filter: brightness(1.06); }
+
+  .ac-btn-ghost {
+    background: var(--ac-panel);
+    color: var(--ac-text);
+    border: 1px solid var(--ac-stroke-soft);
+  }
+  .ac-btn-ghost:hover {
+    border-color: var(--ac-stroke);
+    background: var(--ac-panel-soft);
+  }
+
+  .ac-panel {
+    background: var(--ac-panel);
+    border: 1px solid var(--ac-stroke-soft);
+  }
+
+  /* Film-strip actor card with sprocket-hole top edge */
+  .ac-film-card {
+    background: linear-gradient(180deg, var(--ac-panel) 0%, var(--ac-panel-soft) 100%);
+    border: 1px solid var(--ac-stroke-soft);
+    border-radius: 12px;
+  }
+  .ac-film-card:hover {
+    border-color: var(--ac-stroke);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+  }
+  .ac-film-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 9px;
+    background-color: rgba(0, 0, 0, 0.55);
+    background-image: radial-gradient(circle, var(--ac-bg) 2.4px, transparent 2.5px);
+    background-size: 13px 9px;
+    background-position: 5px center;
+    z-index: 25;
+  }
+
+  /* Ticket-stub pagination */
+  .ac-ticket {
+    position: relative;
+    background: var(--ac-panel);
+    border: 1px dashed var(--ac-stroke-soft);
+    border-radius: 8px;
+    color: var(--ac-text);
+  }
+  .ac-ticket:hover:not(:disabled) {
+    border-color: var(--ac-stroke);
+    background: var(--ac-panel-soft);
+  }
+  .ac-ticket-active {
+    background: var(--ac-gold);
+    border-color: var(--ac-gold);
+    border-style: solid;
+    color: #1A1208;
+    box-shadow: 0 0 0 3px var(--ac-gold-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ac-film-card, .actor-card { transition: none !important; }
+  }
+</style>
