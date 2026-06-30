@@ -192,9 +192,12 @@ const CustomSubtitleSystem: React.FC<{
   const [primaryBgOpacity, setPrimaryBgOpacity] = useState(() => localStorage.getItem('txa_sub_primary_bg_opacity') || '0%');
 
   const [secondaryColor, setSecondaryColor] = useState(() => localStorage.getItem('txa_sub_secondary_color') || '#ffeb3b');
-  const [secondarySize, setSecondarySize] = useState(() => localStorage.getItem('txa_sub_secondary_size') || '12pt');
+  const [secondarySize, setSecondarySize] = useState(() => localStorage.getItem('txa_sub_secondary_size') || '14pt');
   const [secondaryOpacity, setSecondaryOpacity] = useState(() => localStorage.getItem('txa_sub_secondary_opacity') || '100%');
   const [secondaryFont, setSecondaryFont] = useState(() => localStorage.getItem('txa_sub_secondary_font') || 'Arial');
+  const [secondaryBorder, setSecondaryBorder] = useState(() => localStorage.getItem('txa_sub_secondary_border') || 'Viền mỏng');
+  const [secondaryBgColor, setSecondaryBgColor] = useState(() => localStorage.getItem('txa_sub_secondary_bg_color') || 'Đen');
+  const [secondaryBgOpacity, setSecondaryBgOpacity] = useState(() => localStorage.getItem('txa_sub_secondary_bg_opacity') || '0%');
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -358,28 +361,27 @@ const CustomSubtitleSystem: React.FC<{
     const fontFamily = font === 'Sans-Serif' ? 'sans-serif' : `'${font}', sans-serif`;
 
     let textShadow = 'none';
-    if (isPrimary) {
-      if (primaryBorder === 'Bóng đổ') {
-        textShadow = '0 2px 4px rgba(0,0,0,0.9)';
-      } else if (primaryBorder === 'Viền mỏng') {
-        textShadow = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
-      } else if (primaryBorder === 'Viền dày') {
-        textShadow = '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000';
-      }
-    } else {
+    const borderVal = isPrimary ? primaryBorder : secondaryBorder;
+    if (borderVal === 'Bóng đổ') {
       textShadow = '0 2px 4px rgba(0,0,0,0.9)';
+    } else if (borderVal === 'Viền mỏng') {
+      textShadow = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
+    } else if (borderVal === 'Viền dày') {
+      textShadow = '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000';
     }
 
     let background = 'transparent';
     let padding = '0';
     let borderRadius = '0';
-    if (isPrimary && primaryBgOpacity !== '0%') {
-      const bgOp = parseFloat(primaryBgOpacity) / 100;
+    const bgColorVal = isPrimary ? primaryBgColor : secondaryBgColor;
+    const bgOpacityVal = isPrimary ? primaryBgOpacity : secondaryBgOpacity;
+    if (bgOpacityVal !== '0%') {
+      const bgOp = parseFloat(bgOpacityVal) / 100;
       let rgb = '0,0,0';
-      if (primaryBgColor === 'Xám') rgb = '85,85,85';
-      else if (primaryBgColor === 'Đỏ') rgb = '244,67,54';
-      else if (primaryBgColor === 'Xanh') rgb = '76,175,80';
-      else if (primaryBgColor === 'Trắng') rgb = '255,255,255';
+      if (bgColorVal === 'Xám') rgb = '85,85,85';
+      else if (bgColorVal === 'Đỏ') rgb = '244,67,54';
+      else if (bgColorVal === 'Xanh') rgb = '76,175,80';
+      else if (bgColorVal === 'Trắng') rgb = '255,255,255';
       background = `rgba(${rgb}, ${bgOp})`;
       padding = '4px 10px';
       borderRadius = '6px';
@@ -387,9 +389,10 @@ const CustomSubtitleSystem: React.FC<{
 
     return {
       color,
-      fontSize: size,
+      fontSize: adaptedSize,
       opacity: op,
       fontFamily,
+      fontWeight: isPrimary ? 500 : 600,
       textShadow,
       background,
       padding,
@@ -609,6 +612,59 @@ const CustomSubtitleSystem: React.FC<{
       setter: (val: string) => {
         setSecondaryFont(val);
         localStorage.setItem('txa_sub_secondary_font', val);
+      }
+    },
+    {
+      key: 'secondaryBorder',
+      label: 'Viền chữ',
+      section: 'Song ngữ',
+      value: secondaryBorder,
+      displayValue: secondaryBorder,
+      options: [
+        { label: 'Không viền', value: 'Không viền' },
+        { label: 'Bóng đổ', value: 'Bóng đổ' },
+        { label: 'Viền mỏng', value: 'Viền mỏng' },
+        { label: 'Viền dày', value: 'Viền dày' }
+      ],
+      setter: (val: string) => {
+        setSecondaryBorder(val);
+        localStorage.setItem('txa_sub_secondary_border', val);
+      }
+    },
+    {
+      key: 'secondaryBgColor',
+      label: 'Màu nền',
+      section: 'Song ngữ',
+      value: secondaryBgColor,
+      displayValue: secondaryBgColor,
+      options: [
+        { label: 'Đen', value: 'Đen' },
+        { label: 'Xám', value: 'Xám' },
+        { label: 'Đỏ', value: 'Đỏ' },
+        { label: 'Xanh', value: 'Xanh' },
+        { label: 'Trắng', value: 'Trắng' }
+      ],
+      setter: (val: string) => {
+        setSecondaryBgColor(val);
+        localStorage.setItem('txa_sub_secondary_bg_color', val);
+      }
+    },
+    {
+      key: 'secondaryBgOpacity',
+      label: 'Độ trong nền',
+      section: 'Song ngữ',
+      value: secondaryBgOpacity,
+      displayValue: secondaryBgOpacity,
+      options: [
+        { label: '0%', value: '0%' },
+        { label: '25%', value: '25%' },
+        { label: '50%', value: '50%' },
+        { label: '75%', value: '75%' },
+        { label: '100%', value: '100%' }
+      ],
+      setter: (val: string) => {
+        setSecondaryBgOpacity(val);
+        localStorage.setItem('txa_sub_secondary_bg_opacity', val);
       }
     }
   ];
