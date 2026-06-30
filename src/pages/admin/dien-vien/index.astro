@@ -63,6 +63,16 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
       let currentPage = 1;
       const itemsPerPage = 24;
 
+      function cleanString(str) {
+        if (!str) return '';
+        return str
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[đĐ]/g, 'd')
+          .trim();
+      }
+
       async function loadActors() {
         try {
           const res = await fetch('/api/admin/actors');
@@ -97,7 +107,8 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
         if (searchInput) {
           searchInput.oninput = (e) => {
             const query = e.target.value.trim().toLowerCase();
-            currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(query));
+            const cleanedQuery = cleanString(query);
+            currentFiltered = actorsState.filter(a => cleanString(a.name).includes(cleanedQuery));
             currentPage = 1;
             filterAndRender();
           };
@@ -151,7 +162,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                     if (window.showGlobalToast) window.showGlobalToast('Tên diễn viên không được để trống!', 'error');
                     return;
                   }
-                  if (actorsState.some(a => a.name.toLowerCase() === name.toLowerCase())) {
+                  if (actorsState.some(a => cleanString(a.name) === cleanString(name))) {
                     if (window.showGlobalToast) window.showGlobalToast('Diễn viên này đã tồn tại!', 'error');
                     return;
                   }
@@ -173,7 +184,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                       await loadActors();
                       // Reload search and render
                       const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-                      currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+                      currentFiltered = actorsState.filter(a => cleanString(a.name).includes(cleanString(q)));
                       filterAndRender();
                       if (window.showGlobalToast) window.showGlobalToast(`Đã thêm diễn viên ${name} thành công!`, 'success');
                     } else {
@@ -428,7 +439,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                   await loadActors();
                   // Reload search and render
                   const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-                  currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+                  currentFiltered = actorsState.filter(a => cleanString(a.name).includes(cleanString(q)));
                   filterAndRender();
                   if (window.showGlobalToast) window.showGlobalToast('Cập nhật thông tin diễn viên thành công!', 'success');
                 } else {
@@ -503,7 +514,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
               await loadActors();
               // Reload search and render
               const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-              currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
+              currentFiltered = actorsState.filter(a => cleanString(a.name).includes(cleanString(q)));
               filterAndRender();
               if (window.showGlobalToast) window.showGlobalToast('Đã xóa diễn viên thành công!', 'success');
             } else {
@@ -528,7 +539,6 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
         }
       };
 
-      // Helper sync functions
       window.quickSyncActor = async function(index) {
         const actor = actorsState[index];
         if (!actor) return;
@@ -548,7 +558,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
             const updated = json.data;
             actorsState[index] = updated;
             const currentQ = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-            currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(currentQ));
+            currentFiltered = actorsState.filter(a => cleanString(a.name).includes(cleanString(currentQ)));
             filterAndRender();
             if (window.showGlobalToast) window.showGlobalToast(`Đã đồng bộ diễn viên ${actor.name} thành công!`, 'success');
           } else {
@@ -560,12 +570,34 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
       };
 
       let cancelSync = false;
+      let pauseSync = false;
+
+      const closeModal = () => {
+        const modal = document.getElementById('txa-global-modal');
+        if (modal) {
+          const modalBox = modal.querySelector('div');
+          modal.classList.add('opacity-0');
+          if (modalBox) modalBox.classList.add('scale-95');
+          setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            const bodyEl = document.getElementById('txa-modal-body');
+            if (bodyEl) bodyEl.innerHTML = '';
+          }, 200);
+          document.body.style.overflow = '';
+        }
+      };
+
       async function runBulkSyncLoop() {
         cancelSync = false;
+        pauseSync = false;
+        
         const statusEl = document.getElementById('sync-status');
         const progressEl = document.getElementById('sync-progress');
         const logEl = document.getElementById('sync-logs');
-        const modalBoxCancel = document.getElementById('txa-modal-cancel');
+        const btnPause = document.getElementById('btn-sync-pause');
+        const btnCancel = document.getElementById('btn-sync-cancel');
+        const btnComplete = document.getElementById('btn-sync-complete');
         
         const addLog = (msg) => {
           if (logEl) {
@@ -574,12 +606,56 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
           }
         };
 
+        // Bind custom buttons
+        if (btnPause) {
+          btnPause.onclick = () => {
+            pauseSync = !pauseSync;
+            if (pauseSync) {
+              btnPause.textContent = 'Tiếp tục';
+              btnPause.style.borderColor = 'rgba(59,130,246,0.3)';
+              btnPause.style.background = 'rgba(59,130,246,0.1)';
+              btnPause.style.color = '#3b82f6';
+              addLog('Tiến trình đã được TẠM DỪNG.');
+              if (statusEl) statusEl.textContent = 'Đang tạm dừng...';
+            } else {
+              btnPause.textContent = 'Tạm dừng';
+              btnPause.style.borderColor = 'rgba(255,255,255,0.15)';
+              btnPause.style.background = 'rgba(255,255,255,0.05)';
+              btnPause.style.color = '#fff';
+              addLog('Đang TIẾP TỤC tiến trình...');
+              if (statusEl) statusEl.textContent = 'Đang đồng bộ...';
+            }
+          };
+        }
+
+        if (btnCancel) {
+          btnCancel.onclick = () => {
+            cancelSync = true;
+            addLog('Đang yêu cầu hủy...');
+          };
+        }
+
+        if (btnComplete) {
+          btnComplete.onclick = async () => {
+            closeModal();
+            await loadActors();
+            const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
+            currentFiltered = actorsState.filter(a => cleanString(a.name).includes(cleanString(q)));
+            filterAndRender();
+          };
+        }
+
         addLog('Đang khởi chạy tiến trình quét...');
         let totalUpdated = 0;
         let isRunning = true;
         let iteration = 0;
 
         while (isRunning && !cancelSync) {
+          if (pauseSync) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            continue;
+          }
+
           iteration++;
           addLog(`Đang chạy lô thứ ${iteration}...`);
           try {
@@ -591,47 +667,56 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
             const json = await res.json();
             if (json.status === 'success') {
               const count = json.data.count;
+              const details = json.data.details || [];
               totalUpdated += count;
+
+              // Log details of each actor in the batch
+              details.forEach(d => {
+                if (d.status === 'success') {
+                  addLog(`Thành công: [${d.source}] ${d.name}`);
+                } else {
+                  addLog(`<span style="color:#f43f5e">Thất bại: ${d.name} (${d.reason})</span>`);
+                }
+              });
+
               addLog(`Đồng bộ thành công ${count} diễn viên trong lô này.`);
+              
               if (progressEl) {
                 progressEl.style.width = '100%';
                 setTimeout(() => { if (progressEl) progressEl.style.width = '20%'; }, 500);
               }
-              if (count === 0) {
+
+              if (count === 0 && details.length === 0) {
                 isRunning = false;
                 if (statusEl) statusEl.textContent = `Hoàn thành!`;
-                addLog(`Đồng bộ kết thúc. Tổng số diễn viên cập nhật: ${totalUpdated}`);
-                if (modalBoxCancel) {
-                  modalBoxCancel.textContent = 'Hoàn tất';
-                  modalBoxCancel.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition-all';
-                }
-                await loadActors();
-                const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-                currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
-                filterAndRender();
+                addLog(`Đồng bộ kết thúc. Tổng số diễn viên cập nhật thành công: ${totalUpdated}`);
+                
+                if (btnCancel) btnCancel.style.display = 'none';
+                if (btnPause) btnPause.style.display = 'none';
+                if (btnComplete) btnComplete.style.display = 'block';
               } else {
-                if (statusEl) statusEl.textContent = `Đang xử lý... (Tổng cộng đã đồng bộ: ${totalUpdated})`;
+                if (statusEl) statusEl.textContent = `Đang xử lý... (Tổng cộng đã thành công: ${totalUpdated})`;
               }
             } else {
               throw new Error(json.message);
             }
           } catch (e) {
-            addLog(`Gặp lỗi: ${e.message}`);
+            addLog(`<span style="color:#f43f5e">Gặp lỗi: ${e.message}</span>`);
             isRunning = false;
             if (statusEl) statusEl.textContent = 'Bị lỗi!';
-            if (modalBoxCancel) modalBoxCancel.textContent = 'Đóng';
+            if (btnCancel) btnCancel.style.display = 'none';
+            if (btnPause) btnPause.style.display = 'none';
+            if (btnComplete) btnComplete.style.display = 'block';
           }
           await new Promise(resolve => setTimeout(resolve, 800));
         }
 
         if (cancelSync) {
-          addLog('Tiến trình bị hủy bởi người dùng.');
+          addLog('Tiến trình đã bị dừng.');
           if (statusEl) statusEl.textContent = 'Đã dừng';
-          if (modalBoxCancel) modalBoxCancel.textContent = 'Đóng';
-          await loadActors();
-          const q = document.getElementById('actor-search')?.value.trim().toLowerCase() || '';
-          currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(q));
-          filterAndRender();
+          if (btnCancel) btnCancel.style.display = 'none';
+          if (btnPause) btnPause.style.display = 'none';
+          if (btnComplete) btnComplete.style.display = 'block';
         }
       }
 
@@ -642,7 +727,7 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
             if (window.txamodal) {
               window.txamodal.show({
                 title: 'Đồng bộ Diễn viên hàng loạt',
-                message: 'Hệ thống sẽ quét toàn bộ diễn viên trong cơ sở dữ liệu chưa có TMDB ID hoặc tiểu sử/ảnh đại diện và thực hiện tìm kiếm, đồng bộ thông tin từ TMDB.<br><br>Quá trình này được chia thành nhiều đợt (30 diễn viên/lần) để đảm bảo không bị quá tải. Bạn có muốn bắt đầu không?',
+                message: 'Hệ thống sẽ quét toàn bộ diễn viên trong cơ sở dữ liệu chưa có TMDB ID hoặc tiểu sử/ảnh đại diện và thực hiện tìm kiếm, đồng bộ thông tin từ TMDB/Wikipedia.<br><br>Quá trình này được chia thành nhiều đợt (30 diễn viên/lần) để đảm bảo không bị quá tải. Bạn có muốn bắt đầu không?',
                 confirmText: 'Bắt đầu',
                 cancelText: 'Hủy',
                 onConfirm: () => {
@@ -653,18 +738,22 @@ const hasTmdbKey = !!(settings.general as any).tmdb_api_key;
                         <div id="sync-progress" style="width:10%;height:100%;background:#3b82f6;transition:width 0.4s"></div>
                       </div>
                       <div id="sync-logs" style="max-height:150px;overflow-y:auto;font-family:monospace;font-size:11px;color:#94a3b8;background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);min-height:100px;text-align:left"></div>
+                      
+                      <!-- Custom Action Buttons inside the HTML body -->
+                      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+                        <button type="button" id="btn-sync-pause" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:12px;font-weight:600;cursor:pointer" class="hover:bg-white/10 transition-all">Tạm dừng</button>
+                        <button type="button" id="btn-sync-cancel" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);color:#ef4444;font-size:12px;font-weight:600;cursor:pointer" class="hover:bg-red-500/20 transition-all">Hủy</button>
+                        <button type="button" id="btn-sync-complete" style="padding:8px 14px;border-radius:8px;border:none;background:#10b981;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:none" class="hover:bg-emerald-500 transition-all">Hoàn tất</button>
+                      </div>
                     </div>
                   `;
 
                   setTimeout(() => {
                     window.txamodal.show({
-                      title: 'Đang đồng bộ từ TMDB',
+                      title: 'Đang đồng bộ diễn viên',
                       message: syncHtml,
                       confirmText: '',
-                      cancelText: 'Dừng / Hủy',
-                      onCancel: () => {
-                        cancelSync = true;
-                      }
+                      cancelText: ''
                     });
                     
                     setTimeout(runBulkSyncLoop, 100);

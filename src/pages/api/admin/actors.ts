@@ -384,10 +384,11 @@ export const POST: APIRoute = async ({ request }) => {
       if (dbError) throw dbError;
 
       if (!actorsToSync || actorsToSync.length === 0) {
-        return apiResponse({ count: 0 }, 'success', 'Không tìm thấy diễn viên nào cần đồng bộ.', 200, request);
+        return apiResponse({ count: 0, details: [] }, 'success', 'Không tìm thấy diễn viên nào cần đồng bộ.', 200, request);
       }
 
       let count = 0;
+      const details = [];
       for (const a of actorsToSync) {
         try {
           let bestMatchId = a.tmdb_id;
@@ -413,13 +414,19 @@ export const POST: APIRoute = async ({ request }) => {
                 })
                 .eq('id', a.id);
               count++;
+              details.push({ name: a.name, status: 'success', source: 'Wikipedia' });
+            } else {
+              details.push({ name: a.name, status: 'failed', reason: 'Không tìm thấy trên TMDB và Wikipedia' });
             }
             continue;
           }
 
           const detailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=vi-VN`;
           const detailRes = await fetch(detailUrl);
-          if (!detailRes.ok) continue;
+          if (!detailRes.ok) {
+            details.push({ name: a.name, status: 'failed', reason: 'Không tải được chi tiết TMDB' });
+            continue;
+          }
           let detailData = await detailRes.json() as any;
 
           if (!detailData.biography) {
@@ -447,13 +454,15 @@ export const POST: APIRoute = async ({ request }) => {
             .eq('id', a.id);
 
           count++;
+          details.push({ name: a.name, status: 'success', source: 'TMDB' });
           await new Promise(resolve => setTimeout(resolve, 250));
-        } catch (e) {
+        } catch (e: any) {
           console.error(`Lỗi khi đồng bộ diễn viên ${a.name}:`, e);
+          details.push({ name: a.name, status: 'failed', reason: e.message || 'Lỗi không xác định' });
         }
       }
 
-      return apiResponse({ count }, 'success', `Đồng bộ thành công ${count} diễn viên!`, 200, request);
+      return apiResponse({ count, details }, 'success', `Đồng bộ thành công ${count} diễn viên!`, 200, request);
     }
 
     return apiResponse(null, 'error', 'Hành động không hợp lệ!', 400, request);
