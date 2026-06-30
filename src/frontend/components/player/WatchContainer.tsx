@@ -6,13 +6,13 @@ import { supabase } from '@lib/supabase';
 
 const formatLocalAirDateTime = (dateStr?: string, timeStr?: string) => {
   if (!dateStr) return { date: '', time: '', text: '' };
-  let isoStr = `${dateStr}T00:00:00Z`;
+  let isoStr = `${dateStr}T00:00:00+07:00`;
   if (timeStr) {
     const parts = timeStr.split(':');
     if (parts.length === 2) {
-      isoStr = `${dateStr}T${timeStr}:00Z`;
+      isoStr = `${dateStr}T${timeStr}:00+07:00`;
     } else {
-      isoStr = `${dateStr}T${timeStr}Z`;
+      isoStr = `${dateStr}T${timeStr}+07:00`;
     }
   }
   try {
@@ -47,13 +47,13 @@ const CountdownBadge: React.FC<{ date: string; time?: string; label: string }> =
   useEffect(() => {
     if (!hasTime) return;
     
-    let targetDateTimeStr = `${date}T00:00:00Z`;
+    let targetDateTimeStr = `${date}T00:00:00+07:00`;
     if (time) {
       const parts = time.split(':');
       if (parts.length === 2) {
-        targetDateTimeStr = `${date}T${time}:00Z`;
+        targetDateTimeStr = `${date}T${time}:00+07:00`;
       } else {
-        targetDateTimeStr = `${date}T${time}Z`;
+        targetDateTimeStr = `${date}T${time}+07:00`;
       }
     }
     const targetDate = new Date(targetDateTimeStr).getTime();
@@ -118,13 +118,13 @@ const UnreleasedPlayerPlaceholder: React.FC<{ episode: Episode }> = ({ episode }
   useEffect(() => {
     if (!episode.airDate) return;
     
-    let targetDateTimeStr = `${episode.airDate}T00:00:00Z`;
+    let targetDateTimeStr = `${episode.airDate}T00:00:00+07:00`;
     if (episode.airTime) {
       const parts = episode.airTime.split(':');
       if (parts.length === 2) {
-        targetDateTimeStr = `${episode.airDate}T${episode.airTime}:00Z`;
+        targetDateTimeStr = `${episode.airDate}T${episode.airTime}:00+07:00`;
       } else {
-        targetDateTimeStr = `${episode.airDate}T${episode.airTime}Z`;
+        targetDateTimeStr = `${episode.airDate}T${episode.airTime}+07:00`;
       }
     }
     const targetDate = new Date(targetDateTimeStr).getTime();

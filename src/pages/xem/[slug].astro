@@ -46,13 +46,13 @@ if (movie && movie.episodes && movie.episodes.length > 0) {
     for (let i = 0; i < allEps.length; i++) {
       const ep = allEps[i];
       if (ep.airDate) {
-        let airDateTimeStr = `${ep.airDate}T00:00:00Z`;
+        let airDateTimeStr = `${ep.airDate}T00:00:00+07:00`;
         if (ep.airTime) {
           const parts = ep.airTime.split(':');
           if (parts.length === 2) {
-            airDateTimeStr = `${ep.airDate}T${ep.airTime}:00Z`;
+            airDateTimeStr = `${ep.airDate}T${ep.airTime}:00+07:00`;
           } else {
-            airDateTimeStr = `${ep.airDate}T${ep.airTime}Z`;
+            airDateTimeStr = `${ep.airDate}T${ep.airTime}+07:00`;
           }
         }
         try {

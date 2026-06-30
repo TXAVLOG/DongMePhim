@@ -69,10 +69,10 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       serverData: srvData.map((ep: any) => {
         let isUnreleased = false;
         if (movie.status === 'ongoing' && ep.airDate) {
-          let airDateTimeStr = `${ep.airDate}T00:00:00`;
+          let airDateTimeStr = `${ep.airDate}T00:00:00+07:00`;
           if (ep.airTime) {
             const parts = ep.airTime.split(':');
-            airDateTimeStr = parts.length === 2 ? `${ep.airDate}T${ep.airTime}:00` : `${ep.airDate}T${ep.airTime}`;
+            airDateTimeStr = parts.length === 2 ? `${ep.airDate}T${ep.airTime}:00+07:00` : `${ep.airDate}T${ep.airTime}+07:00`;
           }
           try {
             const airDateObj = new Date(airDateTimeStr);
