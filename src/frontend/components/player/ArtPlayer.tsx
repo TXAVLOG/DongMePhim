@@ -34,7 +34,7 @@ export function parseSubtitles(text: string): SubtitleCue[] {
   let textBuffer: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i].trim().replace(/\{[^}]+\}/g, '');
     const match = line.match(timeRegex);
 
     if (match) {
@@ -151,7 +151,7 @@ const CustomSubtitleSystem: React.FC<{
   const [primaryBgOpacity, setPrimaryBgOpacity] = useState(() => localStorage.getItem('txa_sub_primary_bg_opacity') || '0%');
 
   const [secondaryColor, setSecondaryColor] = useState(() => localStorage.getItem('txa_sub_secondary_color') || '#ffeb3b');
-  const [secondarySize, setSecondarySize] = useState(() => localStorage.getItem('txa_sub_secondary_size') || '70%');
+  const [secondarySize, setSecondarySize] = useState(() => localStorage.getItem('txa_sub_secondary_size') || '12pt');
   const [secondaryOpacity, setSecondaryOpacity] = useState(() => localStorage.getItem('txa_sub_secondary_opacity') || '100%');
   const [secondaryFont, setSecondaryFont] = useState(() => localStorage.getItem('txa_sub_secondary_font') || 'Arial');
 
@@ -479,8 +479,12 @@ const CustomSubtitleSystem: React.FC<{
       value: secondarySize,
       displayValue: secondarySize,
       options: [
-        { label: '50%', value: '50%' },
-        { label: '60%', value: '60%' },
+        { label: '10pt', value: '10pt' },
+        { label: '12pt', value: '12pt' },
+        { label: '14pt', value: '14pt' },
+        { label: '16pt', value: '16pt' },
+        { label: '18pt', value: '18pt' },
+        { label: '20pt', value: '20pt' },
         { label: '70%', value: '70%' },
         { label: '80%', value: '80%' },
         { label: '90%', value: '90%' },
