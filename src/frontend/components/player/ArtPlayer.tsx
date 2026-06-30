@@ -119,15 +119,15 @@ const loadAndProcessStoryboard = async (vttUrl: string) => {
       if (trimmed.includes('#xywh=')) {
         const parts = trimmed.split('#');
         const imgPath = parts[0] || '';
-        const hash = parts[1] || '';
+        const hash = parts.slice(1).join('#');
         
         let absoluteImgUrl = imgPath;
         if (!imgPath.startsWith('http') && !imgPath.startsWith('/') && !imgPath.startsWith('data:')) {
           absoluteImgUrl = baseUrl + imgPath;
         }
         
-        // Proxy the image URL and append the hash fragment at the end
-        return `/api/proxy-subtitle?url=${encodeURIComponent(absoluteImgUrl)}#${hash}`;
+        // Use direct R2 URL (CORS is configured on the bucket)
+        return `${absoluteImgUrl}#${hash}`;
       }
       return line;
     });
