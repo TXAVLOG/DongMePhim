@@ -84,11 +84,11 @@ Danh sách chi tiết các công việc cần làm cho dự án WebFilm, chia th
 
 ---
 
-## Phase 6: PWA (50%)
-- [ ] Tạo file `public/manifest.json` chứa thông tin ứng dụng PWA.
+## Phase 6: PWA (100%)
+- [x] Tạo file `public/manifest.json` chứa thông tin ứng dụng PWA.
 - [x] Tạo file Service Worker `public/sw.js` để cache shell và xử lý offline mode.
 - [x] Viết script đăng ký Service Worker trong `MainLayout.astro`.
-- [ ] Thiết kế banner / nút mời gọi cài đặt ứng dụng trên thiết bị di động.
+- [x] Thiết kế banner / nút mời gọi cài đặt ứng dụng trên thiết bị di động.
 
 ---
 
