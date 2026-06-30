@@ -31,13 +31,28 @@ export const GET: APIRoute = async ({ url }) => {
       });
     }
 
+    const contentType = res.headers.get('Content-Type') || '';
+    const isImage = contentType.startsWith('image/') || subtitleUrl.toLowerCase().match(/\.(jpg|jpeg|png|webp|gif)/);
+
+    if (isImage) {
+      const buffer = await res.arrayBuffer();
+      return new Response(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType || 'image/jpeg',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=86400'
+        }
+      });
+    }
+
     const text = await res.text();
-    const contentType = subtitleUrl.toLowerCase().endsWith('.srt') ? 'text/srt' : 'text/vtt';
+    const finalContentType = subtitleUrl.toLowerCase().endsWith('.srt') ? 'text/srt' : 'text/vtt';
 
     return new Response(text, {
       status: 200,
       headers: {
-        'Content-Type': `${contentType}; charset=utf-8`,
+        'Content-Type': `${finalContentType}; charset=utf-8`,
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'public, max-age=86400'
       }
