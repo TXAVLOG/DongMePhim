@@ -6,7 +6,7 @@ import { slugify } from '../../utils/categoryHelper';
 export class SupabaseMovieProvider implements IMovieProvider {
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string, slugs?: string[] }): Promise<Movie[]> {
     try {
-      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source';
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source';
       let query = supabase.from('movies').select(selectFields);
 
       if (params?.type) {
@@ -42,7 +42,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
           views: Number(m.views) || 0,
           commentCount: 0,
           category: Array.isArray(m.genres) && m.genres.length > 0 ? m.genres[0] : 'Khác',
-          country: m.broadcast_at || 'Khác',
+          country: m.country || 'Khác',
           genres: Array.isArray(m.genres) ? m.genres : [],
           updatedAt: m.updated_at || new Date().toISOString(),
           isStatic: false,
@@ -200,7 +200,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
           views: Number(finalDbMovie.views) || 0,
           commentCount: 0,
           category: Array.isArray(finalDbMovie.genres) && finalDbMovie.genres.length > 0 ? finalDbMovie.genres[0] : 'Khác',
-          country: finalDbMovie.broadcast_at || 'Khác',
+          country: finalDbMovie.country || 'Khác',
           genres: Array.isArray(finalDbMovie.genres) ? finalDbMovie.genres : [],
           seasons: finalDbMovie.seasons || (finalDbMovie.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1'),
           actors: Array.isArray(finalDbMovie.actors) ? finalDbMovie.actors : [],
@@ -289,7 +289,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
   async getRelatedMovies(movieId: string): Promise<Movie[]> {
     try {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(movieId);
-      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
       let query = supabase.from('movies').select(selectFields);
       if (isUuid) {
         query = query.neq('id', movieId);
@@ -324,7 +324,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
           imdbScore: Number(m.imdb_score) || 8.0,
           views: Number(m.views) || 0,
           commentCount: 0,
-          category: m.broadcast_at || 'Khác',
+          category: m.country || 'Khác',
           genres: Array.isArray(m.genres) ? m.genres : [],
           updatedAt: m.updated_at || new Date().toISOString(),
           isStatic: false,
@@ -361,7 +361,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
   async searchMovies(query: string): Promise<Movie[]> {
     try {
-      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
       const { data: dbMovies, error } = await supabase
         .from('movies')
         .select(selectFields)
@@ -391,7 +391,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
           views: Number(m.views) || 0,
           commentCount: 0,
           category: Array.isArray(m.genres) && m.genres.length > 0 ? m.genres[0] : 'Khác',
-          country: m.broadcast_at || 'Khác',
+          country: m.country || 'Khác',
           genres: Array.isArray(m.genres) ? m.genres : [],
           updatedAt: m.updated_at || new Date().toISOString(),
           actors: Array.isArray(m.actors) ? m.actors : [],

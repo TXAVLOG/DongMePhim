@@ -1311,10 +1311,20 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   const handleAdEnded = () => {
     setShowAd(false);
+    setTimeout(() => {
+      const movieVideo = document.querySelector('video:not(#adVideoMobile)') as HTMLVideoElement;
+      if (movieVideo) {
+        movieVideo.play().catch(e => console.log('Ad video end play error:', e));
+      }
+    }, 50);
   };
 
   const handleSkipAd = () => {
     setShowAd(false);
+    const movieVideo = document.querySelector('video:not(#adVideoMobile)') as HTMLVideoElement;
+    if (movieVideo) {
+      movieVideo.play().catch(e => console.log('Skip ad play error:', e));
+    }
   };
 
   useEffect(() => {
@@ -1331,6 +1341,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           if (state === 0) { // Ended
             console.log('[Ad] YouTube iframe ended.');
             setShowAd(false);
+            setTimeout(() => {
+              const movieVideo = document.querySelector('video:not(#adVideoMobile)') as HTMLVideoElement;
+              if (movieVideo) {
+                movieVideo.play().catch(e => console.log('YouTube ad end play error:', e));
+              }
+            }, 50);
           }
         }
       } catch (e) {
@@ -2171,41 +2187,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 <span className="text-xs font-bold text-zinc-400">Đang chuẩn bị nguồn phát...</span>
               </div>
             </div>
-          ) : showAd ? (
-            <div className="absolute inset-0 bg-black flex items-center justify-center z-[50]">
-              {adType === 'video' ? (
-                <video 
-                  src={adUrl} 
-                  autoPlay 
-                  controls={false} 
-                  className="w-full h-full object-contain" 
-                  onEnded={handleAdEnded}
-                />
-              ) : (
-                <iframe 
-                  src={adUrl} 
-                  className="w-full h-full border-none" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              )}
-              <div className="absolute bottom-6 right-6 flex items-center gap-3">
-                {canSkipAd ? (
-                  <button 
-                    onClick={handleSkipAd}
-                    className="px-5 py-2.5 bg-[#d2bbff] text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(210,187,255,0.4)] flex items-center gap-1.5 border-none cursor-pointer"
-                  >
-                    <span>Bỏ qua quảng cáo</span>
-                    <span className="material-symbols-outlined text-sm font-bold">skip_next</span>
-                  </button>
-                ) : adCountdown <= 5 ? (
-                  <div className="px-5 py-2.5 bg-black/85 backdrop-blur-md border border-white/10 rounded-xl text-[10px] text-white font-bold tracking-wider uppercase">
-                    Bỏ qua ({adCountdown})
-                  </div>
-                ) : null}
-              </div>
-            </div>
           ) : userPermissions && currentServer && !userPermissions.allowed_servers?.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) ? (
             <div className="w-full h-full aspect-video bg-[#0d0e14] border border-glass-stroke rounded-2xl flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-primary/5 blur-[50px] pointer-events-none"></div>
@@ -2257,9 +2238,48 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 siteName={siteName}
                 siteUrl={siteUrl}
                 maxResolution={userPermissions?.max_resolution}
-                autoplay={true}
+                autoplay={!showAd}
                 storyboardUrl={currentEpisode?.storyboardUrl}
               />
+
+              {showAd && (
+                <div className="absolute inset-0 bg-black flex items-center justify-center z-[50]">
+                  {adType === 'video' ? (
+                    <video 
+                      id="adVideoMobile"
+                      src={adUrl} 
+                      autoPlay 
+                      playsInline
+                      controls={false} 
+                      className="w-full h-full object-contain" 
+                      onEnded={handleAdEnded}
+                    />
+                  ) : (
+                    <iframe 
+                      src={adUrl} 
+                      className="w-full h-full border-none" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      referrerPolicy="strict-origin-when-cross-origin"
+                    />
+                  )}
+                  <div className="absolute bottom-6 right-6 flex items-center gap-3">
+                    {canSkipAd ? (
+                      <button 
+                        onClick={handleSkipAd}
+                        className="px-5 py-2.5 bg-[#d2bbff] text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(210,187,255,0.4)] flex items-center gap-1.5 border-none cursor-pointer"
+                      >
+                        <span>Bỏ qua quảng cáo</span>
+                        <span className="material-symbols-outlined text-sm font-bold">skip_next</span>
+                      </button>
+                    ) : adCountdown <= 5 ? (
+                      <div className="px-5 py-2.5 bg-black/85 backdrop-blur-md border border-white/10 rounded-xl text-[10px] text-white font-bold tracking-wider uppercase">
+                        Bỏ qua ({adCountdown})
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              )}
 
               {/* Resume Prompt Dialog */}
               {resumePrompt?.show && (

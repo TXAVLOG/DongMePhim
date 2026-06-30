@@ -114,14 +114,14 @@ export const MovieService = {
         const { supabase } = await import('@lib/supabase');
         const { data, error } = await supabase
           .from('movies')
-          .select('genres, broadcast_at');
+          .select('genres, country');
         
         if (!error && data) {
           const dbGenres = [...new Set(data.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
           if (dbGenres.length > 0) {
             genres = [...new Set([...genres, ...dbGenres])];
           }
-          const dbCountries = [...new Set(data.map((m: any) => m.broadcast_at).filter(Boolean))] as string[];
+          const dbCountries = [...new Set(data.map((m: any) => m.country).filter(Boolean))] as string[];
           if (dbCountries.length > 0) {
             countries = [...new Set([...countries, ...dbCountries])];
           }

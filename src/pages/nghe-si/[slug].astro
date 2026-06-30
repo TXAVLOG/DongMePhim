@@ -36,7 +36,7 @@ if (isSupabase) {
         const movieIds = movieRelations.map(r => r.movie_id);
         const { data: dbMovies } = await supabase
           .from('movies')
-          .select('id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, broadcast_at, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url')
+          .select('id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url')
           .in('id', movieIds);
 
         if (dbMovies) {
@@ -58,7 +58,7 @@ if (isSupabase) {
             lang: m.lang || 'Vietsub',
             imdbScore: Number(m.imdb_score) || 8.0,
             views: Number(m.views) || 0,
-            category: m.broadcast_at || 'Khác',
+            category: m.country || 'Khác',
             genres: Array.isArray(m.genres) ? m.genres : []
           }));
         }

@@ -8,7 +8,7 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const { countries } = await MovieService.getGenresAndCountries();
     // Return list of countries formatted
-    const formatted = countries.map(c => ({
+    const formatted = countries.map((c: string) => ({
       name: c,
       slug: c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
     }));
@@ -36,11 +36,11 @@ export const POST: APIRoute = async ({ request }) => {
         return apiResponse(null, 'error', 'Thiếu tên quốc gia cũ hoặc mới!', 400, request);
       }
 
-      // Update all movies that have oldName as country (broadcast_at column)
+      // Update all movies that have oldName as country (country column)
       const { data, error } = await supabase
         .from('movies')
-        .update({ broadcast_at: newName.normalize('NFC').trim() })
-        .eq('broadcast_at', oldName.normalize('NFC').trim());
+        .update({ country: newName.normalize('NFC').trim() })
+        .eq('country', oldName.normalize('NFC').trim());
 
       if (error) throw error;
       
@@ -58,8 +58,8 @@ export const POST: APIRoute = async ({ request }) => {
       // Update all movies that have oldName to 'Khác'
       const { data, error } = await supabase
         .from('movies')
-        .update({ broadcast_at: 'Khác' })
-        .eq('broadcast_at', oldName.normalize('NFC').trim());
+        .update({ country: 'Khác' })
+        .eq('country', oldName.normalize('NFC').trim());
 
       if (error) throw error;
 
