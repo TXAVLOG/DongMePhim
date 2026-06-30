@@ -233,11 +233,17 @@ export const POST: APIRoute = async ({ request }) => {
             tmdbInfo = await fetchActorFromTMDB(actorName);
           }
 
+          // Fallback: tìm trên Wikipedia nếu TMDB không có
+          let wikiInfo = null;
+          if (!tmdbInfo) {
+            wikiInfo = await fetchActorFromWikipedia(actorName);
+          }
+
           actorPayloads.push({
             name: actorName,
             slug: slug,
-            avatar_url: tmdbInfo?.avatarUrl || existing?.avatar_url || '',
-            bio: tmdbInfo?.bio || existing?.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.',
+            avatar_url: tmdbInfo?.avatarUrl || wikiInfo?.avatarUrl || existing?.avatar_url || '',
+            bio: tmdbInfo?.bio || wikiInfo?.bio || existing?.bio || 'Thông tin về nghệ sĩ này đang được cập nhật.',
             tmdb_id: tmdbInfo?.tmdbId || existing?.tmdb_id || null
           });
         }

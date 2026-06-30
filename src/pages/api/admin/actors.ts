@@ -3,6 +3,55 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { SettingService } from '@services/SettingService';
 
+// Wikipedia fallback: tìm diễn viên trên Vietnamese Wikipedia, rồi Chinese Wikipedia
+async function fetchActorFromWikipedia(actorName: string): Promise<{ avatarUrl: string; bio: string } | null> {
+  // Thử Vietnamese Wikipedia trước
+  const wikis = [
+    { lang: 'vi', domain: 'vi.wikipedia.org' },
+    { lang: 'zh', domain: 'zh.wikipedia.org' }
+  ];
+
+  for (const wiki of wikis) {
+    try {
+      const searchUrl = `https://${wiki.domain}/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(actorName)}&utf8=&format=json&srlimit=3&origin=*`;
+      const searchRes = await fetch(searchUrl);
+      if (!searchRes.ok) continue;
+      const searchData = await searchRes.json() as any;
+      const results = searchData.query?.search;
+      if (!results || results.length === 0) continue;
+
+      // Tìm kết quả khớp tên nhất (title chứa tên diễn viên)
+      const bestResult = results.find((r: any) => {
+        const t = r.title.toLowerCase();
+        const n = actorName.toLowerCase();
+        return t === n || t.includes(n) || n.includes(t);
+      }) || results[0];
+
+      const title = bestResult.title;
+      const detailUrl = `https://${wiki.domain}/w/api.php?action=query&prop=pageimages|extracts&exintro=1&explaintext=1&piprop=original&titles=${encodeURIComponent(title)}&format=json&origin=*`;
+      const detailRes = await fetch(detailUrl);
+      if (!detailRes.ok) continue;
+      const detailData = await detailRes.json() as any;
+      const pages = detailData.query?.pages;
+      if (!pages) continue;
+      const pageId = Object.keys(pages)[0];
+      if (pageId === '-1') continue;
+      const page = pages[pageId];
+
+      const avatarUrl = page.original?.source || '';
+      const bio = page.extract || '';
+
+      // Chỉ trả về nếu có ít nhất ảnh hoặc bio có nội dung
+      if (avatarUrl || (bio && bio.length > 20)) {
+        return { avatarUrl, bio };
+      }
+    } catch (e) {
+      console.error(`Wikipedia ${wiki.lang} error for ${actorName}:`, e);
+    }
+  }
+  return null;
+}
+
 const slugify = (text: string) => {
   return text
     .toLowerCase()
@@ -172,7 +221,18 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       if (!bestMatchId) {
-        return apiResponse(null, 'error', 'Không tìm thấy diễn viên trên TMDB!', 404, request);
+        // Fallback: tìm trên Wikipedia
+        const wikiInfo = await fetchActorFromWikipedia(name || '');
+        if (wikiInfo && (wikiInfo.avatarUrl || wikiInfo.bio)) {
+          return apiResponse({
+            name: name,
+            tmdb_id: null,
+            avatar_url: wikiInfo.avatarUrl,
+            bio: wikiInfo.bio,
+            source: 'wikipedia'
+          }, 'success', 'Lấy thông tin từ Wikipedia thành công!', 200, request);
+        }
+        return apiResponse(null, 'error', 'Không tìm thấy diễn viên trên TMDB và Wikipedia!', 404, request);
       }
 
       const detailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=vi-VN`;
@@ -234,7 +294,33 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       if (!bestMatchId) {
-        return apiResponse(null, 'error', 'Không tìm thấy diễn viên trên TMDB!', 404, request);
+        // Fallback: tìm trên Wikipedia
+        const wikiInfo = await fetchActorFromWikipedia(dbActor.name);
+        if (wikiInfo && (wikiInfo.avatarUrl || wikiInfo.bio)) {
+          const { data: wikiUpdated, error: wikiErr } = await supabase
+            .from('actors')
+            .update({
+              avatar_url: wikiInfo.avatarUrl || dbActor.avatar_url,
+              bio: wikiInfo.bio || dbActor.bio,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', actor.id)
+            .select('*')
+            .single();
+
+          if (wikiErr) throw wikiErr;
+
+          return apiResponse({
+            id: wikiUpdated.id,
+            name: wikiUpdated.name,
+            image: wikiUpdated.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200&q=80',
+            slug: wikiUpdated.slug,
+            bio: wikiUpdated.bio,
+            tmdb_id: wikiUpdated.tmdb_id,
+            source: 'wikipedia'
+          }, 'success', 'Đồng bộ diễn viên từ Wikipedia thành công!', 200, request);
+        }
+        return apiResponse(null, 'error', 'Không tìm thấy diễn viên trên TMDB và Wikipedia!', 404, request);
       }
 
       const detailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=vi-VN`;
@@ -314,7 +400,22 @@ export const POST: APIRoute = async ({ request }) => {
             }
           }
 
-          if (!bestMatchId) continue;
+          if (!bestMatchId) {
+            // Fallback: tìm trên Wikipedia
+            const wikiInfo = await fetchActorFromWikipedia(a.name);
+            if (wikiInfo && (wikiInfo.avatarUrl || wikiInfo.bio)) {
+              await supabase
+                .from('actors')
+                .update({
+                  avatar_url: wikiInfo.avatarUrl || a.avatar_url,
+                  bio: wikiInfo.bio || a.bio,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', a.id);
+              count++;
+            }
+            continue;
+          }
 
           const detailUrl = `https://api.themoviedb.org/3/person/${bestMatchId}?api_key=${apiKey}&language=vi-VN`;
           const detailRes = await fetch(detailUrl);
