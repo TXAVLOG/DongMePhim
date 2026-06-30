@@ -106,7 +106,9 @@ const loadAndProcessStoryboard = async (vttUrl: string) => {
     const proxied = proxySubtitleUrl(vttUrl);
     const res = await fetch(proxied);
     if (!res.ok) return '';
-    const text = await res.text();
+    const rawText = await res.text();
+    // Strip UTF-8 BOM if present
+    const text = rawText.replace(/^\uFEFF/, '');
     
     // Get the base URL directory of the original VTT file
     const baseUrl = vttUrl.substring(0, vttUrl.lastIndexOf('/') + 1);
@@ -114,7 +116,7 @@ const loadAndProcessStoryboard = async (vttUrl: string) => {
     const lines = text.split('\n');
     const processedLines = lines.map(line => {
       const trimmed = line.trim();
-      if (trimmed && !trimmed.includes('-->') && !trimmed.startsWith('WEBVTT') && !trimmed.match(/^\d+$/)) {
+      if (trimmed.includes('#xywh=')) {
         if (!trimmed.startsWith('http') && !trimmed.startsWith('/') && !trimmed.startsWith('data:')) {
           return baseUrl + trimmed;
         }
@@ -309,12 +311,41 @@ const CustomSubtitleSystem: React.FC<{
     };
   }, [art, primaryCues, secondaryCues, mode]);
 
+  useEffect(() => {
+    if (!showPanel) return;
+
+    const handleOutsideClick = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.txa-sub-control-panel-wrapper') && !target.closest('.art-control-custom-subtitles')) {
+        setShowPanel(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [showPanel]);
+
   const getSubStyle = (isPrimary: boolean) => {
     const color = isPrimary ? primaryColor : secondaryColor;
     const size = isPrimary ? primarySize : secondarySize;
     const opacityVal = isPrimary ? primaryOpacity : secondaryOpacity;
     const font = isPrimary ? primaryFont : secondaryFont;
     
+    let adaptedSize = size;
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      if (size.endsWith('pt')) {
+        adaptedSize = `${parseFloat(size) * 0.85}pt`;
+      } else if (size.endsWith('px')) {
+        adaptedSize = `${parseFloat(size) * 0.85}px`;
+      } else if (size.endsWith('%')) {
+        adaptedSize = `${parseFloat(size) * 0.85}%`;
+      }
+    }
+
     const op = parseFloat(opacityVal) / 100;
     const fontFamily = font === 'Sans-Serif' ? 'sans-serif' : `'${font}', sans-serif`;
 
@@ -615,9 +646,11 @@ const CustomSubtitleSystem: React.FC<{
           className="txa-sub-control-panel-wrapper"
           style={{
             position: 'absolute',
-            bottom: '80px',
-            right: '20px',
-            width: '380px',
+            bottom: `${bottomOffset + 10}px`,
+            right: typeof window !== 'undefined' && window.innerWidth < 768 ? '10px' : '20px',
+            left: typeof window !== 'undefined' && window.innerWidth < 768 ? '10px' : 'auto',
+            width: typeof window !== 'undefined' && window.innerWidth < 768 ? 'auto' : '380px',
+            maxWidth: 'calc(100% - 20px)',
             backgroundColor: 'rgba(15, 15, 20, 0.92)',
             backdropFilter: 'blur(16px)',
             borderRadius: '16px',
@@ -1197,6 +1230,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         // JWPlayer style settings
         theme: '#1e88e5',
         lang: 'vi',
+        autoOrientation: true,
+        fastForward: true,
+        lock: true,
         i18n: {
           'vi': {
             'Play': 'Phát',
