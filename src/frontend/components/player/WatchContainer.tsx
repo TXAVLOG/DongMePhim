@@ -2050,9 +2050,29 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return `${min}:${sec < 10 ? '0' : ''}${sec}`;
   };
 
-  const showBadge = nextAiringEpisode || (movie.broadcastSchedule && (movie.broadcastSchedule.notice || movie.broadcastSchedule.nextDate));
-  const badgeDate = nextAiringEpisode ? nextAiringEpisode.airDate : movie.broadcastSchedule?.nextDate;
-  const badgeTime = nextAiringEpisode ? nextAiringEpisode.airTime : movie.broadcastSchedule?.nextTime;
+  // Check if broadcast schedule has passed
+  let isScheduleActive = false;
+  if (movie.broadcastSchedule && movie.broadcastSchedule.nextDate) {
+    let targetDateTimeStr = `${movie.broadcastSchedule.nextDate}T00:00:00Z`;
+    if (movie.broadcastSchedule.nextTime) {
+      const parts = movie.broadcastSchedule.nextTime.split(':');
+      if (parts.length === 2) {
+        targetDateTimeStr = `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}:00Z`;
+      } else {
+        targetDateTimeStr = `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}Z`;
+      }
+    }
+    try {
+      const targetDate = new Date(targetDateTimeStr).getTime();
+      isScheduleActive = Date.now() < targetDate;
+    } catch (e) {
+      isScheduleActive = true;
+    }
+  }
+
+  const showBadge = nextAiringEpisode || (movie.broadcastSchedule && isScheduleActive && (movie.broadcastSchedule.notice || movie.broadcastSchedule.nextDate));
+  const badgeDate = nextAiringEpisode ? nextAiringEpisode.airDate : (isScheduleActive ? movie.broadcastSchedule?.nextDate : undefined);
+  const badgeTime = nextAiringEpisode ? nextAiringEpisode.airTime : (isScheduleActive ? movie.broadcastSchedule?.nextTime : undefined);
   
   const localAiring = formatLocalAirDateTime(badgeDate, badgeTime);
   const badgeLabel = nextAiringEpisode 

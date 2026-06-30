@@ -17,6 +17,9 @@ if (!movie) {
   Astro.response.statusText = 'Not Found';
 }
 
+// Ensure the page is never cached so that release schedule date/time checks are always fresh
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
 const settings = await SettingService.getSettings();
 
 // Get initial server and episode parameters from query string
