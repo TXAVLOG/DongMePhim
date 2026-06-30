@@ -113,8 +113,14 @@ if (movie) {
       const tmdbId = kkData?.movie?.tmdb?.id;
       const tmdbType = kkData?.movie?.tmdb?.type || 'movie';
       if (tmdbId) {
-        const proxyUrl = `${Astro.url.origin}/api/tmdb-proxy?path=/3/${tmdbType}/${tmdbId}/images`;
-        const tmdbRes = await fetch(proxyUrl);
+        const tmdbApiKey = '211be8d45c0d31404f644ecdcf9caad5';
+        const tmdbUrl = `https://api.tmdb.org/3/${tmdbType}/${tmdbId}/images?api_key=${tmdbApiKey}`;
+        const tmdbRes = await fetch(tmdbUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
         if (tmdbRes.ok) {
           const tmdbImages = await tmdbRes.json() as any;
           if (tmdbImages && Array.isArray(tmdbImages.backdrops)) {
