@@ -1149,15 +1149,15 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           <span class="material-symbols-outlined text-xl">search</span>
           <span class="text-[10px] font-medium">Tìm kiếm</span>
         </a>
+        <a href="/lich-chieu" class={`flex flex-col items-center gap-1 ${isActive('/lich-chieu') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
+          <span class="material-symbols-outlined text-xl">calendar_month</span>
+          <span class="text-[10px] font-medium">Lịch chiếu</span>
+        </a>
 
         <!-- Guest View Links -->
         <a href="/danh-sach-cua-toi" class={`auth-guest flex flex-col items-center gap-1 ${isActive('/danh-sach-cua-toi') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
           <span class="material-symbols-outlined text-xl">bookmark</span>
           <span class="text-[10px] font-medium">Lưu</span>
-        </a>
-        <a href="/lich-chieu" class={`auth-guest flex flex-col items-center gap-1 ${isActive('/lich-chieu') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
-          <span class="material-symbols-outlined text-xl">calendar_month</span>
-          <span class="text-[10px] font-medium">Lịch chiếu</span>
         </a>
         <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class={`auth-guest flex flex-col items-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors`}>
           <span class="material-symbols-outlined text-xl">person</span>

@@ -3,23 +3,34 @@ import MainLayout from '@layouts/MainLayout.astro';
 import { MovieService } from '@services/MovieService';
 import { Button } from '@components/ui/Button';
 
-// Dummy list of upcoming movies for schedule
-const upcomingMovies = await MovieService.getMovies({ type: 'movie', limit: 10 });
-// Filter some to make it look like schedule
-const scheduleList = upcomingMovies.map((m: any) => ({...m, releaseDate: "2026-06-20", time: "20:00"}));
+// Lấy tất cả phim từ Supabase
+const allMovies = await MovieService.getMovies({ type: 'movie', limit: 60 });
 
-const currentYear = new Date().getFullYear();
-const currentMonth = new Date().getMonth() + 1;
-const currentDate = new Date().getDate();
+// Chuẩn hoá dữ liệu phim — KHÔNG tính "hôm nay / đã qua" ở server nữa,
+// vì server (Supabase/Astro SSR) có thể chạy ở múi giờ khác máy người dùng.
+// Toàn bộ so sánh ngày/giờ sẽ được JS ở client xử lý bằng `new Date()` của trình duyệt.
+const scheduleList = allMovies.map((m: any) => {
+  const schedule = m.broadcastSchedule;
+  const hasSchedule = !!(schedule && schedule.nextDate);
+  return {
+    slug: m.slug,
+    title: m.title,
+    posterUrl: m.posterUrl,
+    lang: m.lang || '',
+    hasSchedule,
+    scheduleDate: hasSchedule ? schedule.nextDate : '',      // 'YYYY-MM-DD'
+    scheduleTime: hasSchedule ? (schedule.nextTime || '20:00') : '',
+    scheduleNotice: hasSchedule ? (schedule.notice || '') : '',
+  };
+});
 
-// Generate some days for the picker
-const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-const days = Array.from({length: daysInMonth}, (_, i) => i + 1);
+const nowOnMovies = scheduleList.filter((m: any) => !m.hasSchedule);
+const upcomingOnMovies = scheduleList.filter((m: any) => m.hasSchedule);
 ---
 
 <MainLayout title="Lịch chiếu phim">
-  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 space-y-8">
-    
+  <main class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 space-y-10">
+
     <!-- Header & Reminder Button -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-glass-stroke pb-6">
       <div>
@@ -38,83 +49,76 @@ const days = Array.from({length: daysInMonth}, (_, i) => i + 1);
       <div class="flex flex-wrap gap-4 items-center justify-between border-b border-glass-stroke pb-4">
         <div class="flex items-center gap-3">
           <span class="material-symbols-outlined text-primary">calendar_month</span>
-          <select class="bg-surface border border-glass-stroke text-white font-title-md rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer">
-            <option value={currentYear - 1}>Năm {currentYear - 1}</option>
-            <option value={currentYear} selected>Năm {currentYear}</option>
-            <option value={currentYear + 1}>Năm {currentYear + 1}</option>
+          <select id="select-year" class="bg-surface border border-glass-stroke text-white font-title-md rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer">
+            <!-- options điền bằng JS theo giờ trình duyệt -->
           </select>
-          
+
           <span class="text-text-dim px-2">/</span>
-          
-          <select class="bg-surface border border-glass-stroke text-white font-title-md rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer">
+
+          <select id="select-month" class="bg-surface border border-glass-stroke text-white font-title-md rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer">
             {Array.from({length: 12}).map((_, i) => (
-              <option value={i+1} selected={i+1 === currentMonth}>Tháng {i+1}</option>
+              <option value={i+1}>Tháng {i+1}</option>
             ))}
           </select>
         </div>
-        
-        <div class="text-sm font-label-caps text-on-surface-variant flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-primary inline-block shadow-[0_0_8px_#d2bbff]"></span>
-          Hôm nay: {currentDate}/{currentMonth}/{currentYear}
+
+        <div id="today-label" class="text-sm font-label-caps text-on-surface-variant flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-primary inline-block shadow-[0_0_8px_#d2bbff] animate-pulse"></span>
+          <span id="today-label-text">Đang tải...</span>
         </div>
       </div>
 
       <!-- Centered Day Grid with Arrows -->
       <div class="flex items-center justify-center gap-4">
-        <!-- Left Arrow -->
-        <button class="w-10 h-10 rounded-full glass-card border border-glass-stroke flex items-center justify-center text-on-surface hover:text-primary hover:border-primary transition-colors cursor-pointer shrink-0">
+        <button id="day-arrow-left" class="w-10 h-10 rounded-full glass-card border border-glass-stroke flex items-center justify-center text-on-surface hover:text-primary hover:border-primary transition-colors cursor-pointer shrink-0">
           <span class="material-symbols-outlined">chevron_left</span>
         </button>
-        
-        <!-- Days Grid -->
+
         <div id="days-grid-container" class="flex gap-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory py-2 px-4 items-center justify-start md:justify-center max-w-[800px] flex-1">
-          {days.map(d => {
-            const isToday = d === currentDate;
-            return (
-              <button class={`snap-center shrink-0 w-14 h-16 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${isToday ? 'bg-primary text-on-primary shadow-[0_0_20px_rgba(210,187,255,0.4)] scale-110 border-0' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary/50'}`}>
-                <span class="text-[10px] font-label-caps uppercase">{`T${(d%7)+2}`}</span>
-                <span class="text-lg font-bold font-title-md">{d}</span>
-              </button>
-            )
-          })}
+          <!-- điền bằng JS -->
         </div>
 
-        <!-- Right Arrow -->
-        <button class="w-10 h-10 rounded-full glass-card border border-glass-stroke flex items-center justify-center text-on-surface hover:text-primary hover:border-primary transition-colors cursor-pointer shrink-0">
+        <button id="day-arrow-right" class="w-10 h-10 rounded-full glass-card border border-glass-stroke flex items-center justify-center text-on-surface hover:text-primary hover:border-primary transition-colors cursor-pointer shrink-0">
           <span class="material-symbols-outlined">chevron_right</span>
         </button>
       </div>
     </div>
 
-    <!-- Movie List -->
-    <div class="space-y-6 pt-4">
-      <h3 class="text-xl text-white font-title-md border-l-4 border-primary pl-4">Lịch chiếu ngày {currentDate}/{currentMonth}/{currentYear}</h3>
-      
-      {scheduleList.length === 0 ? (
-        <div class="text-center py-20 text-on-surface-variant">Không có lịch chiếu nào cho ngày này.</div>
-      ) : (
+    <!-- Movie List: lịch chiếu theo ngày được chọn -->
+    <div class="space-y-6">
+      <h3 class="text-xl text-white font-title-md border-l-4 border-primary pl-4">
+        Lịch chiếu ngày <span id="selected-date-label">...</span>
+      </h3>
+
+      <div id="scheduled-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6"></div>
+      <div id="scheduled-empty" class="hidden text-center py-16 text-on-surface-variant glass-card border border-dashed border-glass-stroke rounded-2xl">
+        Không có lịch chiếu nào cho ngày này.
+      </div>
+    </div>
+
+    <!-- Movie List: đang chiếu (không có lịch cụ thể) -->
+    {nowOnMovies.length > 0 && (
+      <div class="space-y-6">
+        <h3 class="text-xl text-white font-title-md border-l-4 border-blue-400 pl-4">Đang chiếu</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6">
-          {scheduleList.map((movie: any) => (
+          {nowOnMovies.map((movie: any) => (
             <div class="group relative flex flex-col gap-2 card-hover">
-              <a href={`/phim/${movie.slug}`} class="block w-full aspect-[2/3] relative rounded-lg overflow-hidden glass-card border border-glass-stroke transition-all duration-300">
+              <a href={`/phim/${movie.slug}`} class="block w-full aspect-[2/3] relative rounded-xl overflow-hidden glass-card border border-glass-stroke transition-all duration-300 group-hover:border-primary/60 group-hover:shadow-[0_0_24px_rgba(210,187,255,0.18)]">
                 <img src={movie.posterUrl} alt={movie.title} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-surface-deep/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
-                
+                <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-surface-deep/30 to-transparent opacity-90"></div>
                 <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end gap-1">
-                  <h3 class="text-white font-title-md text-sm line-clamp-2 leading-tight">{movie.title}</h3>
-                  <div class="flex items-center gap-2">
-                    <span class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] font-label-caps font-bold">{movie.time}</span>
-                    {movie.lang && <span class="text-text-dim text-[10px] font-label-caps">{movie.lang}</span>}
+                  <h3 class="text-white font-title-md text-sm line-clamp-2 leading-tight drop-shadow">{movie.title}</h3>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    {movie.lang && <span class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] font-label-caps font-bold backdrop-blur-sm">{movie.lang}</span>}
+                    <span class="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-[10px] font-label-caps font-bold">Đang chiếu</span>
                   </div>
                 </div>
               </a>
-              <!-- Actions -->
               <div class="flex items-center gap-2 mt-1">
-                <button class="flex-1 bg-surface border border-glass-stroke rounded-lg py-1.5 text-xs font-bold text-on-surface hover:text-secondary hover:border-secondary transition-all flex items-center justify-center gap-1 group/btn relative" onclick="showToast('Đã thêm vào lời nhắc', 'success')">
-                  <span class="material-symbols-outlined text-[14px]">notifications</span>
-                  Nhắc tôi
-                  <div class="txatooltip absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">Xem lời nhắc</div>
-                </button>
+                <a href={`/phim/${movie.slug}`} class="flex-1 bg-primary/15 border border-primary/30 rounded-lg py-1.5 text-xs font-bold text-primary hover:bg-primary/25 transition-all flex items-center justify-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">play_circle</span>
+                  Xem ngay
+                </a>
                 <button class="w-8 h-8 shrink-0 bg-surface border border-glass-stroke rounded-lg text-on-surface hover:text-primary hover:border-primary transition-all flex items-center justify-center relative group/btn btn-bookmark-schedule">
                   <span class="material-symbols-outlined text-[16px]">bookmark_add</span>
                   <div class="txatooltip absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">Add to Playlist</div>
@@ -123,11 +127,40 @@ const days = Array.from({length: daysInMonth}, (_, i) => i + 1);
             </div>
           ))}
         </div>
-      )}
-    </div>
+      </div>
+    )}
   </main>
 
-  <!-- Reminders Modal (Hidden by default) -->
+  <!-- Template cho thẻ phim có lịch chiếu (dùng lại bằng JS) -->
+  <template id="scheduled-card-template">
+    <div class="group relative flex flex-col gap-2 card-hover" data-card>
+      <a class="block w-full aspect-[2/3] relative rounded-xl overflow-hidden glass-card border border-glass-stroke transition-all duration-300 group-hover:border-primary/60 group-hover:shadow-[0_0_24px_rgba(210,187,255,0.18)]" data-link>
+        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" data-img />
+        <div class="absolute inset-0 bg-gradient-to-t from-surface-deep via-surface-deep/30 to-transparent opacity-90"></div>
+        <div class="absolute top-2 right-2" data-status-pill></div>
+        <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end gap-1">
+          <h3 class="text-white font-title-md text-sm line-clamp-2 leading-tight drop-shadow" data-title></h3>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-label-caps font-bold" data-time-pill></span>
+          </div>
+          <p class="text-[10px] text-yellow-300/80 line-clamp-2 leading-tight mt-0.5 hidden" data-notice></p>
+        </div>
+      </a>
+      <div class="flex items-center gap-2 mt-1">
+        <button class="flex-1 bg-surface border border-glass-stroke rounded-lg py-1.5 text-xs font-bold text-on-surface hover:text-secondary hover:border-secondary transition-all flex items-center justify-center gap-1 group/btn relative" data-remind-btn>
+          <span class="material-symbols-outlined text-[14px]">notifications</span>
+          Nhắc tôi
+          <div class="txatooltip absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">Đặt lời nhắc</div>
+        </button>
+        <button class="w-8 h-8 shrink-0 bg-surface border border-glass-stroke rounded-lg text-on-surface hover:text-primary hover:border-primary transition-all flex items-center justify-center relative group/btn btn-bookmark-schedule">
+          <span class="material-symbols-outlined text-[16px]">bookmark_add</span>
+          <div class="txatooltip absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">Add to Playlist</div>
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <!-- Reminders Modal -->
   <div id="reminders-modal" class="txamodal hidden">
     <div class="txamodal-content">
       <div class="flex justify-between items-center mb-6">
@@ -139,9 +172,8 @@ const days = Array.from({length: daysInMonth}, (_, i) => i + 1);
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
-      
+
       <div class="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
-        {/* Mock reminders */}
         {[1, 2, 3].map(i => (
           <div class="flex items-center gap-4 bg-surface border border-glass-stroke p-3 rounded-xl hover:border-primary/50 transition-colors">
             <div class="w-12 h-16 rounded overflow-hidden shrink-0">
@@ -161,67 +193,255 @@ const days = Array.from({length: daysInMonth}, (_, i) => i + 1);
   </div>
 
   <div id="txa-toast-container"></div>
+
+  <!-- Dữ liệu phim cho client JS -->
+  <script type="application/json" id="schedule-data" set:html={JSON.stringify(upcomingOnMovies)} />
 </MainLayout>
 
 <style>
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .card-hover { transition: transform 0.25s ease; }
+  .card-hover:hover { transform: translateY(-4px); }
 </style>
 
 <script>
   document.addEventListener('astro:page-load', () => {
-    // Modal Logic
+    // ---------- Dữ liệu phim có lịch chiếu ----------
+    const dataEl = document.getElementById('schedule-data');
+    const movies = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+
+    // ---------- Mọi tính toán ngày/giờ dùng new Date() của TRÌNH DUYỆT ----------
+    const now = new Date();
+    let viewYear = now.getFullYear();
+    let viewMonth = now.getMonth() + 1; // 1-12
+    let selectedDate = formatDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+    function formatDate(y: number, m: number, d: number) {
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+
+    function isToday(y: number, m: number, d: number) {
+      return y === now.getFullYear() && m === (now.getMonth() + 1) && d === now.getDate();
+    }
+
+    // ---------- Year / Month selects ----------
+    const yearSelect = document.getElementById('select-year') as HTMLSelectElement | null;
+    const monthSelect = document.getElementById('select-month') as HTMLSelectElement | null;
+    const todayLabelText = document.getElementById('today-label-text');
+
+    if (todayLabelText) {
+      todayLabelText.textContent = `Hôm nay: ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+    }
+
+    function updateSelectedDateOnMonthYearChange() {
+      if (viewYear === now.getFullYear() && viewMonth === (now.getMonth() + 1)) {
+        selectedDate = formatDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      } else {
+        selectedDate = formatDate(viewYear, viewMonth, 1);
+      }
+    }
+
+    if (yearSelect) {
+      const curY = now.getFullYear();
+      [curY - 1, curY, curY + 1].forEach((y) => {
+        const opt = document.createElement('option');
+        opt.value = String(y);
+        opt.textContent = `Năm ${y}`;
+        if (y === viewYear) opt.selected = true;
+        yearSelect.appendChild(opt);
+      });
+      yearSelect.addEventListener('change', () => {
+        viewYear = Number(yearSelect.value);
+        updateSelectedDateOnMonthYearChange();
+        renderDaysGrid();
+        renderScheduledMovies();
+      });
+    }
+
+    if (monthSelect) {
+      monthSelect.value = String(viewMonth);
+      monthSelect.addEventListener('change', () => {
+        viewMonth = Number(monthSelect.value);
+        updateSelectedDateOnMonthYearChange();
+        renderDaysGrid();
+        renderScheduledMovies();
+      });
+    }
+
+    // ---------- Days grid ----------
+    const grid = document.getElementById('days-grid-container');
+    const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+    function renderDaysGrid() {
+      if (!grid) return;
+      grid.innerHTML = '';
+      const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+      let activeBtn: HTMLButtonElement | null = null;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dow = new Date(viewYear, viewMonth - 1, d).getDay();
+        const dateStr = formatDate(viewYear, viewMonth, d);
+        const today = isToday(viewYear, viewMonth, d);
+        const isSelected = dateStr === selectedDate;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.date = dateStr;
+        btn.className = `snap-center shrink-0 w-14 h-16 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border cursor-pointer ${
+          isSelected
+            ? 'bg-primary text-on-primary shadow-[0_0_20px_rgba(210,187,255,0.4)] scale-110 border-transparent'
+            : today
+              ? 'bg-surface border-primary/60 text-primary'
+              : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-primary/50'
+        }`;
+        btn.innerHTML = `
+          <span class="text-[10px] font-label-caps uppercase">${dayLabels[dow]}</span>
+          <span class="text-lg font-bold font-title-md">${d}</span>
+        `;
+        btn.addEventListener('click', () => {
+          selectedDate = dateStr;
+          renderDaysGrid();
+          renderScheduledMovies();
+        });
+        grid.appendChild(btn);
+
+        if (isSelected) {
+          activeBtn = btn;
+        }
+      }
+
+      if (activeBtn) {
+        setTimeout(() => {
+          activeBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }, 80);
+      }
+    }
+
+    document.getElementById('day-arrow-left')?.addEventListener('click', () => {
+      grid?.scrollBy({ left: -200, behavior: 'smooth' });
+    });
+    document.getElementById('day-arrow-right')?.addEventListener('click', () => {
+      grid?.scrollBy({ left: 200, behavior: 'smooth' });
+    });
+
+    // ---------- Render movies for selected date ----------
+    const scheduledGrid = document.getElementById('scheduled-grid');
+    const scheduledEmpty = document.getElementById('scheduled-empty');
+    const selectedDateLabel = document.getElementById('selected-date-label');
+    const cardTemplate = document.getElementById('scheduled-card-template') as HTMLTemplateElement | null;
+
+    function renderScheduledMovies() {
+      if (!scheduledGrid || !cardTemplate) return;
+      scheduledGrid.innerHTML = '';
+
+      const [sy, sm, sd] = selectedDate.split('-').map(Number);
+      if (selectedDateLabel) selectedDateLabel.textContent = `${sd}/${sm}/${sy}`;
+
+      const todays = movies.filter((m: any) => m.scheduleDate === selectedDate);
+
+      // Sắp xếp: sắp chiếu trước, đã chiếu sau, theo giờ tăng dần
+      todays.sort((a: any, b: any) => {
+        const aPast = isPastShow(a);
+        const bPast = isPastShow(b);
+        if (aPast !== bPast) return aPast ? 1 : -1;
+        return (a.scheduleTime || '').localeCompare(b.scheduleTime || '');
+      });
+
+      if (todays.length === 0) {
+        scheduledEmpty?.classList.remove('hidden');
+        return;
+      }
+      scheduledEmpty?.classList.add('hidden');
+
+      todays.forEach((movie: any) => {
+        const node = cardTemplate.content.cloneNode(true) as DocumentFragment;
+        const link = node.querySelector('[data-link]') as HTMLAnchorElement;
+        const img = node.querySelector('[data-img]') as HTMLImageElement;
+        const title = node.querySelector('[data-title]') as HTMLElement;
+        const timePill = node.querySelector('[data-time-pill]') as HTMLElement;
+        const statusPill = node.querySelector('[data-status-pill]') as HTMLElement;
+        const notice = node.querySelector('[data-notice]') as HTMLElement;
+        const remindBtn = node.querySelector('[data-remind-btn]') as HTMLElement;
+
+        link.href = `/phim/${movie.slug}`;
+        img.src = movie.posterUrl;
+        img.alt = movie.title;
+        title.textContent = movie.title;
+
+        const past = isPastShow(movie);
+        timePill.textContent = movie.scheduleTime;
+        timePill.className = `px-1.5 py-0.5 rounded text-[10px] font-label-caps font-bold ${past ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`;
+
+        statusPill.innerHTML = past
+          ? `<span class="bg-surface-deep/80 backdrop-blur-sm text-red-300 px-2 py-0.5 rounded-full text-[10px] font-label-caps font-bold border border-red-400/30">Đã chiếu</span>`
+          : `<span class="bg-surface-deep/80 backdrop-blur-sm text-green-300 px-2 py-0.5 rounded-full text-[10px] font-label-caps font-bold border border-green-400/30 animate-pulse">Sắp chiếu</span>`;
+
+        if (movie.scheduleNotice) {
+          notice.textContent = movie.scheduleNotice;
+          notice.classList.remove('hidden');
+        }
+
+        if (past) {
+          // Đã chiếu -> nút "Xem ngay" thay cho "Nhắc tôi"
+          remindBtn.outerHTML = `
+            <a href="/phim/${movie.slug}" class="flex-1 bg-primary/15 border border-primary/30 rounded-lg py-1.5 text-xs font-bold text-primary hover:bg-primary/25 transition-all flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">play_circle</span>
+              Xem ngay
+            </a>`;
+        } else {
+          remindBtn.addEventListener('click', () => {
+            (window as any).showGlobalToast?.('Đã thêm vào lời nhắc', 'success');
+          });
+        }
+
+        scheduledGrid.appendChild(node);
+      });
+
+      // gắn lại sự kiện bookmark cho các card vừa render
+      wireBookmarkButtons();
+    }
+
+    function isPastShow(movie: any) {
+      if (!movie.scheduleDate || !movie.scheduleTime) return true;
+      const [y, m, d] = movie.scheduleDate.split('-').map(Number);
+      const [hh, mm] = movie.scheduleTime.split(':').map(Number);
+      const showDateTime = new Date(y, m - 1, d, hh, mm, 0);
+      return now.getTime() > showDateTime.getTime();
+    }
+
+    // ---------- Bookmark / auth check ----------
+    function wireBookmarkButtons() {
+      document.querySelectorAll('.btn-bookmark-schedule').forEach((btn) => {
+        if ((btn as HTMLElement).dataset.wired) return;
+        (btn as HTMLElement).dataset.wired = 'true';
+        btn.addEventListener('click', () => {
+          const isLoggedIn = document.cookie.includes('txa_gate_passed');
+          if (!isLoggedIn) {
+            (window as any).showGlobalToast?.('Yêu cầu đăng nhập để thêm vào Playlist', 'error');
+            setTimeout(() => (window as any).openLoginModal?.(), 800);
+          } else {
+            (window as any).showGlobalToast?.('Đã thêm vào Playlist!', 'success');
+          }
+        });
+      });
+    }
+
+    // ---------- Reminders modal ----------
     const modal = document.getElementById('reminders-modal');
     const btnOpen = document.getElementById('btn-show-reminders');
     const btnClose = document.getElementById('btn-close-modal');
 
-    if (btnOpen && modal && btnClose) {
-      btnOpen.addEventListener('click', () => {
-        modal.classList.remove('hidden');
-      });
-      btnClose.addEventListener('click', () => {
-        modal.classList.add('hidden');
-      });
-      modal.addEventListener('click', (e: Event) => {
-        if (e.target === modal) {
-          modal.classList.add('hidden');
-        }
-      });
-    }
-
-    // Bookmark buttons - check auth
-    document.querySelectorAll('.btn-bookmark-schedule').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const isLoggedIn = document.cookie.includes('txa_gate_passed');
-        if (!isLoggedIn) {
-          if ((window as any).showGlobalToast) (window as any).showGlobalToast('Yêu cầu đăng nhập để thêm vào Playlist', 'error');
-          setTimeout(() => { if ((window as any).openLoginModal) (window as any).openLoginModal(); }, 800);
-        } else {
-          if ((window as any).showGlobalToast) (window as any).showGlobalToast('Đã thêm vào Playlist!', 'success');
-        }
-      });
+    btnOpen?.addEventListener('click', () => modal?.classList.remove('hidden'));
+    btnClose?.addEventListener('click', () => modal?.classList.add('hidden'));
+    modal?.addEventListener('click', (e: Event) => {
+      if (e.target === modal) modal.classList.add('hidden');
     });
 
-    // Wire Day Grid scroll arrows
-    const grid = document.getElementById('days-grid-container');
-    const leftArrow = grid?.parentElement?.querySelector('button:first-of-type');
-    const rightArrow = grid?.parentElement?.querySelector('button:last-of-type');
-    
-    if (grid && leftArrow && rightArrow) {
-      leftArrow.addEventListener('click', () => {
-        grid.scrollBy({ left: -200, behavior: 'smooth' });
-      });
-      rightArrow.addEventListener('click', () => {
-        grid.scrollBy({ left: 200, behavior: 'smooth' });
-      });
-    }
-
-    // Auto-scroll active day button (today) into view
-    const activeDayBtn = document.querySelector('.snap-center.bg-primary');
-    if (activeDayBtn && grid) {
-      setTimeout(() => {
-        activeDayBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      }, 150);
-    }
+    // ---------- Init ----------
+    renderDaysGrid();
+    renderScheduledMovies();
+    wireBookmarkButtons();
   });
 </script>
