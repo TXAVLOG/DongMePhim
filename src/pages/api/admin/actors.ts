@@ -26,7 +26,7 @@ export const GET: APIRoute = async ({ request }) => {
     const formattedActors = (actors || []).map(a => ({
       id: a.id,
       name: a.name,
-      image: a.avatar_url || '/logo-decoy.png',
+      image: a.avatar_url && a.avatar_url !== '' && !a.avatar_url.includes('logo-decoy') ? a.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200&q=80',
       slug: a.slug,
       bio: a.bio
     }));

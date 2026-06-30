@@ -40,12 +40,9 @@ const staticMovies = await MovieService.getMovies();
       <p class="text-sm text-zinc-400 italic">Không tìm thấy diễn viên nào phù hợp.</p>
     </div>
 
-    <!-- Pagination or Load More -->
-    <div id="load-more-container" class="mt-12 flex justify-center pb-10">
-      <button id="btn-load-more" class="border border-glass-stroke bg-surface-container hover:bg-surface-container-high px-8 py-3 rounded-full font-body-main text-sm transition-all flex items-center gap-2 cursor-pointer text-white">
-        Tải thêm diễn viên
-        <span class="material-symbols-outlined">expand_more</span>
-      </button>
+    <!-- Pagination Container -->
+    <div id="pagination-container" class="mt-12 flex items-center justify-center gap-2 pb-10">
+      <!-- Dynamically generated page buttons -->
     </div>
   </div>
 
@@ -54,8 +51,8 @@ const staticMovies = await MovieService.getMovies();
       let actorsState = [];
       let allMovies = [];
       let currentFiltered = [];
-      let displayedCount = 10;
-      const itemsPerLoad = 10;
+      let currentPage = 1;
+      const itemsPerPage = 24;
 
       async function loadActors() {
         try {
@@ -81,7 +78,7 @@ const staticMovies = await MovieService.getMovies();
         await loadActors();
 
         currentFiltered = [...actorsState];
-        displayedCount = 10;
+        currentPage = 1;
         filterAndRender();
 
         // Bind events
@@ -90,15 +87,7 @@ const staticMovies = await MovieService.getMovies();
           searchInput.oninput = (e) => {
             const query = e.target.value.trim().toLowerCase();
             currentFiltered = actorsState.filter(a => a.name.toLowerCase().includes(query));
-            displayedCount = 10;
-            filterAndRender();
-          };
-        }
-
-        const btnLoadMore = document.getElementById('btn-load-more');
-        if (btnLoadMore) {
-          btnLoadMore.onclick = () => {
-            displayedCount += itemsPerLoad;
+            currentPage = 1;
             filterAndRender();
           };
         }
@@ -137,7 +126,7 @@ const staticMovies = await MovieService.getMovies();
                     return;
                   }
                   if (!image) {
-                    image = '/logo-decoy.png'; // default avatar
+                    image = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200&q=80'; // default avatar
                   }
                   
                   try {
@@ -178,10 +167,76 @@ const staticMovies = await MovieService.getMovies();
         }).length;
       }
 
+      function renderPagination(totalPages) {
+        const container = document.getElementById('pagination-container');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+          container.innerHTML = '';
+          return;
+        }
+
+        let html = '';
+        
+        // Prev button
+        html += `
+          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2.5 rounded-xl border border-glass-stroke bg-surface-container hover:bg-surface-container-high disabled:opacity-30 disabled:pointer-events-none text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
+            <span class="material-symbols-outlined text-sm">chevron_left</span> Trước
+          </button>
+        `;
+
+        // Page numbers
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+        
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        if (startPage > 1) {
+          html += `<button onclick="changePage(1)" class="w-10 h-10 rounded-xl border border-glass-stroke bg-surface-container hover:bg-surface-container-high text-white text-xs font-bold transition-all cursor-pointer">1</button>`;
+          if (startPage > 2) {
+            html += `<span class="text-zinc-600 px-1">...</span>`;
+          }
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+          const isActive = p === currentPage;
+          html += `
+            <button onclick="changePage(${p})" class="w-10 h-10 rounded-xl border ${isActive ? 'border-primary bg-primary text-slate-950' : 'border-glass-stroke bg-surface-container hover:bg-surface-container-high text-white'} text-xs font-bold transition-all cursor-pointer">
+              ${p}
+            </button>
+          `;
+        }
+
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            html += `<span class="text-zinc-600 px-1">...</span>`;
+          }
+          html += `<button onclick="changePage(${totalPages})" class="w-10 h-10 rounded-xl border border-glass-stroke bg-surface-container hover:bg-surface-container-high text-white text-xs font-bold transition-all cursor-pointer">${totalPages}</button>`;
+        }
+
+        // Next button
+        html += `
+          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2.5 rounded-xl border border-glass-stroke bg-surface-container hover:bg-surface-container-high disabled:opacity-30 disabled:pointer-events-none text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
+            Sau <span class="material-symbols-outlined text-sm">chevron_right</span>
+          </button>
+        `;
+
+        container.innerHTML = html;
+      }
+
+      window.changePage = function(page) {
+        currentPage = page;
+        filterAndRender();
+        // Smooth scroll to top of list
+        document.getElementById('actors-grid')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+
       function filterAndRender() {
         const grid = document.getElementById('actors-grid');
         const emptyState = document.getElementById('actors-empty');
-        const loadMoreBtn = document.getElementById('btn-load-more');
         const summaryText = document.getElementById('actor-summary-text');
         if (!grid) return;
 
@@ -192,13 +247,16 @@ const staticMovies = await MovieService.getMovies();
         if (currentFiltered.length === 0) {
           grid.innerHTML = '';
           emptyState?.classList.remove('hidden');
-          if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+          renderPagination(0);
           return;
         }
 
         emptyState?.classList.add('hidden');
         
-        const listToDisplay = currentFiltered.slice(0, displayedCount);
+        const totalPages = Math.ceil(currentFiltered.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+
+        const listToDisplay = currentFiltered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
         grid.innerHTML = listToDisplay.map((actor, index) => {
           const originalIndex = actorsState.findIndex(a => a.name === actor.name);
@@ -225,13 +283,7 @@ const staticMovies = await MovieService.getMovies();
           `;
         }).join('');
 
-        if (loadMoreBtn) {
-          if (displayedCount >= currentFiltered.length) {
-            loadMoreBtn.style.display = 'none';
-          } else {
-            loadMoreBtn.style.display = 'flex';
-          }
-        }
+        renderPagination(totalPages);
       }
 
       window.editActor = function(index) {
