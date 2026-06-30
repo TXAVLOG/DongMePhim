@@ -12,6 +12,7 @@
 		"astro": "astro",
 		"generate-types": "wrangler types",
 		"deploy": "astro build && wrangler deploy",
+		"deploy-push": "npm run deploy && git add . && git commit -m \"update\" && git push",
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
