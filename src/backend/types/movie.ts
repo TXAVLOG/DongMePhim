@@ -58,6 +58,7 @@ export interface Episode {
   airDate?: string;
   airTime?: string;
   thumbUrl?: string;
+  storyboardUrl?: string;
 }
 
 export interface MovieDetail extends Movie {

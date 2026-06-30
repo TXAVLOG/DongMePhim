@@ -100,6 +100,37 @@ export function parseSubtitles(text: string): SubtitleCue[] {
   return cues;
 }
 
+const loadAndProcessStoryboard = async (vttUrl: string) => {
+  if (!vttUrl) return '';
+  try {
+    const proxied = proxySubtitleUrl(vttUrl);
+    const res = await fetch(proxied);
+    if (!res.ok) return '';
+    const text = await res.text();
+    
+    // Get the base URL directory of the original VTT file
+    const baseUrl = vttUrl.substring(0, vttUrl.lastIndexOf('/') + 1);
+    
+    const lines = text.split('\n');
+    const processedLines = lines.map(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.includes('-->') && !trimmed.startsWith('WEBVTT') && !trimmed.match(/^\d+$/)) {
+        if (!trimmed.startsWith('http') && !trimmed.startsWith('/') && !trimmed.startsWith('data:')) {
+          return baseUrl + trimmed;
+        }
+      }
+      return line;
+    });
+    
+    const processedText = processedLines.join('\n');
+    const blob = new Blob([processedText], { type: 'text/vtt' });
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    console.error('Error processing storyboard VTT:', e);
+    return '';
+  }
+};
+
 const CustomSubtitleSystem: React.FC<{
   art: Artplayer;
   subtitles: Subtitle[];
@@ -986,6 +1017,7 @@ interface ArtPlayerProps {
   maxResolution?: 'SD' | 'HD' | 'FHD' | '4K';
   hideWatermark?: boolean;
   autoplay?: boolean;
+  storyboardUrl?: string;
 }
 
 const getAutoSkipSetting = (): boolean => {
@@ -1033,7 +1065,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   siteUrl = 'https://dongmephim.com',
   maxResolution = '4K',
   hideWatermark = false,
-  autoplay = false
+  autoplay = false,
+  storyboardUrl
 }) => {
   const artRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<Artplayer | null>(null);
@@ -1088,7 +1121,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
     const realUrl = getRealStreamUrl(url);
 
-    const initPlayer = (HlsClass: any) => {
+    const initPlayer = (HlsClass: any, storyboardBlobUrl?: string) => {
       if (!artRef.current) return;
 
       if (playerInstanceRef.current) {
@@ -1135,6 +1168,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         container: artRef.current,
         url: realUrl,
         poster: poster || '',
+        thumbnails: storyboardBlobUrl ? {
+          url: storyboardBlobUrl,
+        } : undefined,
         volume: 0.7,
         isLive: false,
         muted: false,
@@ -1249,6 +1285,46 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                   if (hls.currentLevel > maxIndex) {
                     hls.currentLevel = maxIndex;
                   }
+                }
+
+                // Add quality options to settings menu dynamically
+                const levels = hls.levels;
+                if (levels && levels.length > 0) {
+                  try {
+                    art.setting.remove('quality');
+                  } catch (e) {}
+
+                  const qualitySelector = [
+                    {
+                      html: 'Tự động',
+                      default: true,
+                      index: -1
+                    },
+                    ...levels.map((l: any, idx: number) => ({
+                      html: l.height ? `${l.height}p` : `Chất lượng ${idx}`,
+                      index: idx
+                    })).reverse()
+                  ];
+
+                  // Filter selector to only show allowed qualities
+                  const allowedSelector = qualitySelector.filter(item => {
+                    if (item.index === -1) return true;
+                    const lvl = levels[item.index];
+                    return lvl && lvl.height <= maxAllowedHeight;
+                  });
+
+                  art.setting.add({
+                    name: 'quality',
+                    width: 150,
+                    html: 'Chất lượng',
+                    tooltip: 'Tự động',
+                    selector: allowedSelector,
+                    onSelect: function (item: any) {
+                      hls.currentLevel = item.index;
+                      art.notice.show = `Chất lượng: ${item.html}`;
+                      return item.html;
+                    }
+                  });
                 }
               });
 
@@ -1429,6 +1505,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
       if (qualities && qualities.length > 0) {
         art.setting.add({
+          name: 'quality',
           width: 200,
           html: 'Chất lượng',
           tooltip: qualities.find(q => q.default)?.html || qualities[0]?.html || 'Auto',
@@ -1801,49 +1878,57 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       });
     };
 
+    let active = true;
     let checkInterval: any = null;
-    if (realUrl.includes('.m3u8') || realUrl.includes('stream')) {
-      if ((window as any).Hls) {
-        initPlayer((window as any).Hls);
-      } else {
-        let script = document.querySelector('script[src*="hls.min.js"]') as HTMLScriptElement;
-        if (!script) {
-          script = document.createElement('script');
-          script.id = 'hls-js-script';
-          script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js';
-          script.async = true;
-          document.head.appendChild(script);
-        }
-        
-        const onLoad = () => {
-          if ((window as any).Hls) {
-            initPlayer((window as any).Hls);
-            if (checkInterval) clearInterval(checkInterval);
-          }
-        };
+    let storyboardBlobUrl = '';
 
-        script.addEventListener('load', onLoad);
-
-        checkInterval = setInterval(() => {
-          if ((window as any).Hls) {
-            initPlayer((window as any).Hls);
-            clearInterval(checkInterval);
-          }
-        }, 100);
-
-        return () => {
-          script.removeEventListener('load', onLoad);
-          if (checkInterval) clearInterval(checkInterval);
-          if (playerInstanceRef.current) {
-            playerInstanceRef.current.destroy(false);
-          }
-        };
+    const startInit = async () => {
+      if (storyboardUrl) {
+        storyboardBlobUrl = await loadAndProcessStoryboard(storyboardUrl);
       }
-    } else {
-      initPlayer(null);
-    }
+      if (!active) {
+        if (storyboardBlobUrl) URL.revokeObjectURL(storyboardBlobUrl);
+        return;
+      }
+
+      if (realUrl.includes('.m3u8') || realUrl.includes('stream')) {
+        if ((window as any).Hls) {
+          initPlayer((window as any).Hls, storyboardBlobUrl);
+        } else {
+          let script = document.querySelector('script[src*="hls.min.js"]') as HTMLScriptElement;
+          if (!script) {
+            script = document.createElement('script');
+            script.id = 'hls-js-script';
+            script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js';
+            script.async = true;
+            document.head.appendChild(script);
+          }
+          
+          const onLoad = () => {
+            if ((window as any).Hls) {
+              initPlayer((window as any).Hls, storyboardBlobUrl);
+              if (checkInterval) clearInterval(checkInterval);
+            }
+          };
+
+          script.addEventListener('load', onLoad);
+
+          checkInterval = setInterval(() => {
+            if ((window as any).Hls) {
+              initPlayer((window as any).Hls, storyboardBlobUrl);
+              clearInterval(checkInterval);
+            }
+          }, 100);
+        }
+      } else {
+        initPlayer(null, storyboardBlobUrl);
+      }
+    };
+
+    startInit();
 
     return () => {
+      active = false;
       setPortalContainer(null);
       if (playerInstanceRef.current) {
         playerInstanceRef.current.destroy(false);
@@ -1851,8 +1936,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       if (artRef.current) {
         artRef.current.innerHTML = '';
       }
+      if (checkInterval) clearInterval(checkInterval);
+      if (storyboardBlobUrl) {
+        URL.revokeObjectURL(storyboardBlobUrl);
+      }
     };
-  }, [url, title]);
+  }, [url, title, storyboardUrl]);
 
   return (
     <>

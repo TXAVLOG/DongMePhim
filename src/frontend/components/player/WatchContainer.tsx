@@ -2258,6 +2258,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 siteUrl={siteUrl}
                 maxResolution={userPermissions?.max_resolution}
                 autoplay={true}
+                storyboardUrl={currentEpisode?.storyboardUrl}
               />
 
               {/* Resume Prompt Dialog */}
