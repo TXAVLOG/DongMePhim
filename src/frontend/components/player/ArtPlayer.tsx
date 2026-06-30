@@ -1362,7 +1362,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             html: '',
             style: {
               position: 'absolute',
-              inset: 0,
+              inset: '0',
               pointerEvents: 'none',
               zIndex: '45',
             }
