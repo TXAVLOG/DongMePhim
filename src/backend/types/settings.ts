@@ -179,6 +179,9 @@ export interface SubscriptionPlan {
   features: string[];
   permissions: PlanPermission;
   enabled?: boolean;
+  sale_price?: number | null;
+  sale_months?: number | null;
+  sale_end_date?: string | null;
 }
 
 export interface AdSettings {

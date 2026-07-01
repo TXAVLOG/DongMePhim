@@ -26,6 +26,7 @@ const groupedPackages = packages.map((pkg: any) => {
   if (!isFree && pkg.annual_price && pkg.annual_price < originalAnnualPrice) {
     savingPercent = Math.round((1 - pkg.annual_price / originalAnnualPrice) * 100);
   }
+  const isActiveSale = !isFree && pkg.sale_price && (!pkg.sale_end_date || new Date(pkg.sale_end_date) >= new Date());
   return {
     ...pkg,
     normalizedTitle: pkg.title,
@@ -34,7 +35,8 @@ const groupedPackages = packages.map((pkg: any) => {
     annualPrice: pkg.annual_price,
     annualId: pkg.id,
     savingPercent: savingPercent > 0 ? savingPercent : undefined,
-    originalAnnualPrice: originalAnnualPrice
+    originalAnnualPrice: originalAnnualPrice,
+    isActiveSale: !!isActiveSale
   };
 });
 ---
@@ -118,12 +120,21 @@ const groupedPackages = packages.map((pkg: any) => {
               data-has-annual={pkg.annualPrice ? 'true' : 'false'}
               data-saving-percent={pkg.savingPercent || '0'}
               data-original-annual-price={pkg.originalAnnualPrice || '0'}
+              data-sale-price={pkg.sale_price || ''}
+              data-sale-months={pkg.sale_months || ''}
+              data-sale-end-date={pkg.sale_end_date || ''}
             >
               {!isFree && pkg.style_type === 'rainbow_effect' && (
                 <div class="absolute top-0 right-0 overflow-hidden rounded-tr-3xl">
                   <div class="bg-gradient-to-r from-red-500 via-green-500 to-blue-500 text-black px-6 py-1 rotate-45 translate-x-6 translate-y-3 text-[9px] font-black uppercase tracking-wider font-label-caps shadow-md animate-pulse">
                     HOT
                   </div>
+                </div>
+              )}
+              {pkg.isActiveSale && pkg.sale_end_date && (
+                <div class="absolute -left-3 top-6 bg-gradient-to-r from-rose-600 to-amber-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-r-xl shadow-lg shadow-rose-500/20 flex items-center gap-1.5 z-30 countdown-timer-container" data-endtime={pkg.sale_end_date}>
+                  <span class="material-symbols-outlined text-[13px] animate-pulse">alarm</span>
+                  <span class="countdown-timer font-mono">...</span>
                 </div>
               )}
               
@@ -143,7 +154,10 @@ const groupedPackages = packages.map((pkg: any) => {
                 </h3>
                 
                 <div class="mt-6 flex flex-col">
-                  <div class="flex items-baseline gap-1">
+                  <div class="flex items-baseline gap-1 flex-wrap">
+                    <span class="original-price-container mr-2 hidden">
+                      <span class="original-price-val line-through text-zinc-500 text-lg font-bold"></span>
+                    </span>
                     <span class="price-val text-4xl font-black text-white">
                       {pkg.price.toLocaleString('vi-VN')}đ
                     </span>
@@ -586,6 +600,14 @@ const groupedPackages = packages.map((pkg: any) => {
 
         const isBypass = cardId === 'bypass_zalo' || cardId.includes('bypass');
 
+        const salePriceAttr = card.getAttribute('data-sale-price');
+        const saleEndDateAttr = card.getAttribute('data-sale-end-date');
+        const saleMonthsAttr = card.getAttribute('data-sale-months');
+        const saleActive = salePriceAttr && (!saleEndDateAttr || new Date(saleEndDateAttr) >= new Date());
+
+        const origPriceContainer = card.querySelector('.original-price-container');
+        const origPriceValEl = card.querySelector('.original-price-val');
+
         if (isMonthly) {
           card.classList.remove('hidden');
           visibleCount++;
@@ -596,60 +618,76 @@ const groupedPackages = packages.map((pkg: any) => {
           const savingBadge = card.querySelector('.saving-badge');
           const annualDetails = card.querySelector('.annual-price-details');
 
-          if (isBypass) {
-            const watchedCount = getWatchedCount();
-            const dynamicPrice = getBypassDynamicPrice(monthlyPrice);
-            if (priceValEl) priceValEl.textContent = dynamicPrice.toLocaleString('vi-VN') + 'đ';
-
-            let dynamicBadge = card.querySelector('.bypass-dynamic-badge');
-            if (watchedCount > 0) {
-              if (!dynamicBadge) {
-                dynamicBadge = document.createElement('div');
-                dynamicBadge.className = 'bypass-dynamic-badge bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-xl text-[10px] font-bold mt-2 inline-block';
-                const priceContainer = card.querySelector('.flex-col');
-                if (priceContainer) priceContainer.appendChild(dynamicBadge);
-              }
-              dynamicBadge.innerHTML = `<span class="material-symbols-outlined text-xs align-middle mr-1 text-amber-400">workspace_premium</span>Ưu đãi máy bạn xem ${watchedCount} phim (Gốc ${monthlyPrice.toLocaleString('vi-VN')}đ)`;
-            } else if (dynamicBadge) {
-              dynamicBadge.remove();
+          if (saleActive) {
+            const salePrice = parseInt(salePriceAttr);
+            if (priceValEl) priceValEl.textContent = salePrice.toLocaleString('vi-VN') + 'đ';
+            if (origPriceContainer && origPriceValEl) {
+              origPriceValEl.textContent = monthlyPrice.toLocaleString('vi-VN') + 'đ';
+              origPriceContainer.classList.remove('hidden');
+            }
+            if (priceUnitEl) {
+              priceUnitEl.textContent = saleMonthsAttr ? `/ ${saleMonthsAttr} tháng đầu` : '/ tháng';
             }
           } else {
-            if (priceValEl) priceValEl.textContent = monthlyPrice.toLocaleString('vi-VN') + 'đ';
-          }
+            if (origPriceContainer) origPriceContainer.classList.add('hidden');
 
-          if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
-          if (savingBadge) savingBadge.classList.add('hidden');
-          if (annualDetails) annualDetails.classList.add('hidden');
-          } else {
-            if (hasAnnual) {
-              card.classList.remove('hidden');
-              visibleCount++;
+            if (isBypass) {
+              const watchedCount = getWatchedCount();
+              const dynamicPrice = getBypassDynamicPrice(monthlyPrice);
+              if (priceValEl) priceValEl.textContent = dynamicPrice.toLocaleString('vi-VN') + 'đ';
 
-              const annualPrice = parseInt(card.getAttribute('data-annual-price') || '0');
-              const monthlyEquivalent = Math.round(annualPrice / 12);
-              const priceValEl = card.querySelector('.price-val');
-              const priceUnitEl = card.querySelector('.price-unit');
-              const savingBadge = card.querySelector('.saving-badge');
-              const annualDetails = card.querySelector('.annual-price-details');
-
-              if (priceValEl) priceValEl.textContent = monthlyEquivalent.toLocaleString('vi-VN') + 'đ';
-              if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
-              
-              const savingPercent = parseInt(card.getAttribute('data-saving-percent') || '0');
-              if (savingPercent > 0) {
-                if (savingBadge) {
-                  savingBadge.classList.remove('hidden');
-                  savingBadge.textContent = `Tiết kiệm ${savingPercent}%`;
+              let dynamicBadge = card.querySelector('.bypass-dynamic-badge');
+              if (watchedCount > 0) {
+                if (!dynamicBadge) {
+                  dynamicBadge = document.createElement('div');
+                  dynamicBadge.className = 'bypass-dynamic-badge bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-xl text-[10px] font-bold mt-2 inline-block';
+                  const priceContainer = card.querySelector('.flex-col');
+                  if (priceContainer) priceContainer.appendChild(dynamicBadge);
                 }
-                if (annualDetails) annualDetails.classList.remove('hidden');
-              } else {
-                if (savingBadge) savingBadge.classList.add('hidden');
-                if (annualDetails) annualDetails.classList.add('hidden');
+                dynamicBadge.innerHTML = `<span class="material-symbols-outlined text-xs align-middle mr-1 text-amber-400">workspace_premium</span>Ưu đãi máy bạn xem ${watchedCount} phim (Gốc ${monthlyPrice.toLocaleString('vi-VN')}đ)`;
+              } else if (dynamicBadge) {
+                dynamicBadge.remove();
               }
             } else {
-              card.classList.add('hidden');
+              if (priceValEl) priceValEl.textContent = monthlyPrice.toLocaleString('vi-VN') + 'đ';
             }
+
+            if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
           }
+
+          if (savingBadge) savingBadge.classList.add('hidden');
+          if (annualDetails) annualDetails.classList.add('hidden');
+        } else {
+          if (origPriceContainer) origPriceContainer.classList.add('hidden');
+          if (hasAnnual) {
+            card.classList.remove('hidden');
+            visibleCount++;
+
+            const annualPrice = parseInt(card.getAttribute('data-annual-price') || '0');
+            const monthlyEquivalent = Math.round(annualPrice / 12);
+            const priceValEl = card.querySelector('.price-val');
+            const priceUnitEl = card.querySelector('.price-unit');
+            const savingBadge = card.querySelector('.saving-badge');
+            const annualDetails = card.querySelector('.annual-price-details');
+
+            if (priceValEl) priceValEl.textContent = monthlyEquivalent.toLocaleString('vi-VN') + 'đ';
+            if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
+            
+            const savingPercent = parseInt(card.getAttribute('data-saving-percent') || '0');
+            if (savingPercent > 0) {
+              if (savingBadge) {
+                savingBadge.classList.remove('hidden');
+                savingBadge.textContent = `Tiết kiệm ${savingPercent}%`;
+              }
+              if (annualDetails) annualDetails.classList.remove('hidden');
+            } else {
+              if (savingBadge) savingBadge.classList.add('hidden');
+              if (annualDetails) annualDetails.classList.add('hidden');
+            }
+          } else {
+            card.classList.add('hidden');
+          }
+        }
         });
 
         // Adjust column count dynamically for symmetry
@@ -1357,14 +1395,90 @@ const groupedPackages = packages.map((pkg: any) => {
       }
     });
 
+    // Countdown Timer Logic
+    function formatCountdown(diffSeconds) {
+      if (diffSeconds <= 0) return 'Đã hết hạn';
+      
+      const years = Math.floor(diffSeconds / (365 * 24 * 3600));
+      let remains = diffSeconds % (365 * 24 * 3600);
+      
+      const months = Math.floor(remains / (30 * 24 * 3600));
+      remains = remains % (30 * 24 * 3600);
+      
+      const days = Math.floor(remains / (24 * 3600));
+      remains = remains % (24 * 3600);
+      
+      const hours = Math.floor(remains / 3600);
+      remains = remains % 3600;
+      
+      const minutes = Math.floor(remains / 60);
+      const seconds = Math.floor(remains % 60);
+      
+      const parts = [];
+      if (years > 0) parts.push(`${years} năm`);
+      if (months > 0) parts.push(`${months} tháng`);
+      if (days > 0) parts.push(`${days} ngày`);
+      if (hours > 0) parts.push(`${hours} giờ`);
+      if (minutes > 0) parts.push(`${minutes} phút`);
+      if (seconds > 0 || parts.length === 0) parts.push(`${seconds} giây`);
+      
+      return parts.join(' ');
+    }
+
+    let countdownInterval = null;
+
+    function updateCountdowns() {
+      const timers = document.querySelectorAll('.countdown-timer-container');
+      let needsPriceUpdate = false;
+
+      timers.forEach(container => {
+        const endtimeStr = container.getAttribute('data-endtime');
+        if (!endtimeStr) return;
+        const endTime = new Date(endtimeStr);
+        const diffMs = endTime.getTime() - Date.now();
+        const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+        
+        const textEl = container.querySelector('.countdown-timer');
+        if (textEl) {
+          textEl.textContent = formatCountdown(diffSeconds);
+        }
+
+        if (diffSeconds <= 0) {
+          container.classList.add('hidden');
+          const card = container.closest('[id^="plan-card-"]');
+          if (card) {
+            card.removeAttribute('data-sale-price');
+            card.removeAttribute('data-sale-end-date');
+            needsPriceUpdate = true;
+          }
+        }
+      });
+
+      if (needsPriceUpdate) {
+        updatePrices();
+      }
+    }
+
+    function initCountdowns() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      updateCountdowns();
+      countdownInterval = setInterval(updateCountdowns, 1000);
+    }
+
     initUpgradePage();
     setupReceiptForms();
     setupQRLightbox();
+    initCountdowns();
+
+    document.addEventListener('astro:before-preparation', () => {
+      if (countdownInterval) clearInterval(countdownInterval);
+    });
 
     document.addEventListener('astro:page-load', () => {
       initUpgradePage();
       setupReceiptForms();
       setupQRLightbox();
+      initCountdowns();
     });
   })();
 </script>

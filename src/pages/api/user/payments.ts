@@ -55,7 +55,10 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
         receiptImg: log.receipt_img || '',
         note: log.note || log.client_info || '',
         date: log.created_at,
-        keyCode: keyCode
+        keyCode: keyCode,
+        salePrice: log.sale_price ? Number(log.sale_price) : null,
+        saleMonths: log.sale_months || null,
+        saleEndDate: log.sale_end_date || null
       };
       return apiResponse(mappedLog, 'success', '', 200, request);
     }
@@ -83,7 +86,10 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
       status: l.status,
       receiptImg: l.receipt_img || '',
       note: l.note || l.client_info || '',
-      date: l.created_at
+      date: l.created_at,
+      salePrice: l.sale_price ? Number(l.sale_price) : null,
+      saleMonths: l.sale_months || null,
+      saleEndDate: l.sale_end_date || null
     }));
 
     return apiResponse(mappedLogs, 'success', '', 200, request);
@@ -186,6 +192,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       method: method || 'manual',
       status: status || 'pending',
       receipt_img: finalReceiptImg || null,
+      sale_price: body.salePrice !== undefined && body.salePrice !== null ? Number(body.salePrice) : null,
+      sale_months: body.saleMonths !== undefined && body.saleMonths !== null ? Number(body.saleMonths) : null,
+      sale_end_date: body.saleEndDate !== undefined && body.saleEndDate !== null ? body.saleEndDate : null,
       updated_at: new Date().toISOString()
     };
     if (clientNote) {

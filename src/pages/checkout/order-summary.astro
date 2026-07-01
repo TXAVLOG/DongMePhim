@@ -484,7 +484,21 @@ const serverSettings = await SettingService.getSettings();
       const rawOriginalTotal = rawOriginalMonthlyPrice * numMonths;
       const rawOriginalSubtotal = Math.round(rawOriginalTotal / (1 + vatRate / 100));
 
-      let calcTotal = Math.round(baseMonthlyPrice * numMonths * (1 - discountRate));
+      const salePrice = selectedPackage.sale_price;
+      const saleEndDate = selectedPackage.sale_end_date;
+      const saleMonths = selectedPackage.sale_months;
+      const isSaleActive = salePrice !== undefined && salePrice !== null && (!saleEndDate || new Date(saleEndDate) >= new Date());
+
+      let calcTotal = 0;
+      if (isSaleActive) {
+        if (saleMonths && numMonths > saleMonths) {
+          calcTotal = Math.round((salePrice * saleMonths) + (baseMonthlyPrice * (numMonths - saleMonths) * (1 - discountRate)));
+        } else {
+          calcTotal = Math.round(salePrice * numMonths * (1 - discountRate));
+        }
+      } else {
+        calcTotal = Math.round(baseMonthlyPrice * numMonths * (1 - discountRate));
+      }
 
       // Calculate promo discount if applied (Đảm bảo giá tổng không bao giờ dưới 2,000đ)
       let promoDiscountVal = 0;
@@ -670,7 +684,10 @@ const serverSettings = await SettingService.getSettings();
               method: selectedMethod,
               status: 'pending',
               promoCode: appliedPromo ? appliedPromo.code : null,
-              note: clientInfo
+              note: clientInfo,
+              salePrice: selectedPackage.sale_price || null,
+              saleMonths: selectedPackage.sale_months || null,
+              saleEndDate: selectedPackage.sale_end_date || null
             })
           });
         } catch (e) {}

@@ -626,6 +626,9 @@ CREATE TABLE IF NOT EXISTS public.txa_payment_logs (
   method character varying NOT NULL,
   status character varying NOT NULL DEFAULT 'pending'::character varying,
   receipt_img character varying,
+  sale_price numeric,
+  sale_months integer,
+  sale_end_date timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (txid)

@@ -86,9 +86,26 @@ const groupedPackages = packages.map((pkg: any) => {
               </div>
               <h3 class={`font-title-md text-title-md mb-2 ${textClass}`}>{pkg.title}</h3>
               <div class="flex flex-col mb-6">
-                <div class="flex items-baseline gap-1">
-                  <span class="text-headline-lg font-headline-lg text-3xl">{pkg.monthlyPrice.toLocaleString('vi-VN')}đ</span>
-                  <span class="text-on-surface-variant text-[14px]">/ tháng</span>
+                <div class="flex items-baseline gap-1.5 flex-wrap">
+                  {pkg.sale_price ? (
+                    <div class="flex flex-col">
+                      <div class="flex items-baseline gap-1.5 flex-wrap">
+                        <span class="text-zinc-500 line-through text-lg">{pkg.monthlyPrice.toLocaleString('vi-VN')}đ</span>
+                        <span class="text-headline-lg font-headline-lg text-3xl text-primary">{pkg.sale_price.toLocaleString('vi-VN')}đ</span>
+                        <span class="text-on-surface-variant text-[14px]">/ {pkg.sale_months ? `${pkg.sale_months} tháng đầu` : 'tháng'}</span>
+                      </div>
+                      {pkg.sale_end_date && (
+                        <span class="text-[10px] text-amber-400 mt-0.5">
+                          Hạn sale: {new Date(pkg.sale_end_date).toLocaleString('vi-VN')}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <span class="text-headline-lg font-headline-lg text-3xl">{pkg.monthlyPrice.toLocaleString('vi-VN')}đ</span>
+                      <span class="text-on-surface-variant text-[14px]">/ tháng</span>
+                    </>
+                  )}
                 </div>
                 {!isFree && pkg.annualPrice && (
                   <span class="text-[12px] text-zinc-400 mt-1">
@@ -764,6 +781,24 @@ const groupedPackages = packages.map((pkg: any) => {
               </div>
             </div>
 
+            <div class="grid grid-cols-3 gap-4 border border-dashed border-glass-stroke p-3 rounded-xl bg-white/5">
+              <div class="space-y-1 col-span-3">
+                <span class="text-[10px] font-black text-primary uppercase">Cấu hình giảm giá (Sale)</span>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Giá sale (VND)</label>
+                <input type="number" name="sale_price" placeholder="Ví dụ: 30000" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Số tháng áp dụng</label>
+                <input type="number" name="sale_months" placeholder="Ví dụ: 3" min="1" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Thời hạn hết sale</label>
+                <input type="datetime-local" name="sale_end_date" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
+              </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
               <div class="space-y-1 relative group/lock">
                 <label class="text-[10px] text-zinc-400 font-bold uppercase flex justify-between items-center">
@@ -931,14 +966,28 @@ const groupedPackages = packages.map((pkg: any) => {
                 allowed_servers.push(el.value);
               });
 
+              const price = parseInt(formData.get('price') || '0');
+              const salePriceStr = formData.get('sale_price');
+              let sale_price = null;
+              if (salePriceStr) {
+                sale_price = parseInt(salePriceStr);
+                if (sale_price >= price) {
+                  if (window.showGlobalToast) window.showGlobalToast('Giá sale phải nhỏ hơn giá gốc!', 'error');
+                  return;
+                }
+              }
+
               const newPlan = {
                 id: newId,
                 title: title,
-                price: parseInt(formData.get('price') || '0'),
+                price: price,
                 annual_price: parseInt(formData.get('annual_price') || '0'),
                 style_type: formData.get('style_type'),
                 custom_color: formData.get('style_type') === 'custom_color' ? formData.get('custom_color') : undefined,
                 features: formData.get('features').split(',').map(s => s.trim()).filter(s => s.length > 0),
+                sale_price: sale_price,
+                sale_months: formData.get('sale_months') ? parseInt(formData.get('sale_months')) : null,
+                sale_end_date: formData.get('sale_end_date') ? new Date(formData.get('sale_end_date')).toISOString() : null,
                 permissions: {
                   max_resolution: formData.get('max_resolution'),
                   max_playlists: parseInt(formData.get('max_playlists') || '100'),
@@ -1009,6 +1058,13 @@ const groupedPackages = packages.map((pkg: any) => {
         const pkg = loadedSettings.packages?.find(p => p.id === packageId);
         if (!pkg) return;
 
+        let localSaleEndDateStr = '';
+        if (pkg.sale_end_date) {
+          const dt = new Date(pkg.sale_end_date);
+          const offset = dt.getTimezoneOffset() * 60000;
+          localSaleEndDateStr = new Date(dt.getTime() - offset).toISOString().slice(0, 16);
+        }
+
         // Get system servers list
         let systemServers = [];
         try {
@@ -1055,6 +1111,24 @@ const groupedPackages = packages.map((pkg: any) => {
               <div class="space-y-1">
                 <label class="text-[10px] text-zinc-400 font-bold uppercase">Giá hàng tháng (VND)</label>
                 <input type="number" id="edit-plan-price" name="price" value="${pkg.price}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} required />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 border border-dashed border-glass-stroke p-3 rounded-xl bg-white/5">
+              <div class="space-y-1 col-span-3">
+                <span class="text-[10px] font-black text-primary uppercase">Cấu hình giảm giá (Sale)</span>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Giá sale (VND)</label>
+                <input type="number" name="sale_price" value="${pkg.sale_price !== undefined && pkg.sale_price !== null ? pkg.sale_price : ''}" placeholder="Ví dụ: 30000" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Số tháng áp dụng</label>
+                <input type="number" name="sale_months" value="${pkg.sale_months !== undefined && pkg.sale_months !== null ? pkg.sale_months : ''}" placeholder="Ví dụ: 3" min="1" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Thời hạn hết sale</label>
+                <input type="datetime-local" name="sale_end_date" value="${localSaleEndDateStr}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} />
               </div>
             </div>
 
@@ -1224,7 +1298,21 @@ const groupedPackages = packages.map((pkg: any) => {
               if (targetPkg) {
                 targetPkg.title = formData.get('title');
                 if (!isFree) {
-                  targetPkg.price = parseInt(formData.get('price') || '0');
+                  const price = parseInt(formData.get('price') || '0');
+                  const salePriceStr = formData.get('sale_price');
+                  let sale_price = null;
+                  if (salePriceStr) {
+                    sale_price = parseInt(salePriceStr);
+                    if (sale_price >= price) {
+                      if (window.showGlobalToast) window.showGlobalToast('Giá sale phải nhỏ hơn giá gốc!', 'error');
+                      return;
+                    }
+                  }
+                  targetPkg.price = price;
+                  targetPkg.sale_price = sale_price;
+                  targetPkg.sale_months = formData.get('sale_months') ? parseInt(formData.get('sale_months')) : null;
+                  targetPkg.sale_end_date = formData.get('sale_end_date') ? new Date(formData.get('sale_end_date')).toISOString() : null;
+
                   targetPkg.annual_price = parseInt(formData.get('annual_price') || '0');
                   targetPkg.style_type = formData.get('style_type');
                   if (targetPkg.style_type === 'custom_color') {
