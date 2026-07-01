@@ -126,8 +126,15 @@ const loadAndProcessStoryboard = async (vttUrl: string) => {
           absoluteImgUrl = baseUrl + imgPath;
         }
         
+        // Decode first to prevent double-encoding if it's already encoded, then encode spaces, brackets, etc.
+        // Also manually encode parentheses '(' as '%28' and ')' as '%29' because they break CSS url() parsing in Artplayer
+        const decodedImgUrl = decodeURI(absoluteImgUrl);
+        const encodedImgUrl = encodeURI(decodedImgUrl)
+          .replace(/\(/g, '%28')
+          .replace(/\)/g, '%29');
+        
         // Use direct R2 URL (CORS is configured on the bucket)
-        return `${absoluteImgUrl}#${hash}`;
+        return `${encodedImgUrl}#${hash}`;
       }
       return line;
     });
