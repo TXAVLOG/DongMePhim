@@ -182,6 +182,7 @@ export interface SubscriptionPlan {
   sale_price?: number | null;
   sale_months?: number | null;
   sale_end_date?: string | null;
+  sale_annual_price?: number | null;
 }
 
 export interface AdSettings {

@@ -26,7 +26,7 @@ const groupedPackages = packages.map((pkg: any) => {
   if (!isFree && pkg.annual_price && pkg.annual_price < originalAnnualPrice) {
     savingPercent = Math.round((1 - pkg.annual_price / originalAnnualPrice) * 100);
   }
-  const isActiveSale = !isFree && pkg.sale_price && (!pkg.sale_end_date || new Date(pkg.sale_end_date) >= new Date());
+  const isActiveSale = !isFree && (pkg.sale_price || pkg.sale_annual_price) && (!pkg.sale_end_date || new Date(pkg.sale_end_date) >= new Date());
   return {
     ...pkg,
     normalizedTitle: pkg.title,
@@ -123,6 +123,7 @@ const groupedPackages = packages.map((pkg: any) => {
               data-sale-price={pkg.sale_price || ''}
               data-sale-months={pkg.sale_months || ''}
               data-sale-end-date={pkg.sale_end_date || ''}
+              data-sale-annual-price={pkg.sale_annual_price || ''}
             >
               {!isFree && pkg.style_type === 'rainbow_effect' && (
                 <div class="absolute top-0 right-0 overflow-hidden rounded-tr-3xl">
@@ -658,31 +659,63 @@ const groupedPackages = packages.map((pkg: any) => {
           if (savingBadge) savingBadge.classList.add('hidden');
           if (annualDetails) annualDetails.classList.add('hidden');
         } else {
-          if (origPriceContainer) origPriceContainer.classList.add('hidden');
+          const saleAnnualPriceAttr = card.getAttribute('data-sale-annual-price');
+          const saleAnnualActive = saleActive && saleAnnualPriceAttr;
+
           if (hasAnnual) {
             card.classList.remove('hidden');
             visibleCount++;
 
             const annualPrice = parseInt(card.getAttribute('data-annual-price') || '0');
-            const monthlyEquivalent = Math.round(annualPrice / 12);
             const priceValEl = card.querySelector('.price-val');
             const priceUnitEl = card.querySelector('.price-unit');
             const savingBadge = card.querySelector('.saving-badge');
             const annualDetails = card.querySelector('.annual-price-details');
 
-            if (priceValEl) priceValEl.textContent = monthlyEquivalent.toLocaleString('vi-VN') + 'đ';
-            if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
-            
-            const savingPercent = parseInt(card.getAttribute('data-saving-percent') || '0');
-            if (savingPercent > 0) {
-              if (savingBadge) {
-                savingBadge.classList.remove('hidden');
-                savingBadge.textContent = `Tiết kiệm ${savingPercent}%`;
+            if (saleAnnualActive) {
+              const saleAnnualPrice = parseInt(saleAnnualPriceAttr);
+              const saleMonthlyEquivalent = Math.round(saleAnnualPrice / 12);
+              const origMonthlyEquivalent = Math.round(annualPrice / 12);
+
+              if (priceValEl) priceValEl.textContent = saleMonthlyEquivalent.toLocaleString('vi-VN') + 'đ';
+              if (origPriceContainer && origPriceValEl) {
+                origPriceValEl.textContent = origMonthlyEquivalent.toLocaleString('vi-VN') + 'đ';
+                origPriceContainer.classList.remove('hidden');
               }
-              if (annualDetails) annualDetails.classList.remove('hidden');
+              if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
+              
+              if (savingBadge) {
+                const monthlyPrice = parseInt(card.getAttribute('data-monthly-price') || '0');
+                const saving = Math.round((1 - saleAnnualPrice / (monthlyPrice * 12)) * 100);
+                savingBadge.classList.remove('hidden');
+                savingBadge.textContent = `Tiết kiệm ${saving}%`;
+              }
+
+              if (annualDetails) {
+                annualDetails.classList.remove('hidden');
+                annualDetails.innerHTML = `<span class="material-symbols-outlined text-[14px] align-middle mr-1 text-emerald-400 font-bold">payments</span>Thanh toán <strong class="text-emerald-400 font-bold">${saleAnnualPrice.toLocaleString('vi-VN')}đ</strong>/năm`;
+              }
             } else {
-              if (savingBadge) savingBadge.classList.add('hidden');
-              if (annualDetails) annualDetails.classList.add('hidden');
+              if (origPriceContainer) origPriceContainer.classList.add('hidden');
+              const monthlyEquivalent = Math.round(annualPrice / 12);
+
+              if (priceValEl) priceValEl.textContent = monthlyEquivalent.toLocaleString('vi-VN') + 'đ';
+              if (priceUnitEl) priceUnitEl.textContent = '/ tháng';
+              
+              const savingPercent = parseInt(card.getAttribute('data-saving-percent') || '0');
+              if (savingPercent > 0) {
+                if (savingBadge) {
+                  savingBadge.classList.remove('hidden');
+                  savingBadge.textContent = `Tiết kiệm ${savingPercent}%`;
+                }
+                if (annualDetails) {
+                  annualDetails.classList.remove('hidden');
+                  annualDetails.innerHTML = `<span class="material-symbols-outlined text-[14px] align-middle mr-1 text-zinc-400">payments</span>Thanh toán <strong class="text-zinc-400 font-bold">${annualPrice.toLocaleString('vi-VN')}đ</strong>/năm`;
+                }
+              } else {
+                if (savingBadge) savingBadge.classList.add('hidden');
+                if (annualDetails) annualDetails.classList.add('hidden');
+              }
             }
           } else {
             card.classList.add('hidden');

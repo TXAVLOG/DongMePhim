@@ -481,20 +481,27 @@ const serverSettings = await SettingService.getSettings();
       }
 
       const rawOriginalMonthlyPrice = selectedPackage.price;
-      const rawOriginalTotal = rawOriginalMonthlyPrice * numMonths;
+      let rawOriginalTotal = rawOriginalMonthlyPrice * numMonths;
+      if (selectedCycle === 'annual' && selectedPackage.annual_price) {
+        rawOriginalTotal = selectedPackage.annual_price;
+      }
       const rawOriginalSubtotal = Math.round(rawOriginalTotal / (1 + vatRate / 100));
 
       const salePrice = selectedPackage.sale_price;
       const saleEndDate = selectedPackage.sale_end_date;
       const saleMonths = selectedPackage.sale_months;
-      const isSaleActive = salePrice !== undefined && salePrice !== null && (!saleEndDate || new Date(saleEndDate) >= new Date());
+      const saleAnnualPrice = selectedPackage.sale_annual_price;
+      const isSaleActive = (salePrice !== undefined && salePrice !== null || saleAnnualPrice !== undefined && saleAnnualPrice !== null) && (!saleEndDate || new Date(saleEndDate) >= new Date());
 
       let calcTotal = 0;
       if (isSaleActive) {
-        if (saleMonths && numMonths > saleMonths) {
+        if (selectedCycle === 'annual' && saleAnnualPrice) {
+          calcTotal = saleAnnualPrice;
+        } else if (saleMonths && numMonths > saleMonths) {
           calcTotal = Math.round((salePrice * saleMonths) + (baseMonthlyPrice * (numMonths - saleMonths) * (1 - discountRate)));
         } else {
-          calcTotal = Math.round(salePrice * numMonths * (1 - discountRate));
+          const activeSalePrice = salePrice !== null && salePrice !== undefined ? salePrice : baseMonthlyPrice;
+          calcTotal = Math.round(activeSalePrice * numMonths * (1 - discountRate));
         }
       } else {
         calcTotal = Math.round(baseMonthlyPrice * numMonths * (1 - discountRate));
@@ -687,7 +694,8 @@ const serverSettings = await SettingService.getSettings();
               note: clientInfo,
               salePrice: selectedPackage.sale_price || null,
               saleMonths: selectedPackage.sale_months || null,
-              saleEndDate: selectedPackage.sale_end_date || null
+              saleEndDate: selectedPackage.sale_end_date || null,
+              saleAnnualPrice: selectedPackage.sale_annual_price || null
             })
           });
         } catch (e) {}

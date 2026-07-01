@@ -109,7 +109,16 @@ const groupedPackages = packages.map((pkg: any) => {
                 </div>
                 {!isFree && pkg.annualPrice && (
                   <span class="text-[12px] text-zinc-400 mt-1">
-                    Giá năm: <strong class="text-emerald-400 font-bold">{pkg.annualPrice.toLocaleString('vi-VN')}đ</strong> / năm
+                    Giá năm:{' '}
+                    {pkg.sale_annual_price ? (
+                      <>
+                        <span class="line-through text-zinc-500 mr-1.5">{pkg.annualPrice.toLocaleString('vi-VN')}đ</span>
+                        <strong class="text-emerald-400 font-bold">{pkg.sale_annual_price.toLocaleString('vi-VN')}đ</strong>
+                      </>
+                    ) : (
+                      <strong class="text-emerald-400 font-bold">{pkg.annualPrice.toLocaleString('vi-VN')}đ</strong>
+                    )}
+                    {' '}/ năm
                   </span>
                 )}
               </div>
@@ -781,17 +790,21 @@ const groupedPackages = packages.map((pkg: any) => {
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4 border border-dashed border-glass-stroke p-3 rounded-xl bg-white/5">
-              <div class="space-y-1 col-span-3">
+            <div class="grid grid-cols-4 gap-4 border border-dashed border-glass-stroke p-3 rounded-xl bg-white/5">
+              <div class="space-y-1 col-span-4">
                 <span class="text-[10px] font-black text-primary uppercase">Cấu hình giảm giá (Sale)</span>
               </div>
               <div class="space-y-1">
-                <label class="text-[9px] text-zinc-400 font-bold uppercase">Giá sale (VND)</label>
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Giá sale tháng</label>
                 <input type="number" name="sale_price" placeholder="Ví dụ: 30000" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
               </div>
               <div class="space-y-1">
                 <label class="text-[9px] text-zinc-400 font-bold uppercase">Số tháng áp dụng</label>
                 <input type="number" name="sale_months" placeholder="Ví dụ: 3" min="1" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Giá sale năm (VND)</label>
+                <input type="number" name="sale_annual_price" placeholder="Ví dụ: 499000" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
               </div>
               <div class="space-y-1">
                 <label class="text-[9px] text-zinc-400 font-bold uppercase">Thời hạn hết sale</label>
@@ -968,12 +981,23 @@ const groupedPackages = packages.map((pkg: any) => {
               });
 
               const price = parseInt(formData.get('price') || '0');
+              const annualPrice = parseInt(formData.get('annual_price') || '0');
               const salePriceStr = formData.get('sale_price');
               let sale_price = null;
               if (salePriceStr) {
                 sale_price = parseInt(salePriceStr);
                 if (sale_price >= price) {
-                  if (window.showGlobalToast) window.showGlobalToast('Giá sale phải nhỏ hơn giá gốc!', 'error');
+                  if (window.showGlobalToast) window.showGlobalToast('Giá sale tháng phải nhỏ hơn giá gốc!', 'error');
+                  return;
+                }
+              }
+
+              const saleAnnualPriceStr = formData.get('sale_annual_price');
+              let sale_annual_price = null;
+              if (saleAnnualPriceStr) {
+                sale_annual_price = parseInt(saleAnnualPriceStr);
+                if (annualPrice > 0 && sale_annual_price >= annualPrice) {
+                  if (window.showGlobalToast) window.showGlobalToast('Giá sale năm phải nhỏ hơn giá gốc năm!', 'error');
                   return;
                 }
               }
@@ -982,13 +1006,14 @@ const groupedPackages = packages.map((pkg: any) => {
                 id: newId,
                 title: title,
                 price: price,
-                annual_price: parseInt(formData.get('annual_price') || '0'),
+                annual_price: annualPrice,
                 style_type: formData.get('style_type'),
                 custom_color: formData.get('style_type') === 'custom_color' ? formData.get('custom_color') : undefined,
                 features: formData.get('features').split(',').map(s => s.trim()).filter(s => s.length > 0),
                 sale_price: sale_price,
                 sale_months: formData.get('sale_months') ? parseInt(formData.get('sale_months')) : null,
                 sale_end_date: formData.get('sale_end_date') ? new Date(formData.get('sale_end_date')).toISOString() : null,
+                sale_annual_price: sale_annual_price,
                 permissions: {
                   max_resolution: formData.get('max_resolution'),
                   max_playlists: parseInt(formData.get('max_playlists') || '100'),
@@ -1115,17 +1140,21 @@ const groupedPackages = packages.map((pkg: any) => {
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4 border border-dashed border-glass-stroke p-3 rounded-xl bg-white/5">
-              <div class="space-y-1 col-span-3">
+            <div class="grid grid-cols-4 gap-4 border border-dashed border-glass-stroke p-3 rounded-xl bg-white/5">
+              <div class="space-y-1 col-span-4">
                 <span class="text-[10px] font-black text-primary uppercase">Cấu hình giảm giá (Sale)</span>
               </div>
               <div class="space-y-1">
-                <label class="text-[9px] text-zinc-400 font-bold uppercase">Giá sale (VND)</label>
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Giá sale tháng</label>
                 <input type="number" name="sale_price" value="${pkg.sale_price !== undefined && pkg.sale_price !== null ? pkg.sale_price : ''}" placeholder="Ví dụ: 30000" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} />
               </div>
               <div class="space-y-1">
                 <label class="text-[9px] text-zinc-400 font-bold uppercase">Số tháng áp dụng</label>
                 <input type="number" name="sale_months" value="${pkg.sale_months !== undefined && pkg.sale_months !== null ? pkg.sale_months : ''}" placeholder="Ví dụ: 3" min="1" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-zinc-400 font-bold uppercase">Giá sale năm (VND)</label>
+                <input type="number" name="sale_annual_price" value="${pkg.sale_annual_price !== undefined && pkg.sale_annual_price !== null ? pkg.sale_annual_price : ''}" placeholder="Ví dụ: 499000" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} />
               </div>
               <div class="space-y-1">
                 <label class="text-[9px] text-zinc-400 font-bold uppercase">Thời hạn hết sale</label>
@@ -1301,21 +1330,34 @@ const groupedPackages = packages.map((pkg: any) => {
                 targetPkg.title = formData.get('title');
                 if (!isFree) {
                   const price = parseInt(formData.get('price') || '0');
+                  const annualPrice = parseInt(formData.get('annual_price') || '0');
                   const salePriceStr = formData.get('sale_price');
                   let sale_price = null;
                   if (salePriceStr) {
                     sale_price = parseInt(salePriceStr);
                     if (sale_price >= price) {
-                      if (window.showGlobalToast) window.showGlobalToast('Giá sale phải nhỏ hơn giá gốc!', 'error');
+                      if (window.showGlobalToast) window.showGlobalToast('Giá sale tháng phải nhỏ hơn giá gốc!', 'error');
                       return;
                     }
                   }
+
+                  const saleAnnualPriceStr = formData.get('sale_annual_price');
+                  let sale_annual_price = null;
+                  if (saleAnnualPriceStr) {
+                    sale_annual_price = parseInt(saleAnnualPriceStr);
+                    if (annualPrice > 0 && sale_annual_price >= annualPrice) {
+                      if (window.showGlobalToast) window.showGlobalToast('Giá sale năm phải nhỏ hơn giá gốc năm!', 'error');
+                      return;
+                    }
+                  }
+
                   targetPkg.price = price;
                   targetPkg.sale_price = sale_price;
                   targetPkg.sale_months = formData.get('sale_months') ? parseInt(formData.get('sale_months')) : null;
                   targetPkg.sale_end_date = formData.get('sale_end_date') ? new Date(formData.get('sale_end_date')).toISOString() : null;
+                  targetPkg.sale_annual_price = sale_annual_price;
 
-                  targetPkg.annual_price = parseInt(formData.get('annual_price') || '0');
+                  targetPkg.annual_price = annualPrice;
                   targetPkg.style_type = formData.get('style_type');
                   if (targetPkg.style_type === 'custom_color') {
                     targetPkg.custom_color = formData.get('custom_color');

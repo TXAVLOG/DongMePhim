@@ -629,6 +629,7 @@ CREATE TABLE IF NOT EXISTS public.txa_payment_logs (
   sale_price numeric,
   sale_months integer,
   sale_end_date timestamp with time zone,
+  sale_annual_price numeric,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (txid)
