@@ -366,16 +366,26 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
       }
       window.addEventListener('resize', checkMobileApp);
 
+      function syncTlogged() {
+        if (window.APP_USER) {
+          localStorage.setItem('tlogged_in_as', window.APP_USER.username);
+        } else {
+          localStorage.removeItem('tlogged_in_as');
+        }
+      }
+
       document.addEventListener('astro:after-swap', () => {
         applyTheme();
         hydrateSettings();
         checkMobileApp();
+        syncTlogged();
         if (typeof updateAuthState === 'function') updateAuthState();
       });
       document.addEventListener('astro:page-load', () => {
         applyTheme();
         hydrateSettings();
         checkMobileApp();
+        syncTlogged();
         if (typeof updateAuthState === 'function') updateAuthState();
       });
     </script>

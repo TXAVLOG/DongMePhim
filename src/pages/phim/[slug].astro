@@ -1463,10 +1463,31 @@ if (movie && movie.actors && movie.actors.length > 0) {
     }
 
     const checkUserVIP = async () => {
-      const username = localStorage.getItem('tlogged_in_as');
       const siteSettings = (window as any).TXA_SITE_SETTINGS || {};
       const packages: any[] = siteSettings.packages || [];
+      const localUser = (window as any).APP_USER;
 
+      if (localUser) {
+        isAdmin = localUser.role === 'admin';
+        const userPkg = packages.find((p: any) => p.id === localUser.package) || packages.find((p: any) => p.title === localUser.package);
+        userPkgId = userPkg ? userPkg.id : 'free';
+        
+        if (userPkg) {
+          allowedServers = [...(userPkg.permissions?.allowed_servers || [])];
+          const userPrice = userPkg.price || 0;
+          packages.forEach((p: any) => {
+            if (p.price <= userPrice && p.permissions?.allowed_servers) {
+              p.permissions.allowed_servers.forEach((srv: string) => {
+                if (!allowedServers.some((s: string) => s.toLowerCase() === srv.toLowerCase())) {
+                  allowedServers.push(srv);
+                }
+              });
+            }
+          });
+        }
+      }
+
+      const username = localUser?.username || localStorage.getItem('tlogged_in_as');
       if (username) {
         try {
           const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
@@ -1568,7 +1589,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
     };
 
     // Watchlist & Favorites Database Integration
-    const username = localStorage.getItem('tlogged_in_as');
+    const username = (window as any).APP_USER?.username || localStorage.getItem('tlogged_in_as');
     let userFavorites: string[] = [];
     let userPlaylist: string[] = [];
 
