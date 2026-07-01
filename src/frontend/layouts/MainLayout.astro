@@ -2315,11 +2315,13 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         updateAuthState();
         initGoogleOneTap();
         initLocationsDropdowns();
+        if (typeof window.initAuthFormListeners === 'function') window.initAuthFormListeners();
       });
       document.addEventListener('astro:page-load', () => {
         updateAuthState();
         initGoogleOneTap();
         initLocationsDropdowns();
+        if (typeof window.initAuthFormListeners === 'function') window.initAuthFormListeners();
       });
 
       window.logout = async function() {
@@ -2993,6 +2995,11 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           loginTab?.classList.remove('hidden');
         } else if (tab === 'register') {
           registerTab?.classList.remove('hidden');
+          if (typeof window.validatePassword === 'function') {
+            setTimeout(() => {
+              window.validatePassword('');
+            }, 50);
+          }
         } else if (tab === 'forgot-password') {
           forgotTab?.classList.remove('hidden');
         }
@@ -3055,9 +3062,10 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
       // ══════════════════════════════════════════════════════════════
       // Form Submission Actions
       // ══════════════════════════════════════════════════════════════
-      (function() {
+      function initAuthFormListeners() {
         const loginForm = document.getElementById('login-form');
         const regForm = document.getElementById('register-form');
+        const forgotForm = document.getElementById('forgot-password-form');
 
         // Login inputs
         const idInput = document.getElementById('login-identity');
@@ -3066,11 +3074,13 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         let showPass = false;
 
         if (togglePass && passInput) {
-          togglePass.addEventListener('click', function() {
+          // Remove old listeners by recreating/replacing element or just using anonymous function
+          // We can just add event listener. Adding multiple times to same DOM element won't happen because on transitions, the DOM element itself is new.
+          togglePass.onclick = function() {
             showPass = !showPass;
             passInput.type = showPass ? 'text' : 'password';
             this.querySelector('.material-symbols-outlined').textContent = showPass ? 'visibility' : 'visibility_off';
-          });
+          };
         }
 
         // Login Form Validation Check
@@ -3100,7 +3110,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         window.checkLoginFormValidity = checkLoginFormValidity;
 
         if (idInput) {
-          idInput.addEventListener('input', function() {
+          idInput.oninput = function() {
             const msgEl = this.closest('.auth-field').querySelector('.login-id-error');
             if (this.value.trim().length >= 3) {
               this.style.borderColor = 'rgba(16, 185, 129, 0.4)';
@@ -3110,11 +3120,11 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               if (msgEl) { msgEl.textContent = 'Tối thiểu 3 ký tự'; msgEl.style.opacity = '1'; }
             }
             checkLoginFormValidity();
-          });
+          };
         }
 
         if (passInput) {
-          passInput.addEventListener('input', function() {
+          passInput.oninput = function() {
             const msgEl = this.closest('.auth-field').querySelector('.login-pass-msg');
             if (this.value.length >= 6) {
               this.style.borderColor = 'rgba(16, 185, 129, 0.4)';
@@ -3124,11 +3134,11 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               if (msgEl) { msgEl.textContent = 'Tối thiểu 6 ký tự'; msgEl.style.opacity = '1'; }
             }
             checkLoginFormValidity();
-          });
+          };
         }
 
         if (loginForm) {
-          loginForm.addEventListener('submit', async function(e) {
+          loginForm.onsubmit = async function(e) {
             e.preventDefault();
             const identity = idInput?.value.trim() || '';
             const password = passInput?.value || '';
@@ -3181,7 +3191,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 window.dispatchEvent(new Event('auth-changed'));
                 
                 if (typeof window.checkTxaGate === 'function') {
-                  window.checkTxaGate();
+                   window.checkTxaGate();
                 }
 
                 showGlobalToast('Đăng nhập thành công!', 'success');
@@ -3230,7 +3240,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 submitBtn.innerHTML = '<span>Đăng nhập</span>';
               }
             });
-          });
+          };
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -3492,19 +3502,11 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         document.getElementById('reg-confirm')?.addEventListener('input', function() { validateConfirmPassword(this.value); });
         document.getElementById('reg-terms')?.addEventListener('change', checkFormValidity);
 
-        // Call initial validation to show gray indicators on tab switch
-        const originalSwitchAuthTab = window.switchAuthTab;
-        window.switchAuthTab = function(tab) {
-          if (originalSwitchAuthTab) originalSwitchAuthTab(tab);
-          if (tab === 'register') {
-            setTimeout(() => {
-              validatePassword('');
-            }, 50);
-          }
-        };
+        // Expose helper to global scope
+        window.validatePassword = validatePassword;
 
         if (regForm) {
-          regForm.addEventListener('submit', function(e) {
+          regForm.onsubmit = function(e) {
             e.preventDefault();
             const allValid = Object.values(validation).every(v => v === true);
             const terms = document.getElementById('reg-terms')?.checked;
@@ -3574,15 +3576,14 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 showGlobalToast('Lỗi hệ thống đăng ký!', 'error');
               }
             }, 800);
-          });
+          };
         }
 
         // Forgot Password Submit
-        const forgotForm = document.getElementById('forgot-password-form');
         const forgotEmail = document.getElementById('forgot-email');
 
         if (forgotEmail) {
-          forgotEmail.addEventListener('input', function() {
+          forgotEmail.oninput = function() {
             const parent = this.closest('.auth-field');
             const msgEl = parent ? parent.querySelector('.forgot-email-error') : null;
             const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value.trim());
@@ -3591,11 +3592,11 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               msgEl.textContent = isValid ? '' : 'Định dạng email không hợp lệ';
               msgEl.style.opacity = isValid ? '0' : '1';
             }
-          });
+          };
         }
 
         if (forgotForm) {
-          forgotForm.addEventListener('submit', async function(e) {
+          forgotForm.onsubmit = async function(e) {
             e.preventDefault();
             const emailVal = forgotEmail?.value.trim() || '';
             const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
@@ -3636,9 +3637,13 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 submitBtn.innerHTML = '<span>Gửi yêu cầu phục hồi</span>';
               }
             }
-          });
+          };
         }
-      })();
+      }
+
+      // Expose globally and call initially
+      window.initAuthFormListeners = initAuthFormListeners;
+      initAuthFormListeners();
     </script>
     <script is:inline>
       // Scroll effect - using is:inline + astro:page-load for reliability

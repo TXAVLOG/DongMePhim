@@ -559,19 +559,36 @@ const formatDate = (isoStr: string) => {
 
 const CommentSystem: React.FC<{ 
   movieSlug: string; 
+  movie: MovieDetail;
   currentEpisode?: any; 
   currentServerName?: string;
   hideEpisodeLabel?: boolean;
-}> = ({ movieSlug, currentEpisode, currentServerName, hideEpisodeLabel = false }) => {
+}> = ({ movieSlug, movie, currentEpisode, currentServerName, hideEpisodeLabel = false }) => {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [newComment, setNewComment] = useState<string>('');
   const [authorName, setAuthorName] = useState<string>('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [replyTarget, setReplyTarget] = useState<any | null>(null);
   const [replyContent, setReplyContent] = useState<string>('');
   
   const [isSpoilerInput, setIsSpoilerInput] = useState<boolean>(false);
   const [activeDropdown, setActiveDropdown] = useState<any | null>(null);
   const [revealedSpoilers, setRevealedSpoilers] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const user = (window as any).APP_USER;
+      if (user) {
+        setCurrentUser(user);
+        setAuthorName(user.name || user.username || '');
+      } else {
+        const stored = localStorage.getItem('tlogged_in_as');
+        if (stored) {
+          setAuthorName(stored);
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchComments = async () => {
@@ -794,13 +811,23 @@ const CommentSystem: React.FC<{
 
       <form onSubmit={handlePostComment} className="space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input
-            type="text"
-            placeholder="Tên của bạn..."
-            value={authorName}
-            onChange={(e) => setAuthorName(e.target.value)}
-            className="md:col-span-1 bg-surface border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-semibold"
-          />
+          {currentUser ? (
+            <div className="md:col-span-1 flex items-center gap-2 bg-surface border border-glass-stroke rounded-xl px-4 py-2 text-xs text-white font-semibold select-none">
+              <span className="material-symbols-outlined text-[16px] text-primary">account_circle</span>
+              <span className="text-primary-light font-bold">{authorName}</span>
+              {currentUser.gender === 'male' && <span className="text-[8px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-bold">Nam ♂</span>}
+              {currentUser.gender === 'female' && <span className="text-[8px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-1.5 py-0.5 rounded font-bold">Nữ ♀</span>}
+              {currentUser.gender === 'other' && <span className="text-[8px] bg-zinc-800 text-zinc-400 border border-zinc-700 px-1.5 py-0.5 rounded font-bold">Khác ∞</span>}
+            </div>
+          ) : (
+            <input
+              type="text"
+              placeholder="Tên của bạn..."
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              className="md:col-span-1 bg-surface border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-semibold"
+            />
+          )}
           <textarea
             rows={3}
             placeholder="Nhập nội dung bình luận tại đây..."
@@ -843,6 +870,22 @@ const CommentSystem: React.FC<{
               return { id: 'free', title: pkgNameOrId || 'Gói Free' };
             };
 
+            const getEpisodeLink = (epName?: string, svName?: string) => {
+              if (!epName || !movie || !movie.episodes) return null;
+              let svIdx = 0;
+              if (svName) {
+                const foundSv = movie.episodes.findIndex((s: any) => s.serverName === svName);
+                if (foundSv !== -1) svIdx = foundSv;
+              }
+              const server = movie.episodes[svIdx];
+              if (!server || !server.serverData) return null;
+              const ep = server.serverData.find((e: any) => e.name === epName);
+              if (ep) {
+                return `/xem/${movieSlug}?ep=${ep.slug}&sv=${svIdx}`;
+              }
+              return null;
+            };
+
             const plan = getPlanByPackageNameOrId((c as any).package);
             const pkgId = plan.id;
             const pkgTitle = plan.title;
@@ -868,7 +911,34 @@ const CommentSystem: React.FC<{
                           Admin
                         </span>
                       )}
+                      {c.gender === 'male' && <span className="text-[8px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1 py-0.2 rounded font-bold">Nam ♂</span>}
+                      {c.gender === 'female' && <span className="text-[8px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-1 py-0.2 rounded font-bold">Nữ ♀</span>}
+                      {c.gender === 'other' && <span className="text-[8px] bg-zinc-800 text-zinc-400 border border-zinc-700 px-1 py-0.2 rounded font-bold">Khác ∞</span>}
                       <span className="text-[9px] text-zinc-500">{formatDate(c.createdAt)}</span>
+                      {c.episodeName && (
+                        (() => {
+                          const isSingleMovie = movie.type === 'movie';
+                          const label = isSingleMovie 
+                            ? `${c.episodeName} - ${c.serverName || 'Server VIP'}`
+                            : `${c.episodeName} - ${movie.seasons || 'Phần 1'}`;
+                          const link = getEpisodeLink(c.episodeName, c.serverName);
+                          
+                          return link ? (
+                            <a 
+                              href={link} 
+                              className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all flex items-center gap-0.5 cursor-pointer no-underline select-none"
+                            >
+                              <span className="material-symbols-outlined text-[10px]">play_circle</span>
+                              {label}
+                            </a>
+                          ) : (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-white/5 border border-glass-stroke/50 text-zinc-400 flex items-center gap-0.5 select-none">
+                              <span className="material-symbols-outlined text-[10px]">play_circle</span>
+                              {label}
+                            </span>
+                          );
+                        })()
+                      )}
                     </div>
                     <p className="text-xs text-zinc-300 font-body-main leading-relaxed">{c.content}</p>
                     
@@ -949,6 +1019,9 @@ const CommentSystem: React.FC<{
                                   Admin
                                 </span>
                               )}
+                              {r.gender === 'male' && <span className="text-[7px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1 py-0.2 rounded font-bold">Nam ♂</span>}
+                              {r.gender === 'female' && <span className="text-[7px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-1 py-0.2 rounded font-bold">Nữ ♀</span>}
+                              {r.gender === 'other' && <span className="text-[7px] bg-zinc-800 text-zinc-400 border border-zinc-700 px-1 py-0.2 rounded font-bold">Khác ∞</span>}
                               <span className="text-[8px] text-zinc-500">{formatDate(r.createdAt)}</span>
                             </div>
                             <p className="text-xs text-zinc-300 font-body-main leading-relaxed">{r.content}</p>
@@ -2599,7 +2672,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           <CollapsibleDescription htmlContent={movie.description} />
 
           {/* Bình luận */}
-          <CommentSystem movieSlug={movie.slug} />
+          <CommentSystem 
+            movieSlug={movie.slug} 
+            movie={movie}
+            currentEpisode={currentEpisode} 
+            currentServerName={currentServer?.serverName}
+          />
 
         </div>
 
