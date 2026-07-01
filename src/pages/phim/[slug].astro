@@ -2294,17 +2294,27 @@ if (movie && movie.actors && movie.actors.length > 0) {
       
       if (targetStr && timerEl) {
         const targetDate = new Date(targetStr).getTime();
+        let wasPositive = (targetDate - Date.now()) > 0;
+        let hasReloaded = false;
         
         const updateCountdown = () => {
           const now = Date.now();
           const diff = targetDate - now;
           
+          if (diff > 0) {
+            wasPositive = true;
+          }
+          
           if (diff <= 0) {
             timerEl.textContent = "Đã phát sóng!";
             clearInterval(countdownInterval);
-            setTimeout(() => {
-              window.location.reload();
-            }, 2500);
+            // Only reload if the countdown was actively running (not already past on mount)
+            if (wasPositive && !hasReloaded) {
+              hasReloaded = true;
+              setTimeout(() => {
+                window.location.reload();
+              }, 2500);
+            }
             return;
           }
           

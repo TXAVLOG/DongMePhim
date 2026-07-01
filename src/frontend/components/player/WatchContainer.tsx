@@ -43,6 +43,8 @@ const formatLocalAirDateTime = (dateStr?: string, timeStr?: string) => {
 const CountdownBadge: React.FC<{ date: string; time?: string; label: string }> = ({ date, time, label }) => {
   const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
   const hasTime = !!time;
+  const wasPositiveRef = useRef(false);
+  const hasReloadedRef = useRef(false);
 
   useEffect(() => {
     if (!hasTime) return;
@@ -58,15 +60,29 @@ const CountdownBadge: React.FC<{ date: string; time?: string; label: string }> =
     }
     const targetDate = new Date(targetDateTimeStr).getTime();
     
+    // Check initial state - if already past, don't auto-reload
+    const initialDiff = targetDate - Date.now();
+    if (initialDiff > 0) {
+      wasPositiveRef.current = true;
+    }
+    
     const update = () => {
       const now = Date.now();
       const diff = targetDate - now;
       
+      if (diff > 0) {
+        wasPositiveRef.current = true;
+      }
+      
       if (diff <= 0) {
         setTimeLeft('Đã phát sóng!');
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        // Only reload if the countdown was actively running (transitioned from positive to zero)
+        if (wasPositiveRef.current && !hasReloadedRef.current) {
+          hasReloadedRef.current = true;
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
         return;
       }
       
@@ -114,6 +130,8 @@ const CountdownBadge: React.FC<{ date: string; time?: string; label: string }> =
 const UnreleasedPlayerPlaceholder: React.FC<{ episode: Episode }> = ({ episode }) => {
   const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
   const hasTime = !!episode.airTime;
+  const wasPositiveRef = useRef(false);
+  const hasReloadedRef = useRef(false);
 
   useEffect(() => {
     if (!episode.airDate) return;
@@ -129,15 +147,29 @@ const UnreleasedPlayerPlaceholder: React.FC<{ episode: Episode }> = ({ episode }
     }
     const targetDate = new Date(targetDateTimeStr).getTime();
     
+    // Check initial state - if already past, don't auto-reload
+    const initialDiff = targetDate - Date.now();
+    if (initialDiff > 0) {
+      wasPositiveRef.current = true;
+    }
+    
     const update = () => {
       const now = Date.now();
       const diff = targetDate - now;
       
+      if (diff > 0) {
+        wasPositiveRef.current = true;
+      }
+      
       if (diff <= 0) {
         setTimeLeft('Đã đến giờ phát sóng!');
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        // Only reload if the countdown was actively running (transitioned from positive to zero)
+        if (wasPositiveRef.current && !hasReloadedRef.current) {
+          hasReloadedRef.current = true;
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
         return;
       }
       

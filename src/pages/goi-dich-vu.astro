@@ -740,6 +740,15 @@ import MainLayout from '@layouts/MainLayout.astro';
             return 'Hàng tháng';
           };
 
+          const methodLabel = item.method === 'manual' ? 'VietQR (Thủ công)' 
+            : item.method === 'sepay' ? 'SePay' 
+            : item.method === 'payos' ? 'PayOS' 
+            : item.method === 'stripe' ? 'Stripe' 
+            : item.method === 'paypal' ? 'PayPal' 
+            : item.method === 'vnpay' ? 'VNPAY' 
+            : item.method === 'vietqr' ? 'VietQR' 
+            : (item.method || 'N/A').toUpperCase();
+
           return `
             <tr class="hover:bg-white/5 transition-colors">
               <td class="px-6 py-4 font-mono text-zinc-400">${(item.txid || '').substring(0, 10)}...</td>

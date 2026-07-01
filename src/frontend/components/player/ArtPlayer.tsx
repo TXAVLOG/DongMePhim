@@ -1424,6 +1424,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             'Screenshot': 'Chụp màn hình',
             'Setting': 'Cài đặt',
             'Fullscreen': 'Toàn màn hình',
+            'Exit Fullscreen': 'Thoát toàn màn hình',
+            'Web Fullscreen': 'Toàn màn hình web',
+            'Exit Web Fullscreen': 'Thoát toàn màn hình web',
             'Playback Rate': 'Tốc độ phát',
             'Aspect Ratio': 'Tỷ lệ khung hình',
             'Flip': 'Lật hình',
@@ -1432,7 +1435,30 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             'Auto': 'Tự động',
             'Loop': 'Lặp lại',
             'Airplay': 'Phát qua Airplay',
-            'PIP': 'Hình trong hình'
+            'PIP': 'Hình trong hình',
+            'Video Info': 'Thông tin video',
+            'Close': 'Đóng',
+            'Video Load Failed': 'Tải video thất bại',
+            'Rate': 'Tốc độ',
+            'Video Flip': 'Lật video',
+            'Horizontal': 'Ngang',
+            'Vertical': 'Dọc',
+            'Reconnect': 'Kết nối lại',
+            'Show Setting': 'Hiện cài đặt',
+            'Hide Setting': 'Ẩn cài đặt',
+            'Play Speed': 'Tốc độ phát',
+            'Default': 'Mặc định',
+            'Open': 'Mở',
+            'Switch Video': 'Chuyển video',
+            'Switch Subtitle': 'Chuyển phụ đề',
+            'Picture in Picture': 'Hình trong hình',
+            'Exit Picture in Picture': 'Thoát hình trong hình',
+            'AirPlay': 'Phát qua AirPlay',
+            'AirPlay Available': 'AirPlay khả dụng',
+            'Subtitle Offset': 'Lệch phụ đề',
+            'Last Seen': 'Xem lần cuối',
+            'Jump Play': 'Nhảy đến',
+            'Quality': 'Chất lượng',
           } as any
         },
         // Tùy chỉnh menu chuột phải (thay thế menu mặc định)
@@ -1703,8 +1729,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               }
             },
           },
-          // Custom Subtitles toggle button
-          {
+          // Custom Subtitles toggle button - only show if there are subtitles
+          ...(subtitles && subtitles.length > 0 ? [{
             name: 'custom-subtitles',
             position: 'right',
             index: 10,
@@ -1713,7 +1739,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               const event = new CustomEvent('txa-toggle-subtitle-panel');
               window.dispatchEvent(event);
             }
-          }
+          }] : [])
         ],
       };
 
