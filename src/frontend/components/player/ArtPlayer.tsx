@@ -100,52 +100,154 @@ export function parseSubtitles(text: string): SubtitleCue[] {
   return cues;
 }
 
-const loadAndProcessStoryboard = async (vttUrl: string) => {
-  if (!vttUrl) return '';
-  try {
-    const proxied = proxySubtitleUrl(vttUrl);
-    const res = await fetch(proxied);
-    if (!res.ok) return '';
-    const rawText = await res.text();
-    // Strip UTF-8 BOM if present
-    const text = rawText.replace(/^\uFEFF/, '');
-    
-    // Get the base URL directory of the original VTT file
-    const baseUrl = vttUrl.substring(0, vttUrl.lastIndexOf('/') + 1);
-    
-    const lines = text.split('\n');
-    const processedLines = lines.map(line => {
-      const trimmed = line.trim();
-      if (trimmed.includes('#xywh=')) {
-        const parts = trimmed.split('#');
-        const imgPath = parts[0] || '';
-        const hash = parts.slice(1).join('#');
-        
-        let absoluteImgUrl = imgPath;
-        if (!imgPath.startsWith('http') && !imgPath.startsWith('/') && !imgPath.startsWith('data:')) {
-          absoluteImgUrl = baseUrl + imgPath;
+const artplayerPluginVttThumbnail = (vttUrl: string) => {
+  return async function (art: any) {
+    if (!vttUrl) return;
+
+    const cues: { startTime: number; endTime: number; url: string; x: number; y: number; w: number; h: number; }[] = [];
+    try {
+      const proxied = proxySubtitleUrl(vttUrl);
+      const res = await fetch(proxied);
+      if (!res.ok) return;
+      const rawText = await res.text();
+      const text = rawText.replace(/^\uFEFF/, '');
+      const baseUrl = vttUrl.substring(0, vttUrl.lastIndexOf('/') + 1);
+
+      const timeRegex = /(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/;
+      const lines = text.split(/\r?\n/);
+      let currentCue: { startTime: number; endTime: number } | null = null;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        const match = line.match(timeRegex);
+        if (match) {
+          const startSec = parseInt(match[1]) * 3600 + parseInt(match[2]) * 60 + parseInt(match[3]) + parseInt(match[4]) / 1000;
+          const endSec = parseInt(match[5]) * 3600 + parseInt(match[6]) * 60 + parseInt(match[7]) + parseInt(match[8]) / 1000;
+          currentCue = { startTime: startSec, endTime: endSec };
+        } else if (currentCue && line !== '') {
+          if (line.includes('#xywh=')) {
+            const parts = line.split('#');
+            const imgPath = parts[0] || '';
+            const hash = parts[1] || '';
+
+            let absoluteImgUrl = imgPath;
+            if (!imgPath.startsWith('http') && !imgPath.startsWith('/') && !imgPath.startsWith('data:')) {
+              absoluteImgUrl = baseUrl + imgPath;
+            }
+
+            const decodedImgUrl = decodeURI(absoluteImgUrl);
+            const encodedImgUrl = encodeURI(decodedImgUrl);
+
+            const xywhMatch = hash.match(/xywh=(\d+),(\d+),(\d+),(\d+)/);
+            if (xywhMatch) {
+              cues.push({
+                startTime: currentCue.startTime,
+                endTime: currentCue.endTime,
+                url: encodedImgUrl,
+                x: parseInt(xywhMatch[1]),
+                y: parseInt(xywhMatch[2]),
+                w: parseInt(xywhMatch[3]),
+                h: parseInt(xywhMatch[4])
+              });
+            }
+          }
+          currentCue = null;
         }
-        
-        // Decode first to prevent double-encoding if it's already encoded, then encode spaces, brackets, etc.
-        // Also manually encode parentheses '(' as '%28' and ')' as '%29' because they break CSS url() parsing in Artplayer
-        const decodedImgUrl = decodeURI(absoluteImgUrl);
-        const encodedImgUrl = encodeURI(decodedImgUrl)
-          .replace(/\(/g, '%28')
-          .replace(/\)/g, '%29');
-        
-        // Use direct R2 URL (CORS is configured on the bucket)
-        return `${encodedImgUrl}#${hash}`;
       }
-      return line;
+    } catch (e) {
+      console.error('Error in custom VTT thumbnail plugin:', e);
+      return;
+    }
+
+    if (cues.length === 0) return;
+
+    const $progress = art.template.$progress;
+    if (!$progress) return;
+
+    const $thumbnails = document.createElement('div');
+    $thumbnails.className = 'art-control-thumbnails';
+    Object.assign($thumbnails.style, {
+      position: 'absolute',
+      bottom: '20px',
+      left: '0',
+      display: 'none',
+      border: '2px solid #fff',
+      borderRadius: '4px',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#000',
+      boxShadow: '0 0 10px rgba(0,0,0,0.5)',
+      zIndex: '100',
+      pointerEvents: 'none',
+      transform: 'translate(-50%, 0)',
     });
-    
-    const processedText = processedLines.join('\n');
-    const blob = new Blob([processedText], { type: 'text/vtt' });
-    return URL.createObjectURL(blob);
-  } catch (e) {
-    console.error('Error processing storyboard VTT:', e);
-    return '';
-  }
+
+    const $timeTooltip = document.createElement('div');
+    Object.assign($timeTooltip.style, {
+      position: 'absolute',
+      bottom: '-25px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      color: '#fff',
+      padding: '2px 6px',
+      borderRadius: '3px',
+      fontSize: '11px',
+      whiteSpace: 'nowrap',
+      border: '1px solid rgba(255,255,255,0.1)',
+    });
+
+    $thumbnails.appendChild($timeTooltip);
+    $progress.appendChild($thumbnails);
+
+    const formatTime = (seconds: number) => {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+    };
+
+    const uniqueUrls = Array.from(new Set(cues.map(c => c.url)));
+    uniqueUrls.forEach(url => {
+      const img = new Image();
+      img.src = url;
+    });
+
+    art.on('setBar', (type: string, percentage: number) => {
+      if (type === 'hover') {
+        const hoverTime = percentage * art.duration;
+        const cue = cues.find(c => hoverTime >= c.startTime && hoverTime <= c.endTime);
+
+        if (cue) {
+          $thumbnails.style.display = 'block';
+          $thumbnails.style.backgroundImage = `url(${cue.url})`;
+          $thumbnails.style.backgroundPosition = `-${cue.x}px -${cue.y}px`;
+          $thumbnails.style.width = `${cue.w}px`;
+          $thumbnails.style.height = `${cue.h}px`;
+
+          const progressWidth = $progress.clientWidth;
+          const leftPos = progressWidth * percentage;
+          $thumbnails.style.left = `${leftPos}px`;
+
+          $timeTooltip.innerText = formatTime(hoverTime);
+        } else {
+          $thumbnails.style.display = 'none';
+        }
+      }
+    });
+
+    const handleMouseLeave = () => {
+      $thumbnails.style.display = 'none';
+    };
+    $progress.addEventListener('mouseleave', handleMouseLeave);
+
+    art.on('destroy', () => {
+      if ($thumbnails && $thumbnails.parentNode) {
+        $thumbnails.parentNode.removeChild($thumbnails);
+      }
+      $progress.removeEventListener('mouseleave', handleMouseLeave);
+    });
+  };
 };
 
 const CustomSubtitleSystem: React.FC<{
@@ -1232,7 +1334,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
     const realUrl = getRealStreamUrl(url);
 
-    const initPlayer = (HlsClass: any, storyboardBlobUrl?: string) => {
+    const initPlayer = (HlsClass: any) => {
       if (!artRef.current) return;
 
       if (playerInstanceRef.current) {
@@ -1279,7 +1381,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         container: artRef.current,
         url: realUrl,
         poster: poster || '',
-        ...(storyboardBlobUrl ? { thumbnails: { url: storyboardBlobUrl } } : {}),
+        plugins: storyboardUrl ? [
+          artplayerPluginVttThumbnail(storyboardUrl)
+        ] : [],
         volume: 0.7,
         isLive: false,
         muted: false,
@@ -1719,7 +1823,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         }
 
         // Xử lý các phím tắt phổ biến trên máy tính
-        const key = e.key.toLowerCase();
+        const key = (e.key || '').toLowerCase();
         const code = e.code;
 
         if (code === 'Space' || key === 'k') {
@@ -1994,20 +2098,13 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
     let active = true;
     let checkInterval: any = null;
-    let storyboardBlobUrl = '';
 
     const startInit = async () => {
-      if (storyboardUrl) {
-        storyboardBlobUrl = await loadAndProcessStoryboard(storyboardUrl);
-      }
-      if (!active) {
-        if (storyboardBlobUrl) URL.revokeObjectURL(storyboardBlobUrl);
-        return;
-      }
+      if (!active) return;
 
       if (realUrl.includes('.m3u8') || realUrl.includes('stream')) {
         if ((window as any).Hls) {
-          initPlayer((window as any).Hls, storyboardBlobUrl);
+          initPlayer((window as any).Hls);
         } else {
           let script = document.querySelector('script[src*="hls.min.js"]') as HTMLScriptElement;
           if (!script) {
@@ -2020,7 +2117,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           
           const onLoad = () => {
             if ((window as any).Hls) {
-              initPlayer((window as any).Hls, storyboardBlobUrl);
+              initPlayer((window as any).Hls);
               if (checkInterval) clearInterval(checkInterval);
             }
           };
@@ -2029,13 +2126,13 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
           checkInterval = setInterval(() => {
             if ((window as any).Hls) {
-              initPlayer((window as any).Hls, storyboardBlobUrl);
+              initPlayer((window as any).Hls);
               clearInterval(checkInterval);
             }
           }, 100);
         }
       } else {
-        initPlayer(null, storyboardBlobUrl);
+        initPlayer(null);
       }
     };
 
@@ -2051,9 +2148,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         artRef.current.innerHTML = '';
       }
       if (checkInterval) clearInterval(checkInterval);
-      if (storyboardBlobUrl) {
-        URL.revokeObjectURL(storyboardBlobUrl);
-      }
     };
   }, [url, title, storyboardUrl]);
 
