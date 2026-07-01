@@ -3571,6 +3571,12 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 .finally(() => {
                   submitBtn.disabled = false;
                   submitBtn.innerHTML = '<span>Đăng ký tài khoản</span>';
+                  if (typeof resetTurnstileWidgets === 'function') {
+                    resetTurnstileWidgets();
+                  }
+                  if (typeof checkFormValidity === 'function') {
+                    checkFormValidity();
+                  }
                 });
               } catch(e) {
                 showGlobalToast('Lỗi hệ thống đăng ký!', 'error');
