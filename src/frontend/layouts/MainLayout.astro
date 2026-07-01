@@ -1059,6 +1059,9 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-8 w-auto dyn-logo-img" />
             </a>
             <div class="flex items-center gap-3">
+                <a href="/goi-dich-vu" class="auth-user hidden p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center hover:bg-primary/20 active:scale-95 transition-all w-9 h-9 cursor-pointer" title="Gói dịch vụ của tôi">
+                    <span class="material-symbols-outlined text-[18px]">card_membership</span>
+                </a>
                 <button onclick="window.showToast ? window.showToast('Chưa có thông báo mới', 'info') : console.log('No notifications')" class="p-2 rounded-xl bg-white/5 border border-white/10 text-on-surface flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all w-9 h-9 cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">notifications</span>
                 </button>

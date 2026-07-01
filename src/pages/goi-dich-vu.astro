@@ -445,6 +445,10 @@ import MainLayout from '@layouts/MainLayout.astro';
           planBadge.className = `px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full package-style-${userPkgId}`;
           planDesc.textContent = 'Tài khoản của bạn đã được kích hoạt VIP thành công. Bạn có toàn quyền truy cập tất cả tài nguyên phim với băng thông máy chủ cao tốc và chất lượng 4K UHD.';
 
+          if (window.planRemainingInterval) {
+            clearInterval(window.planRemainingInterval);
+          }
+
           if (expStr) {
             const expDate = new Date(expStr);
             planExpiryVal.textContent = expDate.toLocaleString('vi-VN');
@@ -463,20 +467,51 @@ import MainLayout from '@layouts/MainLayout.astro';
             planCycleVal.textContent = formatCycleText(userCycle);
             planCycleDiv.classList.remove('hidden');
             
-            remDays = Math.ceil((expDate.getTime() - Date.now()) / (3600 * 1000 * 24));
+            const updateCountdown = () => {
+              const now = Date.now();
+              const diffMs = expDate.getTime() - now;
+              if (diffMs <= 0) {
+                planRemaining.classList.add('hidden');
+                if (window.planRemainingInterval) clearInterval(window.planRemainingInterval);
+                return;
+              }
 
-            if (remDays > 0) {
+              const diffSec = Math.floor(diffMs / 1000);
+              const diffMin = Math.floor(diffSec / 60);
+              const diffHour = Math.floor(diffMin / 60);
+              const diffDays = Math.floor(diffHour / 24);
+
               planRemaining.classList.remove('hidden');
-              planRemaining.textContent = `Còn lại ${remDays} ngày`;
-            } else {
-              planRemaining.classList.add('hidden');
-            }
+              if (diffDays >= 30) {
+                const months = Math.floor(diffDays / 30);
+                const remainingDays = diffDays % 30;
+                if (remainingDays > 0) {
+                  planRemaining.textContent = `Còn lại ${months} tháng ${remainingDays} ngày`;
+                } else {
+                  planRemaining.textContent = `Còn lại ${months} tháng`;
+                }
+              } else {
+                const secs = diffSec % 60;
+                const mins = diffMin % 60;
+                const hours = diffHour % 24;
+                const days = diffDays;
+                planRemaining.textContent = `Còn lại ${days} ngày ${hours} giờ ${mins} phút ${secs} giây`;
+              }
+            };
+
+            updateCountdown();
+            window.planRemainingInterval = setInterval(updateCountdown, 1000);
+
+            remDays = Math.ceil((expDate.getTime() - Date.now()) / (3600 * 1000 * 24));
           } else {
             planExpiryVal.textContent = 'Vô thời hạn (Lifetime)';
             planCycleDiv.classList.add('hidden');
             planRemaining.classList.add('hidden');
           }
         } else {
+          if (window.planRemainingInterval) {
+            clearInterval(window.planRemainingInterval);
+          }
           // Free tier
           planTitle.textContent = 'Free Plan';
           planBadge.textContent = userPkg?.title || userDb?.package || 'Free';
@@ -719,6 +754,9 @@ import MainLayout from '@layouts/MainLayout.astro';
 
       } catch (err) {
         console.error(err);
+        if (window.planRemainingInterval) {
+          clearInterval(window.planRemainingInterval);
+        }
         planTitle.textContent = 'Free Plan';
         planBadge.textContent = 'MIỄN PHÍ';
         planBadge.className = 'px-3 py-1 bg-zinc-800 text-zinc-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-zinc-700';
