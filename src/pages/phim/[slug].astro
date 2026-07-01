@@ -584,7 +584,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
                                   </div>
                                   <h4 class="text-white font-title-md font-semibold truncate text-sm">{movie.title}</h4>
                                 </div>
-                                <a data-server-idx={idx} href={`/xem/${movie.slug}?sv=${idx}`} class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
+                                <a data-server-idx={idx} data-server-name={srv.serverName} href={`/xem/${movie.slug}?sv=${idx}`} class="mt-4 inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors font-bold text-[11px] px-3.5 py-1.5 rounded-lg w-fit">
                                   Xem bản này
                                 </a>
                               </div>
@@ -620,7 +620,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
                           </div>
                           <div id="server-selector-container" class="flex flex-wrap gap-1.5">
                             {servers.map((srv: any, idx: number) => (
-                              <button data-server-idx={idx} class={`server-btn px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${idx === 0 ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary hover:text-primary'}`}>
+                              <button data-server-idx={idx} data-server-name={srv.serverName} class={`server-btn px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${idx === 0 ? 'bg-primary text-on-primary shadow-md' : 'bg-surface border border-glass-stroke text-on-surface-variant hover:border-primary hover:text-primary'}`}>
                                 {srv.serverName}
                               </button>
                             ))}
@@ -1381,6 +1381,8 @@ if (movie && movie.actors && movie.actors.length > 0) {
     };
 
     let userPkgId = 'free'; // default to free
+    let isAdmin = false;
+    let allowedServers: string[] = [];
 
     function showServerLockedModal() {
       const siteSettings = (window as any).TXA_SITE_SETTINGS || {};
@@ -1423,19 +1425,18 @@ if (movie && movie.actors && movie.actors.length > 0) {
     }
 
     function applyServerLocks() {
-      const isFree = (userPkgId === 'free');
-      if (!isFree) return;
-
       // 1. Phim Bộ server buttons
       const serverBtns = document.querySelectorAll('.server-btn');
       serverBtns.forEach(btn => {
-        const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
-        if (idx > 0) {
+        const srvName = btn.getAttribute('data-server-name') || btn.textContent.trim();
+        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        if (isLocked) {
           if (!btn.querySelector('.lock-badge')) {
+            const originalText = btn.getAttribute('data-server-name') || btn.textContent.trim();
             btn.innerHTML = `
               <span class="flex items-center gap-1">
                 <span class="material-symbols-outlined text-[12px] text-amber-400 lock-badge" style="font-variation-settings: 'FILL' 1">lock</span>
-                ${btn.textContent.trim()}
+                ${originalText}
               </span>
             `;
           }
@@ -1445,8 +1446,9 @@ if (movie && movie.actors && movie.actors.length > 0) {
       // 2. Phim Lẻ watch buttons
       const watchBtns = document.querySelectorAll('a[data-server-idx]');
       watchBtns.forEach((btn: any) => {
-        const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
-        if (idx > 0) {
+        const srvName = btn.getAttribute('data-server-name') || '';
+        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        if (isLocked) {
           if (!btn.querySelector('.lock-badge')) {
             btn.innerHTML = `
               <span class="flex items-center justify-center gap-1.5 w-full">
@@ -1462,6 +1464,9 @@ if (movie && movie.actors && movie.actors.length > 0) {
 
     const checkUserVIP = async () => {
       const username = localStorage.getItem('tlogged_in_as');
+      const siteSettings = (window as any).TXA_SITE_SETTINGS || {};
+      const packages: any[] = siteSettings.packages || [];
+
       if (username) {
         try {
           const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
@@ -1469,16 +1474,35 @@ if (movie && movie.actors && movie.actors.length > 0) {
             const data = (await res.json()) as any;
             const userDb = data?.data;
             if (userDb) {
-              const siteSettings = (window as any).TXA_SITE_SETTINGS || {};
-              const packages: any[] = siteSettings.packages || [];
+              isAdmin = userDb.role === 'admin';
               const userPkg = packages.find((p: any) => p.id === userDb.package) || packages.find((p: any) => p.title === userDb.package);
               userPkgId = userPkg ? userPkg.id : 'free';
+              
+              if (userPkg) {
+                allowedServers = [...(userPkg.permissions?.allowed_servers || [])];
+                const userPrice = userPkg.price || 0;
+                packages.forEach((p: any) => {
+                  if (p.price <= userPrice && p.permissions?.allowed_servers) {
+                    p.permissions.allowed_servers.forEach((srv: string) => {
+                      if (!allowedServers.some((s: string) => s.toLowerCase() === srv.toLowerCase())) {
+                        allowedServers.push(srv);
+                      }
+                    });
+                  }
+                });
+              }
             }
           }
         } catch(e) {
           console.error(e);
         }
       }
+      
+      if (allowedServers.length === 0) {
+        const freePkg = packages.find((p: any) => p.id === 'free');
+        allowedServers = freePkg?.permissions?.allowed_servers || ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+      }
+
       applyServerLocks();
       await syncWatchHistory();
     };
@@ -1493,8 +1517,10 @@ if (movie && movie.actors && movie.actors.length > 0) {
         const btn = e.target.closest('.server-btn');
         if (!btn) return;
         const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
+        const srvName = btn.getAttribute('data-server-name') || '';
         
-        if (idx > 0 && userPkgId === 'free') {
+        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        if (isLocked) {
           showServerLockedModal();
           return;
         }
@@ -1516,8 +1542,9 @@ if (movie && movie.actors && movie.actors.length > 0) {
       const btn = e.target.closest('a[data-server-idx]');
       if (!btn) return;
       
-      const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
-      if (idx > 0 && userPkgId === 'free') {
+      const srvName = btn.getAttribute('data-server-name') || '';
+      const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+      if (isLocked) {
         e.preventDefault();
         showServerLockedModal();
       }

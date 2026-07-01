@@ -599,11 +599,16 @@ const groupedPackages = packages.map((pkg: any) => {
           optionsHtml += `<option value="${p.title}" ${isSelected}>${p.title}</option>`;
         });
 
-        let defaultDays = 30;
+        const localNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+        const minExpiry = localNow.toISOString().slice(0, 16);
+
+        let defaultExpiry = '';
         if (u.expiryDate) {
-          const diffTime = new Date(u.expiryDate).getTime() - Date.now();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          if (diffDays > 0) defaultDays = diffDays;
+          const expDate = new Date(u.expiryDate);
+          defaultExpiry = new Date(expDate.getTime() - expDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        } else {
+          const d30 = new Date(Date.now() + 30 * 24 * 3600 * 1000);
+          defaultExpiry = new Date(d30.getTime() - d30.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         }
 
         const modalContent = `
@@ -616,9 +621,9 @@ const groupedPackages = packages.map((pkg: any) => {
               </select>
             </div>
             <div class="space-y-1" id="member-expiry-wrapper" style="display: ${u.package && u.package.toLowerCase() !== 'free' ? 'block' : 'none'}">
-              <label class="text-[10px] text-zinc-400 font-bold uppercase">Hạn dùng (số ngày kể từ hôm nay)</label>
-              <input type="number" id="member-expiry-days" value="${defaultDays}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
-              <p class="text-[10px] text-zinc-500 mt-1">Nhập số ngày sử dụng (ví dụ: 30, 365). Để trống nếu không giới hạn thời gian.</p>
+              <label class="text-[10px] text-zinc-400 font-bold uppercase">Hạn dùng (Giờ & Ngày)</label>
+              <input type="datetime-local" id="member-expiry-date" value="${defaultExpiry}" min="${minExpiry}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" />
+              <p class="text-[10px] text-zinc-500 mt-1">Chọn thời gian hết hạn gói dịch vụ (Múi giờ máy sẽ được tự động lưu về GMT/UTC).</p>
             </div>
             <div class="flex gap-2 justify-end pt-4 border-t border-glass-stroke/50">
               <button type="button" onclick="closeEditPlanModal()" class="px-4 py-2 rounded-xl bg-white/5 text-zinc-400 font-bold hover:bg-white/10 active:scale-95 transition-all text-xs cursor-pointer border border-glass-stroke/30">Hủy</button>
@@ -646,10 +651,9 @@ const groupedPackages = packages.map((pkg: any) => {
               
               let expiryDate = '';
               if (!isFree) {
-                const daysInput = document.getElementById('member-expiry-days');
-                const days = daysInput ? parseInt(daysInput.value) : 0;
-                if (days > 0) {
-                  expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * days).toISOString();
+                const dateInput = document.getElementById('member-expiry-date');
+                if (dateInput && dateInput.value) {
+                  expiryDate = new Date(dateInput.value).toISOString();
                 }
               }
 

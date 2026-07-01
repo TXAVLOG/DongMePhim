@@ -1198,6 +1198,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [currentUserPackage, setCurrentUserPackage] = useState<string>('free');
   const [currentUserPackageTitle, setCurrentUserPackageTitle] = useState<string>('Gói Free');
   const [userPermissions, setUserPermissions] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [allowedServers, setAllowedServers] = useState<string[]>([]);
 
   const [isAdChecking, setIsAdChecking] = useState<boolean>(true);
   const [showAd, setShowAd] = useState<boolean>(false);
@@ -1216,9 +1218,11 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
       try {
         const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
         let rawPkg = 'free';
+        let role = 'user';
         if (res.ok) {
           const result = (await res.json()) as any;
           rawPkg = result.data?.package || 'free';
+          role = result.data?.role || 'user';
         }
 
         // Tải danh sách yêu thích và danh sách phát
@@ -1260,6 +1264,28 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           };
         }
         setUserPermissions(perms);
+
+        const userIsAdmin = role === 'admin';
+        setIsAdmin(userIsAdmin);
+
+        let mergedAllowed: string[] = [];
+        if (userPkg) {
+          mergedAllowed = [...(userPkg.permissions?.allowed_servers || [])];
+          const userPrice = userPkg.price || 0;
+          packages.forEach((p: any) => {
+            if (p.price <= userPrice && p.permissions?.allowed_servers) {
+              p.permissions.allowed_servers.forEach((srv: string) => {
+                if (!mergedAllowed.some((s: string) => s.toLowerCase() === srv.toLowerCase())) {
+                  mergedAllowed.push(srv);
+                }
+              });
+            }
+          });
+        } else {
+          const freePkg = packages.find((p: any) => p.id === 'free');
+          mergedAllowed = freePkg?.permissions?.allowed_servers || ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+        }
+        setAllowedServers(mergedAllowed);
 
         // Check AdBlock state for Free users
         const isFreeUser = pkgId === 'free' || !perms?.bypass_ads;
@@ -2066,7 +2092,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   };
 
   const selectServer = (idx: number) => {
-    if (idx > 0 && currentUserPackage === 'free') {
+    const srv = servers[idx];
+    const isLocked = srv && !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === srv.serverName.toLowerCase());
+    if (isLocked) {
       const modalContent = `
         <div class="flex flex-col items-center justify-center p-6 text-center relative overflow-hidden space-y-4">
           <div class="bg-primary/20 w-14 h-14 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_20px_rgba(124,58,237,0.25)]">
@@ -2203,7 +2231,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               className="w-full h-full border-none rounded-xl"
               data-txatooltip="Cảnh báo can thiệp hệ thống"
             />
-          ) : adBlockDetected && currentUserPackage.toLowerCase() === 'free' ? (
+          ) : adBlockDetected && !isAdmin && currentUserPackage.toLowerCase() === 'free' ? (
             <div className="w-full h-full flex flex-col items-center justify-center bg-[#09090b] p-6 sm:p-10 text-center relative overflow-hidden">
               {/* Backglow auras */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] sm:w-[500px] sm:h-[500px] bg-rose-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse" />
@@ -2260,7 +2288,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 <span className="text-xs font-bold text-zinc-400">Đang chuẩn bị nguồn phát...</span>
               </div>
             </div>
-          ) : userPermissions && currentServer && !userPermissions.allowed_servers?.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) ? (
+          ) : !isAdmin && currentServer && !allowedServers.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) ? (
             <div className="w-full h-full aspect-video bg-[#0d0e14] border border-glass-stroke rounded-2xl flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-primary/5 blur-[50px] pointer-events-none"></div>
               <div className="relative z-10 space-y-4 max-w-md">
@@ -2538,7 +2566,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   <div className="flex items-center gap-1.5 overflow-x-auto max-w-[320px] sm:max-w-md hide-scrollbar">
                     {servers.map((srv, idx) => {
                       const isActive = idx === serverIndex;
-                      const isLocked = idx > 0 && currentUserPackage.toLowerCase() === 'free';
+                      const isLocked = !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === srv.serverName.toLowerCase());
                       return (
                         <button
                           key={srv.serverName}

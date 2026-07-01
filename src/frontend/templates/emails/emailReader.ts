@@ -293,6 +293,97 @@ export function getEmailTemplate(filename: string): string {
   <p style="margin:8px 0 0;font-size:11px;color:#71717a;">Mã OTP này sẽ hết hạn sau {token_expiry} phút.</p>
 </div>`;
 
+    case 'content-expiry-warning.html':
+      return `<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Chào <strong>{name}</strong>,</p>
+<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Gói dịch vụ <strong>{package_title}</strong> của bạn tại {site_name} sẽ hết hạn sau 3 ngày nữa, vào ngày <strong>{expiry_date}</strong>.</p>
+<div style="background-color:#18181b;border:1px solid #3f3f46;border-radius:16px;padding:20px;margin:24px 0;">
+  <p style="margin:0 0 12px;font-size:13px;color:#f43f5e;font-weight:bold;">⚠️ Thông báo gia hạn tự động:</p>
+  <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.5;">Nếu bạn đang sử dụng gói gia hạn hàng tháng hoặc hàng năm, vui lòng đảm bảo chuẩn bị đủ số dư trong tài khoản để hệ thống có thể tự động gia hạn dịch vụ cho bạn, tránh gián đoạn trải nghiệm xem phim nhé.</p>
+</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+  <tr>
+    <td align="center">
+      <a href="{site_url}/nang-cap" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #7c3aed, #6d28d9);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(124,58,237,0.3);">Xem chi tiết gói cước</a>
+    </td>
+  </tr>
+</table>`;
+
+    case 'content-expiry-expired.html':
+      return `<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Chào <strong>{name}</strong>,</p>
+<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Gói dịch vụ <strong>{package_title}</strong> của bạn tại {site_name} đã chính thức hết hạn vào ngày <strong>{expiry_date}</strong>.</p>
+<div style="background-color:#18181b;border:1px solid #3f3f46;border-radius:16px;padding:20px;margin:24px 0;">
+  <p style="margin:0 0 12px;font-size:13px;color:#f43f5e;font-weight:bold;">🔄 Trở về Gói Free:</p>
+  <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.5;">Do gói cước đã hết hạn và không được tự động gia hạn thành công, tài khoản của bạn đã được chuyển về trạng thái <strong>Gói Free</strong>. Bạn vẫn có thể tiếp tục xem phim có quảng cáo bình thường.</p>
+</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+  <tr>
+    <td align="center">
+      <a href="{site_url}/nang-cap" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #7c3aed, #6d28d9);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(124,58,237,0.3);">Gia hạn / Nâng cấp ngay</a>
+    </td>
+  </tr>
+</table>`;
+
+    case 'content-purchase-success.html':
+      return `<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Chào <strong>{name}</strong>,</p>
+<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Cảm ơn bạn đã nâng cấp dịch vụ tại {site_name}. Giao dịch của bạn đã được xác nhận thành công!</p>
+<div style="background-color:#18181b;border:1px solid #7c3aed;border-radius:16px;padding:20px;margin:24px 0;">
+  <p style="margin:0 0 8px;font-size:13px;color:#ffffff;font-weight:bold;">Thông tin gói dịch vụ:</p>
+  <table width="100%" style="font-size:12px;color:#a1a1aa;line-height:1.6;">
+    <tr>
+      <td width="40%">Tài khoản:</td>
+      <td style="color:#ffffff;"><strong>{username}</strong></td>
+    </tr>
+    <tr>
+      <td>Gói đăng ký:</td>
+      <td style="color:#7c3aed;"><strong>{package_title}</strong></td>
+    </tr>
+    <tr>
+      <td>Thời hạn đến:</td>
+      <td style="color:#ffffff;"><strong>{expiry_date}</strong></td>
+    </tr>
+  </table>
+</div>
+<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Chúc bạn có những giây phút xem phim vui vẻ tại {site_name}!</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+  <tr>
+    <td align="center">
+      <a href="{site_url}" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #7c3aed, #6d28d9);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(124,58,237,0.3);">Xem phim ngay</a>
+    </td>
+  </tr>
+</table>`;
+
+    case 'content-purchase-admin.html':
+      return `<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Chào Admin,</p>
+<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Hệ thống vừa ghi nhận một giao dịch nâng cấp gói cước thành công mới.</p>
+<div style="background-color:#18181b;border:1px solid #3f3f46;border-radius:16px;padding:20px;margin:24px 0;">
+  <p style="margin:0 0 8px;font-size:13px;color:#ffffff;font-weight:bold;">Thông tin chi tiết:</p>
+  <table width="100%" style="font-size:12px;color:#a1a1aa;line-height:1.6;">
+    <tr>
+      <td width="40%">Tài khoản:</td>
+      <td style="color:#ffffff;"><strong>{username}</strong></td>
+    </tr>
+    <tr>
+      <td>Email khách hàng:</td>
+      <td style="color:#ffffff;">{email}</td>
+    </tr>
+    <tr>
+      <td>Gói đăng ký:</td>
+      <td style="color:#a78bfa;"><strong>{package_title}</strong></td>
+    </tr>
+    <tr>
+      <td>Thời hạn đến:</td>
+      <td style="color:#ffffff;">{expiry_date}</td>
+    </tr>
+  </table>
+</div>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+  <tr>
+    <td align="center">
+      <a href="{site_url}/admin/thanh-vien/goi-dang-ky" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #7c3aed, #6d28d9);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(124,58,237,0.3);">Quản lý thành viên</a>
+    </td>
+  </tr>
+</table>`;
+
     default:
       return '';
   }

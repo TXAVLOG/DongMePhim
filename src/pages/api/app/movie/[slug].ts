@@ -41,11 +41,20 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       }
     }
 
-    // Fetch real favorite status
+    // Fetch real favorite status and user info
     let isFavorite = false;
+    let userPkgId = 'free';
+    let isAdmin = false;
+    let allowedServers: string[] = [];
+
+    const settings = await SettingService.getSettings();
+
     try {
       const user = await verifyUserFromRequest(request, cookies);
       if (user) {
+        userPkgId = user.package || 'free';
+        isAdmin = user.role === 'admin';
+
         const { data: fav } = await supabase
           .from('watch_lists')
           .select('id')
@@ -56,8 +65,29 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
         if (fav) {
           isFavorite = true;
         }
+
+        const packagesList = settings.packages || [];
+        const userPkg = packagesList.find((p: any) => p.id === userPkgId || p.title === userPkgId) || packagesList.find((p: any) => p.id === 'free');
+        
+        const userPrice = userPkg?.price || 0;
+        allowedServers = userPkg?.permissions?.allowed_servers || [];
+        packagesList.forEach((p: any) => {
+          if (p.price <= userPrice && p.permissions?.allowed_servers) {
+            p.permissions.allowed_servers.forEach((srv: string) => {
+              if (!allowedServers.includes(srv)) {
+                allowedServers.push(srv);
+              }
+            });
+          }
+        });
       }
     } catch (_) {}
+
+    if (allowedServers.length === 0) {
+      const packagesList = settings.packages || [];
+      const freePkg = packagesList.find((p: any) => p.id === 'free');
+      allowedServers = freePkg?.permissions?.allowed_servers || ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+    }
 
   // Check and flag unreleased episodes
   const nowTime = Date.now();
@@ -96,7 +126,6 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
     return isNaN(parsed) ? id : parsed;
   };
 
-  const settings = await SettingService.getSettings();
   const ads = {
     pre_roll_enable: settings.ads?.pre_roll_enable ?? false,
     pre_roll_type: settings.ads?.pre_roll_type || 'video',
@@ -126,43 +155,47 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
     },
     ads,
     history: historyData,
-    servers: filteredServers.map((srv: any) => ({
-      server_name: srv.serverName,
-      server_data: srv.serverData.map((ep: any) => {
-        // Build intro/outro skip markers
-        const intro = (ep.timeIntroStart !== undefined || ep.timeIntroEnd !== undefined)
-          ? [ep.timeIntroStart || 0, ep.timeIntroEnd || 0]
-          : [];
-        const outro = ep.timeOutroStart !== undefined
-          ? [ep.timeOutroStart]
-          : [];
+    servers: filteredServers.map((srv: any) => {
+      const isServerLocked = !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === srv.serverName.toLowerCase());
+      return {
+        server_name: srv.serverName,
+        is_locked: isServerLocked,
+        server_data: srv.serverData.map((ep: any) => {
+          // Build intro/outro skip markers
+          const intro = (ep.timeIntroStart !== undefined || ep.timeIntroEnd !== undefined)
+            ? [ep.timeIntroStart || 0, ep.timeIntroEnd || 0]
+            : [];
+          const outro = ep.timeOutroStart !== undefined
+            ? [ep.timeOutroStart]
+            : [];
 
-        // Build subtitles list
-        const subtitles = (ep.subtitles || []).map((sub: any) => ({
-          label: sub.label,
-          lang: sub.label?.includes("Việt") ? "vi" : "en",
-          file: sub.file
-        }));
+          // Build subtitles list
+          const subtitles = (ep.subtitles || []).map((sub: any) => ({
+            label: sub.label,
+            lang: sub.label?.includes("Việt") ? "vi" : "en",
+            file: sub.file
+          }));
 
-        return {
-          id: ep.slug,
-          name: ep.name,
-          stream_v6: ep.linkM3u8,
-          stream_m3u8: ep.linkM3u8,
-          link_m3u8: ep.linkM3u8,
-          stream_embed: ep.linkEmbed || "",
-          link_embed: ep.linkEmbed || "",
-          subtitles,
-          skip_markers: {
-            intro,
-            outro
-          },
-          is_unreleased: ep.is_unreleased || false,
-          air_date: ep.airDate || "",
-          air_time: ep.airTime || ""
-        };
-      })
-    })),
+          return {
+            id: ep.slug,
+            name: ep.name,
+            stream_v6: isServerLocked ? "" : (ep.linkM3u8 || ""),
+            stream_m3u8: isServerLocked ? "" : (ep.linkM3u8 || ""),
+            link_m3u8: isServerLocked ? "" : (ep.linkM3u8 || ""),
+            stream_embed: isServerLocked ? "" : (ep.linkEmbed || ""),
+            link_embed: isServerLocked ? "" : (ep.linkEmbed || ""),
+            subtitles,
+            skip_markers: {
+              intro,
+              outro
+            },
+            is_unreleased: ep.is_unreleased || false,
+            air_date: ep.airDate || "",
+            air_time: ep.airTime || ""
+          };
+        })
+      };
+    }),
     related: relatedMovies.map((m: any) => ({
       id: cleanId(m.movie_id_seq || m.id),
       name: m.title,

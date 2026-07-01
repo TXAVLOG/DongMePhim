@@ -7,9 +7,10 @@ export const GET: APIRoute = async () => {
   const settings = await SettingService.getSettings();
   const siteUrl = settings.general.site_url.replace(/\/$/, ''); // Ensure no trailing slash
 
-  // Fetch all movies for the sitemap
-  // In a real scenario with thousands of movies, you might need pagination or sitemap indexes
-  const allMovies = await MovieService.getMovies({ type: 'movie', limit: 100 }); 
+  // Fetch both movies and series for the sitemap
+  const movies = await MovieService.getMovies({ type: 'movie', limit: 250 });
+  const series = await MovieService.getMovies({ type: 'series', limit: 250 });
+  const allMovies = [...movies, ...series]; 
 
   // Static routes
   const staticRoutes = [

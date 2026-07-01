@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { SettingService } from '@services/SettingService';
+import { getEmailTemplate } from '@templates/emails/emailReader';
+import { SmtpClient } from '@lib/api/smtpClient';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -143,6 +145,107 @@ export const POST: APIRoute = async ({ request }) => {
       .eq('username', log.username);
 
     if (updateUserErr) throw updateUserErr;
+
+    // Fetch user email to send notification
+    const { data: userDb } = await supabase
+      .from('users')
+      .select('email, username')
+      .eq('username', log.username)
+      .maybeSingle();
+
+    const userEmail = userDb?.email || log.email || '';
+    if (userEmail) {
+      try {
+        const siteUrl = settings.general?.site_url || 'https://dongmephim.online';
+        const siteName = settings.general?.site_name || 'DongMePhim';
+        const year = new Date().getFullYear().toString();
+        const formattedExpiry = new Date(expiryDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+        
+        // 1. Send success email to user
+        const successTemplate = getEmailTemplate('content-purchase-success.html');
+        const userEmailContent = successTemplate
+          .replace(/{name}/g, log.username)
+          .replace(/{username}/g, log.username)
+          .replace(/{package_title}/g, resolvedPkg?.title || pkgId)
+          .replace(/{expiry_date}/g, formattedExpiry)
+          .replace(/{site_name}/g, siteName)
+          .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''));
+          
+        const userHtml = getEmailTemplate('verify-email.html')
+          .replace(/{name}/g, log.username)
+          .replace(/{verification_content}/g, userEmailContent)
+          .replace(/{site_name}/g, siteName)
+          .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
+          .replace(/{year}/g, year);
+
+        await SmtpClient.sendMail({
+          host: settings.smtp.smtp_host,
+          port: settings.smtp.smtp_port,
+          secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+          user: settings.smtp.smtp_user,
+          pass: settings.smtp.smtp_pass,
+          fromEmail: settings.smtp.smtp_user,
+          fromName: siteName
+        }, {
+          to: userEmail,
+          subject: `[${siteName}] Kích hoạt thành công gói cước ${resolvedPkg?.title || pkgId}`,
+          html: userHtml
+        });
+
+        // 2. Send email to admin
+        const adminEmail = settings.smtp.smtp_user;
+        if (adminEmail) {
+          const adminTemplate = getEmailTemplate('content-purchase-admin.html');
+          const adminEmailContent = adminTemplate
+            .replace(/{username}/g, log.username)
+            .replace(/{email}/g, userEmail)
+            .replace(/{package_title}/g, resolvedPkg?.title || pkgId)
+            .replace(/{expiry_date}/g, formattedExpiry)
+            .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''));
+            
+          const adminHtml = getEmailTemplate('verify-email.html')
+            .replace(/{name}/g, 'Admin')
+            .replace(/{verification_content}/g, adminEmailContent)
+            .replace(/{site_name}/g, siteName)
+            .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
+            .replace(/{year}/g, year);
+
+          await SmtpClient.sendMail({
+            host: settings.smtp.smtp_host,
+            port: settings.smtp.smtp_port,
+            secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+            user: settings.smtp.smtp_user,
+            pass: settings.smtp.smtp_pass,
+            fromEmail: settings.smtp.smtp_user,
+            fromName: siteName
+          }, {
+            to: adminEmail,
+            subject: `[${siteName}] Thông báo: Có thành viên mới mua gói cước`,
+            html: adminHtml
+          });
+        }
+
+        // Log emails in txa_email_logs
+        await supabase.from('txa_email_logs').insert([
+          {
+            recipient: userEmail,
+            sender: settings.smtp.smtp_user,
+            subject: `[${siteName}] Kích hoạt thành công gói cước ${resolvedPkg?.title || pkgId}`,
+            category: 'purchase-success',
+            status: 'success'
+          },
+          {
+            recipient: adminEmail,
+            sender: settings.smtp.smtp_user,
+            subject: `[${siteName}] Thông báo: Có thành viên mới mua gói cước`,
+            category: 'purchase-admin-notification',
+            status: 'success'
+          }
+        ]);
+      } catch (emailErr) {
+        console.error('Error sending purchase notification emails:', emailErr);
+      }
+    }
 
     return apiResponse(
       { success: true, sandbox: isSandbox },

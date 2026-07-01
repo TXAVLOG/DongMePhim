@@ -109,10 +109,12 @@ const settings = await SettingService.getSettings();
           permissions: { watch_together: false }
         };
 
+        const isAdmin = user.role === 'admin';
+
         loadingEl.style.display = 'none';
         guestEl.style.display = 'none';
 
-        if (pkgDef.permissions && pkgDef.permissions.watch_together) {
+        if (isAdmin || (pkgDef.permissions && pkgDef.permissions.watch_together)) {
           // Allowed!
           allowedEl.style.display = 'flex';
           blockedEl.style.display = 'none';

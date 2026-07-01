@@ -1,6 +1,9 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
+import { SettingService } from '@services/SettingService';
+import { getEmailTemplate } from '@templates/emails/emailReader';
+import { SmtpClient } from '@lib/api/smtpClient';
 
 // GET: Lấy danh sách thành viên từ Supabase
 export const GET: APIRoute = async ({ request }) => {
@@ -99,6 +102,15 @@ export const POST: APIRoute = async ({ request }) => {
         return apiResponse(null, 'error', 'Thiếu thông tin người dùng mục tiêu!', 400, request);
       }
 
+      // Fetch old package and email
+      const { data: oldUser } = await supabase
+        .from('users')
+        .select('package, email, username')
+        .eq('username', targetUsername)
+        .maybeSingle();
+
+      const oldPkg = oldUser?.package || 'free';
+
       const updates: any = {};
       if (email !== undefined) updates.email = email;
       if (password !== undefined) updates.password = password;
@@ -115,6 +127,111 @@ export const POST: APIRoute = async ({ request }) => {
         .eq('username', targetUsername);
 
       if (error) throw error;
+
+      const newPkg = updates.package || oldPkg;
+      const finalEmail = updates.email || oldUser?.email || '';
+
+      if (newPkg !== oldPkg && newPkg.toLowerCase() !== 'free' && finalEmail) {
+        try {
+          const settings = await SettingService.getSettings();
+          const siteUrl = settings.general?.site_url || 'https://dongmephim.online';
+          const siteName = settings.general?.site_name || 'DongMePhim';
+          const year = new Date().getFullYear().toString();
+          
+          const expDateVal = updates.expiry_date || null;
+          const formattedExpiry = expDateVal 
+            ? new Date(expDateVal).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+            : 'Vô thời hạn';
+
+          const packagesList = settings.packages || [];
+          const resolvedPkg = packagesList.find((p: any) => p.id === newPkg || p.title === newPkg);
+
+          // 1. Send success email to user
+          const successTemplate = getEmailTemplate('content-purchase-success.html');
+          const userEmailContent = successTemplate
+            .replace(/{name}/g, targetUsername)
+            .replace(/{username}/g, targetUsername)
+            .replace(/{package_title}/g, resolvedPkg?.title || newPkg)
+            .replace(/{expiry_date}/g, formattedExpiry)
+            .replace(/{site_name}/g, siteName)
+            .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''));
+            
+          const userHtml = getEmailTemplate('verify-email.html')
+            .replace(/{name}/g, targetUsername)
+            .replace(/{verification_content}/g, userEmailContent)
+            .replace(/{site_name}/g, siteName)
+            .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
+            .replace(/{year}/g, year);
+
+          await SmtpClient.sendMail({
+            host: settings.smtp.smtp_host,
+            port: settings.smtp.smtp_port,
+            secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+            user: settings.smtp.smtp_user,
+            pass: settings.smtp.smtp_pass,
+            fromEmail: settings.smtp.smtp_user,
+            fromName: siteName
+          }, {
+            to: finalEmail,
+            subject: `[${siteName}] Kích hoạt thành công gói cước ${resolvedPkg?.title || newPkg}`,
+            html: userHtml
+          });
+
+          // 2. Send email to admin
+          const adminEmail = settings.smtp.smtp_user;
+          if (adminEmail) {
+            const adminTemplate = getEmailTemplate('content-purchase-admin.html');
+            const adminEmailContent = adminTemplate
+              .replace(/{username}/g, targetUsername)
+              .replace(/{email}/g, finalEmail)
+              .replace(/{package_title}/g, resolvedPkg?.title || newPkg)
+              .replace(/{expiry_date}/g, formattedExpiry)
+              .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''));
+              
+            const adminHtml = getEmailTemplate('verify-email.html')
+              .replace(/{name}/g, 'Admin')
+              .replace(/{verification_content}/g, adminEmailContent)
+              .replace(/{site_name}/g, siteName)
+              .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
+              .replace(/{year}/g, year);
+
+            await SmtpClient.sendMail({
+              host: settings.smtp.smtp_host,
+              port: settings.smtp.smtp_port,
+              secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+              user: settings.smtp.smtp_user,
+              pass: settings.smtp.smtp_pass,
+              fromEmail: settings.smtp.smtp_user,
+              fromName: siteName
+            }, {
+              to: adminEmail,
+              subject: `[${siteName}] Thông báo: Có thành viên mới mua gói cước`,
+              html: adminHtml
+            });
+          }
+
+          // Log emails in txa_email_logs
+          await supabase.from('txa_email_logs').insert([
+            {
+              recipient: finalEmail,
+              sender: settings.smtp.smtp_user,
+              subject: `[${siteName}] Kích hoạt thành công gói cước ${resolvedPkg?.title || newPkg}`,
+              category: 'purchase-success',
+              status: 'success'
+            },
+            {
+              recipient: adminEmail,
+              sender: settings.smtp.smtp_user,
+              subject: `[${siteName}] Thông báo: Có thành viên mới mua gói cước`,
+              category: 'purchase-admin-notification',
+              status: 'success'
+            }
+          ]);
+        } catch (emailErr) {
+          console.error('Error sending member edit purchase notification emails:', emailErr);
+        }
+      }
+
       return apiResponse({ success: true }, 'success', 'Cập nhật thành viên thành công!', 200, request);
     }
 

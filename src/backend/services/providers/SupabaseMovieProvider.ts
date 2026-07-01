@@ -273,6 +273,40 @@ export class SupabaseMovieProvider implements IMovieProvider {
         if (data && data.status && data.movie) {
           const detail = mapKKPhimToMovieDetail(data);
           if (detail) {
+            // Auto-cache to Supabase database so it is persistent and included in sitemap
+            try {
+              const insertData = {
+                title: detail.title,
+                original_title: detail.originalTitle,
+                slug: detail.slug,
+                description: detail.description || '',
+                poster_url: detail.posterUrl || '',
+                banner_url: detail.bannerUrl || detail.posterUrl || '',
+                release_year: detail.releaseYear || 2024,
+                duration_minutes: detail.durationMinutes || '45 phút/tập',
+                type: detail.type,
+                status: detail.status,
+                episode_current: detail.episodeCurrent || '1',
+                episode_total: detail.episodeTotal || '1',
+                quality: detail.quality || 'FHD',
+                lang: detail.lang || 'Vietsub',
+                imdb_score: detail.imdbScore || 8.0,
+                views: detail.views || 0,
+                country: detail.country || 'Khác',
+                genres: detail.genres || [],
+                seasons: detail.seasons || (detail.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1'),
+                actors: detail.actors || [],
+                directors: detail.directors || [],
+                trailer_url: detail.trailerUrl || '',
+                episodes: detail.episodes || [],
+                source: 'kkphim',
+                updated_at: new Date().toISOString()
+              };
+              await supabase.from('movies').insert(insertData);
+            } catch (dbErr) {
+              console.warn(`Could not cache movie ${detail.title} to Supabase:`, dbErr);
+            }
+
             return {
               ...detail,
               isStatic: false
