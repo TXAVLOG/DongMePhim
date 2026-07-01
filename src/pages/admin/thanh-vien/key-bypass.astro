@@ -165,6 +165,28 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       }
     };
 
+    window.copyBrowserToken = async function(btn, token) {
+      try {
+        await navigator.clipboard.writeText(token);
+        const icon = btn.querySelector('.material-symbols-outlined');
+        btn.classList.add('text-emerald-400', 'scale-110');
+        btn.classList.remove('text-zinc-400');
+        if (icon) icon.textContent = 'check';
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Đã sao chép Browser Token thành công!', 'success');
+        }
+
+        setTimeout(() => {
+          btn.classList.remove('text-emerald-400', 'scale-110');
+          btn.classList.add('text-zinc-400');
+          if (icon) icon.textContent = 'content_copy';
+        }, 1500);
+      } catch (err) {
+        console.error('Lỗi sao chép:', err);
+      }
+    };
+
     window.openCreateKeyModal = function() {
       const content = `
         <div class="space-y-4 text-xs text-left">
@@ -255,7 +277,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                   <tr>
                     <td class="p-2.5 font-bold text-zinc-500">${idx + 1}</td>
                     <td class="p-2.5 font-bold text-white">${l.nickname || '-'}</td>
-                    <td class="p-2.5 font-mono text-[10px] text-purple-300 truncate max-w-[180px]" title="${l.browser_token}">${l.browser_token}</td>
+                    <td class="p-2.5">
+                      <div class="flex items-center gap-1.5 max-w-[180px]">
+                        <span class="font-mono text-[10px] text-purple-300 truncate" title="${l.browser_token}">${l.browser_token}</span>
+                        <button onclick="copyBrowserToken(this, '${l.browser_token}')" class="p-0.5 hover:bg-white/10 text-zinc-400 hover:text-white rounded transition-all cursor-pointer border-none flex items-center justify-center shrink-0 active:scale-90" title="Sao chép Token">
+                          <span class="material-symbols-outlined text-[11px] font-bold">content_copy</span>
+                        </button>
+                      </div>
+                    </td>
                     <td class="p-2.5 font-mono text-zinc-400">${l.ip || '-'}</td>
                     <td class="p-2.5 text-zinc-400">${new Date(l.created_at).toLocaleString('vi-VN')}</td>
                   </tr>

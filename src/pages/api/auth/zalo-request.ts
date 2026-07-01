@@ -137,15 +137,15 @@ export const POST: APIRoute = async ({ request }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { token, nickname, email, bypassKey, bypass_key, key } = body;
+    const { token, nickname, email, bypassKey, bypass_key, key, clientIp } = body;
     const inputKey = bypassKey || bypass_key || key;
 
     if (!token || !nickname) {
       return apiResponse(null, 'error', 'Thiếu thông tin token hoặc nickname!', 400, request);
     }
 
-    // Lấy thông tin IP và User Agent từ request headers
-    const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || '';
+    // Lấy thông tin IP và User Agent từ request headers (ưu tiên clientIp từ ipinfo.io gửi lên)
+    const ip = clientIp || request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || '';
     const userAgent = request.headers.get('user-agent') || '';
 
     // Nếu người dùng có nhập Mã Key Bypass

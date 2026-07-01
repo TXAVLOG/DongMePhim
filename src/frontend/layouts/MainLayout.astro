@@ -3842,6 +3842,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               const res = await fetch('https://ipinfo.io/json');
               if (res.ok) {
                 data = await res.json();
+                if (data.ip) localStorage.setItem('txa_client_ip', data.ip);
               } else {
                 throw new Error('ipinfo.io failed');
               }
@@ -3850,6 +3851,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               const res = await fetch('/api/auth/ip');
               if (res.ok) {
                 data = await res.json();
+                if (data.ip) localStorage.setItem('txa_client_ip', data.ip);
               }
             }
 
@@ -4058,6 +4060,23 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           }
         }
 
+        async function getClientIp() {
+          let ip = localStorage.getItem('txa_client_ip') || '';
+          if (!ip) {
+            try {
+              const res = await fetch('https://ipinfo.io/json');
+              if (res.ok) {
+                const data = await res.json();
+                if (data.ip) {
+                  ip = data.ip;
+                  localStorage.setItem('txa_client_ip', ip);
+                }
+              }
+            } catch (e) {}
+          }
+          return ip;
+        }
+
         // Đăng ký Zalo
         window.handleZaloRegister = async function(e) {
           e.preventDefault();
@@ -4070,6 +4089,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> <span>Đang xử lý...</span>';
 
           try {
+            const clientIp = await getClientIp();
             const userEmail = (window.APP_USER ? window.APP_USER.username : null) || null;
             const res = await fetch('/api/auth/zalo-request', {
               method: 'POST',
@@ -4078,7 +4098,8 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 token: browserToken,
                 nickname: nickname,
                 email: userEmail,
-                bypassKey: bypassKey
+                bypassKey: bypassKey,
+                clientIp: clientIp
               })
             });
             const data = await res.json();
