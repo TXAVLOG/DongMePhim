@@ -367,6 +367,7 @@ import MainLayout from '@layouts/MainLayout.astro';
         if (res.ok) {
           const result = await res.json();
           loadedSettings = result?.data || {};
+          window.TXA_SITE_SETTINGS = loadedSettings;
         }
       } catch (e) {
         console.error('Failed to load settings:', e);
@@ -414,9 +415,11 @@ import MainLayout from '@layouts/MainLayout.astro';
         const userDb = resultMe.data;
         const userInvoices = resultPayments.data || [];
 
-        const siteSettings = window.TXA_SITE_SETTINGS || {};
+        const siteSettings = window.TXA_SITE_SETTINGS || loadedSettings || {};
         const packagesList = siteSettings.packages || [];
-        const userPkg = packagesList.find(p => p.id === (userDb?.package || 'free')) || packagesList.find(p => p.title === (userDb?.package || 'Free')) || packagesList.find(p => p.id === 'free');
+        const userPkg = packagesList.find(p => p.id?.toLowerCase() === (userDb?.package || 'free').toLowerCase()) || 
+                        packagesList.find(p => p.title?.toLowerCase() === (userDb?.package || 'Free').toLowerCase()) || 
+                        packagesList.find(p => p.id === 'free');
         const userPkgId = userPkg ? userPkg.id : 'free';
         const isVIPUser = userPkgId !== 'free';
 

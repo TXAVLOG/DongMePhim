@@ -153,8 +153,22 @@ const settings = await SettingService.getSettings();
 
       fetch(`/api/auth/me?username=${encodeURIComponent(username)}`)
         .then(res => res.ok ? res.json() : null)
-        .then(userData => {
+        .then(async userData => {
           const userDb = userData?.data;
+
+          // Hydrate settings if missing
+          if (!window.TXA_SITE_SETTINGS) {
+            try {
+              const res = await fetch('/api/admin/settings');
+              if (res.ok) {
+                const result = await res.json();
+                window.TXA_SITE_SETTINGS = result?.data || {};
+              }
+            } catch (e) {
+              console.error('Failed to load settings:', e);
+            }
+          }
+
           if (userDb) {
             renderProfile(userDb);
           } else {
@@ -193,7 +207,7 @@ const settings = await SettingService.getSettings();
       
       const siteSettings = window.TXA_SITE_SETTINGS || {};
       const packagesList = siteSettings.packages || [];
-      const userPkg = packagesList.find(p => p.title === pkgTitle || p.id === pkgTitle);
+      const userPkg = packagesList.find(p => p.title?.toLowerCase() === pkgTitle.toLowerCase() || p.id?.toLowerCase() === pkgTitle.toLowerCase());
       
       let rightsText = "Xem cơ bản SD, có quảng cáo";
       let userPkgId = 'free';

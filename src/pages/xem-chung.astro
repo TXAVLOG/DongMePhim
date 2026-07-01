@@ -103,7 +103,8 @@ const settings = await SettingService.getSettings();
         const userPackageName = user.package || 'free';
         
         // Find matching package rules
-        const userPkg = packages.find((p) => p.id === userPackageName) || packages.find((p) => p.title === userPackageName);
+        const userPkg = packages.find((p) => p.id?.toLowerCase() === userPackageName.toLowerCase()) || 
+                        packages.find((p) => p.title?.toLowerCase() === userPackageName.toLowerCase());
         const userPkgId = userPkg ? userPkg.id : 'free';
         const pkgDef = userPkg || packages.find(p => p.id === 'free') || {
           permissions: { watch_together: false }
