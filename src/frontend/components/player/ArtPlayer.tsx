@@ -1213,6 +1213,13 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           console.error('Error parsing wrapped stream URL:', e);
         }
       }
+      // Chuyển Cloudflare Worker URL (có CORS) sang R2 public URL (đã bật CORS)
+      if (rawUrl.includes('webfilm.txasoftdev.workers.dev/txa_media/')) {
+        return rawUrl.replace(
+          'https://webfilm.txasoftdev.workers.dev/txa_media/',
+          'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/'
+        );
+      }
       return rawUrl;
     };
 
@@ -1261,13 +1268,11 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       };
       const validDefaultSub = defaultSub && isValidSubUrl(defaultSub.file) ? defaultSub : undefined;
 
-      const art = new Artplayer({
+      const artOptions: any = {
         container: artRef.current,
         url: realUrl,
         poster: poster || '',
-        thumbnails: storyboardBlobUrl ? {
-          url: storyboardBlobUrl,
-        } : undefined,
+        ...(storyboardBlobUrl ? { thumbnails: { url: storyboardBlobUrl } } : {}),
         volume: 0.7,
         isLive: false,
         muted: false,
@@ -1593,13 +1598,15 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             position: 'right',
             index: 10,
             html: `<button class="art-icon" style="display: flex; align-items: center; justify-center: center; opacity: 0.95; transition: opacity 0.2s;" title="Phụ đề"><span class="material-symbols-outlined" style="font-size: 20px; color: #ffffff;">subtitles</span></button>`,
-            click: function (art) {
+            click: function (_art: any) {
               const event = new CustomEvent('txa-toggle-subtitle-panel');
               window.dispatchEvent(event);
             }
           }
         ],
-      });
+      };
+
+      const art = new Artplayer(artOptions);
 
       // --- Menu Cài đặt (Gear icon) Tùy chỉnh thay thế toàn bộ mặc định ---
 
