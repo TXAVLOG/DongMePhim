@@ -1588,7 +1588,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
       // Auth State Manager
       // ══════════════════════════════════════════════════════════════
       function updateAuthState() {
-        const isLoggedIn = document.cookie.includes('txa_gate_passed');
+        const isLoggedIn = !!window.APP_USER;
         const guestViews = document.querySelectorAll('.auth-guest');
         const userViews = document.querySelectorAll('.auth-user');
         
