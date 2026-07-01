@@ -91,39 +91,62 @@ export const POST: APIRoute = async ({ request }) => {
       .replace(/{year}/g, year);
 
     // Gửi email
-    await SmtpClient.sendMail({
-      host: settings.smtp.smtp_host,
-      port: settings.smtp.smtp_port,
-      secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
-      user: settings.smtp.smtp_user,
-      pass: settings.smtp.smtp_pass,
-      fromEmail: settings.smtp.smtp_from_email,
-      fromName: settings.smtp.smtp_from_name,
-    }, {
-      to: email,
-      subject: `[Gửi lại] Xác minh email kích hoạt tài khoản ${siteName}`,
-      html: compiledHtml
-    });
-    
-    // Ghi log
     try {
-      await supabase.from('txa_email_logs').insert({
-        recipient: email,
-        sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
+      const sendResult = await SmtpClient.sendMail({
+        host: settings.smtp.smtp_host,
+        port: settings.smtp.smtp_port,
+        secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+        user: settings.smtp.smtp_user,
+        pass: settings.smtp.smtp_pass,
+        fromEmail: settings.smtp.smtp_from_email,
+        fromName: settings.smtp.smtp_from_name,
+      }, {
+        to: email,
         subject: `[Gửi lại] Xác minh email kích hoạt tài khoản ${siteName}`,
-        category: 'Email Verification Resend',
-        status: 'success',
-        response_code: '250 2.0.0 OK Message accepted',
-        parameters: { username: user.username, email, method: verificationMethod },
-        smtp_config: {
-          host: settings.smtp.smtp_host,
-          port: settings.smtp.smtp_port,
-          secure: settings.smtp.smtp_secure,
-          user: settings.smtp.smtp_user
-        },
         html: compiledHtml
       });
-    } catch (logErr) {}
+      
+      // Ghi log
+      try {
+        await supabase.from('txa_email_logs').insert({
+          recipient: email,
+          sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
+          subject: `[Gửi lại] Xác minh email kích hoạt tài khoản ${siteName}`,
+          category: 'Email Verification Resend',
+          status: 'success',
+          response_code: sendResult.responseCode || '250 2.0.0 OK Message accepted',
+          parameters: { username: user.username, email, method: verificationMethod },
+          smtp_config: {
+            host: settings.smtp.smtp_host,
+            port: settings.smtp.smtp_port,
+            secure: settings.smtp.smtp_secure,
+            user: settings.smtp.smtp_user
+          },
+          html: compiledHtml
+        });
+      } catch (logErr) {}
+    } catch (sendErr: any) {
+      console.error("[SMTP ERROR] Failed to resend verification email:", sendErr);
+      try {
+        await supabase.from('txa_email_logs').insert({
+          recipient: email,
+          sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
+          subject: `[Gửi lại] Xác minh email kích hoạt tài khoản ${siteName}`,
+          category: 'Email Verification Resend',
+          status: 'failed',
+          response_code: sendErr.message || 'Lỗi kết nối SMTP server',
+          parameters: { username: user.username, email, method: verificationMethod },
+          smtp_config: {
+            host: settings.smtp.smtp_host,
+            port: settings.smtp.smtp_port,
+            secure: settings.smtp.smtp_secure,
+            user: settings.smtp.smtp_user
+          },
+          html: compiledHtml
+        });
+      } catch (logErr) {}
+      return apiResponse(null, 'error', `Gửi lại mã xác minh thất bại: ${sendErr.message}`, 400, request);
+    }
 
     return apiResponse({ success: true, message: 'Gửi lại mã xác minh thành công! Vui lòng kiểm tra email.' }, 'success', '', 200, request, true);
   } catch (err: any) {

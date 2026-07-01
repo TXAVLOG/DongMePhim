@@ -148,7 +148,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Gửi email
         try {
-          await SmtpClient.sendMail({
+          const sendResult = await SmtpClient.sendMail({
             host: settings.smtp.smtp_host,
             port: settings.smtp.smtp_port,
             secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
@@ -170,7 +170,7 @@ export const POST: APIRoute = async ({ request }) => {
               subject: `[Xác minh email] Kích hoạt tài khoản ${siteName}`,
               category: 'Email Verification',
               status: 'success',
-              response_code: '250 2.0.0 OK Message accepted',
+              response_code: sendResult.responseCode || '250 2.0.0 OK Message accepted',
               parameters: { username, email, method: verificationMethod },
               smtp_config: {
                 host: settings.smtp.smtp_host,
@@ -181,8 +181,26 @@ export const POST: APIRoute = async ({ request }) => {
               html: compiledHtml
             });
           } catch (logErr) {}
-        } catch (sendErr) {
+        } catch (sendErr: any) {
           console.error("[SMTP ERROR] Failed to send verification email:", sendErr);
+          try {
+            await supabase.from('txa_email_logs').insert({
+              recipient: email,
+              sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
+              subject: `[Xác minh email] Kích hoạt tài khoản ${siteName}`,
+              category: 'Email Verification',
+              status: 'failed',
+              response_code: sendErr.message || 'Lỗi kết nối SMTP server',
+              parameters: { username, email, method: verificationMethod },
+              smtp_config: {
+                host: settings.smtp.smtp_host,
+                port: settings.smtp.smtp_port,
+                secure: settings.smtp.smtp_secure,
+                user: settings.smtp.smtp_user
+              },
+              html: compiledHtml
+            });
+          } catch (logErr) {}
         }
       }
 

@@ -132,10 +132,14 @@ export const POST: APIRoute = async ({ request }) => {
       const finalEmail = updates.email || oldUser?.email || '';
 
       if (newPkg !== oldPkg && newPkg.toLowerCase() !== 'free' && finalEmail) {
+        let settings: any = null;
+        let siteName = 'DongMePhim';
+        let resolvedPkg: any = null;
+        let userHtml = '';
         try {
-          const settings = await SettingService.getSettings();
+          settings = await SettingService.getSettings();
           const siteUrl = settings.general?.site_url || 'https://dongmephim.online';
-          const siteName = settings.general?.site_name || 'DongMePhim';
+          siteName = settings.general?.site_name || 'DongMePhim';
           const year = new Date().getFullYear().toString();
           
           const expDateVal = updates.expiry_date || null;
@@ -144,7 +148,7 @@ export const POST: APIRoute = async ({ request }) => {
             : 'Vô thời hạn';
 
           const packagesList = settings.packages || [];
-          const resolvedPkg = packagesList.find((p: any) => p.id === newPkg || p.title === newPkg);
+          resolvedPkg = packagesList.find((p: any) => p.id === newPkg || p.title === newPkg);
 
           // 1. Send success email to user
           const successTemplate = getEmailTemplate('content-purchase-success.html');
@@ -156,14 +160,14 @@ export const POST: APIRoute = async ({ request }) => {
             .replace(/{site_name}/g, siteName)
             .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''));
             
-          const userHtml = getEmailTemplate('verify-email.html')
+          userHtml = getEmailTemplate('verify-email.html')
             .replace(/{name}/g, targetUsername)
             .replace(/{verification_content}/g, userEmailContent)
             .replace(/{site_name}/g, siteName)
             .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
             .replace(/{year}/g, year);
 
-          await SmtpClient.sendMail({
+          const userMailResult = await SmtpClient.sendMail({
             host: settings.smtp.smtp_host,
             port: settings.smtp.smtp_port,
             secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
@@ -178,7 +182,9 @@ export const POST: APIRoute = async ({ request }) => {
           });
 
           // 2. Send email to admin
+          let adminMailResult = null;
           const adminEmail = settings.smtp.smtp_user;
+          let adminHtml = '';
           if (adminEmail) {
             const adminTemplate = getEmailTemplate('content-purchase-admin.html');
             const adminEmailContent = adminTemplate
@@ -188,14 +194,14 @@ export const POST: APIRoute = async ({ request }) => {
               .replace(/{expiry_date}/g, formattedExpiry)
               .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''));
               
-            const adminHtml = getEmailTemplate('verify-email.html')
+            adminHtml = getEmailTemplate('verify-email.html')
               .replace(/{name}/g, 'Admin')
               .replace(/{verification_content}/g, adminEmailContent)
               .replace(/{site_name}/g, siteName)
               .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
               .replace(/{year}/g, year);
 
-            await SmtpClient.sendMail({
+            adminMailResult = await SmtpClient.sendMail({
               host: settings.smtp.smtp_host,
               port: settings.smtp.smtp_port,
               secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
@@ -211,24 +217,60 @@ export const POST: APIRoute = async ({ request }) => {
           }
 
           // Log emails in txa_email_logs
-          await supabase.from('txa_email_logs').insert([
+          const smtpConfig = {
+            host: settings.smtp.smtp_host,
+            port: settings.smtp.smtp_port,
+            secure: settings.smtp.smtp_secure,
+            user: settings.smtp.smtp_user
+          };
+
+          const logsToInsert = [
             {
               recipient: finalEmail,
               sender: settings.smtp.smtp_user,
               subject: `[${siteName}] Kích hoạt thành công gói cước ${resolvedPkg?.title || newPkg}`,
               category: 'purchase-success',
-              status: 'success'
-            },
-            {
+              status: 'success',
+              response_code: userMailResult.responseCode || '250 OK',
+              smtp_config: smtpConfig,
+              html: userHtml
+            }
+          ];
+
+          if (adminEmail) {
+            logsToInsert.push({
               recipient: adminEmail,
               sender: settings.smtp.smtp_user,
               subject: `[${siteName}] Thông báo: Có thành viên mới mua gói cước`,
               category: 'purchase-admin-notification',
-              status: 'success'
-            }
-          ]);
-        } catch (emailErr) {
+              status: 'success',
+              response_code: adminMailResult?.responseCode || '250 OK',
+              smtp_config: smtpConfig,
+              html: adminHtml
+            });
+          }
+
+          await supabase.from('txa_email_logs').insert(logsToInsert);
+        } catch (emailErr: any) {
           console.error('Error sending member edit purchase notification emails:', emailErr);
+          try {
+            const smtpConfig = {
+              host: settings.smtp.smtp_host,
+              port: settings.smtp.smtp_port,
+              secure: settings.smtp.smtp_secure,
+              user: settings.smtp.smtp_user
+            };
+            await supabase.from('txa_email_logs').insert({
+              recipient: finalEmail,
+              sender: settings.smtp.smtp_user,
+              subject: `[${siteName}] Kích hoạt thành công gói cước ${resolvedPkg?.title || newPkg}`,
+              category: 'purchase-success',
+              status: 'failed',
+              response_code: emailErr.message || 'SMTP Error',
+              smtp_config: smtpConfig,
+              html: userHtml
+            });
+          } catch (logErr) {}
         }
       }
 
