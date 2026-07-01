@@ -66,6 +66,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse({ errorType: 'password', error_code: 'INVALID_PASSWORD' }, 'error', 'Mật khẩu không chính xác!', 400, request);
     }
 
+    if (settings.user?.require_email_verification && !user.email_verified) {
+      return apiResponse({ errorType: 'verification', error_code: 'EMAIL_NOT_VERIFIED', email: user.email, method: settings.user?.verification_method || 'link' }, 'error', 'Tài khoản chưa được xác minh email! Vui lòng kích hoạt tài khoản để đăng nhập.', 400, request);
+    }
+
     // Create secure session cookie and get token
     const sessionToken = await createSession(user.id, request, cookies);
 

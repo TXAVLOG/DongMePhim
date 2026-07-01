@@ -3,7 +3,10 @@ import path from 'path';
 
 export function getEmailTemplate(filename: string): string {
   try {
-    const filePath = path.resolve(process.cwd(), 'src/templates/emails', filename);
+    let filePath = path.resolve(process.cwd(), 'src/frontend/templates/emails', filename);
+    if (!fs.existsSync(filePath)) {
+      filePath = path.resolve(process.cwd(), 'src/templates/emails', filename);
+    }
     if (fs.existsSync(filePath)) {
       return fs.readFileSync(filePath, 'utf-8');
     }
@@ -251,6 +254,44 @@ export function getEmailTemplate(filename: string): string {
   </table>
 </body>
 </html>`;
+
+    case 'content-verify-link.html':
+      return `<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Cảm ơn bạn đã đăng ký tài khoản tại {site_name}. Để hoàn tất đăng ký, vui lòng nhấp vào liên kết dưới đây để kích hoạt tài khoản của bạn:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+  <tr>
+    <td align="center">
+      <a href="{verify_link}" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #7c3aed, #6d28d9);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(124,58,237,0.3);">Xác minh tài khoản</a>
+    </td>
+  </tr>
+</table>
+<p style="margin:0;font-size:11px;color:#52525b;text-align:center;">Nếu nút trên không hoạt động, bạn có thể copy link sau vào trình duyệt: {verify_link}</p>
+<p style="margin:12px 0 0;font-size:11px;color:#52525b;text-align:center;">Liên kết này sẽ hết hạn sau {token_expiry} phút.</p>`;
+
+    case 'content-verify-otp.html':
+      return `<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Cảm ơn bạn đã đăng ký tài khoản tại {site_name}. Để hoàn tất đăng ký, vui lòng sử dụng mã OTP gồm 6 chữ số dưới đây để xác minh tài khoản của bạn:</p>
+<div style="background-color:#18181b;border:2px dashed #7c3aed;border-radius:16px;padding:20px;text-align:center;margin:24px 0;">
+  <span style="font-size:32px;font-weight:900;color:#7c3aed;font-family:monospace;letter-spacing:4px;">{otp_code}</span>
+  <p style="margin:8px 0 0;font-size:11px;color:#71717a;">Mã OTP này sẽ hết hạn sau {token_expiry} phút.</p>
+</div>`;
+
+    case 'content-resend-link.html':
+      return `<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Yêu cầu gửi lại liên kết xác minh tài khoản của bạn tại {site_name}. Vui lòng nhấp vào liên kết dưới đây để kích hoạt tài khoản:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+  <tr>
+    <td align="center">
+      <a href="{verify_link}" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #7c3aed, #6d28d9);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(124,58,237,0.3);">Xác minh tài khoản</a>
+    </td>
+  </tr>
+</table>
+<p style="margin:0;font-size:11px;color:#52525b;text-align:center;">Nếu nút trên không hoạt động, bạn có thể copy link sau vào trình duyệt: {verify_link}</p>
+<p style="margin:12px 0 0;font-size:11px;color:#52525b;text-align:center;">Liên kết này sẽ hết hạn sau {token_expiry} phút.</p>`;
+
+    case 'content-resend-otp.html':
+      return `<p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Yêu cầu gửi lại mã xác minh tài khoản của bạn tại {site_name}. Vui lòng sử dụng mã OTP gồm 6 chữ số dưới đây để kích hoạt tài khoản:</p>
+<div style="background-color:#18181b;border:2px dashed #7c3aed;border-radius:16px;padding:20px;text-align:center;margin:24px 0;">
+  <span style="font-size:32px;font-weight:900;color:#7c3aed;font-family:monospace;letter-spacing:4px;">{otp_code}</span>
+  <p style="margin:8px 0 0;font-size:11px;color:#71717a;">Mã OTP này sẽ hết hạn sau {token_expiry} phút.</p>
+</div>`;
 
     default:
       return '';
