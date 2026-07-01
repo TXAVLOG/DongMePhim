@@ -46,6 +46,56 @@ let activeTab = 'general';
             <label class="text-xs font-label-caps text-text-dim">Từ khóa SEO (ngăn cách bằng dấu phẩy)</label>
             <input type="text" id="general-site-keywords" value={settings.general.site_keywords} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" />
           </div>
+          <!-- Cấu hình SEO nâng cao -->
+          <div class="md:col-span-2 border-t border-glass-stroke my-4 pt-6">
+            <h4 class="text-base font-bold text-primary flex items-center gap-2">
+              <span class="material-symbols-outlined text-md">search</span>
+              Cấu hình SEO & Metadata nâng cao
+            </h4>
+            <p class="text-text-dim text-xs mt-1">Thiết lập các thông số giúp tối ưu SEO trên các công cụ tìm kiếm Google, Bing và các mạng xã hội.</p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Mẫu tiêu đề trang (Title Template)</label>
+            <input type="text" id="general-site-title-template" value={settings.general.site_title_template} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="VD: %title% | %site_name%" />
+            <p class="text-[10px] text-text-dim mt-1">Sử dụng %title% cho tiêu đề trang con và %site_name% cho tên website.</p>
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Chỉ mục Robots (Meta Robots)</label>
+            <input type="text" id="general-meta-robots" value={settings.general.meta_robots} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="VD: index, follow" />
+          </div>
+
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-label-caps text-text-dim">Ảnh đại diện chia sẻ mặc định (Default OG Image URL)</label>
+            <input type="text" id="general-og-image-default" value={settings.general.og_image_default} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="VD: /favicon.png" />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Google Search Console Verification Key</label>
+            <input type="text" id="general-google-verification" value={settings.general.google_verification} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Mã content trong thẻ meta google-site-verification" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Bing Webmaster Tools Verification Key</label>
+            <input type="text" id="general-bing-verification" value={settings.general.bing_verification} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Mã content trong thẻ meta msvalidate.01" />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Đường dẫn Logo Schema (Schema Logo URL)</label>
+            <input type="text" id="general-schema-logo-url" value={settings.general.schema_logo_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="VD: /favicon.png" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Tên tổ chức Schema (Schema Business Name)</label>
+            <input type="text" id="general-schema-business-name" value={settings.general.schema_business_name} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Tên hiển thị trên Schema JSON-LD" />
+          </div>
+
+          <!-- Cài đặt hệ thống khác -->
+          <div class="md:col-span-2 border-t border-glass-stroke my-4 pt-6">
+            <h4 class="text-base font-bold text-primary flex items-center gap-2">
+              <span class="material-symbols-outlined text-md">settings_applications</span>
+              Cấu hình hệ thống khác
+            </h4>
+          </div>
+
           <div class="space-y-2 md:col-span-2">
             <label class="text-xs font-label-caps text-text-dim">TMDB API Key</label>
             <input type="text" id="general-tmdb-key" value={settings.general.tmdb_api_key} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Nhập TMDB API Key..." />
@@ -78,6 +128,13 @@ let activeTab = 'general';
         setVal('general-site-url', s.general?.site_url);
         setTextarea('general-site-desc', s.general?.site_description);
         setVal('general-site-keywords', s.general?.site_keywords);
+        setVal('general-site-title-template', s.general?.site_title_template);
+        setVal('general-meta-robots', s.general?.meta_robots);
+        setVal('general-og-image-default', s.general?.og_image_default);
+        setVal('general-google-verification', s.general?.google_verification);
+        setVal('general-bing-verification', s.general?.bing_verification);
+        setVal('general-schema-logo-url', s.general?.schema_logo_url);
+        setVal('general-schema-business-name', s.general?.schema_business_name);
         setVal('general-tmdb-key', s.general?.tmdb_api_key);
         setVal('general-maintenance-msg', s.general?.maintenance_message);
         setChecked('general-maintenance-enable', s.general?.maintenance_enable);
@@ -107,6 +164,13 @@ let activeTab = 'general';
               site_url: document.getElementById('general-site-url')?.value || '',
               site_description: document.getElementById('general-site-desc')?.value || '',
               site_keywords: document.getElementById('general-site-keywords')?.value || '',
+              site_title_template: document.getElementById('general-site-title-template')?.value || '',
+              meta_robots: document.getElementById('general-meta-robots')?.value || '',
+              og_image_default: document.getElementById('general-og-image-default')?.value || '',
+              google_verification: document.getElementById('general-google-verification')?.value || '',
+              bing_verification: document.getElementById('general-bing-verification')?.value || '',
+              schema_logo_url: document.getElementById('general-schema-logo-url')?.value || '',
+              schema_business_name: document.getElementById('general-schema-business-name')?.value || '',
               tmdb_api_key: document.getElementById('general-tmdb-key')?.value || '',
               maintenance_message: document.getElementById('general-maintenance-msg')?.value || '',
               maintenance_enable: document.getElementById('general-maintenance-enable')?.checked || false,

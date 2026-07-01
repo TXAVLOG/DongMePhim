@@ -102,15 +102,20 @@ const zaloGroupUrl = settings.social?.social_zalo_group_url || 'https://zalo.me/
 const { 
   title, 
   description = settings.general.site_description, 
-  image = "/favicon.png",
+  image,
   isHome = false,
   useTransition = true
 } = Astro.props;
 
 const defaultTitle = `${settings.general.site_name} - Trải nghiệm điện ảnh đỉnh cao`;
+const titleTemplate = settings.general.site_title_template || "%title% | %site_name%";
 const pageTitle = isHome 
   ? defaultTitle 
-  : (title ? `${title} | ${settings.general.site_name}` : defaultTitle);
+  : (title ? titleTemplate.replace('%title%', title).replace('%site_name%', settings.general.site_name) : defaultTitle);
+
+const ogImage = image && image !== "/favicon.png"
+  ? image 
+  : (settings.general.og_image_default || "/favicon.png");
 
 const socialLinks = [];
 if (settings.social?.social_fb_enable && settings.social?.social_fb_url) {
@@ -379,7 +384,18 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
     <meta name="description" content={description} />
     <meta name="keywords" content={settings.general.site_keywords} />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    {settings.general.meta_robots && <meta name="robots" content={settings.general.meta_robots} />}
+    {settings.general.google_verification && <meta name="google-site-verification" content={settings.general.google_verification} />}
+    {settings.general.bing_verification && <meta name="msvalidate.01" content={settings.general.bing_verification} />}
+    
+    <!-- Favicon Links for Browsers and Search Engines (Bing/Google) -->
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-512x512.png" />
+    
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#7c3aed" />
     <meta name="generator" content={Astro.generator} />
@@ -390,7 +406,30 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL(image, Astro.url)} />
+    <meta property="og:image" content={new URL(ogImage, Astro.url)} />
+
+    <!-- Structured Schema.org / JSON-LD Data for Logo & Site Association -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": settings.general.schema_business_name || settings.general.site_name,
+      "url": settings.general.site_url,
+      "logo": new URL(settings.general.schema_logo_url || '/favicon.png', settings.general.site_url).href,
+      "description": description,
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": `${settings.general.site_url}/tim-kiem?q={search_term_string}`,
+        "query-input": "required name=search_term_string"
+      }
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": settings.general.schema_business_name || settings.general.site_name,
+      "url": settings.general.site_url,
+      "logo": new URL(settings.general.schema_logo_url || '/favicon.png', settings.general.site_url).href,
+      "sameAs": socialLinks.map(link => link.url)
+    })} />
 
     <!-- DNS Prefetch & Preconnect for Fast Asset Loading -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />

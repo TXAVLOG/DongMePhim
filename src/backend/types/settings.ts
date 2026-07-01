@@ -14,6 +14,13 @@ export interface GeneralSettings {
   zalo_lock_enable?: boolean;
   decoy_passcode?: string;
   tmdb_api_key?: string;
+  site_title_template?: string;
+  meta_robots?: string;
+  og_image_default?: string;
+  google_verification?: string;
+  bing_verification?: string;
+  schema_logo_url?: string;
+  schema_business_name?: string;
 }
 
 export interface SMTPSettings {

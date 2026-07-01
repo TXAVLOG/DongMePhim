@@ -12,6 +12,13 @@ export const seedSettings: SiteSettings = {
     api_encrypt_enable: true,
     api_encrypt_pass: "tphimx",
     tmdb_api_key: "",
+    site_title_template: "%title% | %site_name%",
+    meta_robots: "index, follow",
+    og_image_default: "/favicon.png",
+    google_verification: "",
+    bing_verification: "",
+    schema_logo_url: "/favicon.png",
+    schema_business_name: "DongMePhim",
   },
   smtp: {
     smtp_host: "smtp.gmail.com",
@@ -188,6 +195,27 @@ export class LocalSettingProvider implements ISettingProvider {
         if (stored) {
           const parsed = JSON.parse(stored);
           let changed = false;
+          if (parsed.general) {
+            let generalChanged = false;
+            const generalKeys = [
+              'site_title_template',
+              'meta_robots',
+              'og_image_default',
+              'google_verification',
+              'bing_verification',
+              'schema_logo_url',
+              'schema_business_name'
+            ];
+            generalKeys.forEach(k => {
+              if (parsed.general[k] === undefined) {
+                parsed.general[k] = (seedSettings.general as any)[k];
+                generalChanged = true;
+              }
+            });
+            if (generalChanged) {
+              changed = true;
+            }
+          }
           if (!parsed.payments) {
             parsed.payments = { ...seedSettings.payments };
             changed = true;

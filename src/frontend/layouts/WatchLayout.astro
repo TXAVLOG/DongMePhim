@@ -24,7 +24,18 @@ const {
     <meta name="referrer" content="no-referrer" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {settings.general.meta_robots && <meta name="robots" content={settings.general.meta_robots} />}
+    {settings.general.google_verification && <meta name="google-site-verification" content={settings.general.google_verification} />}
+    {settings.general.bing_verification && <meta name="msvalidate.01" content={settings.general.bing_verification} />}
+    
+    <!-- Favicon Links for Browsers and Search Engines (Bing/Google) -->
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-512x512.png" />
+    
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#7c3aed" />
     <meta name="generator" content={Astro.generator} />

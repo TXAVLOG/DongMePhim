@@ -295,6 +295,204 @@ INSERT INTO public.settings (key, value) VALUES (
   ]'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
 
+-- Initial seed data for all setting keys in settings table
+INSERT INTO public.settings (key, value) VALUES (
+  'general',
+  '{
+    "site_name": "DongMePhim",
+    "site_url": "https://localhost:4321",
+    "site_description": "Nền tảng xem phim trực tuyến cao cấp và hoàn toàn miễn phí",
+    "site_keywords": "xem phim, phim bộ, phim lẻ, phim hay, phim mới, dongmephim, phim hd, xem phim online",
+    "maintenance_enable": false,
+    "maintenance_message": "Hệ thống đang được nâng cấp để mang lại trải nghiệm điện ảnh đỉnh cao hơn.",
+    "maintenance_end_time": "1970-01-01T02:00:00.000Z",
+    "api_encrypt_enable": true,
+    "api_encrypt_pass": "tphimx",
+    "tmdb_api_key": "",
+    "site_title_template": "%title% | %site_name%",
+    "meta_robots": "index, follow",
+    "og_image_default": "/favicon.png",
+    "google_verification": "",
+    "bing_verification": "",
+    "schema_logo_url": "/favicon.png",
+    "schema_business_name": "DongMePhim"
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'smtp',
+  '{
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 465,
+    "smtp_secure": "SSL",
+    "smtp_user": "noreply@dongmephim.com",
+    "smtp_pass": "mock_app_password",
+    "smtp_from_email": "noreply@dongmephim.com",
+    "smtp_from_name": "DongMePhim System"
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'telegram',
+  '{
+    "telegram_bot_token": "mock_bot_token",
+    "telegram_chat_id": "123456789",
+    "telegram_channel_id": "@dongphimtxa",
+    "telegram_bot_username": "dongphimbot",
+    "telegram_verified": true,
+    "telegram_notify_report": true,
+    "telegram_notify_zalo": true,
+    "telegram_notify_user": true,
+    "telegram_notify_luckydraw": true
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'app',
+  '{
+    "app_version": "4.7.0",
+    "app_release_notes": "- 🚀 [v4.7.0] Chuẩn hóa toàn bộ các Mobile API Adapter cho di động\\n- 💎 [VIP] Phát triển tính năng chọn và đăng ký nâng cấp gói cước trực tiếp trên Flutter app tích hợp cổng SePay / VietQR\\n- 📺 [CAST] Tích hợp trang chiếu lên TV (/cast) độc lập tối ưu cho màn hình TV\\n- ⭐️ [RATING] Hệ thống đánh giá phim 1-10 sao đồng bộ giữa Web và Mobile App\\n- 🔄 [CRON] Cron Job tự động quét và cập nhật tập phim mới từ nguồn KKPhim, tự động thông báo tới người dùng có phim trong danh sách Yêu thích",
+    "app_android_download_enable": true,
+    "app_android_download_url": "https://app.nrotxa.online/TPHIMX.apk",
+    "app_apk_size": "66122454",
+    "app_apk_sha256": "4f7df1b9932e36159f6c4ee76fb305d627b45e972864f15695a8aaca7baaa0ef",
+    "app_ios_direct_install_enable": false,
+    "app_ios_download_url": "/ios-access",
+    "app_ios_ipa_download_enable": true,
+    "app_ios_ipa_url": "https://github.com/TXAVLOG/tphimx-setup/releases/download/v4.7.0_470/TPHIMX-Premium-v4.7.0+470.ipa",
+    "app_google_play_enable": false,
+    "app_google_play_url": "",
+    "app_app_store_enable": false,
+    "app_app_store_url": ""
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'user',
+  '{
+    "allow_registration": true,
+    "require_email_verification": true,
+    "verification_method": "link",
+    "verification_token_expiry": 3600,
+    "reset_password_token_expiry": 1800
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'login',
+  '{
+    "login_standard_enable": true,
+    "login_google_enable": true,
+    "login_google_client_id": "mock_google_id",
+    "login_google_client_secret": "mock_google_secret",
+    "login_google_onetap_enable": true,
+    "login_fb_enable": true,
+    "login_fb_app_id": "mock_fb_id",
+    "login_fb_app_secret": "mock_fb_secret",
+    "login_apple_enable": false,
+    "login_apple_client_id": "",
+    "login_apple_team_id": "",
+    "login_apple_key_id": "",
+    "login_zalo_enable": true,
+    "login_zalo_app_id": "mock_zalo_id",
+    "login_zalo_secret_key": "mock_zalo_secret",
+    "login_discord_enable": false,
+    "login_discord_client_id": "",
+    "login_discord_client_secret": "",
+    "login_github_enable": false,
+    "login_github_client_id": "",
+    "login_github_client_secret": "",
+    "login_x_enable": false,
+    "login_x_client_id": "",
+    "login_x_client_secret": "",
+    "turnstile_enable": false,
+    "turnstile_site_key": "",
+    "turnstile_secret_key": ""
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'social',
+  '{
+    "social_fb_enable": true,
+    "social_fb_url": "https://www.facebook.com/tphimx",
+    "social_fb_group_enable": true,
+    "social_fb_group_url": "https://www.facebook.com/groups/1819522938713878",
+    "social_telegram_enable": true,
+    "social_telegram_url": "https://t.me/dongphimtxa",
+    "social_tiktok_enable": false,
+    "social_tiktok_url": "",
+    "social_zalo_group_enable": true,
+    "social_zalo_group_url": "https://zalo.me/g/nc4aaozaxnr5fszvnxdb",
+    "social_discord_enable": false,
+    "social_discord_url": "",
+    "decoy_enable": false,
+    "decoy_passcode": "phimtxadinhvai",
+    "zalo_lock_enable": false
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'luckyDraw',
+  '{
+    "lucky_draw_active_event_id": "summer_event_2024"
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'payments',
+  '{
+    "sandbox_mode": false,
+    "sepay_sandbox_mode": false,
+    "payos_enable": true,
+    "payos_client_id": "mock_payos_id",
+    "payos_api_key": "mock_api_key",
+    "payos_checksum_key": "mock_checksum_key",
+    "paypal_enable": true,
+    "paypal_client_id": "mock_paypal_id",
+    "sepay_enable": true,
+    "sepay_api_key": "mock_sepay_key",
+    "sepay_merchant_id": "SP-LIVE-TX5B9345",
+    "sepay_secret_key": "spsk_live_xdFNcCKmERhi2Y3teu8YRN8bLKSbNQxQ",
+    "sepay_ipn_secret_key": "TPHIMX_SECRET_999",
+    "sepay_sandbox_api_key": "",
+    "sepay_integration_type": "gateway",
+    "sepay_bank_account_id": "",
+    "sepay_bank_name": "",
+    "sepay_account_no": "",
+    "sepay_account_name": "",
+    "vnpay_enable": true,
+    "vnpay_tmn_code": "mock_tmn_code",
+    "vnpay_hash_secret": "mock_hash_secret",
+    "stripe_enable": true,
+    "stripe_publishable_key": "mock_stripe_pub_key",
+    "stripe_secret_key": "mock_stripe_sec_key",
+    "vat_rate": 8,
+    "manual_enable": true,
+    "manual_bank_name": "Techcombank",
+    "manual_account_no": "2923252311",
+    "manual_account_name": "TANG XUAN ANH"
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'ads',
+  '{
+    "pre_roll_enable": false,
+    "pre_roll_type": "video",
+    "pre_roll_url": "https://www.w3schools.com/html/mov_bbb.mp4",
+    "pre_roll_skip_seconds": 5,
+    "click_ad_enable": false,
+    "click_ad_code": "https://shope.ee",
+    "click_ad_threshold": 5,
+    "google_ads_enable": false,
+    "google_ads_client_id": "ca-pub-123456789",
+    "offerwall_enable": false,
+    "offerwall_script": "",
+    "ad_provider": "none"
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
 -- Table: public.notifications
 CREATE TABLE IF NOT EXISTS public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
