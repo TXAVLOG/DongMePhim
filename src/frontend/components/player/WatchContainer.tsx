@@ -328,6 +328,12 @@ const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
       }, 800);
       return;
     }
+    if (rating > 0) {
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast(`Bạn đã đánh giá ${rating} sao rồi!`, 'info');
+      }
+      return;
+    }
 
     try {
       const res = await fetch('/api/user/rating', {
@@ -377,15 +383,16 @@ const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
         <div className="flex items-center gap-1 pt-2">
           {Array.from({ length: 10 }).map((_, i) => {
             const val = i + 1;
-            const isFilled = hoverRating >= val || (!hoverRating && rating >= val);
+            const alreadyRated = rating > 0;
+            const isFilled = alreadyRated ? rating >= val : (hoverRating >= val || (!hoverRating && rating >= val));
             return (
               <button
                 key={val}
                 type="button"
-                onMouseEnter={() => setHoverRating(val)}
-                onMouseLeave={() => setHoverRating(0)}
+                onMouseEnter={() => !alreadyRated && setHoverRating(val)}
+                onMouseLeave={() => !alreadyRated && setHoverRating(0)}
                 onClick={() => handleRating(val)}
-                className="focus:outline-none cursor-pointer transition-transform hover:scale-125 bg-transparent border-none p-0 flex"
+                className={`focus:outline-none bg-transparent border-none p-0 flex ${alreadyRated ? 'cursor-default' : 'cursor-pointer transition-transform hover:scale-125'}`}
               >
                 <span 
                   className={`material-symbols-outlined text-lg ${isFilled ? 'text-yellow-400' : 'text-zinc-600'}`}
@@ -397,7 +404,7 @@ const RatingWidget: React.FC<{ movieSlug: string }> = ({ movieSlug }) => {
             );
           })}
         </div>
-        <p className="text-[9px] text-zinc-500 pt-1">Di chuột và nhấp chọn từ 1 - 10 sao</p>
+        <p className="text-[9px] text-zinc-500 pt-1">{rating > 0 ? `Bạn đã đánh giá ${rating}/10` : 'Di chuột và nhấp chọn từ 1 - 10 sao'}</p>
       </div>
     </div>
   );
