@@ -2071,6 +2071,16 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       art.on('ready', () => {
         (art as any).isFocus = true;
 
+        // Fix SPA View Transitions: controls bị ẩn khi ArtPlayer khởi tạo
+        // trong lúc transition animation chưa xong → re-focus sau khi trang load xong
+        const handlePageLoad = () => {
+          if (art && !(art as any).destroyed) {
+            (art as any).isFocus = true;
+            window.dispatchEvent(new Event('resize'));
+          }
+        };
+        document.addEventListener('astro:page-load', handlePageLoad);
+
         // Set the portal container element for custom subtitles React render
         const portalEl = art.template.$container.querySelector('.art-layer-txa-subtitles-portal') as HTMLElement;
         if (portalEl) {
@@ -2314,6 +2324,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       art.on('destroy', () => {
         clearInterval(intervalId);
         observer.disconnect();
+        document.removeEventListener('astro:page-load', handlePageLoad);
         window.removeEventListener('txa-autoskip-changed', handleAutoSkipEvent);
         window.removeEventListener('keydown', handleGlobalKeyDown, true);
         if (playerContainer) {
