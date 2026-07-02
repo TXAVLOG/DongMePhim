@@ -1844,15 +1844,13 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       let activeCard = null;
       let hoverTimeout = null;
 
-      // Mouseenter handler
+      // Mouseenter handler with 1s delay
       document.addEventListener('mouseover', (e) => {
         if (window.innerWidth < 1024) return; // Desktop only
 
-        // Find the movie card wrapper (has class group)
         const card = e.target.closest('.group');
         if (!card) return;
 
-        // Make sure it contains a template popover
         const templatePopover = card.querySelector('.hover-details-popover');
         if (!templatePopover) return;
 
@@ -1864,20 +1862,23 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         clearTimeout(hoverTimeout);
         activeCard = card;
 
-        // Copy template popover HTML to global portal
-        portal.innerHTML = templatePopover.innerHTML;
+        // Wait 1 second before showing the popover
+        hoverTimeout = setTimeout(() => {
+          // Copy template popover HTML to global portal
+          portal.innerHTML = templatePopover.innerHTML;
 
-        // Position over the hovered card
-        const rect = card.getBoundingClientRect();
-        portal.style.display = 'block';
-        portal.style.left = `${rect.left + window.pageXOffset + rect.width / 2}px`;
-        portal.style.top = `${rect.top + window.pageYOffset + rect.height / 2}px`;
+          // Position over the hovered card
+          const rect = card.getBoundingClientRect();
+          portal.style.display = 'block';
+          portal.style.left = `${rect.left + window.pageXOffset + rect.width / 2}px`;
+          portal.style.top = `${rect.top + window.pageYOffset + rect.height / 2}px`;
 
-        // Trigger animations
-        requestAnimationFrame(() => {
-          portal.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
-          portal.classList.add('opacity-100', 'scale-100');
-        });
+          // Trigger animations
+          requestAnimationFrame(() => {
+            portal.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
+            portal.classList.add('opacity-100', 'scale-100');
+          });
+        }, 1000);
       });
 
       // Mouseleave handler
@@ -1886,7 +1887,6 @@ const getMovieProgressBadgesSSR = (movie: any) => {
 
         const toElement = e.relatedTarget;
         if (toElement && (toElement.closest('.group') || toElement.closest('#shared-hover-card'))) {
-          // Moved inside another card or the portal itself
           return;
         }
 
