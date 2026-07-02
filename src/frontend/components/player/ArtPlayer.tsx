@@ -1292,6 +1292,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const [showNextEpisodePopup, setShowNextEpisodePopup] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [showSwitchingToast, setShowSwitchingToast] = useState(false);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -2169,7 +2170,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                     clearInterval(countdownRef.current);
                   }
                   if (onNextEpisode) {
+                    setShowSwitchingToast(true);
                     onNextEpisode();
+                    setTimeout(() => setShowSwitchingToast(false), 2500);
                   }
                   return 0;
                 }
@@ -2343,7 +2346,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   }, [url, title, storyboardUrl]);
 
   return (
-    <>
+    <div className="relative w-full h-full">
       <style>{`
         @keyframes floatWatermark {
           0% { top: 10%; left: 5%; }
@@ -2396,6 +2399,14 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           height: 14px !important;
           margin-top: -5px !important;
         }
+        @keyframes switchSlideUp {
+          0% { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes switchFadeOut {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
       `}</style>
       {isOffline && (
         <div 
@@ -2436,76 +2447,47 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       )}
       
       {showNextEpisodePopup && nextEpisode && (
-        <>
+        <div className="absolute z-50 pointer-events-none" style={{ inset: 0 }}>
           {typeof window !== 'undefined' && window.innerWidth < 768 ? (
-            // Mobile: Show toast
-            <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#0B0A0C]/95 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 z-50 flex items-center gap-3 shadow-2xl">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-[#0B0A0C]/95 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3 shadow-2xl pointer-events-auto">
               <div className="text-white text-xs font-bold">Tập tiếp theo: {nextEpisode.episodeName}</div>
               <div className="text-white/60 text-xs">Đổi sau {countdown}s</div>
             </div>
           ) : (
-            // Desktop: Show popup
-            <div className="fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#0B0A0C]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-5 z-50 shadow-2xl w-[400px] max-w-[90vw]">
-              <div className="flex gap-4">
-                {/* Left: Thumbnail */}
-                <div className="relative w-24 h-36 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800">
-                  <img 
-                    src={nextEpisode.thumbnail} 
-                    alt={nextEpisode.episodeName}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-1 rounded">
-                    {nextEpisode.episodeName}
-                  </div>
+            <div className="absolute bottom-16 right-4 bg-[#0B0A0C]/95 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl w-[280px] pointer-events-auto">
+              <div className="flex gap-3">
+                <div className="relative w-14 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800">
+                  <img src={nextEpisode.thumbnail} alt={nextEpisode.episodeName} className="w-full h-full object-cover" />
+                  <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-[7px] font-bold px-1 py-0.5 rounded">{nextEpisode.episodeName}</div>
                 </div>
-                
-                {/* Right: Content */}
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-white text-sm font-bold mb-1">{nextEpisode.title}</h4>
-                    <p className="text-zinc-400 text-xs mb-3">{nextEpisode.episodeName}</p>
-                    <div className="text-white/60 text-xs">
-                      Chuyển tập sau <span className="text-blue-400 font-bold">{countdown}s</span>
-                    </div>
-                  </div>
-                  
-                  {/* Buttons */}
-                  <div className="flex gap-2 mt-3">
-                    <button 
-                      onClick={() => {
-                        if (countdownRef.current) {
-                          clearInterval(countdownRef.current);
-                        }
-                        if (onNextEpisode) {
-                          onNextEpisode();
-                        }
-                      }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors"
-                    >
-                      Chuyển ngay
-                    </button>
-                    <button 
-                      onClick={() => {
-                        if (countdownRef.current) {
-                          clearInterval(countdownRef.current);
-                        }
-                        setShowNextEpisodePopup(false);
-                      }}
-                      className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors"
-                    >
-                      Hủy bỏ
-                    </button>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-white text-[11px] font-bold truncate">{nextEpisode.title}</h4>
+                  <p className="text-zinc-400 text-[10px] truncate mt-0.5">{nextEpisode.episodeName}</p>
+                  <div className="text-zinc-500 text-[9px] mt-1">Chuyển sau <span className="text-blue-400 font-bold">{countdown}s</span></div>
+                  <div className="flex gap-1.5 mt-2">
+                    <button onClick={() => { if (countdownRef.current) clearInterval(countdownRef.current); setShowSwitchingToast(true); if (onNextEpisode) onNextEpisode(); setTimeout(() => setShowSwitchingToast(false), 2500); }} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold py-1.5 px-2 rounded-lg transition-colors cursor-pointer border-none">Chuyển ngay</button>
+                    <button onClick={() => { if (countdownRef.current) clearInterval(countdownRef.current); setShowNextEpisodePopup(false); }} className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white text-[9px] font-bold py-1.5 px-2 rounded-lg transition-colors cursor-pointer border-none">Hủy</button>
                   </div>
                 </div>
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
+
+      {showSwitchingToast && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none" style={{ animation: 'switchSlideUp 0.3s ease-out' }}>
+          <div className="bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-bold px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 whitespace-nowrap">
+            <div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+            Đang chuyển sang tập tiếp theo...
+          </div>
+        </div>
+      )}
+
       {portalContainer && playerInstanceRef.current && createPortal(
         <CustomSubtitleSystem art={playerInstanceRef.current} subtitles={subtitles} />,
         portalContainer
       )}
-    </>
+    </div>
   );
 };
