@@ -1294,6 +1294,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   const [countdown, setCountdown] = useState(5);
   const [showSwitchingToast, setShowSwitchingToast] = useState(false);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const popupShownRef = useRef(false);
 
   useEffect(() => {
     const handleOffline = () => {
@@ -2185,7 +2186,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           }
 
           // Show next episode popup when auto next is enabled
-          if (autoNextEpisode && nextEpisode && !showNextEpisodePopup && now >= timeOutroStart) {
+          if (autoNextEpisode && nextEpisode && !popupShownRef.current && now >= timeOutroStart) {
+            popupShownRef.current = true;
             setShowNextEpisodePopup(true);
             setCountdown(5);
             
@@ -2403,9 +2405,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           padding: 6px 14px !important;
         }
         .art-control-progress .txa-range-highlight {
-          height: 100% !important;
-          top: 0 !important;
-          border-radius: 3px !important;
+          height: 300% !important;
+          top: -100% !important;
+          border-radius: 4px !important;
           pointer-events: none !important;
           z-index: 3 !important;
         }
