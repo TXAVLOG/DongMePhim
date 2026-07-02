@@ -1496,17 +1496,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               hls.loadSource(url);
               hls.attachMedia(video);
 
-              // Override video.src property to hide real m3u8 URL from DOM inspection
-              try {
-                const realSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
-                if (realSrcDescriptor) {
-                  Object.defineProperty(video, 'src', {
-                    get: () => '',
-                    set: (v: string) => { if (realSrcDescriptor.set) realSrcDescriptor.set.call(video, v); },
-                    configurable: true,
-                  });
-                }
-              } catch (e) { /* ignore */ }
+              // Removed video.src override since blob URLs are safe and overriding .src breaks hls.js internals
               
               hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
                 let maxAllowedHeight = 99999;
@@ -1930,9 +1920,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           if (videoEl) {
             // 1. Block right-click context menu on video element
             videoEl.addEventListener('contextmenu', (e: Event) => e.preventDefault());
-            // 2. Remove downloadable attributes
-            videoEl.removeAttribute('src');
-            videoEl.removeAttribute('crossorigin');
+            // 2. Prevent removing src/crossorigin as it resets video element load state
             // 3. Prevent drag on video
             videoEl.setAttribute('draggable', 'false');
             videoEl.addEventListener('dragstart', (e: Event) => e.preventDefault());
