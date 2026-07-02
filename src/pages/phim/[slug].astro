@@ -390,27 +390,33 @@ if (movie && movie.actors && movie.actors.length > 0) {
                 </span>
               )}
               
-              <span class="bg-primary text-slate-950 border border-primary text-[10px] font-black px-2.5 py-0.5 rounded-md select-none">
-                {movie.ageRating}
-              </span>
+              {movie.ageRating && (
+                <span class="bg-primary text-slate-950 border border-primary text-[10px] font-black px-2.5 py-0.5 rounded-md select-none">
+                  {movie.ageRating}
+                </span>
+              )}
 
-              <span class="border border-secondary/40 text-secondary bg-secondary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
-                {movie.releaseYear}
-              </span>
+              {movie.releaseYear && (
+                <span class="border border-secondary/40 text-secondary bg-secondary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
+                  {movie.releaseYear}
+                </span>
+              )}
 
               <span class="border border-primary/40 text-primary bg-primary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
                 {movie.seasons || (movie.type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1')}
               </span>
 
+              {movie.quality && (
+                <span class="border border-secondary/40 text-secondary bg-secondary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
+                  {movie.quality}
+                </span>
+              )}
 
-
-              <span class="border border-secondary/40 text-secondary bg-secondary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
-                {movie.quality}
-              </span>
-
-              <span class="border border-primary/40 text-primary bg-primary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
-                {movie.lang}
-              </span>
+              {movie.lang && (
+                <span class="border border-primary/40 text-primary bg-primary/5 text-[10px] font-bold px-2.5 py-0.5 rounded-md select-none">
+                  {movie.lang}
+                </span>
+              )}
             </div>
 
             <!-- Genres -->
@@ -728,12 +734,12 @@ if (movie && movie.actors && movie.actors.length > 0) {
           <div class="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-5 shadow-xl space-y-5" id="comments-section-anchor">
             <div class="flex items-center justify-between border-b border-glass-stroke pb-3">
               <h3 class="text-white font-title-md font-bold text-sm flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary text-base">chat_bubble</span>
+                <span class="material-symbols-outlined text-primary text-base">forum</span>
                 Bình luận (<span id="comments-count">2</span>)
               </h3>
               <div class="flex gap-2">
-                <button class="px-3.5 py-1 bg-primary/20 text-primary border border-primary/30 rounded-lg text-[10px] font-bold cursor-pointer transition-colors" id="btn-show-comments">Bình luận</button>
-                <button class="px-3.5 py-1 bg-surface border border-glass-stroke text-on-surface-variant rounded-lg text-[10px] font-bold hover:text-white cursor-pointer transition-colors" id="btn-show-rating">Đánh giá</button>
+                <button class="px-3.5 py-1 bg-primary/20 text-primary border border-primary/30 rounded-lg text-[10px] font-bold cursor-pointer transition-colors hover:bg-primary/30 active:scale-95" id="btn-show-comments">Bình luận</button>
+                <button class="px-3.5 py-1 bg-surface border border-glass-stroke text-on-surface-variant rounded-lg text-[10px] font-bold hover:text-white cursor-pointer transition-colors active:scale-95" id="btn-show-rating">Đánh giá</button>
               </div>
             </div>
 
@@ -741,46 +747,47 @@ if (movie && movie.actors && movie.actors.length > 0) {
             <div id="rating-input-container" class="hidden p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
               <span class="text-xs font-bold text-on-surface-variant">Chọn mức điểm đánh giá phim của bạn:</span>
               <div class="flex gap-1" id="rating-stars-input">
-                <span data-star="1" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
-                <span data-star="2" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
-                <span data-star="3" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
-                <span data-star="4" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
-                <span data-star="5" class="material-symbols-outlined text-gray-500 hover:text-primary cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="1" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="2" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="3" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="4" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
+                <span data-star="5" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
               </div>
             </div>
 
             <!-- Ô nhập liệu bình luận -->
-            <div class="space-y-3">
+            <div class="space-y-3 bg-white/[0.02] border border-glass-stroke/30 rounded-xl p-4">
               <div class="relative">
-                <textarea id="comment-textarea" placeholder="Viết bình luận của bạn tại đây..." rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all outline-none resize-none"></textarea>
-                <span class="absolute bottom-2.5 right-3 text-[9px] text-gray-500 font-bold" id="char-counter">0 / 1000</span>
+                <textarea id="comment-textarea" placeholder="Viết bình luận của bạn tại đây..." rows="3" class="w-full bg-black/40 border border-white/[0.06] rounded-xl p-3 pr-14 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 transition-all outline-none resize-none"></textarea>
+                <span class="absolute bottom-3 right-3 text-[9px] text-zinc-600 font-bold font-mono" id="char-counter">0 / 1000</span>
               </div>
               
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                   <label class="flex items-center gap-2 cursor-pointer group">
                     <div class="relative flex items-center justify-center shrink-0">
                       <input type="checkbox" id="comment-anonymous" class="peer sr-only" />
-                      <div class="h-4 w-4 rounded border border-white/10 bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary"></div>
+                      <div class="h-4 w-4 rounded border border-white/10 bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary peer-checked:shadow-sm peer-checked:shadow-primary/30"></div>
                       <span class="material-symbols-outlined absolute text-[12px] text-white opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
                     </div>
-                    <span class="text-[10px] font-bold text-gray-400 group-hover:text-gray-200 transition-colors select-none">Bình luận ẩn danh</span>
+                    <span class="text-[10px] font-bold text-zinc-500 group-hover:text-zinc-300 transition-colors select-none">Ẩn danh</span>
                   </label>
-                  <label id="reply-to-lbl" class="hidden flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg px-2 py-0.5 text-[9px] text-primary">
+                  <label id="reply-to-lbl" class="hidden items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-lg px-2.5 py-1 text-[9px] text-primary font-bold">
+                    <span class="material-symbols-outlined text-[10px]">reply</span>
                     <span>Đang trả lời...</span>
-                    <button class="material-symbols-outlined text-[10px] hover:text-red-400" id="cancel-reply-btn">close</button>
+                    <button class="material-symbols-outlined text-[10px] hover:text-red-400 ml-0.5 transition-colors" id="cancel-reply-btn">close</button>
                   </label>
                 </div>
                 
-                <button id="btn-submit-comment" class="bg-primary text-on-primary hover:bg-primary/90 font-bold text-[11px] px-4.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95">
-                  Gửi bình luận
+                <button id="btn-submit-comment" class="bg-primary text-on-primary hover:bg-primary/80 font-bold text-[11px] px-5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-lg shadow-primary/20">
+                  Gửi
                   <span class="material-symbols-outlined text-xs">send</span>
                 </button>
               </div>
             </div>
 
             <!-- Danh sách các bình luận -->
-            <div class="space-y-4 pt-1" id="comments-list">
+            <div class="space-y-3 pt-1" id="comments-list">
               <!-- JS render ở client -->
             </div>
           </div>
@@ -1830,25 +1837,114 @@ if (movie && movie.actors && movie.actors.length > 0) {
     const replyToLbl = document.getElementById('reply-to-lbl');
     const cancelReplyBtn = document.getElementById('cancel-reply-btn');
 
-    // Rating star handler
-    ratingStars.forEach(star => {
-      star.addEventListener('click', () => {
-        const val = parseInt(star.getAttribute('data-star') || '0');
-        selectedRatingStar = val;
-        ratingStars.forEach((s, i) => {
-          if (i < val) {
-            s.classList.add('text-amber-400');
-            s.classList.remove('text-gray-500');
-          } else {
-            s.classList.remove('text-amber-400');
-            s.classList.add('text-gray-500');
+    // Rating: load existing user rating + display
+    let currentUserRating = 0;
+    let isRatingSubmitting = false;
+
+    const fetchRating = async () => {
+      try {
+        const username = (window.APP_USER?.username || localStorage.getItem('tlogged_in_as') || '').trim();
+        let url = `/api/user/rating?slug=${encodeURIComponent(movieSlug)}`;
+        if (username) url += `&username=${encodeURIComponent(username)}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === 'success') {
+            const r = data.data;
+            const ratingDisplay = document.getElementById('average-rating-display');
+            const reviewsDisplay = document.getElementById('reviews-count-display');
+            if (ratingDisplay) ratingDisplay.textContent = String(r.averageRating || '--');
+            if (reviewsDisplay) reviewsDisplay.textContent = String(r.totalRatings || 0);
+            currentUserRating = r.userRating || 0;
+            if (currentUserRating > 0) {
+              selectedRatingStar = currentUserRating;
+              ratingStars.forEach((s, i) => {
+                if (i < currentUserRating) {
+                  s.classList.add('text-amber-400');
+                  s.classList.remove('text-gray-500');
+                  s.classList.remove('hover:text-amber-400');
+                } else {
+                  s.classList.remove('text-amber-400');
+                  s.classList.add('text-gray-500');
+                }
+              });
+            }
           }
-        });
+        }
+      } catch (e) {
+        console.error('Lỗi tải rating:', e);
+      }
+    };
+
+    // Rating star handler - click = submit directly
+    ratingStars.forEach(star => {
+      star.addEventListener('click', async () => {
+        if (isRatingSubmitting) return;
+        const val = parseInt(star.getAttribute('data-star') || '0');
+        if (currentUserRating > 0) {
+          if (window.showGlobalToast) window.showGlobalToast('Bạn đã đánh giá phim này!', 'info');
+          return;
+        }
+        if (requireLogin) {
+          requireLogin(async () => {
+            const username = (window.APP_USER?.username || localStorage.getItem('tlogged_in_as') || '').trim();
+            if (!username) {
+              if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập để đánh giá!', 'error');
+              return;
+            }
+            isRatingSubmitting = true;
+            try {
+              const res = await fetch('/api/user/rating', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  username,
+                  slug: movieSlug,
+                  rating: val
+                })
+              });
+              if (res.ok) {
+                const result = await res.json();
+                if (result.status === 'success') {
+                  currentUserRating = val;
+                  selectedRatingStar = val;
+                  ratingStars.forEach((s, i) => {
+                    if (i < val) {
+                      s.classList.add('text-amber-400');
+                      s.classList.remove('text-gray-500');
+                    } else {
+                      s.classList.remove('text-amber-400');
+                      s.classList.add('text-gray-500');
+                    }
+                  });
+                  const r = result.data;
+                  const ratingDisplay = document.getElementById('average-rating-display');
+                  const reviewsDisplay = document.getElementById('reviews-count-display');
+                  if (ratingDisplay) ratingDisplay.textContent = String(r.averageRating || '--');
+                  if (reviewsDisplay) reviewsDisplay.textContent = String(r.totalRatings || 0);
+                  if (window.showGlobalToast) window.showGlobalToast('Đã đánh giá phim!', 'success');
+                }
+              }
+            } catch (e) {
+              console.error(e);
+              if (window.showGlobalToast) window.showGlobalToast('Lỗi khi đánh giá phim', 'error');
+            } finally {
+              isRatingSubmitting = false;
+            }
+          });
+        }
       });
     });
 
     if (btnShowRating && ratingContainer) {
       btnShowRating.addEventListener('click', () => {
+        if (currentUserRating > 0) {
+          if (window.showGlobalToast) window.showGlobalToast(`Bạn đã đánh giá ${currentUserRating} sao!`, 'info');
+          ratingContainer.classList.toggle('hidden');
+          btnShowRating.classList.toggle('bg-primary/20');
+          btnShowRating.classList.toggle('text-primary');
+          return;
+        }
         requireLogin(() => {
           ratingContainer.classList.toggle('hidden');
           btnShowRating.classList.toggle('bg-primary/20');
@@ -1865,6 +1961,16 @@ if (movie && movie.actors && movie.actors.length > 0) {
         }
       });
     }
+
+    // Load rating on page load
+    fetchRating();
+
+    // Track page view
+    fetch('/api/movies/view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: movieSlug })
+    }).catch(() => {});
 
     // Textarea char counter
     if (commentTextarea && charCounter) {
@@ -1900,20 +2006,10 @@ if (movie && movie.actors && movie.actors.length > 0) {
       if (!commentsListContainer || !commentsCountEl) return;
       
       commentsCountEl.textContent = String(comments.length);
-      
-      const getPlanByPackageNameOrId = (pkgNameOrId: any) => {
-        const settings = (window as any).TXA_SITE_SETTINGS || {};
-        const packages = settings.packages || [];
-        const normalized = (pkgNameOrId || 'free').toLowerCase().trim();
-        let plan = packages.find((p: any) => p.id.toLowerCase() === normalized);
-        if (plan) return plan;
-        plan = packages.find((p: any) => p.title.toLowerCase() === normalized);
-        if (plan) return plan;
-        if (normalized === 'free' || normalized === 'gói free') {
-          return { id: 'free', title: 'Gói Free' };
-        }
-        return { id: 'free', title: pkgNameOrId || 'Gói Free' };
-      };
+
+      const currentUser = window.APP_USER || {};
+      const currentUserName = (currentUser.name || currentUser.username || '').toLowerCase().trim();
+      const isAdmin = currentUser.role === 'admin';
 
       const getEpisodeLink = (epName: string, svName: string) => {
         if (!epName || !servers) return null;
@@ -1931,43 +2027,81 @@ if (movie && movie.actors && movie.actors.length > 0) {
         return null;
       };
 
+      const getInitials = (name: string) => {
+        return name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+      };
+
+      const avatarColors = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#14b8a6', '#f97316'];
+
+      const renderMenu = (commentId: string, author: string, authorRole: string) => {
+        const authorLower = author.toLowerCase().trim();
+        const isOwner = currentUserName === authorLower;
+        let items: string[] = [];
+
+        if (isAdmin) {
+          items = [
+            `<button onclick="window.deleteComment('${commentId}')" class="w-full text-left px-3 py-1.5 text-[10px] text-rose-400 hover:bg-white/5 font-bold flex items-center gap-2"><span class="material-symbols-outlined text-[12px]">delete</span>Xoá bình luận</button>`,
+            `<button onclick="window.toggleSpoiler('${commentId}')" class="w-full text-left px-3 py-1.5 text-[10px] text-amber-400 hover:bg-white/5 font-bold flex items-center gap-2"><span class="material-symbols-outlined text-[12px]">visibility_off</span>Spoiler</button>`,
+            `<button onclick="window.reportComment('${commentId}')" class="w-full text-left px-3 py-1.5 text-[10px] text-zinc-400 hover:bg-white/5 font-bold flex items-center gap-2"><span class="material-symbols-outlined text-[12px]">report</span>Báo cáo</button>`
+          ].join('');
+        } else if (isOwner) {
+          items = [
+            `<button onclick="window.deleteComment('${commentId}')" class="w-full text-left px-3 py-1.5 text-[10px] text-rose-400 hover:bg-white/5 font-bold flex items-center gap-2"><span class="material-symbols-outlined text-[12px]">delete</span>Xoá</button>`,
+            `<button onclick="window.toggleSpoiler('${commentId}')" class="w-full text-left px-3 py-1.5 text-[10px] text-amber-400 hover:bg-white/5 font-bold flex items-center gap-2"><span class="material-symbols-outlined text-[12px]">visibility_off</span>Spoiler</button>`
+          ].join('');
+        } else {
+          items = [
+            `<button onclick="window.reportComment('${commentId}')" class="w-full text-left px-3 py-1.5 text-[10px] text-zinc-400 hover:bg-white/5 font-bold flex items-center gap-2"><span class="material-symbols-outlined text-[12px]">report</span>Báo cáo</button>`,
+            `<button onclick="window.toggleSpoiler('${commentId}')" class="w-full text-left px-3 py-1.5 text-[10px] text-amber-400 hover:bg-white/5 font-bold flex items-center gap-2"><span class="material-symbols-outlined text-[12px]">visibility_off</span>Spoiler</button>`
+          ].join('');
+        }
+
+        return `
+          <div class="relative comment-menu-container">
+            <button onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('hidden')" class="text-zinc-500 hover:text-white transition-colors cursor-pointer p-0.5 bg-transparent border-none">
+              <span class="material-symbols-outlined text-[14px]">more_vert</span>
+            </button>
+            <div class="hidden absolute right-0 top-6 z-50 w-44 bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl shadow-black/50 backdrop-blur-xl overflow-hidden py-1 comment-menu-dropdown">
+              ${items}
+            </div>
+          </div>
+        `;
+      };
+
+      const renderAvatar = (author: string, avatarUrl: string, size: string = 'w-7 h-7', textSize: string = 'text-[9px]') => {
+        if (avatarUrl) {
+          return `<img src="${avatarUrl}" alt="${author}" class="${size} rounded-full object-cover border border-glass-stroke shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="${size} rounded-full shrink-0 items-center justify-center hidden ${textSize} font-bold text-white select-none" style="background:${avatarColors[author.length % avatarColors.length]}">${getInitials(author)}</div>`;
+        }
+        return `<div class="${size} rounded-full shrink-0 flex items-center justify-center ${textSize} font-bold text-white select-none" style="background:${avatarColors[author.length % avatarColors.length]}">${getInitials(author)}</div>`;
+      };
+
       let html = '';
       comments.forEach((c: any) => {
         let repliesHtml = '';
         if (c.replies && c.replies.length > 0) {
           c.replies.forEach((rep: any) => {
-            const repPlan = getPlanByPackageNameOrId(rep.package);
-            const repPkgId = repPlan.id;
-            const repPkgTitle = repPlan.title;
-            const isRepMod = rep.author.toLowerCase().includes('cô 3 rổ') || rep.author.toLowerCase().includes('admin');
-            const repGenderBadge = rep.gender === 'male' ? '<span class="text-[7px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.2 py-0.2 rounded font-bold">Nam ♂</span>' :
-                                   rep.gender === 'female' ? '<span class="text-[7px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-1.2 py-0.2 rounded font-bold">Nữ ♀</span>' :
-                                   rep.gender === 'other' ? '<span class="text-[7px] bg-zinc-800 text-zinc-400 border border-zinc-700 px-1.2 py-0.2 rounded font-bold">Khác ∞</span>' : '';
+            const isRepAdmin = rep.role === 'admin';
+            const repGenderBadge = rep.gender === 'male' ? '<span class="text-[7px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.2 py-0.2 rounded font-bold">♂</span>' :
+                                   rep.gender === 'female' ? '<span class="text-[7px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-1.2 py-0.2 rounded font-bold">♀</span>' : '';
 
             repliesHtml += `
-              <div class="mt-3 pl-4 border-l border-glass-stroke space-y-1">
+              <div class="mt-2 pl-3 border-l-2 border-white/5 hover:border-white/10 transition-colors">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <div class="w-5 h-5 rounded-full bg-zinc-800 text-[9px] font-bold text-secondary flex items-center justify-center select-none">
-                    ${rep.author.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
-                  </div>
-                  <span class="text-[10px] font-bold ${isRepMod ? 'text-pink-400' : `package-style-${repPkgId}`}">${rep.author}</span>
-                  ${!isRepMod ? `<span class="text-[7px] font-bold px-1.2 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-${repPkgId}">${repPkgTitle}</span>` : `<span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[7px] font-bold uppercase tracking-wider scale-90">Admin</span>`}
+                  ${renderAvatar(rep.author, rep.avatar || '', 'w-5 h-5', 'text-[8px]')}
+                  <span class="text-[10px] font-bold ${isRepAdmin ? 'text-pink-400' : 'text-white'}">${rep.author}</span>
                   ${repGenderBadge}
-                  <span class="text-[8px] text-on-surface-variant font-medium">${rep.time}</span>
+                  <span class="text-[8px] text-zinc-500 font-medium">${rep.time}</span>
                 </div>
-                <p class="text-[11px] text-on-surface-variant pl-7 leading-relaxed">${rep.content}</p>
+                <p class="text-[11px] text-zinc-400 pl-7 leading-relaxed mt-0.5">${rep.content}</p>
               </div>
             `;
           });
         }
 
-        const plan = getPlanByPackageNameOrId(c.package);
-        const pkgId = plan.id;
-        const pkgTitle = plan.title;
-        const isMod = c.author.toLowerCase().includes('cô 3 rổ') || c.author.toLowerCase().includes('admin');
-        const genderBadge = c.gender === 'male' ? '<span class="text-[8px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1 py-0.2 rounded font-bold">Nam ♂</span>' :
-                            c.gender === 'female' ? '<span class="text-[8px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-1 py-0.2 rounded font-bold">Nữ ♀</span>' :
-                            c.gender === 'other' ? '<span class="text-[8px] bg-zinc-800 text-zinc-400 border border-zinc-700 px-1 py-0.2 rounded font-bold">Khác ∞</span>' : '';
+        const isCommentAdmin = c.role === 'admin';
+        const genderBadge = c.gender === 'male' ? '<span class="text-[8px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1 py-0.2 rounded font-bold">♂</span>' :
+                            c.gender === 'female' ? '<span class="text-[8px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-1 py-0.2 rounded font-bold">♀</span>' :
+                            c.gender === 'other' ? '<span class="text-[8px] bg-zinc-800 text-zinc-400 border border-zinc-700 px-1 py-0.2 rounded font-bold">∞</span>' : '';
 
         let epBadgeHtml = '';
         if (c.episodeName) {
@@ -1979,10 +2113,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
           
           if (epLink) {
             epBadgeHtml = `
-              <a 
-                href="${epLink}" 
-                class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all flex items-center gap-0.5 cursor-pointer no-underline select-none"
-              >
+              <a href="${epLink}" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all flex items-center gap-0.5 cursor-pointer no-underline select-none">
                 <span class="material-symbols-outlined text-[10px]">play_circle</span>
                 ${epLabel}
               </a>
@@ -1998,46 +2129,39 @@ if (movie && movie.actors && movie.actors.length > 0) {
         }
 
         html += `
-          <div class="p-4 bg-white/[0.02] border border-glass-stroke rounded-xl space-y-2">
-            <!-- Author row -->
-            <div class="flex items-start justify-between">
-              <div class="flex items-center gap-3">
-                <img src="${c.avatar}" alt="${c.author}" class="w-7 h-7 rounded-full object-cover border border-glass-stroke" onerror="this.src='https://lh3.googleusercontent.com/a/default-user=s40-c'" />
-                <div>
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <h4 class="text-xs font-bold ${isMod ? 'text-pink-400' : `package-style-${pkgId}`}">${c.author}</h4>
-                    ${!isMod ? `<span class="text-[8px] font-bold px-1.5 py-0.2 rounded bg-white/5 border border-glass-stroke/50 package-style-${pkgId}">${pkgTitle}</span>` : `<span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[8px] font-bold uppercase tracking-wider scale-90">Admin</span>`}
-                    ${genderBadge}
-                    <span class="text-[9px] text-on-surface-variant font-medium">${c.time}</span>
-                    ${epBadgeHtml}
-                  </div>
+          <div class="p-4 bg-white/[0.02] border border-glass-stroke rounded-xl hover:bg-white/[0.04] hover:border-primary/15 transition-all duration-200 space-y-2 group">
+            <div class="flex items-start gap-3">
+              ${renderAvatar(c.author, c.avatar)}
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h4 class="text-xs font-bold ${isCommentAdmin ? 'text-pink-400' : 'text-white'}">${c.author}</h4>
+                  ${isCommentAdmin ? '<span class="bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 text-[7px] font-bold uppercase tracking-wider">Admin</span>' : ''}
+                  ${genderBadge}
+                  <span class="text-[9px] text-zinc-500 font-medium">${c.time}</span>
+                  ${epBadgeHtml}
                 </div>
-              </div>
-              
-              <!-- Like/Dislike actions -->
-              <div class="flex items-center gap-2 text-[10px] text-on-surface-variant">
-                <button class="flex items-center gap-0.5 hover:text-primary transition-colors cursor-pointer" onclick="window.likeComment('${c.id}')">
-                  <span class="material-symbols-outlined text-[13px]">thumb_up</span>
-                  <span>(${c.likes})</span>
-                </button>
-                <button class="flex items-center gap-0.5 hover:text-red-400 transition-colors cursor-pointer" onclick="window.dislikeComment('${c.id}')">
-                  <span class="material-symbols-outlined text-[13px]">thumb_down</span>
-                  <span>(${c.dislikes})</span>
-                </button>
-              </div>
-            </div>
 
-            <!-- Content -->
-            <p class="text-xs text-on-surface leading-relaxed pl-10">${c.content}</p>
+                <p class="text-xs text-zinc-300 leading-relaxed mt-1.5">${c.content}</p>
 
-            <!-- Actions and replies -->
-            <div class="pl-10">
-              <button class="text-[10px] font-bold text-primary hover:underline cursor-pointer" onclick="window.setReplyTo('${c.id}')">
-                Trả lời
-              </button>
-              
-              <div class="mt-2 space-y-2" id="replies-box-${c.id}">
-                ${repliesHtml}
+                <div class="flex items-center gap-3 mt-2">
+                  <button class="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-primary transition-colors cursor-pointer bg-transparent border-none p-0" onclick="window.likeComment('${c.id}')">
+                    <span class="material-symbols-outlined text-[13px]">thumb_up</span>
+                    <span class="font-bold">${c.likes}</span>
+                  </button>
+                  <button class="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0" onclick="window.dislikeComment('${c.id}')">
+                    <span class="material-symbols-outlined text-[13px]">thumb_down</span>
+                    <span class="font-bold">${c.dislikes}</span>
+                  </button>
+                  <button class="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-primary transition-colors cursor-pointer bg-transparent border-none p-0" onclick="window.setReplyTo('${c.id}')">
+                    <span class="material-symbols-outlined text-[12px]">reply</span>
+                    <span class="font-bold">Trả lời</span>
+                  </button>
+                  ${renderMenu(c.id, c.author, c.role)}
+                </div>
+
+                <div class="mt-2 space-y-1" id="replies-box-${c.id}">
+                  ${repliesHtml}
+                </div>
               </div>
             </div>
           </div>
@@ -2045,6 +2169,63 @@ if (movie && movie.actors && movie.actors.length > 0) {
       });
 
       commentsListContainer.innerHTML = html || '<p class="text-xs text-on-surface-variant py-4 text-center">Chưa có bình luận nào. Hãy gửi bình luận đầu tiên nhé!</p>';
+
+      // Close dropdowns on outside click
+      document.querySelectorAll('.comment-menu-container').forEach(container => {
+        container.addEventListener('click', (e) => e.stopPropagation());
+      });
+    };
+
+    // Global click to close all comment menus
+    if (!window._commentMenuInit) {
+      window._commentMenuInit = true;
+      document.addEventListener('click', () => {
+        document.querySelectorAll('.comment-menu-dropdown').forEach(d => d.classList.add('hidden'));
+      });
+    }
+
+    window.deleteComment = async (commentId: string) => {
+      try {
+        const res = await fetch('/api/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', commentId })
+        });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.status === 'success') {
+            comments = comments.filter((c: any) => c.id !== commentId);
+            renderComments();
+            if (window.showGlobalToast) window.showGlobalToast('Đã xoá bình luận!', 'success');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        if (window.showGlobalToast) window.showGlobalToast('Lỗi khi xoá bình luận', 'error');
+      }
+    };
+
+    window.toggleSpoiler = async (commentId: string) => {
+      try {
+        const res = await fetch('/api/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'toggle_spoiler', commentId })
+        });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.status === 'success') {
+            if (window.showGlobalToast) window.showGlobalToast('Đã cập nhật tag spoiler!', 'success');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        if (window.showGlobalToast) window.showGlobalToast('Lỗi khi cập nhật spoiler', 'error');
+      }
+    };
+
+    window.reportComment = async (commentId: string) => {
+      if (window.showGlobalToast) window.showGlobalToast('Đã báo cáo bình luận đến quản trị viên!', 'info');
     };
 
     const loadComments = async () => {
@@ -2056,13 +2237,14 @@ if (movie && movie.actors && movie.actors.length > 0) {
             comments = result.data.map((c: any) => ({
               id: c.id,
               author: c.author,
-              avatar: "https://lh3.googleusercontent.com/a/default-user=s40-c",
+              avatar: c.avatar || '',
               content: c.content,
               time: formatDate(c.createdAt),
               likes: c.likes || 0,
               dislikes: 0,
               package: c.package || 'Free',
               gender: c.gender || 'other',
+              role: c.role || 'user',
               episodeName: c.episodeName || '',
               serverName: c.serverName || '',
               replies: (c.replies || []).map((rep: any) => ({
@@ -2070,7 +2252,9 @@ if (movie && movie.actors && movie.actors.length > 0) {
                 content: rep.content,
                 time: formatDate(rep.createdAt),
                 package: rep.package || 'Free',
-                gender: rep.gender || 'other'
+                gender: rep.gender || 'other',
+                role: rep.role || 'user',
+                avatar: rep.avatar || ''
               }))
             }));
             renderComments();
@@ -2173,10 +2357,15 @@ if (movie && movie.actors && movie.actors.length > 0) {
                   const parent = comments.find((c: MovieComment) => c.id === currentReplyToId);
                   if (parent) {
                     if (!parent.replies) parent.replies = [];
+                    const replyUser = window.APP_USER || {};
                     parent.replies.push({
                       author: result.data.author,
                       content: result.data.content,
-                      time: "Vừa xong"
+                      time: "Vừa xong",
+                      package: replyUser.package || 'Free',
+                      gender: replyUser.gender || 'other',
+                      role: replyUser.role || 'user',
+                      avatar: replyUser.avatar || ''
                     });
                     renderComments();
                     if (window.showGlobalToast) window.showGlobalToast('Đã gửi trả lời bình luận thành công!', 'success');
@@ -2207,11 +2396,14 @@ if (movie && movie.actors && movie.actors.length > 0) {
                   const newComment = {
                     id: result.data.id,
                     author: result.data.author,
-                    avatar: "https://lh3.googleusercontent.com/a/default-user=s40-c",
+                    avatar: result.data.avatar || '',
                     content: result.data.content,
                     time: "Vừa xong",
                     likes: 0,
                     dislikes: 0,
+                    package: result.data.package || 'Free',
+                    gender: result.data.gender || 'other',
+                    role: result.data.role || 'user',
                     replies: []
                   };
                   comments.unshift(newComment);

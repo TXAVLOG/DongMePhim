@@ -46,6 +46,16 @@ export const HOMEPAGE_CATEGORIES: CategoryDefinition[] = [
     slug: 'chau-tinh-tri-xem-la-cuoi',
     title: 'Châu Tinh Trì – Xem Là Phải Cười, Không Cười Là Lỗi Ở Bạn',
     description: 'Tuyển tập hài hước kinh điển của Vua Hài Châu Tinh Trì, xem là cười bể bụng.'
+  },
+  {
+    slug: 'huyen-thoai-co-tich',
+    title: 'Cổ Tích & Huyền Thoại - Nghe Phát Nghiện',
+    description: 'Tuyển tập những câu chuyện thần kỳ, cổ tích và huyền thoại khiến bạn mê mẩn từ tập đầu tiên.'
+  },
+  {
+    slug: 'thanh-xuan-hoc-duong',
+    title: 'Tuổi Học Trò - Thanh Xuân Của Tôi',
+    description: 'Những bộ phim tuổi học trò tình cảm trong sáng, những rung động đầu đời ngọt ngào và đầy kỷ niệm.'
   }
 ];
 

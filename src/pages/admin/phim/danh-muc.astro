@@ -438,6 +438,26 @@ const currentMappings = await getHomepageCategories();
         if (!btn) return;
 
         btn.addEventListener('click', async () => {
+          // Auto-fill top 10 categories if admin selected fewer than 10
+          const TOP10_KEYS = ['top-10-phim-le', 'top-10-phim-bo'];
+          TOP10_KEYS.forEach(key => {
+            const list = mappings[key] || [];
+            if (list.length < 10) {
+              const countNeeded = 10 - list.length;
+              const movieType = key === 'top-10-phim-le' ? 'movie' : 'series';
+              const candidates = [...movies]
+                .filter(m => m.type === movieType && !list.includes(m.slug))
+                .sort((a, b) => {
+                  const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10 + (a.commentCount || 0) * 5;
+                  const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10 + (b.commentCount || 0) * 5;
+                  return scoreB - scoreA;
+                })
+                .slice(0, countNeeded)
+                .map(m => m.slug);
+              mappings[key] = [...list, ...candidates];
+            }
+          });
+
           btn.disabled = true;
           const originalText = btn.innerHTML;
           btn.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> <span>Đang lưu...</span>`;
@@ -451,7 +471,7 @@ const currentMappings = await getHomepageCategories();
 
             const data = await res.json();
             if (data.status === 'success') {
-              if (window.showGlobalToast) window.showGlobalToast("Đã lưu cấu hình danh mục trang chủ!", "success");
+              if (window.showGlobalToast) window.showGlobalToast("Đã lưu cấu hình danh mục trang chủ! Tự động bổ sung top phim chất lượng cao.", "success");
             } else {
               if (window.showGlobalToast) window.showGlobalToast(data.message || "Không thể lưu cấu hình", "error");
             }

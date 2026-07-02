@@ -24,16 +24,27 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
       }
     }
 
+    // Get imdb_score baseline
+    const { data: movie } = await supabase
+      .from('movies')
+      .select('imdb_score')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    const imdbScore = movie ? parseFloat(String(movie.imdb_score)) || 0 : 0;
+
     const { data: ratings } = await supabase
       .from('txa_movie_ratings')
       .select('rating')
       .eq('movie_slug', slug);
 
-    let averageRating = 0.0;
-    const totalRatings = ratings ? ratings.length : 0;
-    if (totalRatings > 0 && ratings) {
-      const sum = ratings.reduce((acc: number, curr: any) => acc + curr.rating, 0);
-      averageRating = parseFloat((sum / totalRatings).toFixed(1));
+    const userRatings = ratings || [];
+    const totalRatings = 1 + userRatings.length;
+    let averageRating = imdbScore;
+
+    if (userRatings.length > 0) {
+      const sum = userRatings.reduce((acc: number, curr: any) => acc + curr.rating, 0);
+      averageRating = parseFloat(((imdbScore + sum) / totalRatings).toFixed(1));
     }
 
     return apiResponse({
@@ -93,18 +104,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       if (error) throw error;
     }
 
-    // Recalculate average rating & total ratings
+    // Recalculate average: imdb_score (weight 1) + all user ratings
+    const { data: movie } = await supabase
+      .from('movies')
+      .select('imdb_score')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    const imdbScore = movie ? parseFloat(String(movie.imdb_score)) || 0 : 0;
+
     const { data: ratings } = await supabase
       .from('txa_movie_ratings')
       .select('rating')
       .eq('movie_slug', slug);
 
-    let averageRating = 0.0;
-    const totalRatings = ratings ? ratings.length : 0;
-    if (totalRatings > 0 && ratings) {
-      const sum = ratings.reduce((acc: number, curr: any) => acc + curr.rating, 0);
-      averageRating = parseFloat((sum / totalRatings).toFixed(1));
-    }
+    const userRatings = ratings || [];
+    const userCount = userRatings.length;
+    const sum = userRatings.reduce((acc: number, curr: any) => acc + curr.rating, 0);
+    const averageRating = parseFloat(((imdbScore + sum) / (1 + userCount)).toFixed(1));
+    const totalRatings = 1 + userCount;
 
     // Sync back to movies table for search/sort
     await supabase

@@ -86,6 +86,22 @@ if (category) {
             const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;
             return scoreB - scoreA;
           });
+      } else if (category.slug === 'huyen-thoai-co-tich') {
+        const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+        movies = allMovies.filter((m: any) =>
+          Array.isArray(m.genres) && m.genres.some((g: string) => {
+            const lower = (g || '').toLowerCase();
+            return lower.includes('thần thoại') || lower.includes('cổ tích') || lower.includes('thần tiên') || lower.includes('mythology') || lower.includes('fantasy');
+          })
+        );
+      } else if (category.slug === 'thanh-xuan-hoc-duong') {
+        const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+        movies = allMovies.filter((m: any) =>
+          Array.isArray(m.genres) && m.genres.some((g: string) => {
+            const lower = (g || '').toLowerCase();
+            return lower.includes('học đường') || lower.includes('tuổi trẻ') || lower.includes('học sinh') || lower.includes('school') || lower.includes('tuổi thanh xuân');
+          })
+        );
       }
     }
   }

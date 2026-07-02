@@ -2,18 +2,6 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 
-// Helper: Seed rating values if not initialized in database
-function getSeedRating(movieSlug: string) {
-  let seed = 0;
-  for (let i = 0; i < movieSlug.length; i++) seed += movieSlug.charCodeAt(i);
-  const calculatedTotal = 80 + (seed % 150);
-  const calculatedAvg = 7.5 + ((seed % 20) / 10);
-  return {
-    count: calculatedTotal,
-    score: parseFloat(calculatedAvg.toFixed(1))
-  };
-}
-
 // GET: Lấy điểm đánh giá trung bình và điểm của chính user hiện tại
 export const GET: APIRoute = async ({ request, url }) => {
   try {
@@ -24,31 +12,36 @@ export const GET: APIRoute = async ({ request, url }) => {
       return apiResponse(null, 'error', 'Missing slug parameter', 400, request);
     }
 
-    // 1. Lấy thông tin phim trong DB
+    // Lấy imdb_score và user ratings
     const { data: movie, error: movieError } = await supabase
       .from('movies')
-      .select('rating_score, rating_count, imdb_score')
+      .select('imdb_score')
       .eq('slug', slug)
       .maybeSingle();
 
     if (movieError) throw movieError;
 
-    let avg = 8.0;
-    let count = 100;
+    const imdbScore = movie ? parseFloat(String(movie.imdb_score)) || 0 : 0;
 
-    if (movie) {
-      if (movie.rating_count && movie.rating_count > 0) {
-        avg = parseFloat(Number(movie.rating_score).toFixed(1));
-        count = movie.rating_count;
-      } else {
-        // Fallback seed
-        const seed = getSeedRating(slug);
-        avg = seed.score;
-        count = seed.count;
-      }
+    // Lấy tất cả user ratings cho phim này
+    const { data: ratings } = await supabase
+      .from('txa_movie_ratings')
+      .select('rating')
+      .eq('movie_slug', slug);
+
+    const userRatings = ratings || [];
+    const userCount = userRatings.length;
+
+    let avg = imdbScore;
+    let count = 1;
+
+    if (userCount > 0) {
+      const sum = userRatings.reduce((acc: number, r: any) => acc + r.rating, 0);
+      avg = (imdbScore + sum) / (1 + userCount);
+      count = 1 + userCount;
     }
 
-    // 2. Lấy điểm của user nếu có truyền username
+    // Lấy điểm của user nếu có truyền username
     let userRating = 0;
     if (username) {
       const { data: ratingRecord } = await supabase
@@ -64,9 +57,10 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
 
     return apiResponse({
-      averageRating: avg,
+      averageRating: parseFloat(avg.toFixed(1)),
       totalRatings: count,
-      userRating: userRating
+      userRating: userRating,
+      imdbScore: parseFloat(imdbScore.toFixed(1))
     }, 'success', '', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
@@ -86,7 +80,7 @@ export const POST: APIRoute = async ({ request }) => {
     // 1. Lấy thông tin phim hiện tại
     const { data: movie, error: movieError } = await supabase
       .from('movies')
-      .select('id, rating_score, rating_count, imdb_score')
+      .select('id, imdb_score')
       .eq('slug', slug)
       .maybeSingle();
 
@@ -94,18 +88,7 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Movie not found', 404, request);
     }
 
-    let currentAvg = 0;
-    let currentCount = 0;
-
-    if (movie.rating_count && movie.rating_count > 0) {
-      currentAvg = Number(movie.rating_score);
-      currentCount = movie.rating_count;
-    } else {
-      // Seed values
-      const seed = getSeedRating(slug);
-      currentAvg = seed.score;
-      currentCount = seed.count;
-    }
+    const imdbScore = parseFloat(String(movie.imdb_score)) || 0;
 
     // 2. Kiểm tra xem user này đã từng đánh giá phim này chưa
     const { data: existingRatingRecord } = await supabase
@@ -115,34 +98,41 @@ export const POST: APIRoute = async ({ request }) => {
       .eq('movie_slug', slug)
       .maybeSingle();
 
-    let newAvg = currentAvg;
-    let newCount = currentCount;
-
     if (existingRatingRecord) {
-      // Đã đánh giá -> Cập nhật trung bình không đổi số lượt đánh giá
-      const oldRating = existingRatingRecord.rating;
-      newAvg = ((currentAvg * currentCount) - oldRating + rating) / currentCount;
+      // Đã đánh giá -> cập nhật điểm mới
+      const { error: ratingUpdateError } = await supabase
+        .from('txa_movie_ratings')
+        .update({ rating })
+        .eq('username', username)
+        .eq('movie_slug', slug);
+
+      if (ratingUpdateError) throw ratingUpdateError;
     } else {
-      // Đánh giá mới -> Tăng số lượt đánh giá
-      newAvg = ((currentAvg * currentCount) + rating) / (currentCount + 1);
-      newCount = currentCount + 1;
+      // Đánh giá mới
+      const { error: ratingInsertError } = await supabase
+        .from('txa_movie_ratings')
+        .insert({
+          username,
+          movie_slug: slug,
+          rating
+        });
+
+      if (ratingInsertError) throw ratingInsertError;
     }
 
-    // Làm tròn 2 chữ số thập phân
-    newAvg = parseFloat(newAvg.toFixed(2));
-
-    // 3. Lưu bản ghi đánh giá cá nhân của user
-    const { error: ratingUpsertError } = await supabase
+    // 3. Tính lại trung bình: imdb_score (weight 1) + tất cả user ratings
+    const { data: allRatings } = await supabase
       .from('txa_movie_ratings')
-      .upsert({
-        username,
-        movie_slug: slug,
-        rating
-      }, { onConflict: 'username,movie_slug' });
+      .select('rating')
+      .eq('movie_slug', slug);
 
-    if (ratingUpsertError) throw ratingUpsertError;
+    const userRatings = allRatings || [];
+    const userCount = userRatings.length;
+    const sum = userRatings.reduce((acc: number, r: any) => acc + r.rating, 0);
+    const newAvg = parseFloat(((imdbScore + sum) / (1 + userCount)).toFixed(2));
+    const newCount = 1 + userCount;
 
-    // 4. Cập nhật lại phim với điểm trung bình mới
+    // 4. Cập nhật lại phim
     const { error: movieUpdateError } = await supabase
       .from('movies')
       .update({

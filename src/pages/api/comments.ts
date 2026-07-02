@@ -72,7 +72,8 @@ export const GET: APIRoute = async ({ request }) => {
         ...r,
         package: userPackageMap.get(r.author?.toLowerCase().trim()) || 'Free',
         gender: userGenderMap.get(r.author?.toLowerCase().trim()) || 'other',
-        role: userRoleMap.get(r.author?.toLowerCase().trim()) || 'user'
+        role: userRoleMap.get(r.author?.toLowerCase().trim()) || 'user',
+        avatar: userAvatarMap.get(r.author?.toLowerCase().trim()) || ''
       })) : [];
 
       return {
@@ -234,9 +235,16 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Nội dung bình luận không được để trống!', 400, request);
     }
 
+    const authorName = (author || 'Ẩn danh').trim();
+    const { data: userData } = await supabase
+      .from('users')
+      .select('avatar, gender, package, role')
+      .or(`name.eq.${authorName},username.eq.${authorName}`)
+      .maybeSingle();
+
     const newComment = {
       movie_slug: slug,
-      author: (author || 'Ẩn danh').trim(),
+      author: authorName,
       content: content.trim(),
       likes: 0,
       replies: [],
@@ -256,6 +264,10 @@ export const POST: APIRoute = async ({ request }) => {
     return apiResponse({
       id: insertedData.id,
       author: insertedData.author,
+      avatar: userData?.avatar || '',
+      package: userData?.package || 'Free',
+      gender: userData?.gender || 'other',
+      role: userData?.role || 'user',
       content: insertedData.content,
       likes: insertedData.likes,
       dislikes: 0,
