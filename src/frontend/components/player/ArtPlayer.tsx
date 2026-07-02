@@ -1496,6 +1496,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               hls.loadSource(url);
               hls.attachMedia(video);
 
+              // Recovery attempt tracking to prevent infinite recovery loops
+              let mediaErrorRecoveryAttempts = 0;
+              const MAX_MEDIA_RECOVERY_ATTEMPTS = 3;
+              let lastRecoveryTime = 0;
+              const RECOVERY_COOLDOWN_MS = 5000; // 5 seconds cooldown between recovery attempts
+
               // Bắt sự kiện lỗi Hls.js để tự động phục hồi luồng phát
               hls.on(HlsClass.Events.ERROR, (event: any, data: any) => {
                 if (data.fatal) {
@@ -1506,7 +1512,17 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                       break;
                     case HlsClass.ErrorTypes.MEDIA_ERROR:
                       console.warn('HLS Media error encountered, attempting recovery...', data);
-                      hls.recoverMediaError();
+                      if (mediaErrorRecoveryAttempts < MAX_MEDIA_RECOVERY_ATTEMPTS) {
+                        mediaErrorRecoveryAttempts++;
+                        hls.recoverMediaError();
+                      } else {
+                        console.error('HLS Media error recovery failed after max attempts, reloading source...');
+                        mediaErrorRecoveryAttempts = 0;
+                        hls.destroy();
+                        const newHls = new HlsClass();
+                        newHls.loadSource(url);
+                        newHls.attachMedia(video);
+                      }
                       break;
                     default:
                       console.error('Fatal HLS error, destroying player instance:', data);
@@ -1516,7 +1532,21 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                       break;
                   }
                 } else {
-                  console.warn('Non-fatal HLS error:', data);
+                  // Throttle non-fatal error logging to prevent console spam
+                  const now = Date.now();
+                  if (data.details === 'bufferAppendingError' || data.details === 'bufferAppendError') {
+                    if (now - lastRecoveryTime < RECOVERY_COOLDOWN_MS) {
+                      return; // Skip recovery during cooldown
+                    }
+                    lastRecoveryTime = now;
+                    console.warn('Non-fatal HLS buffer error, attempting recovery...', data.details);
+                    hls.recoverMediaError();
+                  } else if (data.details === 'internalException') {
+                    // Suppress the maxAutoLevel setter error - handled by using autoLevelCapping
+                    console.debug('Non-fatal HLS internal exception (suppressed):', data.details);
+                  } else {
+                    console.warn('Non-fatal HLS error:', data.details);
+                  }
                 }
               });
 
@@ -1537,7 +1567,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
                 if (allowedLevels.length > 0) {
                   const maxIndex = Math.max(...allowedLevels);
-                  hls.maxAutoLevel = maxIndex;
+                  // Use autoLevelCapping instead of maxAutoLevel (read-only in HLS.js v1.5.x)
+                  hls.autoLevelCapping = maxIndex;
                   if (hls.currentLevel > maxIndex) {
                     hls.currentLevel = maxIndex;
                   }
