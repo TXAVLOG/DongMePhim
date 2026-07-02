@@ -317,7 +317,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
 
       async function loadMovieForEdit(slug) {
         try {
-          const res = await fetch(`/api/admin/movie-action?action=get&slug=${slug}`);
+          const res = await fetch(`/api/admin/movie-action?action=get&slug=${slug}&_t=${Date.now()}`);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const responseData = await res.json();
           if (responseData.status !== "success" || !responseData.data) {
@@ -511,6 +511,29 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         }
       };
 
+      // Bulk action: Set intro/outro for all episodes
+      function bulkSetIntroOutro(introStart, introEnd, outroStart, outroEnd) {
+        if (introStart === undefined) {
+          introStart = parseInt(document.getElementById('bulkIntroStart')?.value) || 0;
+          introEnd = parseInt(document.getElementById('bulkIntroEnd')?.value) || 0;
+          outroStart = parseInt(document.getElementById('bulkOutroStart')?.value) || 0;
+          outroEnd = parseInt(document.getElementById('bulkOutroEnd')?.value) || 0;
+        }
+
+        movieData.episodes.forEach((server) => {
+          server.server_data.forEach((ep) => {
+            ep.time_intro_start = introStart;
+            ep.time_intro_end = introEnd;
+            ep.time_outro_start = outroStart;
+            ep.time_outro_end = outroEnd;
+          });
+        });
+
+        renderServers();
+        if (window.showGlobalToast) window.showGlobalToast(`Đã set intro(${introStart}s-${introEnd}s) / outro(${outroStart}s-${outroEnd}s) cho tất cả tập!`, 'success');
+      }
+      window.bulkSetIntroOutro = bulkSetIntroOutro;
+
       // Server & Ep UI Rendering
       function renderServers() {
         if (movieData.episodes.length === 0) {
@@ -520,7 +543,47 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         }
         emptyServers.classList.add("hidden");
 
-        serversContainer.innerHTML = movieData.episodes.map((server, serverIdx) => {
+        // Bulk action panel
+        const bulkActionHtml = `
+          <div class="p-4 bg-primary/10 border border-primary/30 rounded-2xl mb-4">
+            <h4 class="font-bold text-sm text-white mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">settings_suggest</span>
+              Bulk Action - Set Intro/Outro cho tất cả tập
+            </h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+              <div>
+                <label class="block text-[9px] text-zinc-400 font-bold uppercase mb-1">Bắt đầu Intro (giây)</label>
+                <input type="number" id="bulkIntroStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="0"/>
+              </div>
+              <div>
+                <label class="block text-[9px] text-zinc-400 font-bold uppercase mb-1">Bỏ qua Intro (giây)</label>
+                <input type="number" id="bulkIntroEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="0"/>
+              </div>
+              <div>
+                <label class="block text-[9px] text-zinc-400 font-bold uppercase mb-1">Bắt đầu Outro (giây)</label>
+                <input type="number" id="bulkOutroStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="0"/>
+              </div>
+              <div>
+                <label class="block text-[9px] text-zinc-400 font-bold uppercase mb-1">Kết thúc Outro (giây)</label>
+                <input type="number" id="bulkOutroEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="0"/>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="bulkSetIntroOutro()" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-4 rounded-lg text-xs transition-colors cursor-pointer border-none flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">done_all</span>
+                Áp dụng số tùy chỉnh
+              </button>
+              <button onclick="bulkSetIntroOutro(85, 95, 0, 0)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 font-bold py-2 px-3 rounded-lg text-[10px] transition-colors cursor-pointer border-none">Intro 85-95</button>
+              <button onclick="bulkSetIntroOutro(80, 90, 0, 0)" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 font-bold py-2 px-3 rounded-lg text-[10px] transition-colors cursor-pointer border-none">Intro 80-90</button>
+              <button onclick="bulkSetIntroOutro(0, 0, 1380, 1395)" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/30 font-bold py-2 px-3 rounded-lg text-[10px] transition-colors cursor-pointer border-none">Outro 1380-1395</button>
+              <button onclick="bulkSetIntroOutro(0, 0, 1350, 1365)" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/30 font-bold py-2 px-3 rounded-lg text-[10px] transition-colors cursor-pointer border-none">Outro 1350-1365</button>
+              <button onclick="bulkSetIntroOutro(85, 95, 1380, 1395)" class="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border border-purple-500/30 font-bold py-2 px-3 rounded-lg text-[10px] transition-colors cursor-pointer border-none">Cả 85-95 / 1380-1395</button>
+              <button onclick="bulkSetIntroOutro(0, 0, 0, 0)" class="bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/20 font-bold py-2 px-3 rounded-lg text-[10px] transition-colors cursor-pointer border-none">Xóa tất cả</button>
+            </div>
+          </div>
+        `;
+
+        serversContainer.innerHTML = bulkActionHtml + movieData.episodes.map((server, serverIdx) => {
           const episodesHtml = server.server_data.map((ep, epIdx) => {
             const subsList = ep.subtitles || [];
             const subsHtml = subsList.map((sub, subIdx) => `
@@ -768,11 +831,11 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
                 filename: ep.filename || `${title} - ${ep.name}`,
                 linkEmbed: ep.link_embed || ep.linkEmbed || "",
                 linkM3u8: ep.link_m3u8 || ep.linkM3u8 || "",
-                timeIntroStart: ep.time_intro_start || 0,
-                timeIntroEnd: ep.time_intro_end || 0,
-                timeOutroStart: ep.time_outro_start || 0,
-                timeOutroEnd: ep.time_outro_end || 0,
-                subtitles: ep.subtitles || [],
+                timeIntroStart: typeof ep.time_intro_start === 'number' ? ep.time_intro_start : 0,
+                timeIntroEnd: typeof ep.time_intro_end === 'number' ? ep.time_intro_end : 0,
+                timeOutroStart: typeof ep.time_outro_start === 'number' ? ep.time_outro_start : 0,
+                timeOutroEnd: typeof ep.time_outro_end === 'number' ? ep.time_outro_end : 0,
+                subtitles: Array.isArray(ep.subtitles) ? ep.subtitles : [],
                 airDate: ep.airDate || ep.air_date || "",
                 airTime: ep.airTime || ep.air_time || "",
               }))

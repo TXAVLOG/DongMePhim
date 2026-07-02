@@ -15,6 +15,8 @@ export const GET: APIRoute = async ({ request }) => {
       if (!slug) {
         return apiResponse(null, 'error', 'Thiếu slug phim!', 400, request);
       }
+      // Clear cache để luôn lấy data mới nhất cho admin
+      MovieService.clearCache();
       const movie = await MovieService.getMovieBySlug(slug);
       if (!movie) {
         return apiResponse(null, 'error', 'Không tìm thấy phim!', 404, request);
@@ -23,6 +25,7 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     if (action === 'list') {
+      MovieService.clearCache();
       const movies = await MovieService.getMovies();
       return apiResponse(movies, 'success', 'Lấy danh sách phim thành công!', 200, request);
     }
@@ -145,6 +148,19 @@ export const POST: APIRoute = async ({ request }) => {
         return apiResponse(null, 'error', 'Thiếu slug của phim!', 400, request);
       }
 
+      // Preserve existing views if not explicitly provided (avoid reset to 0 on every save)
+      let existingViews = 0;
+      try {
+        const { data: existing } = await supabase
+          .from('movies')
+          .select('views')
+          .eq('slug', movieSlug)
+          .maybeSingle();
+        if (existing && typeof existing.views === 'number') {
+          existingViews = existing.views;
+        }
+      } catch (_) {}
+
       // Map trường chuẩn sang cột database
       const moviePayload = {
         title: m.title || m.name || '',
@@ -162,7 +178,7 @@ export const POST: APIRoute = async ({ request }) => {
         quality: m.quality || 'FHD',
         lang: m.lang || 'Vietsub',
         imdb_score: Number(m.imdbScore || m.imdb_score) || 8.0,
-        views: Number(m.views) || Number(m.view) || Math.floor(Math.random() * 4000) + 1000,
+        views: Number(m.views) || Number(m.view) || existingViews || 0,
         country: m.country || m.country_name || m.category || m.broadcast_at || 'Khác',
         genres: Array.isArray(m.genres) ? m.genres : [],
         actors: Array.isArray(m.actors) ? m.actors : (Array.isArray(m.actor) ? m.actor : []),

@@ -750,7 +750,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     // Load list local crawled movies & dictionaries from database
     async function loadExistingMoviesDict() {
       try {
-        const res = await fetch('/api/admin/movie-action?action=list');
+        const res = await fetch('/api/admin/movie-action?action=list&_t=' + Date.now());
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (data.status !== 'success' || !data.data) {
@@ -771,7 +771,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           if (count === 0) {
             count = (m.type === 'movie' || m.type === 'single') ? 1 : (m.episodeCurrent ? parseInt(m.episodeCurrent) || 1 : 1);
           }
-          existingMoviesMap[m.slug] = count;
+          // Film đã full/hoàn thành thì set count cao để tránh hiện "có tập mới"
+          const epCur = String(m.episodeCurrent || '').toLowerCase();
+          const epTot = String(m.episodeTotal || '').toLowerCase();
+          const isFull = m.status === 'completed' || epCur === 'full' || epTot === 'full' || epCur.includes('hoàn tất');
+          existingMoviesMap[m.slug] = isFull ? 99999 : count;
         });
       } catch (e) {
         console.error('Error fetching dynamic movies:', e);
@@ -978,7 +982,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           items = responseData.data?.items || [];
           cdnDomain = responseData.data?.pathImage || 'https://phimimg.com';
         } else if (crawlSource === 'vsmov') {
-          items = responseData.data?.items || [];
+          items = responseData.items || [];
           cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://vsmov.com';
         } else {
           items = responseData.data?.items || [];
@@ -1050,6 +1054,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         // Check if API has newer episodes than DB
         const hasNewEpisodes = isAlreadyInDb && (apiEpNum > localCount || (episodeCurrent.toLowerCase().includes('full') && localCount < 1));
         const addedEpsCount = Math.max(1, apiEpNum - localCount);
+        const isFullFilm = localCount > 9999;
+        const displayCount = isFullFilm ? '∞' : localCount;
 
         // Show checkbox if overwrite is checked, OR if not in DB, OR if has new episodes
         const showCheckbox = isOverwrite || !isAlreadyInDb || hasNewEpisodes;
@@ -1058,11 +1064,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         if (isAlreadyInDb) {
           if (hasNewEpisodes) {
             statusHtml = `
-              <span class="text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded text-[10px] font-bold inline-block">✓ Đã cào (${localCount} tập)</span>
+              <span class="text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded text-[10px] font-bold inline-block">✓ Đã cào (${displayCount} tập)</span>
               <span class="text-amber-400 font-bold text-[10px] block mt-1 animate-pulse">🔥 Có +${addedEpsCount} tập mới! (${episodeCurrent})</span>
             `;
           } else {
-            statusHtml = `<span class="text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded text-[10px] font-bold">✓ Đã cào (${localCount} tập)</span>`;
+            statusHtml = `<span class="text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded text-[10px] font-bold">${isFullFilm ? '✓ Hoàn tất' : `✓ Đã cào (${displayCount} tập)`}</span>`;
           }
         } else {
           statusHtml = '<span class="text-zinc-500 bg-zinc-950 border border-glass-stroke px-1.5 py-0.5 rounded text-[10px]">Chưa cào</span>';
@@ -1124,6 +1130,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       const checkboxes = document.querySelectorAll('.item-checkbox');
       checkboxes.forEach(cb => {
         if (checked) {
+          // Nếu không ghi đè, bỏ qua film đã cào đầy đủ (data-crawled="true")
+          // Film có tập mới (data-crawled="false") vẫn được chọn
           if (!isOverwrite && cb.getAttribute('data-crawled') === 'true') {
             cb.checked = false;
             return;

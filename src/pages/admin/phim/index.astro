@@ -305,16 +305,17 @@ const staticMovies = await MovieService.getMovies();
               const xx = format2Digits(m.episodeCurrent);
               const yy = format2Digits(m.episodeTotal);
               
-              if (xx.toLowerCase() === 'full' || xx.toLowerCase() === 'hoàn tất') {
+              if (m.status === 'completed' || xx.toLowerCase() === 'full' || xx.toLowerCase() === 'hoàn tất' || yy.toLowerCase() === 'full') {
                 statusText = 'Hoàn tất';
-              } else if (xx.includes('/') || xx.toLowerCase().includes('hoàn tất') || xx.toLowerCase().includes('full')) {
+                statusBg = 'bg-emerald-500';
+              } else if (xx.includes('/') || xx.toLowerCase().includes('full')) {
                 statusText = xx.startsWith('Tập') || xx.startsWith('tập') ? xx : `Tập ${xx}`;
               } else {
                 statusText = `Tập ${xx}/${yy}`;
-              }
-              
-              if (m.status === 'completed' || xx.toLowerCase().includes('hoàn tất') || xx.toLowerCase() === 'full') {
-                statusBg = 'bg-emerald-500';
+                if (xx.toLowerCase() === yy.toLowerCase() && yy !== '??') {
+                  statusText = 'Hoàn tất';
+                  statusBg = 'bg-emerald-500';
+                }
               }
             }
 

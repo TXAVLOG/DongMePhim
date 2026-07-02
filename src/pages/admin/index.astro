@@ -3,6 +3,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 import { MovieService } from '@services/MovieService';
 import { supabase } from '@lib/supabase';
 
+// Luôn clear cache cho dashboard admin để hiển thị số liệu mới nhất
+MovieService.clearCache();
 const staticMovies = await MovieService.getMovies();
 
 // 1. Movies Stats
@@ -399,9 +401,16 @@ const brokenDiff = 0;
               statusBg = 'bg-emerald-500';
             } else {
               let epNum = m.episodeCurrent || '1';
+              let epTotal = m.episodeTotal || '';
               epNum = String(epNum).trim().replace(/^[tT]ập\s+/, '');
-              statusText = m.status === 'completed' ? 'Completed' : `Ongoing (Tập ${epNum})`;
-              statusBg = m.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500';
+              const isFull = epNum.toLowerCase() === 'full' || epNum.toLowerCase() === 'hoàn tất';
+              if (m.status === 'completed' || isFull || (epTotal && epNum === epTotal)) {
+                statusText = 'Hoàn tất';
+                statusBg = 'bg-emerald-500';
+              } else {
+                statusText = `Ongoing (Tập ${epNum})`;
+                statusBg = 'bg-amber-500';
+              }
             }
 
             const isStatic = !crawledList.some(c => c.id === m.id);
