@@ -2039,6 +2039,34 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
       window.addEventListener('keydown', handleGlobalKeyDown, true);
 
+      const injectRangeHighlights = () => {
+        const container = art.template.$container;
+        if (!container) return;
+        const progressBar = container.querySelector('.art-progress') as HTMLElement;
+        if (!progressBar) return;
+        const duration = art.duration;
+        if (!duration || duration <= 0) return;
+
+        progressBar.querySelectorAll('.txa-range-highlight').forEach(el => el.remove());
+
+        if (timeIntroStart > 0 && timeIntroEnd > 0 && timeIntroEnd > timeIntroStart && timeIntroEnd <= duration) {
+          const left = (timeIntroStart / duration) * 100;
+          const w = ((timeIntroEnd - timeIntroStart) / duration) * 100;
+          const el = document.createElement('div');
+          el.className = 'txa-range-highlight txa-range-highlight-intro';
+          el.style.cssText = `position:absolute;left:${left}%;width:${w}%;`;
+          progressBar.appendChild(el);
+        }
+        if (timeOutroStart > 0 && timeOutroStart < duration) {
+          const left = (timeOutroStart / duration) * 100;
+          const w = ((duration - timeOutroStart) / duration) * 100;
+          const el = document.createElement('div');
+          el.className = 'txa-range-highlight txa-range-highlight-outro';
+          el.style.cssText = `position:absolute;left:${left}%;width:${w}%;`;
+          progressBar.appendChild(el);
+        }
+      };
+
       art.on('ready', () => {
         (art as any).isFocus = true;
 
@@ -2047,6 +2075,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         if (portalEl) {
           setPortalContainer(portalEl);
         }
+
+        injectRangeHighlights();
 
         if (currentTime > 0) {
           art.currentTime = currentTime;
@@ -2372,32 +2402,47 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         .art-fullscreen .art-layer-txa-watermark-fixed .txa-watermark-wrapper {
           padding: 6px 14px !important;
         }
+        .art-control-progress .txa-range-highlight {
+          height: 100% !important;
+          top: 0 !important;
+          border-radius: 3px !important;
+          pointer-events: none !important;
+          z-index: 3 !important;
+        }
+        .art-control-progress .txa-range-highlight-intro {
+          background: rgba(30, 136, 229, 0.35) !important;
+          box-shadow: inset 0 0 8px rgba(30, 136, 229, 0.2) !important;
+          border: 1px solid rgba(30, 136, 229, 0.3) !important;
+        }
+        .art-control-progress .txa-range-highlight-outro {
+          background: rgba(239, 68, 68, 0.35) !important;
+          box-shadow: inset 0 0 8px rgba(239, 68, 68, 0.2) !important;
+          border: 1px solid rgba(239, 68, 68, 0.3) !important;
+        }
         .art-control-progress .art-progress-highlight {
-          width: 10px !important;
-          height: 10px !important;
-          border-radius: 50% !important;
-          margin-top: -3px !important;
-          box-shadow: 0 0 12px rgba(30, 136, 229, 0.8), 0 0 4px rgba(30, 136, 229, 0.6) !important;
-          border: 2px solid rgba(255, 255, 255, 0.6) !important;
-          background: radial-gradient(circle, #60a5fa, #1e88e5) !important;
+          width: 6px !important;
+          height: 16px !important;
+          border-radius: 3px !important;
+          margin-top: -6px !important;
+          box-shadow: 0 0 14px rgba(30, 136, 229, 0.9), 0 0 4px rgba(30, 136, 229, 0.6) !important;
+          border: 1px solid rgba(255, 255, 255, 0.5) !important;
+          background: #60a5fa !important;
           z-index: 10 !important;
-          transition: transform 0.15s ease !important;
         }
         .art-control-progress .art-progress-highlight:hover {
-          transform: scale(1.5) !important;
+          transform: scaleY(1.5) !important;
         }
         .art-control-progress .art-progress-highlight:nth-child(2) {
-          box-shadow: 0 0 12px rgba(251, 191, 36, 0.8), 0 0 4px rgba(251, 191, 36, 0.6) !important;
-          background: radial-gradient(circle, #fbbf24, #f59e0b) !important;
+          box-shadow: 0 0 14px rgba(251, 191, 36, 0.9), 0 0 4px rgba(251, 191, 36, 0.6) !important;
+          background: #fbbf24 !important;
         }
         .art-control-progress .art-progress-highlight:nth-child(3) {
-          box-shadow: 0 0 12px rgba(239, 68, 68, 0.8), 0 0 4px rgba(239, 68, 68, 0.6) !important;
-          background: radial-gradient(circle, #f87171, #ef4444) !important;
+          box-shadow: 0 0 14px rgba(239, 68, 68, 0.9), 0 0 4px rgba(239, 68, 68, 0.6) !important;
+          background: #f87171 !important;
         }
         .art-control-progress:hover .art-progress-highlight {
-          width: 14px !important;
-          height: 14px !important;
-          margin-top: -5px !important;
+          height: 20px !important;
+          margin-top: -9px !important;
         }
         @keyframes switchSlideUp {
           0% { opacity: 0; transform: translateY(10px); }
@@ -2451,22 +2496,32 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           {typeof window !== 'undefined' && window.innerWidth < 768 ? (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-[#0B0A0C]/95 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3 shadow-2xl pointer-events-auto">
               <div className="text-white text-xs font-bold">Tập tiếp theo: {nextEpisode.episodeName}</div>
-              <div className="text-white/60 text-xs">Đổi sau {countdown}s</div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-zinc-400 text-[10px]">Tự động sau</span>
+                <span className="text-white text-sm font-black min-w-[18px] text-center tabular-nums">{countdown}</span>
+              </div>
             </div>
           ) : (
-            <div className="absolute bottom-16 right-4 bg-[#0B0A0C]/95 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl w-[280px] pointer-events-auto">
-              <div className="flex gap-3">
-                <div className="relative w-14 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800">
+            <div className="absolute bottom-20 right-6 bg-[#0B0A0C]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl w-[340px] pointer-events-auto">
+              <div className="flex gap-4">
+                <div className="relative w-20 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-zinc-800 shadow-lg">
                   <img src={nextEpisode.thumbnail} alt={nextEpisode.episodeName} className="w-full h-full object-cover" />
-                  <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-[7px] font-bold px-1 py-0.5 rounded">{nextEpisode.episodeName}</div>
+                  <div className="absolute bottom-1.5 left-1.5 bg-blue-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md shadow">{nextEpisode.episodeName}</div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-white text-[11px] font-bold truncate">{nextEpisode.title}</h4>
-                  <p className="text-zinc-400 text-[10px] truncate mt-0.5">{nextEpisode.episodeName}</p>
-                  <div className="text-zinc-500 text-[9px] mt-1">Chuyển sau <span className="text-blue-400 font-bold">{countdown}s</span></div>
-                  <div className="flex gap-1.5 mt-2">
-                    <button onClick={() => { if (countdownRef.current) clearInterval(countdownRef.current); setShowSwitchingToast(true); if (onNextEpisode) onNextEpisode(); setTimeout(() => setShowSwitchingToast(false), 2500); }} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold py-1.5 px-2 rounded-lg transition-colors cursor-pointer border-none">Chuyển ngay</button>
-                    <button onClick={() => { if (countdownRef.current) clearInterval(countdownRef.current); setShowNextEpisodePopup(false); }} className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white text-[9px] font-bold py-1.5 px-2 rounded-lg transition-colors cursor-pointer border-none">Hủy</button>
+                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-white text-sm font-bold truncate">{nextEpisode.title}</h4>
+                    <p className="text-zinc-400 text-[11px] truncate mt-0.5">{nextEpisode.episodeName}</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-zinc-500 text-[10px]">Tự động sau</span>
+                      <span className="text-white text-2xl font-black min-w-[28px] text-center tabular-nums leading-none">{countdown}</span>
+                    </div>
+                    <div className="flex gap-2 mt-2.5">
+                      <button onClick={() => { if (countdownRef.current) clearInterval(countdownRef.current); setShowSwitchingToast(true); if (onNextEpisode) onNextEpisode(); setTimeout(() => setShowSwitchingToast(false), 2500); }} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-2 px-3 rounded-xl transition-all cursor-pointer border-none active:scale-95">Chuyển ngay</button>
+                      <button onClick={() => { if (countdownRef.current) clearInterval(countdownRef.current); setShowNextEpisodePopup(false); }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold py-2 px-3 rounded-xl transition-all cursor-pointer border-none active:scale-95">Bỏ qua</button>
+                    </div>
                   </div>
                 </div>
               </div>
