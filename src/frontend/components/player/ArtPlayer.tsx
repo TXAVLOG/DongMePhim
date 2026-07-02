@@ -1496,6 +1496,30 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               hls.loadSource(url);
               hls.attachMedia(video);
 
+              // Bắt sự kiện lỗi Hls.js để tự động phục hồi luồng phát
+              hls.on(HlsClass.Events.ERROR, (event: any, data: any) => {
+                if (data.fatal) {
+                  switch (data.type) {
+                    case HlsClass.ErrorTypes.NETWORK_ERROR:
+                      console.warn('HLS Network error encountered, attempting recovery...', data);
+                      hls.startLoad();
+                      break;
+                    case HlsClass.ErrorTypes.MEDIA_ERROR:
+                      console.warn('HLS Media error encountered, attempting recovery...', data);
+                      hls.recoverMediaError();
+                      break;
+                    default:
+                      console.error('Fatal HLS error, destroying player instance:', data);
+                      try {
+                        art.destroy();
+                      } catch (e) {}
+                      break;
+                  }
+                } else {
+                  console.warn('Non-fatal HLS error:', data);
+                }
+              });
+
               // Removed video.src override since blob URLs are safe and overriding .src breaks hls.js internals
               
               hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
@@ -2135,7 +2159,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           if (!script) {
             script = document.createElement('script');
             script.id = 'hls-js-script';
-            script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js';
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.8/hls.min.js';
             script.async = true;
             document.head.appendChild(script);
           }

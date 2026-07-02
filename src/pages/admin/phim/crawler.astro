@@ -37,6 +37,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nguồn dữ liệu</label>
             <select id="crawlSource" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
               <option value="kkphim">KKPhim API (phimapi.com)</option>
+              <option value="vsmov">VSMOV API (vsmov.com)</option>
               <option value="tmdb">TMDB API (themoviedb.org)</option>
             </select>
           </div>
@@ -950,6 +951,12 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           const res = await fetch(searchUrl);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           responseData = await res.json();
+        } else if (crawlSource === 'vsmov') {
+          // Use VSMOV API
+          searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(keyword)}`;
+          const res = await fetch(searchUrl);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          responseData = await res.json();
         } else {
           // Use KKPhim API
           searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`;
@@ -970,6 +977,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         } else if (searchMode === 'actor') {
           items = responseData.data?.items || [];
           cdnDomain = responseData.data?.pathImage || 'https://phimimg.com';
+        } else if (crawlSource === 'vsmov') {
+          items = responseData.data?.items || [];
+          cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://vsmov.com';
         } else {
           items = responseData.data?.items || [];
           cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://phimimg.com';
@@ -1290,9 +1300,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     };
 
     // MAP KKPHIM DATA HELPER
-    function mapKKPhimToMovieDetail(data) {
+    function mapKKPhimToMovieDetail(data, source = 'kkphim') {
       const m = data.movie;
-      const cdnDomain = "https://phimimg.com";
+      const defaultCdn = source === 'vsmov' ? 'https://vsmov.com' : 'https://phimimg.com';
+      const cdnDomain = data.pathImage || data.APP_DOMAIN_CDN_IMAGE || defaultCdn;
       
       let posterUrl = m.poster_url || '';
       if (posterUrl && !posterUrl.startsWith('http')) {
@@ -1632,8 +1643,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               throw new Error('Không tìm thấy thông tin TMDB cho phim này. Vui lòng tìm kiếm lại từ TMDB.');
             }
           } else {
-            // Crawl from KKPhim API
-            const detailRes = await fetch(`https://phimapi.com/phim/${slug}`);
+            // Crawl from KKPhim API or VSMOV API
+            const isVsmov = crawlSource === 'vsmov';
+            const detailUrl = isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`;
+            const detailRes = await fetch(detailUrl);
             if (!detailRes.ok) throw new Error(`HTTP ${detailRes.status}`);
             
             let detailData;
@@ -1663,9 +1676,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 continue;
               }
 
-              movieDetailObj = mapKKPhimToMovieDetail(detailData);
+              movieDetailObj = mapKKPhimToMovieDetail(detailData, crawlSource);
               movieDetailObj.updatedAt = new Date().toISOString();
-              movieDetailObj.source = 'kkphim';
+              movieDetailObj.source = isVsmov ? 'vsmov' : 'kkphim';
             
               // Fetch TMDB images and override if available
               if (detailData.movie.tmdb && detailData.movie.tmdb.id) {
@@ -1880,10 +1893,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
         addLog(`⏳ Đang tải danh sách phim từ trang ${startPage} đến ${endPage}...`);
         const slugs = [];
+        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
         
         for (let p = startPage; p <= endPage; p++) {
           try {
-            const res = await fetch(`https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}`);
+            const batchUrl = crawlSource === 'vsmov'
+              ? `https://vsmov.com/api/phim-moi-cap-nhat?page=${p}`
+              : `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}`;
+            const res = await fetch(batchUrl);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             
@@ -1995,7 +2012,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             addLog(`⏳ Đang tải phim Quốc gia "${country}": Từ trang ${startPage} đến ${endPage}...`);
             for (let p = startPage; p <= endPage; p++) {
               try {
-                const res = await fetch(`https://phimapi.com/v1/api/quoc-gia/${country}?page=${p}`);
+                const countryUrl = crawlSource === 'vsmov'
+                  ? `https://vsmov.com/api/quoc-gia/${country}?page=${p}`
+                  : `https://phimapi.com/v1/api/quoc-gia/${country}?page=${p}`;
+                const res = await fetch(countryUrl);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 if (data && data.data && Array.isArray(data.data.items)) {
@@ -2013,7 +2033,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             addLog(`⏳ Đang tải phim Thể loại "${genre}": Từ trang ${startPage} đến ${endPage}...`);
             for (let p = startPage; p <= endPage; p++) {
               try {
-                const res = await fetch(`https://phimapi.com/v1/api/the-loai/${genre}?page=${p}`);
+                const genreUrl = crawlSource === 'vsmov'
+                  ? `https://vsmov.com/api/the-loai/${genre}?page=${p}`
+                  : `https://phimapi.com/v1/api/the-loai/${genre}?page=${p}`;
+                const res = await fetch(genreUrl);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 if (data && data.data && Array.isArray(data.data.items)) {
@@ -2045,7 +2068,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       const performCrawlAll = async () => {
         addLog('⏳ Đang lấy dữ liệu trang 1 để ước tính toàn bộ kho phim...');
         try {
-          const res = await fetch('https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1');
+          const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
+          const batchUrl1 = crawlSource === 'vsmov'
+            ? 'https://vsmov.com/api/phim-moi-cap-nhat?page=1'
+            : 'https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1';
+          const res = await fetch(batchUrl1);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
           
@@ -2056,7 +2083,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           for (let p = 1; p <= totalPages; p++) {
             if (shouldStop) break;
             try {
-              const pageRes = await fetch(`https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}`);
+              const batchUrl = crawlSource === 'vsmov'
+                ? `https://vsmov.com/api/phim-moi-cap-nhat?page=${p}`
+                : `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}`;
+              const pageRes = await fetch(batchUrl);
               const pageData = await pageRes.json();
               if (pageData && Array.isArray(pageData.items)) {
                 pageData.items.forEach(item => {

@@ -379,11 +379,15 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               throw new Error(tmdbData.message || "Không thể lấy dữ liệu từ TMDB");
             }
           } else {
-            // Fetch from KKPhim (existing logic)
+            // Fetch from KKPhim or VSMOV
             let slug = urlInput;
+            let isVsmov = false;
             try {
               if (urlInput.startsWith("http://") || urlInput.startsWith("https://")) {
                 const url = new URL(urlInput);
+                if (url.hostname.includes('vsmov.com')) {
+                  isVsmov = true;
+                }
                 const pathParts = url.pathname.split("/");
                 const phimIdx = pathParts.indexOf("phim");
                 if (phimIdx !== -1 && pathParts[phimIdx + 1]) {
@@ -396,7 +400,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               console.error(e);
             }
 
-            const res = await fetch(`https://phimapi.com/phim/${slug}`);
+            const apiEndpoint = isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`;
+            const res = await fetch(apiEndpoint);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
 
@@ -414,11 +419,11 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               document.getElementById("movieType").value = typeVal;
               document.getElementById("movieStatus").value = m.status === "completed" ? "completed" : "ongoing";
 
-              const cdn = "https://phimimg.com";
+              const cdn = isVsmov ? "https://vsmov.com" : "https://phimimg.com";
               let poster = m.poster_url || "";
-              if (poster && !poster.startsWith("http")) poster = `${cdn}/uploads/movies/${poster.replace(/^\/?uploads\/movies\//, "")}`;
+              if (poster && !poster.startsWith("http")) poster = `${cdn}/${poster.replace(/^\//, "")}`;
               let banner = m.thumb_url || m.poster_url || "";
-              if (banner && !banner.startsWith("http")) banner = `${cdn}/uploads/movies/${banner.replace(/^\/?uploads\/movies\//, "")}`;
+              if (banner && !banner.startsWith("http")) banner = `${cdn}/${banner.replace(/^\//, "")}`;
 
               document.getElementById("moviePosterUrl").value = poster;
               document.getElementById("movieBannerUrl").value = banner;

@@ -458,8 +458,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
     <!-- Font Awesome CDN -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
     
-    <!-- ArtPlayer Premium CSS (CDN) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer@5.4.0/dist/artplayer.css" />
+
 
     {settings.ads?.google_ads_enable && settings.ads?.google_ads_client_id && !currentPath.startsWith('/xem/') && (
       <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${settings.ads.google_ads_client_id}`} crossorigin="anonymous"></script>

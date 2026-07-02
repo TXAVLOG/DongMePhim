@@ -434,9 +434,10 @@ export function mergeStoredEpisodesConfig(movieSlug: string, episodes: any[]): a
   });
 }
 
-export function mapKKPhimToMovieDetail(data: any): MovieDetail {
+export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): MovieDetail {
   const m = data.movie;
-  const cdnDomain = data.pathImage || data.APP_DOMAIN_CDN_IMAGE || "https://phimimg.com";
+  const defaultCdn = source === 'vsmov' ? 'https://vsmov.com' : 'https://phimimg.com';
+  const cdnDomain = data.pathImage || data.APP_DOMAIN_CDN_IMAGE || defaultCdn;
   
   let posterUrl = m.poster_url || '';
   if (posterUrl && !posterUrl.startsWith('http')) {
@@ -833,13 +834,18 @@ export class LocalMovieProvider implements IMovieProvider {
       };
     }
 
-    // 3. Fallback: Fetch directly from KKPhim API (supports crawled movies dynamically in SSR)
+    // 3. Fallback: Fetch directly from KKPhim API or VSMOV API (supports crawled movies dynamically in SSR)
     try {
-      const res = await fetch(`https://phimapi.com/phim/${slug}`);
+      let source = 'kkphim';
+      let res = await fetch(`https://phimapi.com/phim/${slug}`);
+      if (!res.ok) {
+        res = await fetch(`https://vsmov.com/api/phim/${slug}`);
+        source = 'vsmov';
+      }
       if (res.ok) {
         const data = await res.json() as any;
         if (data && data.status && data.movie) {
-          const detail = mapKKPhimToMovieDetail(data);
+          const detail = mapKKPhimToMovieDetail(data, source);
           
           if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
             try {
@@ -859,7 +865,7 @@ export class LocalMovieProvider implements IMovieProvider {
         }
       }
     } catch (e) {
-      console.warn(`Cannot fetch movie detail from KKPhim API for slug: ${slug}`, e);
+      console.warn(`Cannot fetch movie detail from API for slug: ${slug}`, e);
     }
 
     return null;

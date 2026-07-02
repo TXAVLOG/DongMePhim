@@ -450,8 +450,10 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               throw new Error(tmdbData.message || "Không thể lấy dữ liệu từ TMDB");
             }
           } else {
-            // Sync from KKPhim (default)
-            const res = await fetch(`https://phimapi.com/phim/${editSlug}`);
+            // Sync from KKPhim or VSMOV based on movieData.source
+            const isVsmov = movieData.source === 'vsmov';
+            const syncUrl = isVsmov ? `https://vsmov.com/api/phim/${editSlug}` : `https://phimapi.com/phim/${editSlug}`;
+            const res = await fetch(syncUrl);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             data = await res.json();
           }

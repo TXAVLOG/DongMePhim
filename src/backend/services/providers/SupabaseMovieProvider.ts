@@ -266,12 +266,17 @@ export class SupabaseMovieProvider implements IMovieProvider {
         };
       }
 
-      // 3. Fallback gọi API KKPhim
-      const res = await fetch(`https://phimapi.com/phim/${slug}`);
+      // 3. Fallback gọi API KKPhim hoặc VSMOV
+      let source = 'kkphim';
+      let res = await fetch(`https://phimapi.com/phim/${slug}`);
+      if (!res.ok) {
+        res = await fetch(`https://vsmov.com/api/phim/${slug}`);
+        source = 'vsmov';
+      }
       if (res.ok) {
         const data = await res.json() as any;
         if (data && data.status && data.movie) {
-          const detail = mapKKPhimToMovieDetail(data);
+          const detail = mapKKPhimToMovieDetail(data, source);
           if (detail) {
             // Auto-cache to Supabase database so it is persistent and included in sitemap
             try {
@@ -299,7 +304,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
                 directors: detail.directors || [],
                 trailer_url: detail.trailerUrl || '',
                 episodes: detail.episodes || [],
-                source: 'kkphim',
+                source: source,
                 updated_at: new Date().toISOString()
               };
               await supabase.from('movies').insert(insertData);
@@ -433,14 +438,38 @@ export class SupabaseMovieProvider implements IMovieProvider {
         }));
       }
 
-      // Fallback KKPhim API search
-      const res = await fetch(`https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(query)}&limit=10`);
-      if (res.ok) {
-        const data = await res.json() as any;
-        if (data && data.status === "success" && data.data && Array.isArray(data.data.items)) {
-          const cdnDomain = data.data.APP_DOMAIN_CDN_IMAGE || "https://phimimg.com";
-          return data.data.items.map((item: any) => mapKKPhimSearchItemToMovie(item, cdnDomain));
+      // Fallback KKPhim hoặc VSMOV API search
+      let source = 'kkphim';
+      let res = await fetch(`https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(query)}&limit=10`);
+      let data = res.ok ? await res.json() as any : null;
+      let items = data && data.status === "success" && data.data && Array.isArray(data.data.items) ? data.data.items : [];
+      let cdnDomain = data?.data?.APP_DOMAIN_CDN_IMAGE || "https://phimimg.com";
+
+      if (items.length === 0) {
+        const vsmovRes = await fetch(`https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(query)}`);
+        if (vsmovRes.ok) {
+          const vsmovData = await vsmovRes.json() as any;
+          if (vsmovData && vsmovData.status === "success" && vsmovData.data && Array.isArray(vsmovData.data.items)) {
+            items = vsmovData.data.items;
+            cdnDomain = vsmovData.data.APP_DOMAIN_CDN_IMAGE || "https://vsmov.com";
+            source = 'vsmov';
+          }
         }
+      }
+
+      if (items.length > 0) {
+        return items.map((item: any) => {
+          const movie = mapKKPhimSearchItemToMovie(item, cdnDomain);
+          if (source === 'vsmov') {
+            if (movie.posterUrl && !movie.posterUrl.startsWith('http')) {
+              movie.posterUrl = `https://vsmov.com/${movie.posterUrl.replace(/^\//, '')}`;
+            }
+            if (movie.bannerUrl && !movie.bannerUrl.startsWith('http')) {
+              movie.bannerUrl = `https://vsmov.com/${movie.bannerUrl.replace(/^\//, '')}`;
+            }
+          }
+          return movie;
+        });
       }
     } catch (e) {
       console.warn('Lỗi khi tìm kiếm phim trên Supabase:', e);

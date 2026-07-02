@@ -16,7 +16,7 @@ export const GET: APIRoute = async ({ request }) => {
     // 1. Fetch all ongoing movies from Supabase that have source = 'kkphim' or slug exists
     const { data: movies, error: fetchErr } = await supabase
       .from('movies')
-      .select('id, title, slug, episodes, poster_url, episode_current')
+      .select('id, title, slug, episodes, poster_url, episode_current, source')
       .eq('status', 'ongoing')
       .limit(20); // Limit to 20 per cron run to avoid timeouts
 
@@ -35,14 +35,15 @@ export const GET: APIRoute = async ({ request }) => {
     for (const movie of movies) {
       try {
         const slug = movie.slug;
-        const res = await fetch(`https://phimapi.com/phim/${slug}`);
+        const isVsmov = movie.source === 'vsmov';
+        const res = await fetch(isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`);
         if (!res.ok) continue;
 
         const data = await res.json() as any;
         if (!data || !data.movie || !data.episodes) continue;
 
         // Parse new episodes list
-        const detailedMovie = mapKKPhimToMovieDetail(data);
+        const detailedMovie = mapKKPhimToMovieDetail(data, movie.source || 'kkphim');
         if (!detailedMovie || !detailedMovie.episodes) continue;
 
         const newEpisodes = detailedMovie.episodes;
