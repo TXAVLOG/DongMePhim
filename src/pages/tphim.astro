@@ -1598,7 +1598,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       });
 
       document.querySelectorAll('.top10-swiper').forEach(el => {
-        new Swiper(el, {
+        const swiper = new Swiper(el, {
           slidesPerView: 2,
           spaceBetween: 16,
           grabCursor: true,
@@ -1619,6 +1619,22 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             1024: {
               slidesPerView: 5,
               spaceBetween: 24,
+            },
+          },
+          on: {
+            touchStart: function () {
+              this.el.classList.add('is-dragging');
+              const portal = document.getElementById('shared-hover-card');
+              if (portal) {
+                portal.classList.remove('opacity-100', 'scale-100');
+                portal.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+              }
+            },
+            touchEnd: function () {
+              this.el.classList.remove('is-dragging');
+            },
+            touchMove: function () {
+              this.el.classList.add('is-dragging');
             },
           },
         });
@@ -2453,15 +2469,36 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     // Initialize Swiper for Top 10
     try {
       if (typeof window.Swiper !== 'undefined') {
-        new window.Swiper('.top10-swiper', {
-          slidesPerView: 2,
-          spaceBetween: 16,
-          breakpoints: {
-            640: { slidesPerView: 3, spaceBetween: 20 },
-            768: { slidesPerView: 4, spaceBetween: 20 },
-            1024: { slidesPerView: 5, spaceBetween: 24 },
-            1280: { slidesPerView: 6, spaceBetween: 24 },
-          }
+        document.querySelectorAll('.top10-swiper').forEach(el => {
+          if (el.swiper) return;
+          new window.Swiper(el, {
+            slidesPerView: 2,
+            spaceBetween: 16,
+            grabCursor: true,
+            simulateTouch: true,
+            breakpoints: {
+              640: { slidesPerView: 3, spaceBetween: 20 },
+              768: { slidesPerView: 4, spaceBetween: 20 },
+              1024: { slidesPerView: 5, spaceBetween: 24 },
+              1280: { slidesPerView: 6, spaceBetween: 24 },
+            },
+            on: {
+              touchStart: function () {
+                this.el.classList.add('is-dragging');
+                const portal = document.getElementById('shared-hover-card');
+                if (portal) {
+                  portal.classList.remove('opacity-100', 'scale-100');
+                  portal.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+                }
+              },
+              touchEnd: function () {
+                this.el.classList.remove('is-dragging');
+              },
+              touchMove: function () {
+                this.el.classList.add('is-dragging');
+              },
+            },
+          });
         });
       }
     } catch(swiperErr) {
@@ -2593,6 +2630,10 @@ const getMovieProgressBadgesSSR = (movie: any) => {
   .top10-item {
     position: relative;
     transition: all 0.3s;
+    cursor: grab;
+  }
+  .top10-item:active {
+    cursor: grabbing;
   }
 
   .top10-thumbnail {
@@ -2615,8 +2656,18 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     clip-path: polygon(5.761% 100%, 94.239% 100%, 94.239% 100%, 95.174% 99.95%, 96.06% 99.803%, 96.887% 99.569%, 97.642% 99.256%, 98.313% 98.87%, 98.889% 98.421%, 99.357% 97.915%, 99.706% 97.362%, 99.925% 96.768%, 100% 96.142%, 100% 3.858%, 100% 3.858%, 99.913% 3.185%, 99.662% 2.552%, 99.263% 1.968%, 98.731% 1.442%, 98.08% 0.984%, 97.328% 0.602%, 96.488% 0.306%, 95.577% 0.105%, 94.609% 0.008%, 93.6% 0.024%, 5.121% 6.625%, 5.121% 6.625%, 4.269% 6.732%, 3.468% 6.919%, 2.728% 7.178%, 2.058% 7.503%, 1.467% 7.887%, 0.962% 8.323%, 0.555% 8.805%, 0.253% 9.326%, 0.065% 9.88%, 0px 10.459%, 0px 96.142%, 0px 96.142%, 0.075% 96.768%, 0.294% 97.362%, 0.643% 97.915%, 1.111% 98.421%, 1.687% 98.87%, 2.358% 99.256%, 3.113% 99.569%, 3.94% 99.803%, 4.826% 99.95%, 5.761% 100%);
   }
 
-  .top10-item:hover .top10-thumbnail img {
-    transform: scale(1.05);
+  @media (hover: hover) {
+    .top10-item:hover .top10-thumbnail img {
+      transform: scale(1.05);
+    }
+  }
+  .top10-swiper.is-dragging .top10-item:hover .top10-thumbnail img,
+  .top10-swiper.swiper-slide-dragging .top10-item .top10-thumbnail img {
+    transform: none !important;
+    transition: none !important;
+  }
+  .top10-swiper.is-dragging .top10-item {
+    cursor: grabbing;
   }
 
   .top10-info {
