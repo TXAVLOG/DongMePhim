@@ -1937,19 +1937,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             art.on('destroy', () => observer.disconnect());
           }
 
-          // 5. Intercept XMLHttpRequest to hide m3u8 URLs from extension sniffers
-          const _xhrOpen = XMLHttpRequest.prototype.open;
-          const blockedExtensions = ['m3u8', '.ts', '.key'];
-          XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, method: string, reqUrl: string | URL, async?: boolean, user?: string | null, password?: string | null) {
-            const urlStr = String(reqUrl);
-            if (blockedExtensions.some(ext => urlStr.includes(ext))) {
-              const stack = new Error().stack || '';
-              if (stack.includes('extension') || stack.includes('chrome-extension') || stack.includes('moz-extension')) {
-                return; // silently block
-              }
-            }
-            return _xhrOpen.call(this, method, reqUrl, async ?? true, user, password);
-          };
+          // 5. Intercept XMLHttpRequest removed since checking stack traces for extensions breaks playback on browsers with active extensions
 
           // 6. Wrap navigator.mediaDevices to prevent screen capture
           if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
