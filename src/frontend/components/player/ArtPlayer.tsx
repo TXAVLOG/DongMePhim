@@ -2369,6 +2369,33 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         .art-fullscreen .art-layer-txa-watermark-fixed .txa-watermark-wrapper {
           padding: 6px 14px !important;
         }
+        .art-control-progress .art-progress-highlight {
+          width: 10px !important;
+          height: 10px !important;
+          border-radius: 50% !important;
+          margin-top: -3px !important;
+          box-shadow: 0 0 12px rgba(30, 136, 229, 0.8), 0 0 4px rgba(30, 136, 229, 0.6) !important;
+          border: 2px solid rgba(255, 255, 255, 0.6) !important;
+          background: radial-gradient(circle, #60a5fa, #1e88e5) !important;
+          z-index: 10 !important;
+          transition: transform 0.15s ease !important;
+        }
+        .art-control-progress .art-progress-highlight:hover {
+          transform: scale(1.5) !important;
+        }
+        .art-control-progress .art-progress-highlight:nth-child(2) {
+          box-shadow: 0 0 12px rgba(251, 191, 36, 0.8), 0 0 4px rgba(251, 191, 36, 0.6) !important;
+          background: radial-gradient(circle, #fbbf24, #f59e0b) !important;
+        }
+        .art-control-progress .art-progress-highlight:nth-child(3) {
+          box-shadow: 0 0 12px rgba(239, 68, 68, 0.8), 0 0 4px rgba(239, 68, 68, 0.6) !important;
+          background: radial-gradient(circle, #f87171, #ef4444) !important;
+        }
+        .art-control-progress:hover .art-progress-highlight {
+          width: 14px !important;
+          height: 14px !important;
+          margin-top: -5px !important;
+        }
       `}</style>
       {isOffline && (
         <div 
