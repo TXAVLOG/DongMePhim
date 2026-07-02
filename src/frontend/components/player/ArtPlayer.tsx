@@ -1745,6 +1745,29 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
       const art = new Artplayer(artOptions);
 
+      // Error handling for video load failures
+      art.on('error', (error: any) => {
+        console.error('Video player error:', error);
+        if (art.notice) {
+          art.notice.show = 'Không thể tải video. Vui lòng thử lại hoặc chọn server khác.';
+        }
+        if (typeof window !== 'undefined' && (window as any).showGlobalToast) {
+          (window as any).showGlobalToast('Lỗi tải video: Link không khả dụng hoặc đã hết hạn', 'error');
+        }
+      });
+
+      art.on('video:loadstart', () => {
+        console.log('Video loading started');
+      });
+
+      art.on('video:loadedmetadata', () => {
+        console.log('Video metadata loaded');
+      });
+
+      art.on('video:canplay', () => {
+        console.log('Video can play');
+      });
+
       // --- Menu Cài đặt (Gear icon) Tùy chỉnh thay thế toàn bộ mặc định ---
 
       if (qualities && qualities.length > 0) {
