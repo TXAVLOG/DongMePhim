@@ -1492,18 +1492,83 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                 xhrSetup: (xhr: XMLHttpRequest, xhrUrl: string) => {
                   // Do not send custom headers to cross-origin CDN servers to prevent CORS preflight blocking
                 },
+                // Enable worker for better performance and stability
+                enableWorker: true,
+                // Lower max buffer to reduce memory issues with large segments
+                maxBufferLength: 30,
+                maxMaxBufferLength: 60,
+                // Enable progressive loading for faster start
+                progressive: true,
+                // Handle audio codec errors gracefully - if browser doesn't support
+                // EAC-3/AC-3 (Dolby Digital Plus) in MSE, try to recover
+                backBufferLength: 30,
               });
               hls.loadSource(url);
               hls.attachMedia(video);
 
+
               // Recovery attempt tracking to prevent infinite recovery loops
               let mediaErrorRecoveryAttempts = 0;
               const MAX_MEDIA_RECOVERY_ATTEMPTS = 3;
-              let lastRecoveryTime = 0;
-              const RECOVERY_COOLDOWN_MS = 5000; // 5 seconds cooldown between recovery attempts
+              let audioBufferErrorCount = 0;
+              const MAX_AUDIO_BUFFER_ERRORS = 3;
+              let hasReloadedWithoutAudio = false;
 
               // Bắt sự kiện lỗi Hls.js để tự động phục hồi luồng phát
               hls.on(HlsClass.Events.ERROR, (event: any, data: any) => {
+                // Handle audio SourceBuffer errors specifically (EAC-3/DDP codec incompatibility)
+                if (data.details === 'bufferAppendingError' || data.details === 'bufferAppendError') {
+                  if (data.sourceBufferName === 'audio' || (data.error && data.error.message && data.error.message.includes('audio'))) {
+                    audioBufferErrorCount++;
+                    if (audioBufferErrorCount <= 2) {
+                      console.warn(`HLS audio buffer error #${audioBufferErrorCount}, attempting recovery...`);
+                      try { hls.recoverMediaError(); } catch(e) {}
+                      return;
+                    }
+                    if (!hasReloadedWithoutAudio) {
+                      hasReloadedWithoutAudio = true;
+                      console.warn('HLS audio codec incompatible (likely EAC-3/DDP 5.1), reloading without problematic audio...');
+                      try {
+                        hls.destroy();
+                        // Recreate HLS with forced AAC audio codec preference
+                        const hlsRetry = new HlsClass({
+                          enableWorker: true,
+                          maxBufferLength: 30,
+                          maxMaxBufferLength: 60,
+                          progressive: true,
+                          backBufferLength: 30,
+                          // Force AAC audio codec - skip incompatible EAC-3/AC-3
+                          audioCodec: 'mp4a.40.2',
+                        });
+                        hlsRetry.loadSource(url);
+                        hlsRetry.attachMedia(video);
+                        hlsRetry.on(HlsClass.Events.MANIFEST_PARSED, () => {
+                          video.play().catch(() => {});
+                        });
+                        // Suppress further audio errors on retry instance
+                        hlsRetry.on(HlsClass.Events.ERROR, (_evt: any, retryData: any) => {
+                          if (retryData.details === 'bufferAppendingError' || retryData.details === 'bufferAppendError') {
+                            // Silently ignore on retry - audio may just not work with this file
+                            return;
+                          }
+                          if (retryData.fatal) {
+                            console.error('Fatal HLS error on retry:', retryData);
+                            if (retryData.type === HlsClass.ErrorTypes.MEDIA_ERROR) {
+                              hlsRetry.recoverMediaError();
+                            }
+                          }
+                        });
+                        art.on('destroy', () => { try { hlsRetry.destroy(); } catch(e) {} });
+                        art.notice.show = 'Đang tải lại video...';
+                      } catch (e) {
+                        console.error('Failed to reload HLS:', e);
+                      }
+                    }
+                    // After reload attempt, suppress further errors
+                    return;
+                  }
+                }
+
                 if (data.fatal) {
                   switch (data.type) {
                     case HlsClass.ErrorTypes.NETWORK_ERROR:
@@ -1518,10 +1583,19 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                       } else {
                         console.error('HLS Media error recovery failed after max attempts, reloading source...');
                         mediaErrorRecoveryAttempts = 0;
-                        hls.destroy();
-                        const newHls = new HlsClass();
-                        newHls.loadSource(url);
-                        newHls.attachMedia(video);
+                        try {
+                          hls.destroy();
+                          const newHls = new HlsClass({
+                            enableWorker: true,
+                            maxBufferLength: 30,
+                            maxMaxBufferLength: 60,
+                          });
+                          newHls.loadSource(url);
+                          newHls.attachMedia(video);
+                          art.on('destroy', () => { try { newHls.destroy(); } catch(e) {} });
+                        } catch (e) {
+                          console.error('Failed to recreate HLS:', e);
+                        }
                       }
                       break;
                     default:
@@ -1531,22 +1605,11 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
                       } catch (e) {}
                       break;
                   }
+                } else if (data.details === 'internalException') {
+                  // Suppress HLS internal exceptions (e.g. setter errors)
+                  console.debug('Non-fatal HLS internal exception (suppressed)');
                 } else {
-                  // Throttle non-fatal error logging to prevent console spam
-                  const now = Date.now();
-                  if (data.details === 'bufferAppendingError' || data.details === 'bufferAppendError') {
-                    if (now - lastRecoveryTime < RECOVERY_COOLDOWN_MS) {
-                      return; // Skip recovery during cooldown
-                    }
-                    lastRecoveryTime = now;
-                    console.warn('Non-fatal HLS buffer error, attempting recovery...', data.details);
-                    hls.recoverMediaError();
-                  } else if (data.details === 'internalException') {
-                    // Suppress the maxAutoLevel setter error - handled by using autoLevelCapping
-                    console.debug('Non-fatal HLS internal exception (suppressed):', data.details);
-                  } else {
-                    console.warn('Non-fatal HLS error:', data.details);
-                  }
+                  console.debug('Non-fatal HLS error:', data.details);
                 }
               });
 
