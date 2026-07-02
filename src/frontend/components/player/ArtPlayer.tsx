@@ -2185,8 +2185,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             }
           }
 
-          // Show next episode popup when auto next is enabled
-          if (autoNextEpisode && nextEpisode && !popupShownRef.current && now >= timeOutroStart) {
+          // Show next episode popup when auto next is enabled (skip if auto-skip-outro already triggered)
+          if (autoNextEpisode && nextEpisode && !popupShownRef.current && now >= timeOutroStart && !hasAutoSkippedOutro) {
             popupShownRef.current = true;
             setShowNextEpisodePopup(true);
             setCountdown(5);
@@ -2404,9 +2404,20 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         .art-fullscreen .art-layer-txa-watermark-fixed .txa-watermark-wrapper {
           padding: 6px 14px !important;
         }
+        .art-control-progress .art-progress {
+          height: 8px !important;
+          border-radius: 4px !important;
+          transition: height 0.15s ease !important;
+        }
+        .art-mobile .art-control-progress .art-progress {
+          height: 10px !important;
+        }
+        .art-control-progress:hover .art-progress {
+          height: 12px !important;
+        }
         .art-control-progress .txa-range-highlight {
-          height: 300% !important;
-          top: -100% !important;
+          height: 100% !important;
+          top: 0 !important;
           border-radius: 4px !important;
           pointer-events: none !important;
           z-index: 3 !important;
