@@ -1815,6 +1815,23 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const currentServer = servers[serverIndex] || null;
   const currentEpisode = currentServer?.serverData[episodeIndex] || null;
 
+  // Calculate next episode for auto-play
+  const nextEpisode = currentServer && episodeIndex < currentServer.serverData.length - 1
+    ? {
+        title: movie.title,
+        episodeName: currentServer.serverData[episodeIndex + 1].name,
+        thumbnail: movie.posterUrl || movie.bannerUrl || '',
+        slug: currentServer.serverData[episodeIndex + 1].slug
+      }
+    : undefined;
+
+  const handleNextEpisode = () => {
+    if (nextEpisode) {
+      setEpisodeIndex(episodeIndex + 1);
+      setPlaybackTime(0);
+    }
+  };
+
   useEffect(() => {
     if (!currentEpisode) {
       setResolvedSubtitles([]);
@@ -2373,6 +2390,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 maxResolution={userPermissions?.max_resolution}
                 autoplay={!showAd}
                 storyboardUrl={currentEpisode?.storyboardUrl}
+                autoNextEpisode={true}
+                nextEpisode={nextEpisode}
+                onNextEpisode={handleNextEpisode}
               />
 
               {showAd && (

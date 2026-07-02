@@ -1224,6 +1224,14 @@ interface ArtPlayerProps {
   hideWatermark?: boolean;
   autoplay?: boolean;
   storyboardUrl?: string;
+  autoNextEpisode?: boolean;
+  nextEpisode?: {
+    title: string;
+    episodeName: string;
+    thumbnail: string;
+    slug: string;
+  };
+  onNextEpisode?: () => void;
 }
 
 const getAutoSkipSetting = (): boolean => {
@@ -1272,13 +1280,19 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   maxResolution = '4K',
   hideWatermark = false,
   autoplay = false,
-  storyboardUrl
+  storyboardUrl,
+  autoNextEpisode = false,
+  nextEpisode,
+  onNextEpisode
 }) => {
   const artRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<Artplayer | null>(null);
   const [isOffline, setIsOffline] = useState(typeof window !== 'undefined' ? !navigator.onLine : false);
   const [connectionRestored, setConnectionRestored] = useState(false);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const [showNextEpisodePopup, setShowNextEpisodePopup] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleOffline = () => {
@@ -1302,6 +1316,15 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
     return () => {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  // Cleanup countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
     };
   }, []);
 
@@ -2085,7 +2108,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         const now = art.currentTime;
         const duration = art.duration;
 
-        if (timeIntroStart > 0 && timeIntroEnd > 0 && timeIntroEnd > timeIntroStart) {
+        if (timeIntroEnd > 0 && timeIntroEnd > timeIntroStart) {
           const skipIntroBtn = art.template.$container.querySelector('.art-layer-txa-skip-intro button') as HTMLElement;
 
           if (now >= timeIntroStart && now < timeIntroEnd) {
@@ -2128,6 +2151,31 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
             if (skipOutroBtn && skipOutroBtn.style.display !== 'none') {
               skipOutroBtn.style.display = 'none';
             }
+          }
+
+          // Show next episode popup when auto next is enabled
+          if (autoNextEpisode && nextEpisode && !showNextEpisodePopup && now >= timeOutroStart) {
+            setShowNextEpisodePopup(true);
+            setCountdown(5);
+            
+            if (countdownRef.current) {
+              clearInterval(countdownRef.current);
+            }
+            
+            countdownRef.current = setInterval(() => {
+              setCountdown((prev) => {
+                if (prev <= 1) {
+                  if (countdownRef.current) {
+                    clearInterval(countdownRef.current);
+                  }
+                  if (onNextEpisode) {
+                    onNextEpisode();
+                  }
+                  return 0;
+                }
+                return prev - 1;
+              });
+            }, 1000);
           }
         }
 
@@ -2358,6 +2406,74 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke" 
           style={{ minHeight: '350px' }}
         />
+      )}
+      
+      {showNextEpisodePopup && nextEpisode && (
+        <>
+          {typeof window !== 'undefined' && window.innerWidth < 768 ? (
+            // Mobile: Show toast
+            <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#0B0A0C]/95 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 z-50 flex items-center gap-3 shadow-2xl">
+              <div className="text-white text-xs font-bold">Tập tiếp theo: {nextEpisode.episodeName}</div>
+              <div className="text-white/60 text-xs">Đổi sau {countdown}s</div>
+            </div>
+          ) : (
+            // Desktop: Show popup
+            <div className="fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#0B0A0C]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-5 z-50 shadow-2xl w-[400px] max-w-[90vw]">
+              <div className="flex gap-4">
+                {/* Left: Thumbnail */}
+                <div className="relative w-24 h-36 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800">
+                  <img 
+                    src={nextEpisode.thumbnail} 
+                    alt={nextEpisode.episodeName}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-1 rounded">
+                    {nextEpisode.episodeName}
+                  </div>
+                </div>
+                
+                {/* Right: Content */}
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-white text-sm font-bold mb-1">{nextEpisode.title}</h4>
+                    <p className="text-zinc-400 text-xs mb-3">{nextEpisode.episodeName}</p>
+                    <div className="text-white/60 text-xs">
+                      Chuyển tập sau <span className="text-blue-400 font-bold">{countdown}s</span>
+                    </div>
+                  </div>
+                  
+                  {/* Buttons */}
+                  <div className="flex gap-2 mt-3">
+                    <button 
+                      onClick={() => {
+                        if (countdownRef.current) {
+                          clearInterval(countdownRef.current);
+                        }
+                        if (onNextEpisode) {
+                          onNextEpisode();
+                        }
+                      }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors"
+                    >
+                      Chuyển ngay
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (countdownRef.current) {
+                          clearInterval(countdownRef.current);
+                        }
+                        setShowNextEpisodePopup(false);
+                      }}
+                      className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors"
+                    >
+                      Hủy bỏ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
       {portalContainer && playerInstanceRef.current && createPortal(
         <CustomSubtitleSystem art={playerInstanceRef.current} subtitles={subtitles} />,
