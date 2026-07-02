@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ArtPlayer } from './ArtPlayer';
 import type { MovieDetail, Episode } from '@apptypes/movie';
 import { TxaModal } from '../ui/txamodal';
@@ -1541,7 +1541,21 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [playbackTime, setPlaybackTime] = useState<number>(0);
   const [isHacked, setIsHacked] = useState<boolean>(false);
   const playerGetTimeRef = useRef<(() => number) | null>(null);
-  const [resolvedSubtitles, setResolvedSubtitles] = useState<any[]>([]);
+  const resolvedSubtitles = useMemo(() => {
+    if (!currentEpisode) return [];
+    const subs = [...(currentEpisode.subtitles || [])];
+    const rawSrt = (currentEpisode as any).subtitles_srt || (currentEpisode as any).subtitlesSrt;
+    if (rawSrt && rawSrt.trim()) {
+      try {
+        const blob = new Blob([rawSrt], { type: 'text/plain;charset=utf-8' });
+        const localUrl = URL.createObjectURL(blob) + '#/sub.srt';
+        subs.push({ label: 'Tiếng Việt', file: localUrl, default: true });
+      } catch (e) {
+        console.error('Error creating blob for subtitles_srt:', e);
+      }
+    }
+    return subs;
+  }, [currentEpisode]);
 
   // DevTools detection with admin bypass
   useEffect(() => {
@@ -1839,37 +1853,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (!currentEpisode) {
-      setResolvedSubtitles([]);
-      return;
-    }
-    const subs = [...(currentEpisode.subtitles || [])];
-    const rawSrt = (currentEpisode as any).subtitles_srt || (currentEpisode as any).subtitlesSrt;
-    let localUrl = '';
-    if (rawSrt && rawSrt.trim()) {
-      try {
-        const blob = new Blob([rawSrt], { type: 'text/plain;charset=utf-8' });
-        localUrl = URL.createObjectURL(blob) + '#/sub.srt';
-        subs.push({
-          label: 'Tiếng Việt',
-          file: localUrl,
-          default: true
-        });
-      } catch (e) {
-        console.error('Error creating blob for subtitles_srt:', e);
-      }
-    }
-    setResolvedSubtitles(subs);
-    return () => {
-      if (localUrl) {
-        // Remove hash before revoking object URL to avoid issues in some browsers
-        const cleanUrl = localUrl.split('#')[0];
-        URL.revokeObjectURL(cleanUrl);
-      }
-    };
-  }, [currentEpisode]);
-
   const totalEps = currentServer?.serverData.length || 0;
   const episodesPerTab = totalEps > 100 ? 100 : 25;
   const totalTabs = Math.ceil(totalEps / episodesPerTab);
@@ -2140,6 +2123,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   const selectEpisode = (idx: number) => {
     setEpisodeIndex(idx);
+    setPlaybackTime(0);
     if (currentServer) {
       const ep = currentServer.serverData[idx];
       const newUrl = `${window.location.pathname}?ep=${ep.slug}&sv=${serverIndex}`;
@@ -2371,7 +2355,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           ) : (
             <>
               <ArtPlayer 
-                key={`${currentEpisode?.slug}_${serverIndex}_${playbackTime}_${resolvedSubtitles.map(s => s.file).join(',')}`}
+                key={`${currentEpisode?.slug}_${serverIndex}`}
                 url={currentEpisode?.linkM3u8 || ''}
                 title={`${movie.title} - ${currentEpisode?.name || ''}`}
                 poster={movie.bannerUrl || movie.posterUrl}

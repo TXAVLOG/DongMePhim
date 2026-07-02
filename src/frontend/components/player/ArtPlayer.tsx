@@ -1363,7 +1363,17 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       if (!artRef.current) return;
 
       if (playerInstanceRef.current) {
-        playerInstanceRef.current.destroy(false);
+        try {
+          const oldArt = playerInstanceRef.current;
+          if (oldArt.video) {
+            oldArt.video.pause();
+            oldArt.video.removeAttribute('src');
+            try { oldArt.video.load(); } catch (e) {}
+          }
+        } catch (e) {}
+        try {
+          playerInstanceRef.current.destroy(false);
+        } catch (e) {}
       }
       artRef.current.innerHTML = '';
 
@@ -1836,6 +1846,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           }
         ],
         controls: [
+          'progress',
           {
             name: 'rewind-10',
             position: 'left',
@@ -2379,14 +2390,24 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       active = false;
       setPortalContainer(null);
       if (playerInstanceRef.current) {
-        playerInstanceRef.current.destroy(false);
+        try {
+          const oldArt = playerInstanceRef.current;
+          if (oldArt.video) {
+            oldArt.video.pause();
+            oldArt.video.removeAttribute('src');
+            try { oldArt.video.load(); } catch (e) {}
+          }
+        } catch (e) {}
+        try {
+          playerInstanceRef.current.destroy(false);
+        } catch (e) {}
       }
       if (artRef.current) {
         artRef.current.innerHTML = '';
       }
       if (checkInterval) clearInterval(checkInterval);
     };
-  }, [url, title, storyboardUrl]);
+  }, [url, title, storyboardUrl, subtitles]);
 
   return (
     <div className="relative w-full h-full">
@@ -2425,6 +2446,13 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         }
         .art-control-progress:hover .art-progress {
           height: 12px !important;
+        }
+        .art-mobile .art-mini-progress-bar {
+          height: 3px !important;
+          opacity: 1 !important;
+        }
+        .art-mobile .art-mini-progress-bar .art-mini-progress-inner {
+          background: #1e88e5 !important;
         }
         .art-control-progress .txa-range-highlight {
           height: 100% !important;
