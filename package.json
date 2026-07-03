@@ -16,6 +16,7 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
+		"@txa/txaplayer": "file:../txaplayer-lib",
 		"@astrojs/check": "^0.9.9",
 		"@astrojs/cloudflare": "^13.1.1",
 		"@astrojs/react": "^5.0.7",

@@ -1,6 +1,6 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro';
-import { TXAPlayer } from '@components/player/TXAPlayer.tsx';
+import { TXAPlayer } from '@txa/txaplayer';
 import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 
@@ -58,6 +58,9 @@ const subtitles = [
         timeIntroEnd={50}
         timeOutroStart={250}
         timeOutroEnd={320}
+        adSettings={settings.ads}
+        movieSlug="minions-monsters"
+        episodeSlug="full"
       />
     </div>
 
@@ -67,11 +70,12 @@ const subtitles = [
         Hướng dẫn kiểm thử song ngữ
       </h2>
       <ul class="text-zinc-400 text-xs space-y-2.5 leading-relaxed font-sans list-disc list-inside">
-        <li>Nhấn vào biểu tượng bánh răng <strong class="text-white">Cài đặt (Gear)</strong> trong thanh điều khiển để đổi qua lại phụ đề giữa <strong class="text-white">Tiếng Việt</strong> và <strong class="text-white">English</strong>.</li>
+        <li>Trình phát được tải trực tiếp từ thư viện độc lập <strong class="text-white">@txa/txaplayer</strong>.</li>
         <li>Bật/tắt chế độ <strong class="text-white">Tự động Skip</strong> bằng công tắc iOS ở góc trên bên phải trình phát.</li>
         <li>Tua đến giây thứ <strong class="text-white">15</strong> để test Skip Intro (sẽ hiện nút nếu tắt tự động, hoặc tự tua qua giây 50 nếu bật tự động).</li>
-        <li>Hover vào biểu tượng loa để chỉnh volume và kéo thả thanh trượt mà không lo bị ẩn mất thanh điều chỉnh volume nữa.</li>
-        <li>Dùng các phím tắt <strong class="text-white">Space, Mũi tên, M, F</strong> trên Desktop hoặc <strong class="text-white">chạm đúp</strong> trên Mobile để điều khiển trình phát.</li>
+        <li><strong class="text-[#1e88e5]">Tính năng kéo tua chính xác kiểu YouTube</strong>: Nhấp giữ nút kéo trên thanh tiến trình và kéo tay hướng lên trên để mở dải 7 ảnh phân cảnh lân cận, rê chuột trái phải để tua chính xác.</li>
+        <li>Click chuột phải vào trình phát để kiểm tra <strong class="text-white">Context Menu tùy chỉnh</strong> bản quyền của trình phát.</li>
+        <li>Xem video một lát, sau đó tải lại trang để kiểm tra <strong class="text-white">Popup Modal phát tiếp (Resume)</strong>.</li>
       </ul>
     </div>
   </div>
