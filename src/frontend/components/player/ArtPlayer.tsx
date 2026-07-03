@@ -1343,6 +1343,18 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
     if (isOffline || connectionRestored) return;
     if (!artRef.current) return;
 
+    // Force inject Artplayer CSS if it was stripped by Astro View Transitions
+    if (typeof document !== 'undefined') {
+      let artstyle = document.getElementById('artplayer-style');
+      if (!artstyle && (Artplayer as any).STYLE) {
+        artstyle = document.createElement('style');
+        artstyle.id = 'artplayer-style';
+        artstyle.innerHTML = (Artplayer as any).STYLE;
+        document.head.appendChild(artstyle);
+        console.log('Force-injected ArtPlayer CSS style on SPA navigation.');
+      }
+    }
+
     const getRealStreamUrl = (rawUrl: string): string => {
       if (!rawUrl) return '';
       if (rawUrl.includes('player.phimapi.com/player/?url=')) {

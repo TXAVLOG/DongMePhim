@@ -97,6 +97,19 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
             </div>
           </div>
 
+          <!-- Smart TV Cấu hình -->
+          <div class="md:col-span-2 border-t border-glass-stroke/40 pt-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-white uppercase text-[11px] flex items-center gap-1.5"><span class="material-symbols-outlined text-amber-400" style="font-size:16px">tv</span> Tải trực tiếp Smart TV (file APK)</span>
+              <label class="txa-switch"><input type="checkbox" id="app-smarttv-enable" checked={settings.app.app_smart_tv_enable} /><span class="txa-slider"></span></label>
+            </div>
+            <div id="smarttv-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-2 border-l-2 border-primary/20 ml-2" style={settings.app.app_smart_tv_enable ? '' : 'display:none'}>
+              <div class="space-y-1 md:col-span-2"><label class="text-[10px] text-zinc-500 font-bold uppercase">Đường dẫn tệp Smart TV APK (app_smart_tv_url)</label><input type="text" id="app-smarttv-url" value={settings.app.app_smart_tv_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Kích thước TV APK (Bytes)</label><input type="text" id="app-smarttv-size" value={settings.app.app_smart_tv_size} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
+              <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Mã băm SHA-256 TV APK</label><input type="text" id="app-smarttv-sha" value={settings.app.app_smart_tv_sha256} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" /></div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -169,6 +182,10 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
         setVal('app-gplay-url', s.app?.app_google_play_url);
         setChecked('app-appstore-enable', s.app?.app_app_store_enable);
         setVal('app-appstore-url', s.app?.app_app_store_url);
+        setChecked('app-smarttv-enable', s.app?.app_smart_tv_enable);
+        setVal('app-smarttv-url', s.app?.app_smart_tv_url);
+        setVal('app-smarttv-size', s.app?.app_smart_tv_size);
+        setVal('app-smarttv-sha', s.app?.app_smart_tv_sha256);
         if (Array.isArray(s.app?.app_changelogs)) changelogsState = [...s.app.app_changelogs];
         
         syncToggleVisibility();
@@ -186,6 +203,7 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
           'app-ios-ipa-enable': 'ios-ipa-fields',
           'app-gplay-enable': 'gplay-fields',
           'app-appstore-enable': 'appstore-fields',
+          'app-smarttv-enable': 'smarttv-fields',
         };
         Object.entries(toggleMap).forEach(([checkboxId, fieldsId]) => {
           const cb = document.getElementById(checkboxId);
@@ -346,6 +364,10 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
               app_google_play_url: document.getElementById('app-gplay-url')?.value || '',
               app_app_store_enable: document.getElementById('app-appstore-enable')?.checked || false,
               app_app_store_url: document.getElementById('app-appstore-url')?.value || '',
+              app_smart_tv_enable: document.getElementById('app-smarttv-enable')?.checked || false,
+              app_smart_tv_url: document.getElementById('app-smarttv-url')?.value || '',
+              app_smart_tv_size: document.getElementById('app-smarttv-size')?.value || '',
+              app_smart_tv_sha256: document.getElementById('app-smarttv-sha')?.value || '',
             }
           };
 

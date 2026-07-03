@@ -61,6 +61,10 @@ export interface AppSettings {
   app_google_play_url: string;
   app_app_store_enable: boolean;
   app_app_store_url: string;
+  app_smart_tv_enable?: boolean;
+  app_smart_tv_url?: string;
+  app_smart_tv_size?: string;
+  app_smart_tv_sha256?: string;
 }
 
 export interface UserSettings {

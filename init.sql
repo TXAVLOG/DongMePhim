@@ -363,7 +363,11 @@ INSERT INTO public.settings (key, value) VALUES (
     "app_google_play_enable": false,
     "app_google_play_url": "",
     "app_app_store_enable": false,
-    "app_app_store_url": ""
+    "app_app_store_url": "",
+    "app_smart_tv_enable": false,
+    "app_smart_tv_url": "",
+    "app_smart_tv_size": "",
+    "app_smart_tv_sha256": ""
   }'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
 

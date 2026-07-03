@@ -147,8 +147,12 @@ const cleanedServers = servers.map((srv: any) => {
   return { ...srv, cleanServerName: cleanName };
 });
 
-// Tải ảnh hậu trường từ TMDB qua proxy nội bộ
+// Tải ảnh hậu trường và thông tin đoàn phim từ TMDB qua proxy nội bộ
 let backdrops: string[] = [];
+let tmdbCastList: any[] = [];
+let movieTmdbId = null;
+let movieTmdbType = 'movie';
+
 if (movie) {
   try {
     const kkRes = await fetch(`https://phimapi.com/phim/${slug}`);
@@ -157,26 +161,35 @@ if (movie) {
       const tmdbId = kkData?.movie?.tmdb?.id;
       const tmdbType = kkData?.movie?.tmdb?.type || 'movie';
       if (tmdbId) {
+        movieTmdbId = tmdbId;
+        movieTmdbType = tmdbType;
         const tmdbApiKey = '211be8d45c0d31404f644ecdcf9caad5';
-        const tmdbUrl = `https://api.tmdb.org/3/${tmdbType}/${tmdbId}/images?api_key=${tmdbApiKey}`;
-        const tmdbRes = await fetch(tmdbUrl, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        });
-        if (tmdbRes.ok) {
-          const tmdbImages = await tmdbRes.json() as any;
+        
+        // Gọi song song hai API để tối ưu tốc độ load trang
+        const [imagesRes, creditsRes] = await Promise.all([
+          fetch(`https://api.themoviedb.org/3/${tmdbType}/${tmdbId}/images?api_key=${tmdbApiKey}`),
+          fetch(`https://api.themoviedb.org/3/${tmdbType}/${tmdbId}/credits?api_key=${tmdbApiKey}&language=vi-VN`)
+        ]);
+
+        if (imagesRes.ok) {
+          const tmdbImages = await imagesRes.json() as any;
           if (tmdbImages && Array.isArray(tmdbImages.backdrops)) {
             backdrops = tmdbImages.backdrops
               .slice(0, 9)
               .map((img: any) => `https://image.tmdb.org/t/p/w780${img.file_path}`);
           }
         }
+
+        if (creditsRes.ok) {
+          const tmdbCredits = await creditsRes.json() as any;
+          if (tmdbCredits && Array.isArray(tmdbCredits.cast)) {
+            tmdbCastList = tmdbCredits.cast;
+          }
+        }
       }
     }
   } catch (e) {
-    console.warn('Không thể tải ảnh hậu trường từ TMDB:', e);
+    console.warn('Không thể tải ảnh hậu trường và thông tin từ TMDB:', e);
   }
 }
 // Fallback nếu không lấy được ảnh từ TMDB
@@ -312,16 +325,33 @@ if (movie && movie.actors && movie.actors.length > 0) {
       const dbActorBySlugMap = new Map(allDbActors.map(a => [a.slug.toLowerCase().trim(), a]));
       const dbActorByNameMap = new Map(allDbActors.map(a => [a.name.toLowerCase().trim(), a]));
       
+      // Build a map of TMDB cast
+      const tmdbCastMap = new Map();
+      if (Array.isArray(tmdbCastList)) {
+        tmdbCastList.forEach((c: any) => {
+          if (c.name) {
+            tmdbCastMap.set(c.name.toLowerCase().trim(), c.character || '');
+            tmdbCastMap.set(slugify(c.name).toLowerCase().trim(), c.character || '');
+          }
+          if (c.original_name) {
+            tmdbCastMap.set(c.original_name.toLowerCase().trim(), c.character || '');
+            tmdbCastMap.set(slugify(c.original_name).toLowerCase().trim(), c.character || '');
+          }
+        });
+      }
+
       castActors = movie.actors.map((actorName: string) => {
         const nameKey = actorName.toLowerCase().trim();
         const slugKey = slugify(actorName).toLowerCase().trim();
         
         const dbActor = dbActorByNameMap.get(nameKey) || dbActorBySlugMap.get(slugKey);
+        const character = tmdbCastMap.get(nameKey) || tmdbCastMap.get(slugKey) || '';
         
         return {
           name: dbActor ? dbActor.name : actorName,
           slug: dbActor ? dbActor.slug : slugify(actorName),
-          avatarUrl: dbActor ? dbActor.avatar_url : '/logo-decoy.png'
+          avatarUrl: dbActor ? dbActor.avatar_url : '/logo-decoy.png',
+          character: character
         };
       });
     } catch (e) {
@@ -329,15 +359,34 @@ if (movie && movie.actors && movie.actors.length > 0) {
       castActors = movie.actors.map((actorName: string) => ({
         name: actorName,
         slug: slugify(actorName),
-        avatarUrl: '/logo-decoy.png'
+        avatarUrl: '/logo-decoy.png',
+        character: ''
       }));
     }
   } else {
-    castActors = movie.actors.map((actorName: string) => ({
-      name: actorName,
-      slug: slugify(actorName),
-      avatarUrl: '/logo-decoy.png'
-    }));
+    // Build a map of TMDB cast
+    const tmdbCastMap = new Map();
+    if (Array.isArray(tmdbCastList)) {
+      tmdbCastList.forEach((c: any) => {
+        if (c.name) {
+          tmdbCastMap.set(c.name.toLowerCase().trim(), c.character || '');
+          tmdbCastMap.set(slugify(c.name).toLowerCase().trim(), c.character || '');
+        }
+      });
+    }
+
+    castActors = movie.actors.map((actorName: string) => {
+      const nameKey = actorName.toLowerCase().trim();
+      const slugKey = slugify(actorName).toLowerCase().trim();
+      const character = tmdbCastMap.get(nameKey) || tmdbCastMap.get(slugKey) || '';
+
+      return {
+        name: actorName,
+        slug: slugify(actorName),
+        avatarUrl: '/logo-decoy.png',
+        character: character
+      };
+    });
   }
 }
 ---
@@ -750,8 +799,8 @@ if (movie && movie.actors && movie.actors.length > 0) {
                         </div>
                       )}
                       <div>
-                        <p class="text-xs font-bold text-white truncate max-w-[100px] group-hover/cast:text-primary transition-colors">{actor.name}</p>
-                        <p class="text-[9px] text-on-surface-variant uppercase tracking-wider font-bold">Diễn viên</p>
+                        <p class="text-xs font-bold text-white truncate max-w-[120px] group-hover/cast:text-primary transition-colors">{actor.name}</p>
+                        <p class="text-[10px] text-primary font-bold truncate max-w-[120px]">{actor.character || 'Diễn viên'}</p>
                       </div>
                     </a>
                   ))

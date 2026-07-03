@@ -81,6 +81,10 @@ export const seedSettings: SiteSettings = {
     app_google_play_url: "",
     app_app_store_enable: false,
     app_app_store_url: "",
+    app_smart_tv_enable: true,
+    app_smart_tv_url: "",
+    app_smart_tv_size: "",
+    app_smart_tv_sha256: "",
   },
   user: {
     allow_registration: true,
