@@ -107,8 +107,7 @@ if (!actor) {
   };
 
   // Fetch movies that match this actor
-  const allMovies = await MovieService.getMovies();
-  movies = allMovies.filter((m: Movie) => mockActor.movies.includes(m.slug));
+  movies = await MovieService.getMovies({ slugs: mockActor.movies });
 }
 
 const settings = await SettingService.getSettings();

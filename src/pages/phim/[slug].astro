@@ -184,21 +184,72 @@ if (backdrops.length === 0 && movie) {
   backdrops = [movie.bannerUrl, movie.posterUrl, movie.bannerUrl].filter(Boolean) as string[];
 }
 
-// Fetch all movies to group seasons/parts of the same series
-const allMovies = await MovieService.getMovies();
+// Fetch related seasons/parts of the same series
 let relatedParts: Movie[] = [];
 if (movie) {
-  relatedParts = allMovies.filter((m: Movie) => {
-    const normalize = (title: string) => {
-      return title
-        .toLowerCase()
-        .replace(/(?:phần|ss|season|part|tập|phim|bộ)\s*\d+/gi, '')
-        .replace(/\s+\d+$/g, '')
-        .trim();
-    };
-    const baseTitle = normalize(movie.title);
+  const getBaseTitle = (t: string) => {
+    return t
+      .replace(/(?:phần|ss|season|part|tập|phim|bộ)\s*\d+/gi, '')
+      .replace(/\s+\d+$/g, '')
+      .trim();
+  };
+  const baseTitle = getBaseTitle(movie.title);
+  
+  const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+  let candidateMovies: Movie[] = [];
+
+  if (isSupabase) {
+    try {
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
+      const { data: dbCandidates } = await supabase
+        .from('movies')
+        .select(selectFields)
+        .ilike('title', `%${baseTitle}%`);
+        
+      if (dbCandidates) {
+        candidateMovies = dbCandidates.map((m: any) => ({
+          id: m.id,
+          title: m.title,
+          originalTitle: m.original_title,
+          slug: m.slug,
+          description: m.description || '',
+          posterUrl: m.poster_url || '',
+          bannerUrl: m.banner_url || m.poster_url || '',
+          releaseYear: m.release_year || 2024,
+          durationMinutes: m.duration_minutes || '45 phút/tập',
+          type: m.type,
+          status: m.status,
+          episodeCurrent: m.episode_current || '1',
+          episodeTotal: m.episode_total || '1',
+          quality: m.quality || 'FHD',
+          lang: m.lang || 'Vietsub',
+          imdbScore: Number(m.imdb_score) || 8.0,
+          views: Number(m.views) || 0,
+          category: m.country || 'Khác',
+          genres: Array.isArray(m.genres) ? m.genres : [],
+          updatedAt: m.updated_at || new Date().toISOString(),
+          seasons: m.seasons || undefined
+        }));
+      }
+    } catch (e) {
+      console.error("Error fetching related parts from Supabase:", e);
+    }
+  } else {
+    candidateMovies = await MovieService.getMovies();
+  }
+
+  const normalize = (t: string) => {
+    return t
+      .toLowerCase()
+      .replace(/(?:phần|ss|season|part|tập|phim|bộ)\s*\d+/gi, '')
+      .replace(/\s+\d+$/g, '')
+      .trim();
+  };
+  const targetBase = normalize(movie.title);
+
+  relatedParts = candidateMovies.filter((m: Movie) => {
     const mBaseTitle = normalize(m.title);
-    return baseTitle.length > 2 && mBaseTitle === baseTitle;
+    return targetBase.length > 2 && mBaseTitle === targetBase;
   }).sort((a: Movie, b: Movie) => {
     return a.releaseYear - b.releaseYear || a.title.localeCompare(b.title);
   });
@@ -1805,6 +1856,10 @@ if (movie && movie.actors && movie.actors.length > 0) {
       author: string;
       content: string;
       time: string;
+      package?: string;
+      gender?: string;
+      role?: string;
+      avatar?: string;
     }
 
     interface MovieComment {
@@ -1848,7 +1903,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
         if (username) url += `&username=${encodeURIComponent(username)}`;
         const res = await fetch(url);
         if (res.ok) {
-          const data = await res.json();
+          const data = await res.json() as any;
           if (data.status === 'success') {
             const r = data.data;
             const ratingDisplay = document.getElementById('average-rating-display');
@@ -1904,7 +1959,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
                 })
               });
               if (res.ok) {
-                const result = await res.json();
+                const result = await res.json() as any;
                 if (result.status === 'success') {
                   currentUserRating = val;
                   selectedRatingStar = val;
@@ -2036,7 +2091,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       const renderMenu = (commentId: string, author: string, authorRole: string) => {
         const authorLower = author.toLowerCase().trim();
         const isOwner = currentUserName === authorLower;
-        let items: string[] = [];
+        let items: string = '';
 
         if (isAdmin) {
           items = [
@@ -2186,14 +2241,14 @@ if (movie && movie.actors && movie.actors.length > 0) {
     };
 
     // Global click to close all comment menus
-    if (!window._commentMenuInit) {
-      window._commentMenuInit = true;
+    if (!(window as any)._commentMenuInit) {
+      (window as any)._commentMenuInit = true;
       document.addEventListener('click', () => {
         document.querySelectorAll('.comment-menu-dropdown').forEach(d => d.classList.add('hidden'));
       });
     }
 
-    window.deleteComment = async (commentId: string) => {
+    (window as any).deleteComment = async (commentId: string) => {
       try {
         const res = await fetch('/api/comments', {
           method: 'POST',
@@ -2201,7 +2256,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
           body: JSON.stringify({ action: 'delete', commentId })
         });
         if (res.ok) {
-          const result = await res.json();
+          const result = await res.json() as any;
           if (result.status === 'success') {
             comments = comments.filter((c: any) => c.id !== commentId);
             renderComments();
@@ -2214,7 +2269,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       }
     };
 
-    window.toggleSpoiler = async (commentId: string) => {
+    (window as any).toggleSpoiler = async (commentId: string) => {
       try {
         const res = await fetch('/api/comments', {
           method: 'POST',
@@ -2222,7 +2277,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
           body: JSON.stringify({ action: 'toggle_spoiler', commentId })
         });
         if (res.ok) {
-          const result = await res.json();
+          const result = await res.json() as any;
           if (result.status === 'success') {
             if (window.showGlobalToast) window.showGlobalToast('Đã cập nhật tag spoiler!', 'success');
           }
@@ -2233,7 +2288,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       }
     };
 
-    window.reportComment = async (commentId: string) => {
+    (window as any).reportComment = async (commentId: string) => {
       if (window.showGlobalToast) window.showGlobalToast('Đã báo cáo bình luận đến quản trị viên!', 'info');
     };
 

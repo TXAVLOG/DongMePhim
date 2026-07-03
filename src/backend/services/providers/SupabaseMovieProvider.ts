@@ -8,44 +8,52 @@ export class SupabaseMovieProvider implements IMovieProvider {
     try {
       const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source';
       
-      let dbMovies: any[] = [];
-      let page = 0;
-      const pageSize = 1000;
+      let query = supabase.from('movies').select(selectFields);
 
-      while (true) {
-        let query = supabase.from('movies').select(selectFields);
-
-        if (params?.type) {
-          query = query.eq('type', params.type);
-        }
-
-        if (params?.slugs && Array.isArray(params.slugs)) {
-          query = query.in('slug', params.slugs);
-        }
-
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-        query = query.range(from, to);
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          break;
-        }
-
-        dbMovies.push(...data);
-
-        if (data.length < pageSize) {
-          break;
-        }
-
-        if (params?.limit && dbMovies.length >= params.limit) {
-          break;
-        }
-
-        page++;
+      if (params?.type) {
+        query = query.eq('type', params.type);
       }
+
+      if (params?.slugs && Array.isArray(params.slugs)) {
+        query = query.in('slug', params.slugs);
+      }
+
+      // Lọc theo category ở cấp độ database
+      if (params?.category) {
+        const cat = params.category;
+        const catSlug = slugify(cat);
+        if (cat === 'Lồng Tiếng' || catSlug === 'long-tieng') {
+          query = query.or('lang.ilike.%lồng tiếng%,lang.ilike.%thuyết minh%');
+        } else if (cat === 'Châu Tinh Trì' || catSlug === 'chau-tinh-tri' || catSlug === 'chau-tinh-tri-xem-la-cuoi') {
+          query = query.or('title.ilike.%Châu Tinh Trì%,title.ilike.%Stephen Chow%');
+        } else if (catSlug === 'toi-so-con-nguoi-em-roi-do') {
+          query = query.or('genres.cs.["Kinh dị"],genres.cs.["Ma"],genres.cs.["Thriller"],genres.cs.["Horror"]');
+        } else if (catSlug === 'phim-thai-new') {
+          query = query.or('country.eq.Thái Lan,genres.cs.["Thái Lan"]');
+        } else {
+          query = query.or(`country.eq."${cat}",country.eq."${catSlug}",genres.cs.["${cat}"],genres.cs.["${catSlug}"]`);
+        }
+      }
+
+      // Sắp xếp ở cấp độ database
+      if (params?.sortBy === 'imdb_score') {
+        query = query.order('imdb_score', { ascending: false, nullsFirst: false });
+      } else if (params?.sortBy === 'views_comments') {
+        query = query.order('views', { ascending: false, nullsFirst: false });
+      } else {
+        query = query.order('updated_at', { ascending: false, nullsFirst: false });
+      }
+
+      // Giới hạn ở cấp độ database
+      const defaultLimit = 1000;
+      let dbLimit = params?.limit || defaultLimit;
+      if (params?.category && params?.limit) {
+        dbLimit = params.limit * 2; // Lấy rộng hơn phòng trường hợp JS lọc lại
+      }
+      query = query.limit(dbLimit);
+
+      const { data: dbMovies, error } = await query;
+      if (error) throw error;
 
       let moviesList: Movie[] = [];
       if (dbMovies && dbMovies.length > 0) {
@@ -108,7 +116,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
         return params.slugs.map(s => foundMap.get(s)).filter(Boolean) as Movie[];
       }
 
-      // Lọc theo category
+      // Lọc lại bằng JS để đảm bảo tính đúng đắn tuyệt đối
       if (params?.category) {
         const cat = params.category;
         const catSlug = slugify(cat);
@@ -147,7 +155,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
         }
       }
 
-      // Sắp xếp
+      // Sắp xếp lại trong JS (đảm bảo đồng bộ với seedMovies)
       if (params?.sortBy === 'imdb_score') {
         result.sort((a, b) => (b.imdbScore || 0) - (a.imdbScore || 0));
       } else if (params?.sortBy === 'views_comments') {
@@ -156,7 +164,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
         result.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
       }
 
-      // Giới hạn
+      // Giới hạn lại trong JS
       if (params?.limit) {
         result = result.slice(0, params.limit);
       }

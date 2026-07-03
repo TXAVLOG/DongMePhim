@@ -5,31 +5,73 @@ import { supabase } from '@lib/supabase';
 
 // Luôn clear cache cho dashboard admin để hiển thị số liệu mới nhất
 MovieService.clearCache();
-const staticMovies = await MovieService.getMovies();
 
-// 1. Movies Stats
-const totalMovies = staticMovies.length;
+const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
 
 const now = new Date();
 const todayStart = new Date();
 todayStart.setHours(0, 0, 0, 0);
-
 const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
 
-const moviesToday = staticMovies.filter((m: any) => {
-  const d = m.updatedAt ? new Date(m.updatedAt) : new Date('2024-01-01');
-  return d >= todayStart;
-}).length;
+let totalMovies = 0;
+let moviesToday = 0;
+let moviesYesterday = 0;
+let totalViews = 0;
+let brokenMoviesCount = 0;
+let staticMovies: any[] = [];
 
-const moviesYesterday = staticMovies.filter((m: any) => {
-  const d = m.updatedAt ? new Date(m.updatedAt) : new Date('2024-01-01');
-  return d >= yesterdayStart && d < todayStart;
-}).length;
+if (isSupabase) {
+  try {
+    const todayStartStr = todayStart.toISOString();
+    const yesterdayStartStr = yesterdayStart.toISOString();
+
+    const [
+      { count: totalCount },
+      { count: todayCount },
+      { count: yesterdayCount },
+      { data: statsData },
+      { data: brokenData },
+      dbLatestMovies
+    ] = await Promise.all([
+      supabase.from('movies').select('*', { count: 'exact', head: true }),
+      supabase.from('movies').select('*', { count: 'exact', head: true }).gte('updated_at', todayStartStr),
+      supabase.from('movies').select('*', { count: 'exact', head: true }).gte('updated_at', yesterdayStartStr).lt('updated_at', todayStartStr),
+      supabase.from('view_movie_stats').select('total_views').single(),
+      supabase.from('view_broken_movies').select('count').single(),
+      MovieService.getMovies({ limit: 10, sortBy: 'updatedAt' })
+    ]);
+
+    totalMovies = totalCount || 0;
+    moviesToday = todayCount || 0;
+    moviesYesterday = yesterdayCount || 0;
+    totalViews = Number(statsData?.total_views) || 0;
+    brokenMoviesCount = Number(brokenData?.count) || 0;
+    staticMovies = dbLatestMovies || [];
+  } catch (e) {
+    console.error("Lỗi khi tải dữ liệu dashboard từ Supabase:", e);
+  }
+} else {
+  staticMovies = await MovieService.getMovies();
+  totalMovies = staticMovies.length;
+  moviesToday = staticMovies.filter((m: any) => {
+    const d = m.updatedAt ? new Date(m.updatedAt) : new Date('2024-01-01');
+    return d >= todayStart;
+  }).length;
+  moviesYesterday = staticMovies.filter((m: any) => {
+    const d = m.updatedAt ? new Date(m.updatedAt) : new Date('2024-01-01');
+    return d >= yesterdayStart && d < todayStart;
+  }).length;
+  totalViews = staticMovies.reduce((acc: number, m: any) => acc + (m.views || 0), 0);
+  staticMovies.forEach((m: any) => {
+    if (!m.posterUrl || m.posterUrl.trim() === '' || m.posterUrl.includes('error')) {
+      brokenMoviesCount++;
+    }
+  });
+}
 
 const moviesDiff = moviesToday - moviesYesterday;
 
 // 2. Views Stats
-const totalViews = staticMovies.reduce((acc: number, m: any) => acc + (m.views || 0), 0);
 const formattedViews = totalViews >= 1000000 
   ? (totalViews / 1000000).toFixed(1) + 'M' 
   : totalViews >= 1000 
@@ -96,12 +138,6 @@ if (totalMembers === 0) {
 const membersDiff = membersToday - membersYesterday;
 
 // 4. Broken Movies Stats
-let brokenMoviesCount = 0;
-staticMovies.forEach((m: any) => {
-  if (!m.posterUrl || m.posterUrl.trim() === '' || m.posterUrl.includes('error')) {
-    brokenMoviesCount++;
-  }
-});
 const brokenDiff = 0;
 ---
 

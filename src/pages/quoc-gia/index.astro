@@ -2,11 +2,36 @@
 import MainLayout from '@layouts/MainLayout.astro';
 import { MovieService } from '@services/MovieService';
 import { slugify } from '../../backend/utils/categoryHelper';
+import { supabase } from '@lib/supabase';
 
-const movies = await MovieService.getMovies();
 const standardCountries = ["Trung Quốc", "Hàn Quốc", "Nhật Bản", "Âu Mỹ", "Hồng Kông", "Đài Loan", "Thái Lan", "Việt Nam", "TVB", "Ấn Độ"];
-const dynamicCountries = movies.map((m: any) => m.category).filter(Boolean);
-const uniqueCountries = [...new Set([...standardCountries, ...dynamicCountries])] as string[];
+
+let uniqueCountries = standardCountries;
+let countryCounts: Record<string, number> = {};
+
+const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+if (isSupabase) {
+  try {
+    const { data: dbCountries } = await supabase.from('view_country_counts').select('*');
+    if (dbCountries) {
+      const dbCountryNames = dbCountries.map(c => c.country);
+      uniqueCountries = [...new Set([...standardCountries, ...dbCountryNames])];
+      dbCountries.forEach(c => {
+        countryCounts[c.country] = c.count;
+      });
+    }
+  } catch (e) {
+    console.error("Lỗi khi tải quốc gia từ Supabase view:", e);
+  }
+} else {
+  const movies = await MovieService.getMovies();
+  const dynamicCountries = movies.map((m: any) => m.category).filter(Boolean);
+  uniqueCountries = [...new Set([...standardCountries, ...dynamicCountries])] as string[];
+  uniqueCountries.forEach(country => {
+    const slug = slugify(country);
+    countryCounts[country] = movies.filter((m: any) => m.category === country || (slugify(m.category || '') === slug) || (Array.isArray(m.genres) && m.genres.some((g: any) => slugify(g) === slug))).length;
+  });
+}
 
 const countryGradients = [
   'from-blue-500/20 via-indigo-500/20 to-violet-500/10',
@@ -52,7 +77,7 @@ const countryGradients = [
       {uniqueCountries.map((country, idx) => {
         const slug = slugify(country);
         const gradient = countryGradients[idx % countryGradients.length];
-        const countryMovies = movies.filter((m: any) => m.category === country || (slugify(m.category || '') === slug) || (Array.isArray(m.genres) && m.genres.some((g: any) => slugify(g) === slug)));
+        const count = countryCounts[country] || 0;
         return (
           <a href={`/quoc-gia/${slug}`} class={`group relative overflow-hidden rounded-2xl border border-glass-stroke p-6 bg-gradient-to-br ${gradient} hover:scale-[1.03] hover:border-primary/40 transition-all duration-300 shadow-xl cursor-pointer flex flex-col justify-between h-40`}>
             <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>
@@ -60,7 +85,7 @@ const countryGradients = [
               <span class="material-symbols-outlined text-3xl text-primary group-hover:scale-110 transition-transform">flag</span>
               <h3 class="text-xl font-bold text-white mt-3 group-hover:text-primary transition-colors">{country}</h3>
             </div>
-            <span class="text-xs text-on-surface-variant font-medium">{countryMovies.length} bộ phim</span>
+            <span class="text-xs text-on-surface-variant font-medium">{count} bộ phim</span>
           </a>
         );
       })}

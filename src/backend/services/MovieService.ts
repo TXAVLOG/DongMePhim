@@ -112,16 +112,19 @@ export const MovieService = {
     try {
       if (providerType === 'supabase') {
         const { supabase } = await import('@lib/supabase');
-        const { data, error } = await supabase
-          .from('movies')
-          .select('genres, country');
+        const [genresRes, countriesRes] = await Promise.all([
+          supabase.from('genres').select('name'),
+          supabase.from('countries').select('name')
+        ]);
         
-        if (!error && data) {
-          const dbGenres = [...new Set(data.flatMap((m: any) => m.genres || []).filter(Boolean))] as string[];
+        if (genresRes.data) {
+          const dbGenres = genresRes.data.map((g: any) => g.name).filter(Boolean);
           if (dbGenres.length > 0) {
             genres = [...new Set([...genres, ...dbGenres])];
           }
-          const dbCountries = [...new Set(data.map((m: any) => m.country).filter(Boolean))] as string[];
+        }
+        if (countriesRes.data) {
+          const dbCountries = countriesRes.data.map((c: any) => c.name).filter(Boolean);
           if (dbCountries.length > 0) {
             countries = [...new Set([...countries, ...dbCountries])];
           }
