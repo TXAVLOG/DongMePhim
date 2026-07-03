@@ -7,18 +7,45 @@ export class SupabaseMovieProvider implements IMovieProvider {
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string, slugs?: string[] }): Promise<Movie[]> {
     try {
       const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source';
-      let query = supabase.from('movies').select(selectFields);
+      
+      let dbMovies: any[] = [];
+      let page = 0;
+      const pageSize = 1000;
 
-      if (params?.type) {
-        query = query.eq('type', params.type);
+      while (true) {
+        let query = supabase.from('movies').select(selectFields);
+
+        if (params?.type) {
+          query = query.eq('type', params.type);
+        }
+
+        if (params?.slugs && Array.isArray(params.slugs)) {
+          query = query.in('slug', params.slugs);
+        }
+
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          break;
+        }
+
+        dbMovies.push(...data);
+
+        if (data.length < pageSize) {
+          break;
+        }
+
+        if (params?.limit && dbMovies.length >= params.limit) {
+          break;
+        }
+
+        page++;
       }
-
-      if (params?.slugs && Array.isArray(params.slugs)) {
-        query = query.in('slug', params.slugs);
-      }
-
-      const { data: dbMovies, error } = await query;
-      if (error) throw error;
 
       let moviesList: Movie[] = [];
       if (dbMovies && dbMovies.length > 0) {
