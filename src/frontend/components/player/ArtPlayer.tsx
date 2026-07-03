@@ -1857,7 +1857,6 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           }
         ],
         controls: [
-          { name: 'progress' },
           // Prev Episode Button
           ...(onPrevEpisode ? [{
             name: 'prev-episode',
