@@ -5,23 +5,23 @@ import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
-const movie = await MovieService.getMovieBySlug('zoey-khac');
+const movie = await MovieService.getMovieBySlug('minions-monsters');
 
-// Media assets từ Cloudflare R2 công cộng & nguồn phimapi.com
-const url = 'https://v7.kkphimplayer7.com/20260702/1RfvTgea/index.m3u8';
-const title = movie?.title || 'Zoey Khác (The Other Zoey)';
-const poster = movie?.bannerUrl || movie?.posterUrl || 'https://phimimg.com/upload/vod/20260703-1/bd023455f5743bce0e3280e5fd74599c.jpg';
+// Media assets của phim Minions & Monsters
+const url = 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Minions.2026.1080p.CAM.x264-DKS/master.m3u8';
+const title = movie?.title || 'Minions & Monsters (2026)';
+const poster = movie?.bannerUrl || movie?.posterUrl || 'https://image.tmdb.org/t/p/original/uEBBHwJuDfBtVWd2WS7WBOc8kb6.jpg';
 
-// Cấu hình danh sách phụ đề song ngữ
+// Cấu hình danh sách phụ đề song ngữ Anh - Việt thật của phim
 const subtitles = [
   {
     label: 'Tiếng Việt',
-    file: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Obsession%20(2026)%201080p%20AMZN%20WEB-DL%20x264%20%5BEnglish%20DDP%205.1%5D%20ESub-(KyoGo-4kHdHub)/Obsession.2025.1080p.MA.WEB-DL.DDP5.1.Atmos.H.264%20(SDH).vi.srt',
+    file: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Minions.2026.1080p.CAM.x264-DKS/Minions%20.%20Monsters.2026.CAM-Rip-OnlyFlix.1080p.English.vi.srt',
     default: true
   },
   {
     label: 'English',
-    file: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Obsession%20(2026)%201080p%20AMZN%20WEB-DL%20x264%20%5BEnglish%20DDP%205.1%5D%20ESub-(KyoGo-4kHdHub)/Obsession.2025.1080p.MA.WEB-DL.DDP5.1.Atmos.H.264%20(SDH).srt'
+    file: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Minions.2026.1080p.CAM.x264-DKS/Minions%20.%20Monsters.2026.CAM-Rip-OnlyFlix.1080p.English.srt'
   }
 ];
 ---
@@ -33,7 +33,7 @@ const subtitles = [
         <span class="material-symbols-outlined text-white text-[20px] transition-transform duration-300 group-hover:-translate-x-0.5" style="font-variation-settings: 'FILL' 0, 'wght' 600;">chevron_left</span>
       </a>
       <h1 class="text-lg md:text-xl font-outfit font-bold text-white tracking-tight flex items-center gap-2">
-        <span class="text-white/60 font-normal">Trang Demo (TXAPlayer)</span>
+        <span class="text-white/60 font-normal">Trang Demo Song Ngữ (TXAPlayer)</span>
         <span>{title}</span>
       </h1>
     </div>
@@ -53,8 +53,26 @@ const subtitles = [
         }}
         siteName={settings.general.site_name || undefined}
         siteUrl={settings.general.site_url || undefined}
-        storyboardUrl="https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Obsession%20(2026)%201080p%20AMZN%20WEB-DL%20x264%20%5BEnglish%20DDP%205.1%5D%20ESub-(KyoGo-4kHdHub)/storyboard.vtt"
+        storyboardUrl="https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Minions.2026.1080p.CAM.x264-DKS/storyboard.vtt"
+        timeIntroStart={15}
+        timeIntroEnd={50}
+        timeOutroStart={250}
+        timeOutroEnd={320}
       />
+    </div>
+
+    <div class="mt-8 backdrop-blur-md bg-white/5 border border-glass-stroke rounded-2xl p-6 shadow-xl max-w-3xl">
+      <h2 class="text-white font-bold font-outfit text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#1e88e5] text-lg">info</span>
+        Hướng dẫn kiểm thử song ngữ
+      </h2>
+      <ul class="text-zinc-400 text-xs space-y-2.5 leading-relaxed font-sans list-disc list-inside">
+        <li>Nhấn vào biểu tượng bánh răng <strong class="text-white">Cài đặt (Gear)</strong> trong thanh điều khiển để đổi qua lại phụ đề giữa <strong class="text-white">Tiếng Việt</strong> và <strong class="text-white">English</strong>.</li>
+        <li>Bật/tắt chế độ <strong class="text-white">Tự động Skip</strong> bằng công tắc iOS ở góc trên bên phải trình phát.</li>
+        <li>Tua đến giây thứ <strong class="text-white">15</strong> để test Skip Intro (sẽ hiện nút nếu tắt tự động, hoặc tự tua qua giây 50 nếu bật tự động).</li>
+        <li>Hover vào biểu tượng loa để chỉnh volume và kéo thả thanh trượt mà không lo bị ẩn mất thanh điều chỉnh volume nữa.</li>
+        <li>Dùng các phím tắt <strong class="text-white">Space, Mũi tên, M, F</strong> trên Desktop hoặc <strong class="text-white">chạm đúp</strong> trên Mobile để điều khiển trình phát.</li>
+      </ul>
     </div>
   </div>
 </MainLayout>
