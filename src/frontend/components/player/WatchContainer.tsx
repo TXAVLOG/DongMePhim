@@ -1234,6 +1234,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return findEpisodeIndexBySlug(currentServer?.serverData || [], initialEpisodeSlug);
   });
 
+  const currentServer = servers[serverIndex] || null;
+  const currentEpisode = currentServer?.serverData[episodeIndex] || null;
+
   const [currentUserPackage, setCurrentUserPackage] = useState<string>('free');
   const [currentUserPackageTitle, setCurrentUserPackageTitle] = useState<string>('Gói Free');
   const [userPermissions, setUserPermissions] = useState<any>(null);
@@ -1833,9 +1836,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     }
   };
 
-  const currentServer = servers[serverIndex] || null;
-  const currentEpisode = currentServer?.serverData[episodeIndex] || null;
-
   // Calculate next episode for auto-play
   const nextEpisode = currentServer && episodeIndex < currentServer.serverData.length - 1
     ? {
@@ -1849,6 +1849,23 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const handleNextEpisode = () => {
     if (nextEpisode) {
       setEpisodeIndex(episodeIndex + 1);
+      setPlaybackTime(0);
+    }
+  };
+
+  // Calculate prev episode
+  const prevEpisode = currentServer && episodeIndex > 0
+    ? {
+        title: movie.title,
+        episodeName: currentServer.serverData[episodeIndex - 1].name,
+        thumbnail: movie.posterUrl || movie.bannerUrl || '',
+        slug: currentServer.serverData[episodeIndex - 1].slug
+      }
+    : undefined;
+
+  const handlePrevEpisode = () => {
+    if (prevEpisode) {
+      setEpisodeIndex(episodeIndex - 1);
       setPlaybackTime(0);
     }
   };
@@ -2383,7 +2400,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 storyboardUrl={currentEpisode?.storyboardUrl}
                 autoNextEpisode={true}
                 nextEpisode={nextEpisode}
-                onNextEpisode={handleNextEpisode}
+                onNextEpisode={nextEpisode ? handleNextEpisode : undefined}
+                prevEpisode={prevEpisode}
+                onPrevEpisode={prevEpisode ? handlePrevEpisode : undefined}
               />
 
               {showAd && (

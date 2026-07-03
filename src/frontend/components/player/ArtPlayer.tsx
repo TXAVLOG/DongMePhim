@@ -1232,6 +1232,13 @@ interface ArtPlayerProps {
     slug: string;
   };
   onNextEpisode?: () => void;
+  prevEpisode?: {
+    title: string;
+    episodeName: string;
+    thumbnail: string;
+    slug: string;
+  };
+  onPrevEpisode?: () => void;
 }
 
 const getAutoSkipSetting = (): boolean => {
@@ -1283,7 +1290,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
   storyboardUrl,
   autoNextEpisode = false,
   nextEpisode,
-  onNextEpisode
+  onNextEpisode,
+  prevEpisode,
+  onPrevEpisode
 }) => {
   const artRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<Artplayer | null>(null);
@@ -1849,6 +1858,18 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         ],
         controls: [
           'progress',
+          // Prev Episode Button
+          ...(onPrevEpisode ? [{
+            name: 'prev-episode',
+            position: 'left',
+            index: 9,
+            html: `<button class="art-icon" style="display: flex; align-items: center; justify-content: center;" title="${prevEpisode ? 'Tập trước: ' + prevEpisode.episodeName : 'Tập trước'}"><span class="material-symbols-outlined" style="font-size: 20px;">skip_previous</span></button>`,
+            click: function () {
+              if (onPrevEpisode) {
+                onPrevEpisode();
+              }
+            },
+          }] : []),
           {
             name: 'rewind-10',
             position: 'left',
@@ -1875,6 +1896,18 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
               }
             },
           },
+          // Next Episode Button
+          ...(onNextEpisode ? [{
+            name: 'next-episode',
+            position: 'left',
+            index: 12,
+            html: `<button class="art-icon" style="display: flex; align-items: center; justify-center: center;" title="${nextEpisode ? 'Tập tiếp theo: ' + nextEpisode.episodeName : 'Tập tiếp theo'}"><span class="material-symbols-outlined" style="font-size: 20px;">skip_next</span></button>`,
+            click: function () {
+              if (onNextEpisode) {
+                onNextEpisode();
+              }
+            },
+          }] : []),
           // Custom Subtitles toggle button - only show if there are subtitles
           ...(subtitles && subtitles.length > 0 ? [{
             name: 'custom-subtitles',
@@ -1890,6 +1923,10 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       };
 
       const art = new Artplayer(artOptions);
+      
+      // ... (code omitted for brevity but preserved by tool)
+      // (Lines between 1892 and 2390 are preserved)
+
 
       // Error handling for video load failures
       art.on('error', (error: any) => {
@@ -2411,7 +2448,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       }
       if (checkInterval) clearInterval(checkInterval);
     };
-  }, [url, title, storyboardUrl, subtitles]);
+  }, [url, title, storyboardUrl, subtitles, nextEpisode, onNextEpisode, prevEpisode, onPrevEpisode]);
 
   return (
     <div className="relative w-full h-full">
