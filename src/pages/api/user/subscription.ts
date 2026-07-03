@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ request }) => {
     const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
     
     if (providerType === 'supabase') {
-      let query = supabase.from('users').select('package, expiryDate, status');
+      let query = supabase.from('users').select('package, expiry_date, status');
       
       if (email) {
         query = query.eq('email', email);
@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (data) {
         return apiResponse({
           package: data.package || 'Free',
-          expiryDate: data.expiryDate,
+          expiryDate: data.expiry_date,
           status: data.status
         }, 'success', 'User package fetched successfully', 200, request);
       }

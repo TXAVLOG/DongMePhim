@@ -95,31 +95,31 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       featured: featuredList,
       categories,
       TXA_NEW1: {
-        title: "Mới cập nhật",
+        title: "TXA_NEW1",
         data: latestList
       },
       TXA_HOT1: {
-        title: "Xem nhiều nhất",
+        title: "TXA_HOT1",
         data: hotList
       },
       TXA_HH1: {
-        title: "Anime & Hoạt Hình",
+        title: "TXA_HH1",
         data: animeList
       },
       TXA_PB1: {
-        title: "Phim Bộ Đặc Sắc",
+        title: "TXA_PB1",
         data: seriesList
       },
       TXA_PL1: {
-        title: "Phim Lẻ Hay Nhất",
+        title: "TXA_PL1",
         data: singleList
       },
       TXA_TV1: {
-        title: "TV Shows thực tế",
+        title: "TXA_TV1",
         data: tvshowsList
       },
       TXA_CR1: {
-        title: "Phim Chiếu Rạp Bom Tấn",
+        title: "TXA_CR1",
         data: theaterList
       }
     }, 'success', '', 200, request);
