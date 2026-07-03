@@ -1,16 +1,16 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro';
-import { ArtPlayer } from '@components/player/ArtPlayer.tsx';
+import { TXAPlayer } from '@components/player/TXAPlayer.tsx';
 import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
-const movie = await MovieService.getMovieBySlug('obsession');
+const movie = await MovieService.getMovieBySlug('zoey-khac');
 
-// Media assets từ Cloudflare R2 công cộng
-const url = 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Obsession%20(2026)%201080p%20AMZN%20WEB-DL%20x264%20%5BEnglish%20DDP%205.1%5D%20ESub-(KyoGo-4kHdHub)/master.m3u8';
-const title = movie?.title || 'Obsession (2026)';
-const poster = movie?.bannerUrl || movie?.posterUrl || 'https://image.tmdb.org/t/p/original/5lTZyuBTNOfawsfPT8Q0cIg6qAF.jpg';
+// Media assets từ Cloudflare R2 công cộng & nguồn phimapi.com
+const url = 'https://v7.kkphimplayer7.com/20260702/1RfvTgea/index.m3u8';
+const title = movie?.title || 'Zoey Khác (The Other Zoey)';
+const poster = movie?.bannerUrl || movie?.posterUrl || 'https://phimimg.com/upload/vod/20260703-1/bd023455f5743bce0e3280e5fd74599c.jpg';
 
 // Cấu hình danh sách phụ đề song ngữ
 const subtitles = [
@@ -33,13 +33,13 @@ const subtitles = [
         <span class="material-symbols-outlined text-white text-[20px] transition-transform duration-300 group-hover:-translate-x-0.5" style="font-variation-settings: 'FILL' 0, 'wght' 600;">chevron_left</span>
       </a>
       <h1 class="text-lg md:text-xl font-outfit font-bold text-white tracking-tight flex items-center gap-2">
-        <span class="text-white/60 font-normal">Trang Demo</span>
+        <span class="text-white/60 font-normal">Trang Demo (TXAPlayer)</span>
         <span>{title}</span>
       </h1>
     </div>
 
     <div class="w-full aspect-video rounded-xl overflow-hidden shadow-2xl relative bg-black border border-glass-stroke">
-      <ArtPlayer 
+      <TXAPlayer 
         client:load 
         url={url}
         title={title}

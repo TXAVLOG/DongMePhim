@@ -1362,6 +1362,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
     const initPlayer = (HlsClass: any) => {
       if (!artRef.current) return;
 
+      let handlePageLoad: (() => void) | null = null;
+
       if (playerInstanceRef.current) {
         try {
           const oldArt = playerInstanceRef.current;
@@ -2084,7 +2086,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
 
         // Fix SPA View Transitions: controls bị ẩn khi ArtPlayer khởi tạo
         // trong lúc transition animation chưa xong → re-focus sau khi trang load xong
-        const handlePageLoad = () => {
+        handlePageLoad = () => {
           if (art && !(art as any).destroyed) {
             (art as any).isFocus = true;
             window.dispatchEvent(new Event('resize'));
@@ -2335,7 +2337,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       art.on('destroy', () => {
         clearInterval(intervalId);
         observer.disconnect();
-        document.removeEventListener('astro:page-load', handlePageLoad);
+        if (handlePageLoad) {
+          document.removeEventListener('astro:page-load', handlePageLoad);
+        }
         window.removeEventListener('txa-autoskip-changed', handleAutoSkipEvent);
         window.removeEventListener('keydown', handleGlobalKeyDown, true);
         if (playerContainer) {
