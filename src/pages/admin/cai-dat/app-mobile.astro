@@ -338,10 +338,10 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
 
           const current = serverSettings;
 
-          let appVersion = document.getElementById('app-version')?.value || '';
+          let appVersion = (document.getElementById('app-version')?.value || '').trim();
           let appReleaseNotes = '';
           if (changelogsState.length > 0) {
-            appVersion = changelogsState[0].version || appVersion;
+            appVersion = (changelogsState[0].version || appVersion).trim();
             appReleaseNotes = changelogsState[0].content || '';
           }
 
@@ -353,21 +353,21 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
               app_release_notes: appReleaseNotes,
               app_changelogs: changelogsState,
               app_android_download_enable: document.getElementById('app-android-enable')?.checked || false,
-              app_android_download_url: document.getElementById('app-android-url')?.value || '',
-              app_apk_size: document.getElementById('app-apk-size')?.value || '',
-              app_apk_sha256: document.getElementById('app-apk-sha')?.value || '',
+              app_android_download_url: (document.getElementById('app-android-url')?.value || '').trim(),
+              app_apk_size: (document.getElementById('app-apk-size')?.value || '').trim(),
+              app_apk_sha256: (document.getElementById('app-apk-sha')?.value || '').trim(),
               app_ios_direct_install_enable: document.getElementById('app-ios-ota-enable')?.checked || false,
-              app_ios_download_url: document.getElementById('app-ios-download-url')?.value || '',
+              app_ios_download_url: (document.getElementById('app-ios-download-url')?.value || '').trim(),
               app_ios_ipa_download_enable: document.getElementById('app-ios-ipa-enable')?.checked || false,
-              app_ios_ipa_url: document.getElementById('app-ios-ipa-url')?.value || '',
+              app_ios_ipa_url: (document.getElementById('app-ios-ipa-url')?.value || '').trim(),
               app_google_play_enable: document.getElementById('app-gplay-enable')?.checked || false,
-              app_google_play_url: document.getElementById('app-gplay-url')?.value || '',
+              app_google_play_url: (document.getElementById('app-gplay-url')?.value || '').trim(),
               app_app_store_enable: document.getElementById('app-appstore-enable')?.checked || false,
-              app_app_store_url: document.getElementById('app-appstore-url')?.value || '',
+              app_app_store_url: (document.getElementById('app-appstore-url')?.value || '').trim(),
               app_smart_tv_enable: document.getElementById('app-smarttv-enable')?.checked || false,
-              app_smart_tv_url: document.getElementById('app-smarttv-url')?.value || '',
-              app_smart_tv_size: document.getElementById('app-smarttv-size')?.value || '',
-              app_smart_tv_sha256: document.getElementById('app-smarttv-sha')?.value || '',
+              app_smart_tv_url: (document.getElementById('app-smarttv-url')?.value || '').trim(),
+              app_smart_tv_size: (document.getElementById('app-smarttv-size')?.value || '').trim(),
+              app_smart_tv_sha256: (document.getElementById('app-smarttv-sha')?.value || '').trim(),
             }
           };
 

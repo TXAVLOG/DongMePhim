@@ -34,27 +34,27 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
 
   // Android parameters
   const androidEnabled = isSettingEnabled(settings.app_android_download_enable);
-  const androidUrl = androidEnabled ? (settings.app_android_download_url || '') : '';
-  const apkSize = settings.app_apk_size || '';
-  const apkSha = settings.app_apk_sha256 || '';
+  const androidUrl = androidEnabled ? (settings.app_android_download_url || '').trim() : '';
+  const apkSize = (settings.app_apk_size || '').trim();
+  const apkSha = (settings.app_apk_sha256 || '').trim();
 
   // iOS parameters
   const iosDirectEnabled = isSettingEnabled(settings.app_ios_direct_install_enable);
-  const iosDirectUrl = iosDirectEnabled ? (settings.app_ios_download_url || '') : '';
+  const iosDirectUrl = iosDirectEnabled ? (settings.app_ios_download_url || '').trim() : '';
   const iosIpaEnabled = isSettingEnabled(settings.app_ios_ipa_download_enable);
-  const iosIpaUrl = iosIpaEnabled ? (settings.app_ios_ipa_url || '') : '';
+  const iosIpaUrl = iosIpaEnabled ? (settings.app_ios_ipa_url || '').trim() : '';
 
   // Play Store & App Store parameters
   const playStoreEnabled = isSettingEnabled(settings.app_google_play_enable);
-  const playStoreUrl = playStoreEnabled ? (settings.app_google_play_url || '') : '';
+  const playStoreUrl = playStoreEnabled ? (settings.app_google_play_url || '').trim() : '';
   const appStoreEnabled = isSettingEnabled(settings.app_app_store_enable);
-  const appStoreUrl = appStoreEnabled ? (settings.app_app_store_url || '') : '';
+  const appStoreUrl = appStoreEnabled ? (settings.app_app_store_url || '').trim() : '';
 
   // Smart TV parameters
   const smartTvEnabled = isSettingEnabled(settings.app_smart_tv_enable);
-  const smartTvUrl = smartTvEnabled ? (settings.app_smart_tv_url || '') : '';
-  const smartTvSize = settings.app_smart_tv_size || '';
-  const smartTvSha = settings.app_smart_tv_sha256 || '';
+  const smartTvUrl = smartTvEnabled ? (settings.app_smart_tv_url || '').trim() : '';
+  const smartTvSize = (settings.app_smart_tv_size || '').trim();
+  const smartTvSha = (settings.app_smart_tv_sha256 || '').trim();
 
   const showAndroidTab = androidEnabled && androidUrl;
   const showIosOtaTab = iosDirectEnabled && iosDirectUrl;
