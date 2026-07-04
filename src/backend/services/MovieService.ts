@@ -58,6 +58,7 @@ export const MovieService = {
           'huyen-thoai-co-tich': 'than-thoai',
           'hoc-duong': 'thanh-xuan-hoc-duong',
           'thanh-xuan-hoc-duong': 'hoc-duong',
+          'thanh-xuan-vuon-truong': 'thanh-xuan-hoc-duong',
           'chau-tinh-tri': 'chau-tinh-tri-xem-la-cuoi',
           'chau-tinh-tri-xem-la-cuoi': 'chau-tinh-tri'
         };

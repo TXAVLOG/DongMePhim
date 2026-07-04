@@ -33,6 +33,7 @@ export const SLUG_TO_NAME_MAP: Record<string, string> = {
   'hinh-su': 'Hình Sự',
   'vo-thuat': 'Võ Thuật',
   'hoc-duong': 'Học Đường',
+  'thanh-xuan-vuon-truong': 'Học Đường',
   'phieu-luu': 'Phiêu Lưu',
   'than-thoai': 'Thần Thoại',
   'chien-tranh': 'Chiến Tranh',
