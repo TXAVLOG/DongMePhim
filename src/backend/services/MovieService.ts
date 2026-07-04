@@ -1,6 +1,7 @@
 import { LocalMovieProvider } from './providers/LocalMovieProvider';
 import { SupabaseMovieProvider } from './providers/SupabaseMovieProvider';
 import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
+import { getHomepageCategories } from '../data/categories';
 
 // Lựa chọn provider dựa trên biến môi trường ENV. 
 const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
@@ -44,6 +45,43 @@ export const MovieService = {
     const cacheKey = `list_${JSON.stringify(params || {})}`;
     const cached = movieCache.get(cacheKey);
     if (cached) return cached;
+
+    // Nếu lọc theo category, kiểm tra xem admin có cấu hình thủ công trong homepage_categories không
+    if (params?.category) {
+      try {
+        const homepageMappings = await getHomepageCategories();
+        const category = params.category;
+
+        // Bộ ánh xạ bí danh cho các danh mục trang chủ đề phòng sự bất nhất giữa param API và slug cấu hình
+        const categoryAliases: Record<string, string> = {
+          'than-thoai': 'huyen-thoai-co-tich',
+          'huyen-thoai-co-tich': 'than-thoai',
+          'hoc-duong': 'thanh-xuan-hoc-duong',
+          'thanh-xuan-hoc-duong': 'hoc-duong',
+          'chau-tinh-tri': 'chau-tinh-tri-xem-la-cuoi',
+          'chau-tinh-tri-xem-la-cuoi': 'chau-tinh-tri'
+        };
+
+        const targetKey = homepageMappings[category] ? category : (categoryAliases[category] || category);
+        const configuredSlugs = homepageMappings[targetKey];
+
+        if (configuredSlugs && Array.isArray(configuredSlugs) && configuredSlugs.length > 0) {
+          // Lấy danh sách phim theo đúng các slugs được cấu hình
+          const movies = await movieProvider.getMovies({ slugs: configuredSlugs });
+          // Sắp xếp phim theo đúng thứ tự mà admin đã kéo thả
+          movies.sort((a, b) => configuredSlugs.indexOf(a.slug) - configuredSlugs.indexOf(b.slug));
+
+          let result = movies;
+          if (params.limit) {
+            result = result.slice(0, params.limit);
+          }
+          movieCache.set(cacheKey, result, 2 * 60 * 1000);
+          return result;
+        }
+      } catch (err) {
+        console.error('Lỗi khi lấy phim theo cấu hình danh mục trang chủ:', err);
+      }
+    }
 
     const data = await movieProvider.getMovies(params);
     // Cache danh sách trong 2 phút

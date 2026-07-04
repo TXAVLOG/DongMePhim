@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { getHomepageCategories, saveHomepageCategories } from '@data/categories';
+import { MovieService } from '@services/MovieService';
 
 // GET: Lấy ánh xạ danh mục trang chủ
 export const GET: APIRoute = async ({ request }) => {
@@ -25,6 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     await saveHomepageCategories(body);
+    MovieService.clearCache();
     return apiResponse({ success: true }, 'success', 'Cập nhật danh mục trang chủ thành công!', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);

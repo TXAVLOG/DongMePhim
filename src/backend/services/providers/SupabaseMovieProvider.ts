@@ -26,9 +26,9 @@ export class SupabaseMovieProvider implements IMovieProvider {
         if (cat === 'Lồng Tiếng' || catSlug === 'long-tieng') {
           query = query.or('lang.ilike.%lồng tiếng%,lang.ilike.%thuyết minh%');
         } else if (cat === 'Châu Tinh Trì' || catSlug === 'chau-tinh-tri' || catSlug === 'chau-tinh-tri-xem-la-cuoi') {
-          query = query.or('title.ilike.%Châu Tinh Trì%,title.ilike.%Stephen Chow%');
+          query = query.or('title.ilike.%Châu Tinh Trì%,title.ilike.%Stephen Chow%,actors.cs.["Châu Tinh Trì"],actors.cs.["Stephen Chow"]');
         } else if (catSlug === 'toi-so-con-nguoi-em-roi-do') {
-          query = query.or('genres.cs.["Kinh dị"],genres.cs.["Ma"],genres.cs.["Thriller"],genres.cs.["Horror"]');
+          query = query.or('genres.cs.["Kinh Dị"],genres.cs.["Kinh dị"],genres.cs.["Ma"],genres.cs.["Thriller"],genres.cs.["Horror"]');
         } else if (catSlug === 'phim-thai-new') {
           query = query.or('country.eq.Thái Lan,genres.cs.["Thái Lan"]');
         } else {
