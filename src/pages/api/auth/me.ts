@@ -38,7 +38,7 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
       gender: user.gender || '',
       province: user.province || '',
       ward: user.ward || '',
-      package: user.package || 'free',
+      package: (user.package || 'free').toLowerCase(),
       status: user.status || 'active',
       emailVerified: user.email_verified !== false,
       expiryDate: user.expiry_date || '',

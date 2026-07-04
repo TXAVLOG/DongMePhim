@@ -1339,6 +1339,17 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
     };
   }, []);
 
+  // Reset next episode popup state when episode changes
+  useEffect(() => {
+    popupShownRef.current = false;
+    setShowNextEpisodePopup(false);
+    setCountdown(5);
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+  }, [url]);
+
   useEffect(() => {
     if (isOffline || connectionRestored) return;
     if (!artRef.current) return;
@@ -1459,9 +1470,13 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
         fullscreenWeb: true,
         subtitleOffset: false,
         miniProgressBar: true,
-        mutex: true,
         backdrop: true,
         playsInline: true,
+        moreVideoAttr: {
+          playsInline: true,
+          'webkit-playsinline': true,
+          'x5-playsinline': true
+        },
         autoPlayback: false,
         airplay: true,
         hotkey: true,

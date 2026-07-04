@@ -41,9 +41,15 @@ export const seedSettings: SiteSettings = {
     telegram_notify_luckydraw: true,
   },
   app: {
-    app_version: "4.7.0",
-    app_release_notes: "- 🚀 [v4.7.0] Chuẩn hóa toàn bộ các Mobile API Adapter cho di động\n- 💎 [VIP] Phát triển tính năng chọn và đăng ký nâng cấp gói cước trực tiếp trên Flutter app tích hợp cổng SePay / VietQR\n- 📺 [CAST] Tích hợp trang chiếu lên TV (/cast) độc lập tối ưu cho màn hình TV\n- ⭐️ [RATING] Hệ thống đánh giá phim 1-10 sao đồng bộ giữa Web và Mobile App\n- 🔄 [CRON] Cron Job tự động quét và cập nhật tập phim mới từ nguồn KKPhim, tự động thông báo tới người dùng có phim trong danh sách Yêu thích",
+    app_version: "4.7.5",
+    app_release_notes: "- 📺 [PLAYER] Khắc phục lỗi ẩn thanh controls ArtPlayer trên mobile\n- 🔄 [AUTO-NEXT] Sửa lỗi tự động chuyển tập nhảy nhanh\n- 🎬 [AD] Tự động bỏ qua quảng cáo pre-roll nếu lỗi kết nối\n- 💎 [VIP] Chuẩn hóa đồng bộ logic gói cước Premium trên App\n- ⚙️ [SYS] Nâng cấp phiên bản lên v4.7.5",
     app_changelogs: [
+      {
+        version: "4.7.5",
+        date: "2026-07-04",
+        title: "🚀 v4.7.5 - Player Fixes, Ad Buffering & Upgrades Stability",
+        content: "- 📺 [PLAYER] Khắc phục lỗi ẩn thanh controls trình phát ArtPlayer trên trình duyệt Safari/Chrome mobile\n- 🔄 [AUTO-NEXT] Sửa lỗi tự động chuyển tập nhảy nhanh và rò rỉ trạng thái giữa các tập\n- 🎬 [AD] Nâng cấp cơ chế buffering quảng cáo pre-roll, tự động bỏ qua nếu link quảng cáo lỗi giúp người dùng vào thẳng phim\n- 💎 [VIP] Chuẩn hóa đồng bộ logic gói cước chữ thường để khắc phục lỗi không nhận diện gói Premium nâng cấp trên App\n- ⚙️ [SYS] Nâng cấp phiên bản hệ thống lên v4.7.5 tương thích hoàn toàn"
+      },
       {
         version: "4.7.0",
         date: "2026-06-28",
@@ -76,7 +82,7 @@ export const seedSettings: SiteSettings = {
     app_ios_direct_install_enable: false,
     app_ios_download_url: "/ios-access",
     app_ios_ipa_download_enable: true,
-    app_ios_ipa_url: "https://github.com/TXAVLOG/tphimx-setup/releases/download/v4.7.0_470/TPHIMX-Premium-v4.7.0+470.ipa",
+    app_ios_ipa_url: "https://github.com/TXAVLOG/tphimx-setup/releases/download/v4.7.5_475/TPHIMX-Premium-v4.7.5+475.ipa",
     app_google_play_enable: false,
     app_google_play_url: "",
     app_app_store_enable: false,

@@ -170,10 +170,15 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
             : [];
 
           // Build subtitles list
-          const subtitles = (ep.subtitles || []).map((sub: any) => ({
-            label: sub.label,
+          const rawSubtitles = Array.isArray(ep.subtitles)
+            ? ep.subtitles
+            : (ep.subtitles && typeof ep.subtitles === 'object')
+              ? [ep.subtitles]
+              : [];
+          const subtitles = rawSubtitles.map((sub: any) => ({
+            label: sub.label || "Phụ đề",
             lang: sub.label?.includes("Việt") ? "vi" : "en",
-            file: sub.file
+            file: sub.file || ""
           }));
 
           return {
