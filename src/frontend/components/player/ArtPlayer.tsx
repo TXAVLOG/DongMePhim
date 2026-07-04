@@ -2571,11 +2571,18 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
           0% { opacity: 1; }
           100% { opacity: 0; }
         }
+        .artplayer-container-responsive {
+          min-height: 350px;
+        }
+        @media (max-width: 767px) {
+          .artplayer-container-responsive {
+            min-height: 180px !important;
+          }
+        }
       `}</style>
       {isOffline && (
         <div 
-          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-red-500/30 bg-[#0B0A0C]/95 flex flex-col items-center justify-center text-center p-6"
-          style={{ minHeight: '350px' }}
+          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-red-500/30 bg-[#0B0A0C]/95 flex flex-col items-center justify-center text-center p-6 artplayer-container-responsive"
         >
           <span className="material-symbols-outlined text-red-500 text-5xl mb-4 animate-pulse">wifi_off</span>
           <h3 className="text-white text-lg font-black font-outfit mb-2 uppercase tracking-wide">Mất kết nối mạng</h3>
@@ -2586,8 +2593,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       )}
       {connectionRestored && (
         <div 
-          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-emerald-500/30 bg-[#0B0A0C]/95 flex flex-col items-center justify-center text-center p-6"
-          style={{ minHeight: '350px' }}
+          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-emerald-500/30 bg-[#0B0A0C]/95 flex flex-col items-center justify-center text-center p-6 artplayer-container-responsive"
         >
           <span className="material-symbols-outlined text-emerald-400 text-5xl mb-4 animate-bounce">wifi</span>
           <h3 className="text-white text-lg font-black font-outfit mb-2 uppercase tracking-wide">Đã có mạng trở lại</h3>
@@ -2605,8 +2611,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = ({
       {!isOffline && !connectionRestored && (
         <div 
           ref={artRef} 
-          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke" 
-          style={{ minHeight: '350px' }}
+          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke artplayer-container-responsive" 
         />
       )}
       

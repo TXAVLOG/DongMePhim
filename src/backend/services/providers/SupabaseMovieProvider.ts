@@ -1,7 +1,7 @@
 import { supabase } from '@lib/supabase';
 import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
 import { seedMovies, mapKKPhimToMovieDetail, mapKKPhimSearchItemToMovie } from './LocalMovieProvider';
-import { slugify } from '../../utils/categoryHelper';
+import { slugify, getNameBySlug } from '../../utils/categoryHelper';
 
 export class SupabaseMovieProvider implements IMovieProvider {
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string, slugs?: string[] }): Promise<Movie[]> {
@@ -22,6 +22,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
       if (params?.category) {
         const cat = params.category;
         const catSlug = slugify(cat);
+        const resolvedName = getNameBySlug(cat);
         if (cat === 'Lồng Tiếng' || catSlug === 'long-tieng') {
           query = query.or('lang.ilike.%lồng tiếng%,lang.ilike.%thuyết minh%');
         } else if (cat === 'Châu Tinh Trì' || catSlug === 'chau-tinh-tri' || catSlug === 'chau-tinh-tri-xem-la-cuoi') {
@@ -31,7 +32,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
         } else if (catSlug === 'phim-thai-new') {
           query = query.or('country.eq.Thái Lan,genres.cs.["Thái Lan"]');
         } else {
-          query = query.or(`country.eq."${cat}",country.eq."${catSlug}",genres.cs.["${cat}"],genres.cs.["${catSlug}"]`);
+          query = query.or(`country.eq."${cat}",country.eq."${catSlug}",country.eq."${resolvedName}",genres.cs.["${cat}"],genres.cs.["${catSlug}"],genres.cs.["${resolvedName}"]`);
         }
       }
 
