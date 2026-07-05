@@ -1,6 +1,7 @@
 // @ts-check
 // Trigger restart to register newly created routes
 import { defineConfig } from 'astro/config';
+import path from 'path';
 
 import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
@@ -20,6 +21,12 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        'react': path.resolve('./node_modules/react'),
+        'react-dom': path.resolve('./node_modules/react-dom')
+      }
+    },
     build: {
       target: 'esnext',
       cssMinify: 'esbuild',
