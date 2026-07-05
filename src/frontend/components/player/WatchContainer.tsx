@@ -1451,6 +1451,21 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return () => clearTimeout(timer);
   }, [showAd, adCountdown]);
 
+  useEffect(() => {
+    if (showAd && adType === 'video' && adVideoRef.current) {
+      const video = adVideoRef.current;
+      video.muted = false; // Bắt đầu không tắt tiếng
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn("Tự động phát có tiếng bị chặn, chuyển sang chế độ tắt tiếng:", error);
+          video.muted = true;
+          video.play().catch(e => console.error("Tự động phát tắt tiếng cũng thất bại:", e));
+        });
+      }
+    }
+  }, [showAd, adUrl, adType]);
+
   const handleAdEnded = () => {
     setShowAd(false);
     setTimeout(() => {
@@ -1545,6 +1560,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [playbackTime, setPlaybackTime] = useState<number>(0);
   const [isHacked, setIsHacked] = useState<boolean>(false);
   const playerGetTimeRef = useRef<(() => number) | null>(null);
+  const adVideoRef = useRef<HTMLVideoElement | null>(null);
   const resolvedSubtitles = useMemo(() => {
     if (!currentEpisode) return [];
     const subs = [...(currentEpisode.subtitles || [])];
@@ -2288,8 +2304,31 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
       )}
 
       {/* Player Section */}
-      <div className={`relative transition-all duration-300 ${isCinemaMode ? 'z-50 xl:scale-[1.03] shadow-[0_0_80px_rgba(0,0,0,0.9)]' : 'z-10'} glass-card bg-surface-card border border-glass-stroke rounded-2xl overflow-hidden shadow-2xl`}>
+      <div className={`relative transition-all duration-300 ${isCinemaMode ? 'z-50 xl:scale-[1.03] shadow-[0_0_80px_rgba(0,0,0,0.9)]' : 'z-10'} glass-card bg-surface-card border border-glass-stroke rounded-2xl overflow-hidden shadow-2xl ${showAd ? 'txa-ad-playing' : ''}`}>
         <div className="w-full aspect-video bg-black relative">
+          <style dangerouslySetInnerHTML={{ __html: `
+            .txa-ad-playing .art-controls,
+            .txa-ad-playing .art-loading,
+            .txa-ad-playing .art-mask,
+            .txa-ad-playing .art-setting,
+            .txa-ad-playing .art-layer,
+            .txa-ad-playing .txa-controls-wrapper,
+            .txa-ad-playing .txa-hud-top-bar,
+            .txa-ad-playing .txa-subtitles-container,
+            .txa-ad-playing .txa-precise-scrub-strip,
+            .txa-ad-playing .art-mini-progress-bar,
+            .txa-ad-playing .txa-watermark-fixed,
+            .txa-ad-playing .txa-watermark-floating,
+            .txa-ad-playing .art-layer-txa-watermark-fixed,
+            .txa-ad-playing .art-layer-txa-watermark-floating,
+            .txa-ad-playing .art-layer-txa-skip-intro,
+            .txa-ad-playing .art-layer-txa-skip-outro {
+              display: none !important;
+              opacity: 0 !important;
+              visibility: hidden !important;
+              pointer-events: none !important;
+            }
+          `}} />
           {isHacked ? (
             <iframe 
               src="/embed/crash" 
@@ -2452,9 +2491,10 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
               {showAd && (
                 <>
-                  <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-[50]">
+                  <div className="absolute inset-0 bg-black/90 flex items-center justify-center" style={{ zIndex: 200 }}>
                     {adType === 'video' ? (
                       <video 
+                        ref={adVideoRef}
                         id="adVideoMobile"
                         src={adUrl} 
                         autoPlay 
@@ -2473,7 +2513,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                       />
                     )}
                   </div>
-                  <div className="absolute bottom-0 right-3 z-[55] flex items-center gap-3 pb-2">
+                  <div className="absolute bottom-0 right-3 flex items-center gap-3 pb-2" style={{ zIndex: 210 }}>
                     {canSkipAd ? (
                       <button 
                         onClick={handleSkipAd}
