@@ -1688,6 +1688,16 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return false;
   });
 
+  useEffect(() => {
+    const handleAutoSkipChanged = (e: any) => {
+      setAutoSkip(e.detail);
+    };
+    window.addEventListener('txa-autoskip-changed', handleAutoSkipChanged);
+    return () => {
+      window.removeEventListener('txa-autoskip-changed', handleAutoSkipChanged);
+    };
+  }, []);
+
   const showLoginRequired = (actionName: string) => {
     if (typeof window === 'undefined') return;
     if ((window as any).txamodal) {
@@ -2780,20 +2790,36 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
               {totalEps > episodesPerTab && (
                 <div className="flex gap-2 overflow-x-auto pb-3 hide-scrollbar">
-                  {Array.from({ length: totalTabs }).map((_, i) => (
-                    <button 
-                      key={i}
-                      type="button"
-                      onClick={() => setActiveTab(i)}
-                      className={`shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer border ${
-                        i === activeTab 
-                          ? 'bg-secondary text-slate-950 border-secondary' 
-                          : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-secondary hover:text-secondary'
-                      }`}
-                    >
-                      {i * episodesPerTab + 1} - {Math.min((i + 1) * episodesPerTab, totalEps)}
-                    </button>
-                  ))}
+                  {Array.from({ length: totalTabs }).map((_, i) => {
+                    const firstEpIdx = i * episodesPerTab;
+                    const lastEpIdx = Math.min((i + 1) * episodesPerTab, totalEps) - 1;
+                    const firstEpName = currentServer.serverData[firstEpIdx]?.name || '';
+                    const lastEpName = currentServer.serverData[lastEpIdx]?.name || '';
+                    
+                    const cleanEpName = (name: string): string => {
+                      if (!name) return '';
+                      return name.replace(/^(tập|tap|episode|ep|chương|season|part|p)\s*/i, '').trim();
+                    };
+                    
+                    const tabLabel = (cleanEpName(firstEpName) && cleanEpName(lastEpName))
+                      ? `${cleanEpName(firstEpName)} - ${cleanEpName(lastEpName)}`
+                      : `${firstEpIdx + 1} - ${lastEpIdx + 1}`;
+
+                    return (
+                      <button 
+                        key={i}
+                        type="button"
+                        onClick={() => setActiveTab(i)}
+                        className={`shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer border ${
+                          i === activeTab 
+                            ? 'bg-secondary text-slate-950 border-secondary' 
+                            : 'bg-surface border-glass-stroke text-on-surface-variant hover:border-secondary hover:text-secondary'
+                        }`}
+                      >
+                        {tabLabel}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
               
