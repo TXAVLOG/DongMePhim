@@ -1619,10 +1619,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           continue;
         }
 
-        addLog(`⏳ Đang cào dữ liệu chi tiết cho slug: ${slug}...`);
+        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
+        const sourceLabel = crawlSource.toUpperCase();
+        addLog(`⏳ Đang cào dữ liệu chi tiết từ ${sourceLabel} cho slug: ${slug}...`);
         
         try {
-          const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
           let movieDetailObj;
           
           if (crawlSource === 'tmdb') {
@@ -1811,18 +1812,13 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             document.getElementById('statSuccess').textContent = success;
             
             // Format log message depending on source and whether movie is new or updated
-            const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
-            if (crawlSource === 'tmdb') {
-              const episodeText = movieDetailObj.type === 'movie' ? 'Hoàn Tất (Full)' : movieDetailObj.episodeCurrent;
-              addLog(`✓ Cào thành công từ TMDB & đã lưu vào DB: "${movieDetailObj.title}" (${episodeText})`, 'success');
+            const sourceLabel = crawlSource.toUpperCase();
+            if (currentEpisodeCount > 0) {
+              const addedCount = apiEpisodeCount - currentEpisodeCount;
+              addLog(`✓ Cào thành công từ ${sourceLabel} & đã lưu vào DB: "${movieDetailObj.title}" (Cập nhật +${addedCount} tập)`, 'success');
             } else {
-              if (currentEpisodeCount > 0) {
-                const addedCount = apiEpisodeCount - currentEpisodeCount;
-                addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (Cập nhật +${addedCount} tập)`, 'success');
-              } else {
-                const episodeText = movieDetailObj.type === 'movie' ? 'Hoàn Tất (Full)' : movieDetailObj.episodeCurrent;
-                addLog(`✓ Cào thành công & đã lưu vào DB: "${movieDetailObj.title}" (${episodeText})`, 'success');
-              }
+              const episodeText = movieDetailObj.type === 'movie' ? 'Hoàn Tất (Full)' : movieDetailObj.episodeCurrent;
+              addLog(`✓ Cào thành công từ ${sourceLabel} & đã lưu vào DB: "${movieDetailObj.title}" (${episodeText})`, 'success');
             }
             
             // Live update inventory list

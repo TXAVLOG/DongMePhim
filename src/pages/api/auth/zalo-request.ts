@@ -100,7 +100,7 @@ async function notifyAdminNewRequest(nickname: string, token: string, userEmail:
     };
 
     // Lưu thẳng vào Database (Supabase)
-    const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+    const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
     if (providerType === 'supabase') {
       try {
         await supabase.from('txa_email_logs').insert({

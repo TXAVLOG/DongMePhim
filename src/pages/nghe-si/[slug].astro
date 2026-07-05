@@ -8,7 +8,7 @@ import type { Movie } from '@apptypes/movie';
 
 const { slug } = Astro.params;
 
-const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+const isSupabase = (import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase') === 'supabase';
 let actor = null;
 let movies: Movie[] = [];
 

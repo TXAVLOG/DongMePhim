@@ -11,7 +11,7 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Missing credentials', 400, request);
     }
 
-    const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+    const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
     
     if (providerType === 'supabase') {
       let query = supabase.from('users').select('package, expiry_date, status');

@@ -14,7 +14,7 @@ interface Props {
 const { title } = Astro.props;
 const settings = await SettingService.getSettings();
 const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
-const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
 
 const packages = settings.packages || [];
 let packageStyles = '';

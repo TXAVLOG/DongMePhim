@@ -101,7 +101,7 @@ export const POST: APIRoute = async ({ request }) => {
         html: compiledHtml
       };
 
-      const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+      const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
       if (providerType === 'supabase') {
         try {
           await supabase.from('txa_email_logs').insert({
@@ -151,7 +151,7 @@ export const POST: APIRoute = async ({ request }) => {
         html: compiledHtml
       };
 
-      const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+      const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
       if (providerType === 'supabase') {
         try {
           await supabase.from('txa_email_logs').insert({

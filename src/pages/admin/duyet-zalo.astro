@@ -6,7 +6,7 @@ import { ZaloService } from "@services/ZaloService";
 const serverRequests = await ZaloService.getAllZaloAccessRequests();
 const serverBypasses = await ZaloService.getZaloBypasses();
 
-const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
 ---
 
 <AdminLayout title="Quản trị duyệt cổng Zalo & Whitelist">

@@ -3,7 +3,7 @@ import { SupabaseSettingProvider } from './providers/SupabaseSettingProvider';
 import type { ISettingProvider, SiteSettings } from '@apptypes/settings';
 
 // Chọn provider dựa trên biến môi trường (mặc định 'local')
-const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
 
 let settingProvider: ISettingProvider;
 

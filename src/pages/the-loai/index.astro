@@ -9,7 +9,7 @@ const standardGenres = ["Hành Động", "Tình Cảm", "Kinh Dị", "Hài Hư�
 let uniqueGenres = standardGenres;
 let genreCounts: Record<string, number> = {};
 
-const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+const isSupabase = (import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase') === 'supabase';
 if (isSupabase) {
   try {
     const { data: dbGenres } = await supabase.from('view_genre_counts').select('*');

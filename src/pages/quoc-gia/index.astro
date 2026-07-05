@@ -9,7 +9,7 @@ const standardCountries = ["Trung Quốc", "Hàn Quốc", "Nhật Bản", "Âu M
 let uniqueCountries = standardCountries;
 let countryCounts: Record<string, number> = {};
 
-const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+const isSupabase = (import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase') === 'supabase';
 if (isSupabase) {
   try {
     const { data: dbCountries } = await supabase.from('view_country_counts').select('*');

@@ -4,7 +4,7 @@ import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
 import { getHomepageCategories } from '../data/categories';
 
 // Lựa chọn provider dựa trên biến môi trường ENV. 
-const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'local';
+const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
 
 let movieProvider: IMovieProvider;
 

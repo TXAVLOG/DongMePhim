@@ -208,7 +208,7 @@ if (movie) {
   };
   const baseTitle = getBaseTitle(movie.title);
   
-  const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+  const isSupabase = (import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase') === 'supabase';
   let candidateMovies: Movie[] = [];
 
   if (isSupabase) {
@@ -285,7 +285,7 @@ const slugify = (text: string) => {
 
 let castActors = [];
 if (movie && movie.actors && movie.actors.length > 0) {
-  const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+  const isSupabase = (import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase') === 'supabase';
   if (isSupabase) {
     try {
       // 1. Query actors by movie relation

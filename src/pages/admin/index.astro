@@ -6,7 +6,7 @@ import { supabase } from '@lib/supabase';
 // Luôn clear cache cho dashboard admin để hiển thị số liệu mới nhất
 MovieService.clearCache();
 
-const isSupabase = import.meta.env.PUBLIC_DATA_PROVIDER === 'supabase';
+const isSupabase = (import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase') === 'supabase';
 
 const now = new Date();
 const todayStart = new Date();
