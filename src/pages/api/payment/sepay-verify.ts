@@ -126,8 +126,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     const allPkgs = settings.packages || [];
     const logTitle = log.package_title || '';
-    const resolvedPkg = allPkgs.find((p: any) => p.title === logTitle) ||
-                        allPkgs.find((p: any) => p.id === logTitle) ||
+    const resolvedPkg = allPkgs.find((p: any) => (p.title || '').toLowerCase() === logTitle.toLowerCase()) ||
+                        allPkgs.find((p: any) => (p.id || '').toLowerCase() === logTitle.toLowerCase()) ||
                         allPkgs.find((p: any) => p.id && logTitle.toLowerCase().includes(p.id.toLowerCase()));
     const pkgId = resolvedPkg?.id || resolvedPkg?.title || logTitle || 'vip';
     const cycleDays = calculateCycleDays(log.cycle);

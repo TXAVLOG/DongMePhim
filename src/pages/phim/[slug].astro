@@ -1576,7 +1576,10 @@ if (movie && movie.actors && movie.actors.length > 0) {
 
       if (localUser) {
         isAdmin = localUser.role === 'admin';
-        const userPkg = packages.find((p: any) => p.id === localUser.package) || packages.find((p: any) => p.title === localUser.package);
+        const userPkg = packages.find((p: any) => 
+          (p.id || '').toLowerCase() === (localUser.package || '').toLowerCase() || 
+          (p.title || '').toLowerCase() === (localUser.package || '').toLowerCase()
+        );
         userPkgId = userPkg ? userPkg.id : 'free';
         
         if (userPkg) {
@@ -1603,7 +1606,10 @@ if (movie && movie.actors && movie.actors.length > 0) {
             const userDb = data?.data;
             if (userDb) {
               isAdmin = userDb.role === 'admin';
-              const userPkg = packages.find((p: any) => p.id === userDb.package) || packages.find((p: any) => p.title === userDb.package);
+              const userPkg = packages.find((p: any) => 
+                (p.id || '').toLowerCase() === (userDb.package || '').toLowerCase() || 
+                (p.title || '').toLowerCase() === (userDb.package || '').toLowerCase()
+              );
               userPkgId = userPkg ? userPkg.id : 'free';
               
               if (userPkg) {

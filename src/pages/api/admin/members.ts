@@ -148,7 +148,10 @@ export const POST: APIRoute = async ({ request }) => {
             : 'Vô thời hạn';
 
           const packagesList = settings.packages || [];
-          resolvedPkg = packagesList.find((p: any) => p.id === newPkg || p.title === newPkg);
+          resolvedPkg = packagesList.find((p: any) => 
+            (p.id || '').toLowerCase() === newPkg.toLowerCase() || 
+            (p.title || '').toLowerCase() === newPkg.toLowerCase()
+          );
 
           // 1. Send success email to user
           const successTemplate = getEmailTemplate('content-purchase-success.html');

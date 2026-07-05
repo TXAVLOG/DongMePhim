@@ -1286,7 +1286,10 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
         const settings = (window as any).TXA_SITE_SETTINGS || {};
         const packages = settings.packages || [];
-        const userPkg = packages.find((p: any) => p.id === rawPkg || p.title === rawPkg) || packages.find((p: any) => p.id === 'free');
+        const userPkg = packages.find((p: any) => 
+          (p.id || '').toLowerCase() === rawPkg.toLowerCase() || 
+          (p.title || '').toLowerCase() === rawPkg.toLowerCase()
+        ) || packages.find((p: any) => (p.id || '').toLowerCase() === 'free');
         const pkgId = userPkg?.id || 'free';
         setCurrentUserPackage(pkgId);
         setCurrentUserPackageTitle(userPkg?.title || 'Gói Free');

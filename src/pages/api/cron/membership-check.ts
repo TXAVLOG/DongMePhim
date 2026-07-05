@@ -107,7 +107,10 @@ export const GET: APIRoute = async ({ request }) => {
       else if (diffDays <= 3.0 && diffDays >= 2.0) {
         // Kiểm tra xem gói cước có chu kỳ hàng tháng hoặc hàng năm
         const packagesList = settings.packages || [];
-        const userPkg = packagesList.find((p: any) => p.id === user.package || p.title === user.package);
+        const userPkg = packagesList.find((p: any) => 
+          (p.id || '').toLowerCase() === (user.package || '').toLowerCase() || 
+          (p.title || '').toLowerCase() === (user.package || '').toLowerCase()
+        );
         const cycle = (userPkg?.cycle || '').toLowerCase();
         
         if (cycle === 'monthly' || cycle === 'annual') {

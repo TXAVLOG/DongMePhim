@@ -90,7 +90,10 @@ export const POST: APIRoute = async ({ request }) => {
     const settings = await SettingService.getSettings();
     const userPackage = user.package || 'free';
     const packages = settings.packages || [];
-    const userPkg: any = packages.find((p: any) => p.id === userPackage) || packages.find((p: any) => p.title === userPackage) || packages.find((p: any) => p.id === 'free') || {};
+    const userPkg: any = packages.find((p: any) => 
+      (p.id || '').toLowerCase() === userPackage.toLowerCase() || 
+      (p.title || '').toLowerCase() === userPackage.toLowerCase()
+    ) || packages.find((p: any) => (p.id || '').toLowerCase() === 'free') || {};
     const maxPlaylists = userPkg.permissions?.max_playlists ?? 10;
 
     const { data: existingItem } = await supabase

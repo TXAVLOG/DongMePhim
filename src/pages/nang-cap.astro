@@ -757,7 +757,10 @@ const groupedPackages = packages.map((pkg: any) => {
           const userData = await userRes.json();
           const userObj = userData?.data || {};
           const userPackage = userObj.package || 'Free';
-          const userPkg = packages.find(p => p.title === userPackage);
+          const userPkg = packages.find(p => 
+            (p.title || '').toLowerCase() === userPackage.toLowerCase() ||
+            (p.id || '').toLowerCase() === userPackage.toLowerCase()
+          );
           const userPkgId = userPkg ? userPkg.id : 'free';
           
           userPackagePrice = userPkg ? userPkg.price : 0;

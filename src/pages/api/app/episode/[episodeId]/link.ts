@@ -67,7 +67,10 @@ export const GET: APIRoute = async ({ params, request }) => {
         isAdmin = user.role === 'admin';
 
         const packagesList = settings.packages || [];
-        const userPkg = packagesList.find((p: any) => p.id === userPkgId || p.title === userPkgId) || packagesList.find((p: any) => p.id === 'free');
+        const userPkg = packagesList.find((p: any) => 
+          (p.id || '').toLowerCase() === userPkgId.toLowerCase() || 
+          (p.title || '').toLowerCase() === userPkgId.toLowerCase()
+        ) || packagesList.find((p: any) => (p.id || '').toLowerCase() === 'free');
         
         const userPrice = userPkg?.price || 0;
         allowedServers = userPkg?.permissions?.allowed_servers || [];
