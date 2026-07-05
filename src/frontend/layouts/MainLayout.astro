@@ -16,6 +16,28 @@ interface Props {
 }
 
 const settings = await SettingService.getSettings();
+const publicSettings = {
+  general: {
+    site_name: settings.general?.site_name,
+    site_url: settings.general?.site_url,
+    site_description: settings.general?.site_description,
+    site_keywords: settings.general?.site_keywords,
+    maintenance_enable: settings.general?.maintenance_enable,
+    maintenance_message: settings.general?.maintenance_message,
+    maintenance_end_time: settings.general?.maintenance_end_time,
+    api_encrypt_enable: settings.general?.api_encrypt_enable,
+    api_encrypt_pass: settings.general?.api_encrypt_pass,
+    google_verification: settings.general?.google_verification,
+    bing_verification: settings.general?.bing_verification,
+    meta_robots: settings.general?.meta_robots,
+    og_image_default: settings.general?.og_image_default,
+    schema_business_name: settings.general?.schema_business_name,
+    schema_logo_url: settings.general?.schema_logo_url,
+  },
+  ads: settings.ads,
+  social: settings.social,
+  packages: settings.packages
+};
 const packages = settings.packages || [];
 const bypassPackage = packages.find((p: any) => p.id === 'bypass_zalo' || p.id.includes('bypass'));
 const isBypassPackageEnabled = bypassPackage ? bypassPackage.enabled !== false : true;
@@ -94,10 +116,28 @@ const isStaticPolicyPage = currentPath === '/bao-mat' || currentPath === '/dieu-
 const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
 const popularMovies = isStaticPolicyPage ? [] : await MovieService.getMovies({ limit: 12 });
 
-const decoyEnable = settings.general?.decoy_enable ?? true;
-const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;
+const userAgent = Astro.request.headers.get('user-agent') || '';
+const isBot = /googlebot|google-adwords|adsbot|bingbot|yandexbot|baiduspider|facebookexternalhit|twitterbot|rogerbot|linkedinbot|embedly|quora\slink\spreview|showyoubot|outbrain|pinterest\/0\.|pinterestbot|slackbot|vkShare|W3C_Validator/i.test(userAgent);
+
+const rawDecoyEnable = settings.general?.decoy_enable ?? true;
+const rawZaloLockEnable = settings.general?.zalo_lock_enable ?? true;
+
+const decoyEnable = isBot ? false : rawDecoyEnable;
+const zaloLockEnable = isBot ? false : rawZaloLockEnable;
 const decoyPasscode = settings.general?.decoy_passcode || 'phimtxadinhvai';
 const zaloGroupUrl = settings.social?.social_zalo_group_url || 'https://zalo.me/g/nc4aaozaxnr5fszvnxdb';
+
+let initialGateClass = 'gate-decoy';
+if (!decoyEnable) {
+  if (zaloLockEnable) {
+    initialGateClass = 'gate-zalo';
+  } else {
+    initialGateClass = 'gate-passed';
+  }
+}
+
+const siteUrl = settings.general?.site_url || Astro.url.origin;
+const canonicalURL = new URL(Astro.url.pathname, siteUrl).toString();
 
 const { 
   title, 
@@ -161,13 +201,13 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
 ---
 
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class={`dark ${initialGateClass}`}>
   <head>
     {useTransition && <ClientRouter />}
     <script define:vars={{ 
       apiEncryptEnable: settings.general?.api_encrypt_enable ?? false, 
       apiEncryptPass: settings.general?.api_encrypt_pass || 'tphimx',
-      settings,
+      settings: publicSettings,
       currentUser
     }}>
       window.TXA_API_CONFIG = {
@@ -410,6 +450,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
     <meta name="theme-color" content="#7c3aed" />
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
+    <link rel="canonical" href={canonicalURL} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -493,7 +534,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
       decoyPasscode,
       zaloGroupUrl
     })} />
-    <script is:inline id="txa-site-settings-data" type="application/json" set:html={JSON.stringify(settings)} />
+    <script is:inline id="txa-site-settings-data" type="application/json" set:html={JSON.stringify(publicSettings)} />
     <script is:inline>
       window.TXA_SITE_SETTINGS = JSON.parse(document.getElementById('txa-site-settings-data').textContent);
     </script>

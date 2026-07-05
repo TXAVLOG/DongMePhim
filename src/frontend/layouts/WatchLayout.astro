@@ -15,6 +15,9 @@ const {
   description = `${settings.general.site_name} - Xem phim trực tuyến chất lượng cao`, 
   image = "/favicon.svg" 
 } = Astro.props;
+
+const siteUrl = settings.general?.site_url || Astro.url.origin;
+const canonicalURL = new URL(Astro.url.pathname, siteUrl).toString();
 ---
 
 <!DOCTYPE html>
@@ -40,6 +43,7 @@ const {
     <meta name="theme-color" content="#7c3aed" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <link rel="canonical" href={canonicalURL} />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

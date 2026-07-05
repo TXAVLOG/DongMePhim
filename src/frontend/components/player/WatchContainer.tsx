@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ArtPlayer } from './ArtPlayer';
+import { TXAPlayer } from '@txa/txaplayer';
 import type { MovieDetail, Episode } from '@apptypes/movie';
 import { TxaModal } from '../ui/txamodal';
 import { supabase } from '@lib/supabase';
@@ -1612,6 +1613,13 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const [isInPlaylist, setIsInPlaylist] = useState<boolean>(false);
   const [isCinemaMode, setIsCinemaMode] = useState<boolean>(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<'txaplayer' | 'artplayer'>(() => {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('selected_player');
+      if (saved === 'artplayer') return 'artplayer';
+    }
+    return 'txaplayer';
+  });
   const [isCompact, setIsCompact] = useState<boolean>(() => {
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
     try {
@@ -2371,39 +2379,76 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             </div>
           ) : (
             <>
-              <ArtPlayer 
-                key={`${currentEpisode?.slug}_${serverIndex}`}
-                url={currentEpisode?.linkM3u8 || ''}
-                title={`${movie.title} - ${currentEpisode?.name || ''}`}
-                poster={movie.bannerUrl || movie.posterUrl}
-                currentTime={playbackTime}
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={handleEnded}
-                onPlayerReady={(getTime) => {
-                  playerGetTimeRef.current = getTime;
-                }}
-                subtitles={resolvedSubtitles}
-                qualities={[
-                  { html: 'Auto', url: currentEpisode?.linkM3u8 || '', default: true }
-                ]}
-                onChangeQuality={(item) => {
-                  console.log('Chất lượng phát: ', item.html);
-                }}
-                timeIntroStart={currentEpisode?.timeIntroStart}
-                timeIntroEnd={currentEpisode?.timeIntroEnd}
-                timeOutroStart={currentEpisode?.timeOutroStart}
-                timeOutroEnd={currentEpisode?.timeOutroEnd}
-                siteName={siteName}
-                siteUrl={siteUrl}
-                maxResolution={userPermissions?.max_resolution}
-                autoplay={!showAd}
-                storyboardUrl={currentEpisode?.storyboardUrl}
-                autoNextEpisode={autoNext}
-                nextEpisode={nextEpisode}
-                onNextEpisode={nextEpisode ? handleNextEpisode : undefined}
-                prevEpisode={prevEpisode}
-                onPrevEpisode={prevEpisode ? handlePrevEpisode : undefined}
-              />
+              {selectedPlayer === 'txaplayer' ? (
+                <TXAPlayer 
+                  key={`txa_${currentEpisode?.slug}_${serverIndex}`}
+                  url={currentEpisode?.linkM3u8 || ''}
+                  title={`${movie.title} - ${currentEpisode?.name || ''}`}
+                  poster={movie.bannerUrl || movie.posterUrl}
+                  currentTime={playbackTime}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleEnded}
+                  onPlayerReady={(getTime) => {
+                    playerGetTimeRef.current = getTime;
+                  }}
+                  subtitles={resolvedSubtitles}
+                  qualities={[
+                    { html: 'Auto', url: currentEpisode?.linkM3u8 || '', default: true }
+                  ]}
+                  onChangeQuality={(item) => {
+                    console.log('Chất lượng phát: ', item.html);
+                  }}
+                  timeIntroStart={currentEpisode?.timeIntroStart}
+                  timeIntroEnd={currentEpisode?.timeIntroEnd}
+                  timeOutroStart={currentEpisode?.timeOutroStart}
+                  timeOutroEnd={currentEpisode?.timeOutroEnd}
+                  siteName={siteName}
+                  siteUrl={siteUrl}
+                  maxResolution={userPermissions?.max_resolution}
+                  autoplay={!showAd}
+                  storyboardUrl={currentEpisode?.storyboardUrl}
+                  autoNextEpisode={autoNext}
+                  nextEpisode={nextEpisode}
+                  onNextEpisode={nextEpisode ? handleNextEpisode : undefined}
+                  prevEpisode={prevEpisode}
+                  onPrevEpisode={prevEpisode ? handlePrevEpisode : undefined}
+                  disableInternalResume={true}
+                />
+              ) : (
+                <ArtPlayer 
+                  key={`art_${currentEpisode?.slug}_${serverIndex}`}
+                  url={currentEpisode?.linkM3u8 || ''}
+                  title={`${movie.title} - ${currentEpisode?.name || ''}`}
+                  poster={movie.bannerUrl || movie.posterUrl}
+                  currentTime={playbackTime}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleEnded}
+                  onPlayerReady={(getTime) => {
+                    playerGetTimeRef.current = getTime;
+                  }}
+                  subtitles={resolvedSubtitles}
+                  qualities={[
+                    { html: 'Auto', url: currentEpisode?.linkM3u8 || '', default: true }
+                  ]}
+                  onChangeQuality={(item) => {
+                    console.log('Chất lượng phát: ', item.html);
+                  }}
+                  timeIntroStart={currentEpisode?.timeIntroStart}
+                  timeIntroEnd={currentEpisode?.timeIntroEnd}
+                  timeOutroStart={currentEpisode?.timeOutroStart}
+                  timeOutroEnd={currentEpisode?.timeOutroEnd}
+                  siteName={siteName}
+                  siteUrl={siteUrl}
+                  maxResolution={userPermissions?.max_resolution}
+                  autoplay={!showAd}
+                  storyboardUrl={currentEpisode?.storyboardUrl}
+                  autoNextEpisode={autoNext}
+                  nextEpisode={nextEpisode}
+                  onNextEpisode={nextEpisode ? handleNextEpisode : undefined}
+                  prevEpisode={prevEpisode}
+                  onPrevEpisode={prevEpisode ? handlePrevEpisode : undefined}
+                />
+              )}
 
               {showAd && (
                 <>
@@ -2532,6 +2577,26 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             <span>Rạp phim</span>
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors ${isCinemaMode ? 'bg-primary/20 border-primary text-primary' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
               {isCinemaMode ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          {/* Trình phát selector */}
+          <button 
+            onClick={() => {
+              const nextPlayer = selectedPlayer === 'txaplayer' ? 'artplayer' : 'txaplayer';
+              setSelectedPlayer(nextPlayer);
+              if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('selected_player', nextPlayer);
+              }
+              if ((window as any).showGlobalToast) {
+                (window as any).showGlobalToast(`Đã chuyển sang trình phát ${nextPlayer === 'txaplayer' ? 'TXAPlayer' : 'ArtPlayer'}!`, 'success');
+              }
+            }}
+            className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
+          >
+            <span>Trình phát</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-primary bg-primary/20 text-primary transition-colors">
+              {selectedPlayer === 'txaplayer' ? 'TXAPlayer' : 'ArtPlayer'}
             </span>
           </button>
 

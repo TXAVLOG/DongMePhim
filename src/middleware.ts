@@ -3,6 +3,21 @@ import { verifySession } from '@lib/auth';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const pathname = context.url.pathname;
+  const host = context.url.hostname || '';
+  const isApiSubdomain = host.startsWith('api.');
+
+  if (isApiSubdomain && pathname === '/') {
+    return new Response(
+      JSON.stringify({ status: 'ok', message: 'DongMePhim API Server' }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet'
+        }
+      }
+    );
+  }
 
   if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && pathname !== '/api/admin/movie-action' && pathname !== '/admin/phim/edit') {
     const currentUser = await verifySession(context.request, context.cookies) as any;
@@ -44,5 +59,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.locals.user = currentUser;
   }
 
-  return next();
+  const response = await next();
+
+  if (isApiSubdomain) {
+    try {
+      response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');
+    } catch (e) {
+      const headers = new Headers(response.headers);
+      headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+      });
+    }
+  }
+
+  return response;
 });
