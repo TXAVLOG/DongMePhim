@@ -91,6 +91,117 @@ function formatDuration(ms: number) {
       </div>
     </div>
 
+    <!-- Manual Trigger Section -->
+    <div class="glass-panel p-6 rounded-2xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-glass-stroke/40 pb-4">
+        <div>
+          <h2 class="text-base font-black text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-purple-400">play_circle</span>
+            Kích Hoạt Tác Vụ Thủ Công (Manual Triggers)
+          </h2>
+          <p class="text-[10px] text-zinc-400 mt-0.5">Chủ động chạy ngay tiến trình đồng bộ hoặc quét hạn dùng không cần đợi theo lịch tự động.</p>
+        </div>
+        <button 
+          type="button" 
+          onclick="triggerCronJob('all')"
+          id="btn-trigger-all"
+          class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 active:scale-95 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer border-none shadow-[0_4px_12px_rgba(139,92,246,0.3)]"
+        >
+          <span class="material-symbols-outlined text-sm">run_circle</span>
+          <span>Chạy tất cả tác vụ</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Card 1: Sync KKPhim -->
+        <div class="glass-panel p-5 rounded-2xl flex flex-col justify-between border border-glass-stroke/30 hover:border-purple-500/30 transition-all bg-white/[0.01] hover:bg-white/[0.03]">
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <span class="material-symbols-outlined text-xl">sync</span>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-white block">Đồng bộ phim (sync-kkphim)</span>
+                <span class="text-[9px] text-zinc-500 font-bold font-mono">Trực tiếp: 15-phút / lần</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-zinc-400 leading-relaxed">
+              Cập nhật tập phim mới và tiến độ phát sóng cho tối đa 20 phim đang cập nhật (`ongoing`) từ các API của đối tác.
+            </p>
+          </div>
+          <div class="pt-4 flex justify-end">
+            <button 
+              type="button" 
+              onclick="triggerCronJob('sync-kkphim')"
+              id="btn-trigger-sync-kkphim"
+              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-sm">play_arrow</span>
+              <span>Chạy ngay</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: Crawl New Movies -->
+        <div class="glass-panel p-5 rounded-2xl flex flex-col justify-between border border-glass-stroke/30 hover:border-emerald-500/30 transition-all bg-white/[0.01] hover:bg-white/[0.03]">
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <span class="material-symbols-outlined text-xl">movie_filter</span>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-white block">Cào phim tự động (crawl-new-movies)</span>
+                <span class="text-[9px] text-zinc-500 font-bold font-mono">Trực tiếp: Hằng ngày (7:00 AM)</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-zinc-400 leading-relaxed">
+              Quét danh sách mới cập nhật và cào tự động 10 phim mới nhất từ nguồn phim đối tác KKPhim & VSMOV vào hệ thống.
+            </p>
+          </div>
+          <div class="pt-4 flex justify-end">
+            <button 
+              type="button" 
+              onclick="triggerCronJob('crawl-new-movies')"
+              id="btn-trigger-crawl-new-movies"
+              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-sm">play_arrow</span>
+              <span>Chạy ngay</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 3: Membership Check -->
+        <div class="glass-panel p-5 rounded-2xl flex flex-col justify-between border border-glass-stroke/30 hover:border-sky-500/30 transition-all bg-white/[0.01] hover:bg-white/[0.03]">
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                <span class="material-symbols-outlined text-xl">badge</span>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-white block">Quét hạn tài khoản (membership-check)</span>
+                <span class="text-[9px] text-zinc-500 font-bold font-mono">Trực tiếp: 15-phút / lần</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-zinc-400 leading-relaxed">
+              Kiểm tra thời hạn gói cước, hạ cấp tài khoản hết hạn về gói Free và gửi email cảnh báo/thông báo hết hạn tự động.
+            </p>
+          </div>
+          <div class="pt-4 flex justify-end">
+            <button 
+              type="button" 
+              onclick="triggerCronJob('membership-check')"
+              id="btn-trigger-membership-check"
+              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-sm">play_arrow</span>
+              <span>Chạy ngay</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Filter Control Bar -->
     <div class="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row gap-4 items-center justify-between">
       <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -242,6 +353,52 @@ ${formattedJson}
           row.classList.add('hidden');
         }
       });
+    };
+
+    window.triggerCronJob = async function(jobName) {
+      const btnId = jobName === 'all' ? 'btn-trigger-all' : `btn-trigger-${jobName}`;
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `
+        <span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full mr-1.5" role="status" aria-hidden="true"></span>
+        <span>Đang chạy...</span>
+      `;
+      
+      if (window.showGlobalToast) {
+        window.showGlobalToast(`Đang gửi yêu cầu kích hoạt tác vụ ${jobName}...`, 'info');
+      }
+
+      try {
+        const res = await fetch('/api/admin/cron-trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job: jobName })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          if (window.showGlobalToast) {
+            window.showGlobalToast(data.message || `Đã chạy tác vụ ${jobName} thành công!`, 'success');
+          }
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          throw new Error(data.message || 'Lỗi không xác định từ server');
+        }
+      } catch (err) {
+        console.error('Trigger cron task error:', err);
+        if (window.showGlobalToast) {
+          window.showGlobalToast(`Lỗi: ${err.message}`, 'error');
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
     };
 
     // Auto highlight active nav item

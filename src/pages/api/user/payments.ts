@@ -108,7 +108,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const clientNote = note || clientInfo || null;
 
     const user = await verifyUserFromRequest(request, cookies);
-    if (user) {
+    const callerIsAdmin = user && (user.role === 'admin' || user.roles === 'admin');
+    
+    if (user && !callerIsAdmin) {
       username = user.username;
       email = user.email;
     }

@@ -1,0 +1,55 @@
+import type { APIRoute } from 'astro';
+import { apiResponse } from '@lib/api/response';
+import { verifySession } from '@lib/auth';
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  try {
+    const user = await verifySession(request, cookies) as any;
+    const isAdmin = user && (user.role === 'admin' || user.roles === 'admin');
+    if (!isAdmin) {
+      return apiResponse(null, 'error', 'Không có quyền truy cập!', 403, request);
+    }
+
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch (e) {}
+
+    const { job } = body;
+    const validJobs = ['sync-kkphim', 'membership-check', 'crawl-new-movies'];
+    
+    if (!job || (!validJobs.includes(job) && job !== 'all')) {
+      return apiResponse(null, 'error', 'Tên tác vụ không hợp lệ!', 400, request);
+    }
+
+    const secret = (import.meta as any).env.CRON_SECRET || 'txa-cron-kkphim-2026-secure';
+    const url = new URL(request.url);
+    const host = url.origin;
+
+    const runJob = async (jobName: string) => {
+      const targetUrl = `${host}/api/cron/${jobName}?secret=${secret}`;
+      const res = await fetch(targetUrl);
+      if (!res.ok) {
+        throw new Error(`Tác vụ ${jobName} trả về trạng thái ${res.status}`);
+      }
+      return await res.json();
+    };
+
+    if (job === 'all') {
+      const results: Record<string, any> = {};
+      for (const j of validJobs) {
+        try {
+          results[j] = await runJob(j);
+        } catch (err: any) {
+          results[j] = { error: err.message };
+        }
+      }
+      return apiResponse(results, 'success', 'Đã chạy tất cả tác vụ!', 200, request);
+    } else {
+      const result = await runJob(job);
+      return apiResponse(result, 'success', `Đã chạy tác vụ ${job} thành công!`, 200, request);
+    }
+  } catch (err: any) {
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
+  }
+};
