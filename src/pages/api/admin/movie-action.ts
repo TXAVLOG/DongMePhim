@@ -3,6 +3,8 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
+import { SmtpClient } from '@lib/api/smtpClient';
+import { getEmailTemplate } from '@templates/emails/emailReader';
 
 // GET: Lấy chi tiết phim qua MovieService (tự động fallback DB/Seed/API)
 export const GET: APIRoute = async ({ request }) => {
@@ -121,8 +123,125 @@ async function fetchActorFromWikipedia(actorName: string) {
   }
 }
 
+async function sendEpisodeUpdateEmails(movieId: string, movieSlug: string, moviePayload: any, settings: any) {
+  try {
+    const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
+    if (!isSmtpConfigured) return;
+
+    // 1. Query watch_lists for this movie
+    const { data: favoritedUsers, error: favError } = await supabase
+      .from('watch_lists')
+      .select('user_id')
+      .eq('movie_id', movieId);
+
+    if (favError) {
+      console.error(`[SMTP] Error querying watch_lists for movie ${movieId}:`, favError);
+      return;
+    }
+
+    if (!favoritedUsers || favoritedUsers.length === 0) {
+      return;
+    }
+
+    const userIds = favoritedUsers.map((fu: any) => fu.user_id).filter(Boolean);
+    if (userIds.length === 0) return;
+
+    // 2. Fetch user details (email, username, name)
+    const { data: usersList, error: usersError } = await supabase
+      .from('users')
+      .select('email, username, name')
+      .in('id', userIds);
+
+    if (usersError) {
+      console.error(`[SMTP] Error fetching users for notifications:`, usersError);
+      return;
+    }
+
+    if (!usersList || usersList.length === 0) return;
+
+    // 3. Load email template
+    const htmlTemplate = getEmailTemplate('movie-episode-update.html');
+    const siteUrl = settings.general.site_url || 'https://dongmephim.online';
+    const siteName = settings.general.site_name || 'DongMePhim';
+    const movieLink = `${siteUrl.replace(/\/$/, '')}/phim/${movieSlug}`;
+    const year = new Date().getFullYear().toString();
+
+    // 4. Send emails to each user
+    for (const user of usersList) {
+      if (!user.email) continue;
+      
+      const recipientName = user.name || user.username || 'Bạn';
+      const compiledHtml = htmlTemplate
+        .replace(/{name}/g, recipientName)
+        .replace(/{movie_title}/g, moviePayload.title)
+        .replace(/{episode_current}/g, moviePayload.episode_current)
+        .replace(/{movie_link}/g, movieLink)
+        .replace(/{site_name}/g, siteName)
+        .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
+        .replace(/{year}/g, year);
+
+      try {
+        const sendResult = await SmtpClient.sendMail({
+          host: settings.smtp.smtp_host,
+          port: settings.smtp.smtp_port,
+          secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+          user: settings.smtp.smtp_user,
+          pass: settings.smtp.smtp_pass,
+          fromEmail: settings.smtp.smtp_from_email,
+          fromName: settings.smtp.smtp_from_name,
+        }, {
+          to: user.email,
+          subject: `[Tập Mới] Phim "${moviePayload.title}" đã cập nhật: ${moviePayload.episode_current}!`,
+          html: compiledHtml
+        });
+
+        // Log successful email
+        await supabase.from('txa_email_logs').insert({
+          recipient: user.email,
+          sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
+          subject: `[Tập Mới] Phim "${moviePayload.title}" đã cập nhật: ${moviePayload.episode_current}!`,
+          category: 'Movie Update Notification',
+          status: 'success',
+          response_code: sendResult.responseCode || '250 OK',
+          parameters: { username: user.username, email: user.email, movie_slug: movieSlug },
+          smtp_config: {
+            host: settings.smtp.smtp_host,
+            port: settings.smtp.smtp_port,
+            secure: settings.smtp.smtp_secure,
+            user: settings.smtp.smtp_user
+          },
+          html: compiledHtml
+        });
+      } catch (err: any) {
+        console.error(`[SMTP ERROR] Failed to send episode update email to ${user.email}:`, err);
+        // Log failed email
+        try {
+          await supabase.from('txa_email_logs').insert({
+            recipient: user.email,
+            sender: `${settings.smtp.smtp_from_name} <${settings.smtp.smtp_from_email}>`,
+            subject: `[Tập Mới] Phim "${moviePayload.title}" đã cập nhật: ${moviePayload.episode_current}!`,
+            category: 'Movie Update Notification',
+            status: 'failed',
+            response_code: err.message || 'Lỗi kết nối SMTP server',
+            parameters: { username: user.username, email: user.email, movie_slug: movieSlug },
+            smtp_config: {
+              host: settings.smtp.smtp_host,
+              port: settings.smtp.smtp_port,
+              secure: settings.smtp.smtp_secure,
+              user: settings.smtp.smtp_user
+            },
+            html: compiledHtml
+          });
+        } catch (_) {}
+      }
+    }
+  } catch (e) {
+    console.error(`[SMTP] Critical error in sendEpisodeUpdateEmails:`, e);
+  }
+}
+
 // POST: Lưu hoặc Xóa phim trên database Supabase
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     let body: any = {};
     try {
@@ -148,16 +267,20 @@ export const POST: APIRoute = async ({ request }) => {
         return apiResponse(null, 'error', 'Thiếu slug của phim!', 400, request);
       }
 
-      // Preserve existing views if not explicitly provided (avoid reset to 0 on every save)
+      // Preserve existing views and get previous episode current to detect updates
+      let existingMovie: any = null;
       let existingViews = 0;
       try {
         const { data: existing } = await supabase
           .from('movies')
-          .select('views')
+          .select('views, episode_current, title')
           .eq('slug', movieSlug)
           .maybeSingle();
-        if (existing && typeof existing.views === 'number') {
-          existingViews = existing.views;
+        if (existing) {
+          existingMovie = existing;
+          if (typeof existing.views === 'number') {
+            existingViews = existing.views;
+          }
         }
       } catch (_) {}
 
@@ -200,6 +323,24 @@ export const POST: APIRoute = async ({ request }) => {
       if (error) {
         console.error('Lỗi khi lưu phim vào Supabase:', error);
         return apiResponse(null, 'error', `Lỗi database: ${error.message}`, 500, request);
+      }
+
+      // Gửi thông báo email nếu phim có tập mới và SMTP được cấu hình
+      const hasNewEpisode = existingMovie && 
+        existingMovie.episode_current && 
+        existingMovie.episode_current !== moviePayload.episode_current;
+
+      if (hasNewEpisode && savedMovie) {
+        const settings = await SettingService.getSettings();
+        if (locals?.runtime?.ctx?.waitUntil) {
+          locals.runtime.ctx.waitUntil(
+            sendEpisodeUpdateEmails(savedMovie.id, movieSlug, moviePayload, settings)
+          );
+        } else {
+          sendEpisodeUpdateEmails(savedMovie.id, movieSlug, moviePayload, settings).catch(e => {
+            console.error('Error sending episode updates in background:', e);
+          });
+        }
       }
 
       // Xử lý và lưu diễn viên để tránh trùng lặp

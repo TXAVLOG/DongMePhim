@@ -384,6 +384,60 @@ export function getEmailTemplate(filename: string): string {
   </tr>
 </table>`;
 
+    case 'movie-episode-update.html':
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tập mới phim {movie_title} - {site_name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);" cellpadding="0" cellspacing="0">
+          <!-- Header -->
+          <tr>
+            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
+              <img src="{site_url}/favicon.png" alt="Logo" style="width:56px;height:56px;margin-bottom:16px;border-radius:12px;box-shadow:0 0 15px rgba(124, 58, 237, 0.2);" />
+              <h2 style="margin:0;font-size:24px;font-weight:800;color:#7c3aed;letter-spacing:-0.5px;text-transform:uppercase;">{site_name}</h2>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 30px;">
+              <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#ffffff;">Xin chào {name},</h3>
+              <p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Phim <strong style="color:#ffffff;">{movie_title}</strong> trong danh sách yêu thích của bạn vừa cập nhật tập mới:</p>
+              
+              <div style="background-color:#18181b;border:1px solid #7c3aed;border-radius:16px;padding:20px;margin:24px 0;text-align:center;">
+                <p style="margin:0 0 8px;font-size:13px;color:#a1a1aa;">Tập hiện tại:</p>
+                <div style="font-size:28px;font-weight:900;color:#7c3aed;font-family:monospace;letter-spacing:1px;">{episode_current}</div>
+              </div>
+              
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="{movie_link}" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #7c3aed, #6d28d9);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(124,58,237,0.3);">Xem phim ngay</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:30px 40px;background-color:#0c0c0e;border-top:1px solid rgba(255,255,255,0.03);text-align:center;">
+              <p style="margin:0 0 8px;font-size:11px;color:#52525b;">Hệ thống gửi thư tự động từ {site_name} - Trải nghiệm điện ảnh đỉnh cao</p>
+              <p style="margin:0;font-size:10px;color:#3f3f46;">© {year} {site_name}. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
     default:
       return '';
   }

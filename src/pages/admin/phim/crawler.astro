@@ -56,14 +56,15 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         </div>
 
         <!-- Mode sub-tabs -->
-        <div class="grid grid-cols-3 gap-1 p-1 bg-zinc-950/80 rounded-xl border border-glass-stroke">
-          <button id="subTabBatchBtn" class="py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all">Số trang</button>
+        <div class="grid grid-cols-4 gap-1 p-1 bg-zinc-950/80 rounded-xl border border-glass-stroke">
+          <button id="subTabUrlBtn" class="py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all">URL/Slugs</button>
+          <button id="subTabBatchBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Số trang</button>
           <button id="subTabFilterBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Lọc/Bộ lọc</button>
           <button id="subTabUpdateBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Mới cập nhật</button>
         </div>
 
         <!-- Sub-Tab: URL / Slug input -->
-        <div id="subTabUrl" class="space-y-4 hidden">
+        <div id="subTabUrl" class="space-y-4">
           <div>
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập URL phim hoặc Slugs (Mỗi dòng 1 phim)</label>
             <textarea id="crawlUrlsInput" rows="5" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs font-mono placeholder:text-zinc-700" placeholder="https://kkphim1.com/phim/digimon-beatbreak&#10;tro-choi-con-muc"></textarea>
@@ -85,7 +86,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         </div>
 
         <!-- Sub-Tab: Batch range -->
-        <div id="subTabBatch" class="space-y-4">
+        <div id="subTabBatch" class="space-y-4 hidden">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang bắt đầu</label>
@@ -372,7 +373,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     (function() {
       // State
       let activeTab = 'standard'; // 'standard' | 'advanced'
-      let standardSubTab = 'batch'; // 'batch' | 'filter' | 'update'
+      let standardSubTab = 'url'; // 'url' | 'batch' | 'filter'
       let filterType = 'country'; // 'country' | 'genre'
       let isRunning = false;
       let shouldStop = false;
@@ -594,26 +595,24 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     });
 
     // Sub-tab Switches
-    if (subTabUrlBtn) {
-      subTabUrlBtn.addEventListener('click', () => {
-        if (isRunning) return;
-        standardSubTab = 'url';
-        subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
-        subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-        subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-        if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-        subTabUrl.classList.remove('hidden');
-        subTabBatch.classList.add('hidden');
-        subTabFilter.classList.add('hidden');
-        if (subTabUpdate) subTabUpdate.classList.add('hidden');
-      });
-    }
+    subTabUrlBtn.addEventListener('click', () => {
+      if (isRunning) return;
+      standardSubTab = 'url';
+      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
+      subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabUrl.classList.remove('hidden');
+      subTabBatch.classList.add('hidden');
+      subTabFilter.classList.add('hidden');
+      if (subTabUpdate) subTabUpdate.classList.add('hidden');
+    });
 
     subTabBatchBtn.addEventListener('click', () => {
       if (isRunning) return;
       standardSubTab = 'batch';
       subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
-      if (subTabUrlBtn) subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabBatch.classList.remove('hidden');
@@ -626,7 +625,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       if (isRunning) return;
       standardSubTab = 'filter';
       subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
-      if (subTabUrlBtn) subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabFilter.classList.remove('hidden');
@@ -640,7 +639,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         if (isRunning) return;
         standardSubTab = 'update';
         subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
-        if (subTabUrlBtn) subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+        subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
         subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
         subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
         if (subTabUpdate) subTabUpdate.classList.remove('hidden');
@@ -1508,7 +1507,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         } else if (session.standardSubTab === 'update') {
           if (subTabUpdateBtn) subTabUpdateBtn.click();
         } else {
-          if (subTabUrlBtn) subTabUrlBtn.click();
+          subTabUrlBtn.click();
         }
       }
 
