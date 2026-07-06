@@ -5,6 +5,13 @@ import { mapKKPhimToMovieDetail, mergeMovieEpisodes } from '@services/providers/
 
 export const GET: APIRoute = async ({ request }) => {
   const startTime = Date.now();
+  let updatedCount = 0;
+  let processedCount = 0;
+  let totalMovies = 0;
+  const notificationsToInsert: any[] = [];
+  const detailsLog: string[] = [];
+  let cronLogId: string | null = null;
+
   try {
     const url = new URL(request.url);
     const secret = url.searchParams.get('secret') || request.headers.get('x-cron-secret');
@@ -23,43 +30,78 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
-    // 1. Fetch all ongoing movies from Supabase that have source = 'kkphim' or slug exists
+    // ★ GHI LOG NGAY LẬP TỨC khi bắt đầu chạy (status = 'running')
+    // Nếu Worker bị timeout/kill, log này vẫn tồn tại trong DB để admin biết
+    try {
+      const { data: logEntry } = await supabase.from('txa_cron_logs').insert({
+        job_name: 'sync-kkphim',
+        status: 'running',
+        message: `Đang đồng bộ phim ongoing (limit: ${limit})... Nếu trạng thái này không chuyển sang "success" sau vài phút, Worker đã bị timeout.`,
+        details: { limit, started_at: new Date().toISOString() },
+        duration_ms: 0
+      }).select('id').single();
+      
+      if (logEntry) {
+        cronLogId = logEntry.id;
+      }
+    } catch (logErr) {
+      console.error('[sync-kkphim] Failed to write initial running log:', logErr);
+    }
+
+    // 1. Fetch all ongoing movies from Supabase
     const { data: movies, error: fetchErr } = await supabase
       .from('movies')
       .select('id, title, slug, episodes, poster_url, episode_current, source')
       .eq('status', 'ongoing')
-      .limit(limit); // Limit per cron run to avoid timeouts
+      .limit(limit);
 
     if (fetchErr) {
       throw fetchErr;
     }
 
     if (!movies || movies.length === 0) {
+      const duration = Date.now() - startTime;
+      // Update the running log to success
+      if (cronLogId) {
+        await supabase.from('txa_cron_logs').update({
+          status: 'success',
+          message: `Không có phim ongoing nào để đồng bộ (limit: ${limit}).`,
+          details: { updated_count: 0, total_movies: 0, limit },
+          duration_ms: duration
+        }).eq('id', cronLogId);
+      }
       return apiResponse({ updated: 0, message: "No ongoing movies to sync" }, 'success', '', 200, request);
     }
 
-    let updatedCount = 0;
-    const notificationsToInsert: any[] = [];
+    totalMovies = movies.length;
 
     // 2. Scan each movie
     for (const movie of movies) {
+      processedCount++;
       try {
         const slug = movie.slug;
         const isVsmov = movie.source === 'vsmov';
         const res = await fetch(isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`);
-        if (!res.ok) continue;
+        if (!res.ok) {
+          detailsLog.push(`${slug}: HTTP ${res.status} (skip)`);
+          continue;
+        }
 
         const data = await res.json() as any;
-        if (!data || !data.movie || !data.episodes) continue;
+        if (!data || !data.movie || !data.episodes) {
+          detailsLog.push(`${slug}: Empty payload (skip)`);
+          continue;
+        }
 
-        // Parse new episodes list
         const detailedMovie = mapKKPhimToMovieDetail(data, movie.source || 'kkphim');
-        if (!detailedMovie || !detailedMovie.episodes) continue;
+        if (!detailedMovie || !detailedMovie.episodes) {
+          detailsLog.push(`${slug}: No episodes parsed (skip)`);
+          continue;
+        }
 
         const newEpisodes = detailedMovie.episodes;
         const oldEpisodes = movie.episodes || [];
 
-        // Count episodes comparison
         const getEpCount = (eps: any[]) => {
           let count = 0;
           eps.forEach(server => {
@@ -74,13 +116,11 @@ export const GET: APIRoute = async ({ request }) => {
         const oldCount = getEpCount(oldEpisodes);
 
         if (mergedCount > oldCount) {
-          // Dynamic episode current text
           const latestServer = mergedEpisodes[0] || {};
           const latestServerData = latestServer.serverData || [];
           const latestEp = latestServerData[latestServerData.length - 1] || {};
           const latestEpName = latestEp.name ? `Tập ${latestEp.name}` : `Tập ${mergedCount}`;
 
-          // Update database
           const { error: updateErr } = await supabase
             .from('movies')
             .update({
@@ -91,13 +131,14 @@ export const GET: APIRoute = async ({ request }) => {
             .eq('id', movie.id);
 
           if (updateErr) {
-            console.error(`Error updating movie ${movie.title}:`, updateErr);
+            detailsLog.push(`${slug}: DB update error: ${updateErr.message}`);
             continue;
           }
 
           updatedCount++;
+          detailsLog.push(`${slug}: ✅ ${oldCount}→${mergedCount} tập (${latestEpName})`);
 
-          // 3. Find users who favorited this movie
+          // Find users who favorited this movie for notifications
           const { data: watchlists } = await supabase
             .from('watch_lists')
             .select('user_id')
@@ -144,13 +185,33 @@ export const GET: APIRoute = async ({ request }) => {
               });
             });
           }
+        } else {
+          detailsLog.push(`${slug}: Không có tập mới (${oldCount} tập)`);
         }
-      } catch (movieErr) {
-        console.error(`Error syncing movie ${movie.title || movie.slug}:`, movieErr);
+      } catch (movieErr: any) {
+        detailsLog.push(`${movie.slug}: ❌ ${movieErr.message}`);
+      }
+
+      // ★ CẬP NHẬT LOG TIẾN ĐỘ mỗi 10 phim để tránh mất data khi timeout
+      if (cronLogId && processedCount % 10 === 0) {
+        const elapsed = Date.now() - startTime;
+        try {
+          await supabase.from('txa_cron_logs').update({
+            message: `Đang đồng bộ... ${processedCount}/${totalMovies} phim (${updatedCount} cập nhật, ${(elapsed / 1000).toFixed(1)}s)`,
+            details: {
+              updated_count: updatedCount,
+              processed_count: processedCount,
+              total_movies: totalMovies,
+              limit,
+              log: detailsLog.slice(-20) // Last 20 entries to keep payload small
+            },
+            duration_ms: elapsed
+          }).eq('id', cronLogId);
+        } catch (_) {}
       }
     }
 
-    // 4. Batch insert notifications
+    // 3. Batch insert notifications
     if (notificationsToInsert.length > 0) {
       const { error: notifErr } = await supabase
         .from('notifications')
@@ -161,33 +222,86 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
+    // 4. ★ CẬP NHẬT LOG CUỐI CÙNG → success
     const duration = Date.now() - startTime;
-    await supabase.from('txa_cron_logs').insert({
-      job_name: 'sync-kkphim',
-      status: 'success',
-      message: `Successfully synchronized ongoing movies. Updated ${updatedCount} movies.`,
-      details: {
-        updated_count: updatedCount,
-        notifications_sent: notificationsToInsert.length
-      },
-      duration_ms: duration
-    });
+    if (cronLogId) {
+      await supabase.from('txa_cron_logs').update({
+        status: 'success',
+        message: `Đồng bộ hoàn tất: ${updatedCount}/${totalMovies} phim cập nhật (limit: ${limit}, ${(duration / 1000).toFixed(1)}s).`,
+        details: {
+          updated_count: updatedCount,
+          processed_count: processedCount,
+          total_movies: totalMovies,
+          notifications_sent: notificationsToInsert.length,
+          limit,
+          log: detailsLog
+        },
+        duration_ms: duration
+      }).eq('id', cronLogId);
+    } else {
+      // Fallback: insert new log if initial insert failed
+      await supabase.from('txa_cron_logs').insert({
+        job_name: 'sync-kkphim',
+        status: 'success',
+        message: `Đồng bộ hoàn tất: ${updatedCount}/${totalMovies} phim cập nhật (limit: ${limit}, ${(duration / 1000).toFixed(1)}s).`,
+        details: {
+          updated_count: updatedCount,
+          processed_count: processedCount,
+          total_movies: totalMovies,
+          notifications_sent: notificationsToInsert.length,
+          limit,
+          log: detailsLog
+        },
+        duration_ms: duration
+      });
+    }
 
     return apiResponse({
       updated: updatedCount,
+      processed: processedCount,
+      total: totalMovies,
       notifications_sent: notificationsToInsert.length,
-      message: `Successfully synchronized ongoing movies. Updated ${updatedCount} movies.`
+      message: `Đồng bộ hoàn tất: ${updatedCount}/${totalMovies} phim cập nhật.`
     }, 'success', '', 200, request);
+
   } catch (err: any) {
     const duration = Date.now() - startTime;
+    const isPartial = processedCount > 0 && processedCount < totalMovies;
+    
+    // Update existing log OR insert new error log
     try {
-      await supabase.from('txa_cron_logs').insert({
-        job_name: 'sync-kkphim',
-        status: 'error',
-        message: err.message || 'Lỗi hệ thống',
-        details: { error_stack: err.stack },
-        duration_ms: duration
-      });
+      if (cronLogId) {
+        await supabase.from('txa_cron_logs').update({
+          status: isPartial ? 'partial' : 'error',
+          message: isPartial 
+            ? `Đồng bộ gián đoạn: ${processedCount}/${totalMovies} phim (${updatedCount} cập nhật). Lỗi: ${err.message}`
+            : (err.message || 'Lỗi hệ thống'),
+          details: { 
+            error_stack: err.stack,
+            updated_count: updatedCount,
+            processed_count: processedCount,
+            total_movies: totalMovies,
+            log: detailsLog
+          },
+          duration_ms: duration
+        }).eq('id', cronLogId);
+      } else {
+        await supabase.from('txa_cron_logs').insert({
+          job_name: 'sync-kkphim',
+          status: isPartial ? 'partial' : 'error',
+          message: isPartial 
+            ? `Đồng bộ gián đoạn: ${processedCount}/${totalMovies} phim (${updatedCount} cập nhật). Lỗi: ${err.message}`
+            : (err.message || 'Lỗi hệ thống'),
+          details: { 
+            error_stack: err.stack,
+            updated_count: updatedCount,
+            processed_count: processedCount,
+            total_movies: totalMovies,
+            log: detailsLog
+          },
+          duration_ms: duration
+        });
+      }
     } catch (dbLogErr) {
       console.error('Failed to log cron error to db:', dbLogErr);
     }

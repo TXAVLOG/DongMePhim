@@ -6,6 +6,7 @@ import { SettingService } from '@services/SettingService';
 import { SmtpClient } from '@lib/api/smtpClient';
 import { getEmailTemplate } from '@templates/emails/emailReader';
 import { mergeMovieEpisodes } from '@services/providers/LocalMovieProvider';
+import { enrichVsmovEpisodesWithSubtitles } from '@lib/vsmov-subtitles';
 
 // GET: Lấy chi tiết phim qua MovieService (tự động fallback DB/Seed/API)
 export const GET: APIRoute = async ({ request }) => {
@@ -339,6 +340,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
       const mergedEpisodes = mergeMovieEpisodes(existingEpisodes, episodes);
 
+      // Auto-fetch VSMOV subtitles if source is vsmov or episodes contain vsmov embed URLs
+      let enrichedEpisodes = mergedEpisodes;
+      const movieSource = m.source || '';
+      const hasVsmovEmbeds = mergedEpisodes.some((srv: any) =>
+        (srv.serverData || srv.server_data || []).some((ep: any) => {
+          const embed = ep.linkEmbed || ep.link_embed || '';
+          return embed.includes('streamvsmov.com') || embed.includes('vsmov.com');
+        })
+      );
+
+      if (movieSource === 'vsmov' || hasVsmovEmbeds) {
+        try {
+          const { episodes: enrichedEps, subtitleLog } = await enrichVsmovEpisodesWithSubtitles(
+            mergedEpisodes,
+            movieSlug
+          );
+          enrichedEpisodes = enrichedEps;
+          if (subtitleLog.length > 0) {
+            console.log(`[Movie-Action] VSMOV subtitle enrichment for "${movieSlug}": ${subtitleLog.length} episodes processed`);
+          }
+        } catch (subErr: any) {
+          console.error(`[Movie-Action] Error enriching VSMOV subtitles for "${movieSlug}":`, subErr.message);
+        }
+      }
+
       // Map trường chuẩn sang cột database
       const moviePayload = {
         title: m.title || m.name || '',
@@ -361,7 +387,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         genres: Array.isArray(m.genres) ? m.genres : [],
         actors: Array.isArray(m.actors) ? m.actors : (Array.isArray(m.actor) ? m.actor : []),
         directors: Array.isArray(m.directors) ? m.directors : (Array.isArray(m.director) ? m.director : []),
-        episodes: mergedEpisodes,
+        episodes: enrichedEpisodes,
         seasons: m.seasons || (m.type === 'movie' || m.type === 'single' ? 'Bản Điện Ảnh' : 'Phần 1'),
         trailer_url: m.trailerUrl || m.trailer_url || '',
         broadcast_schedule: m.broadcastSchedule || null,

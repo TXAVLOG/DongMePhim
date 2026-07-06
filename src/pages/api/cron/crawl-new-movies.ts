@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { mapKKPhimToMovieDetail } from '@services/providers/LocalMovieProvider';
+import { enrichVsmovEpisodesWithSubtitles } from '@lib/vsmov-subtitles';
 
 export const GET: APIRoute = async ({ request }) => {
   const startTime = Date.now();
@@ -111,6 +112,22 @@ export const GET: APIRoute = async ({ request }) => {
         const movieDetailObj = mapKKPhimToMovieDetail(detailData, 'vsmov');
         movieDetailObj.updatedAt = new Date().toISOString();
         movieDetailObj.source = 'vsmov';
+
+        // Pre-fetch VSMOV subtitles from embed pages
+        if (Array.isArray(movieDetailObj.episodes) && movieDetailObj.episodes.length > 0) {
+          try {
+            const { episodes: enrichedEps, subtitleLog } = await enrichVsmovEpisodesWithSubtitles(
+              movieDetailObj.episodes,
+              slug
+            );
+            movieDetailObj.episodes = enrichedEps;
+            if (subtitleLog.length > 0) {
+              detailsLog.push(`VSMOV-Sub: ${slug} → ${subtitleLog.length} tập xử lý phụ đề`);
+            }
+          } catch (subErr: any) {
+            detailsLog.push(`VSMOV-Sub: ${slug} (Lỗi fetch phụ đề: ${subErr.message})`);
+          }
+        }
 
         const saveRes = await fetch(`${host}/api/admin/movie-action`, {
           method: 'POST',
