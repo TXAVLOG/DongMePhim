@@ -16,7 +16,14 @@ const totalRuns = initialLogs.length;
 const successRuns = initialLogs.filter(l => l.status === 'success').length;
 const errorRuns = totalRuns - successRuns;
 const successRate = totalRuns > 0 ? Math.round((successRuns / totalRuns) * 100) : 100;
-const avgDuration = totalRuns > 0 ? Math.round(initialLogs.reduce((acc, curr) => acc + (curr.duration_ms || 0), 0) / totalRuns) : 0;
+const avgDurationMs = totalRuns > 0 ? Math.round(initialLogs.reduce((acc, curr) => acc + (curr.duration_ms || 0), 0) / totalRuns) : 0;
+
+function formatDuration(ms: number) {
+  if (ms >= 1000) {
+    return `${(ms / 1000).toFixed(1)} s`;
+  }
+  return `${ms} ms`;
+}
 ---
 
 <AdminLayout title="Nhật ký Cron tự động">
@@ -79,7 +86,7 @@ const avgDuration = totalRuns > 0 ? Math.round(initialLogs.reduce((acc, curr) =>
         </div>
         <div>
           <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Thời gian chạy trung bình</span>
-          <span class="text-xl font-black text-white">{avgDuration} <span class="text-xs text-zinc-400">ms</span></span>
+          <span class="text-xl font-black text-white">{formatDuration(avgDurationMs)}</span>
         </div>
       </div>
     </div>
@@ -155,7 +162,7 @@ const avgDuration = totalRuns > 0 ? Math.round(initialLogs.reduce((acc, curr) =>
                       )}
                     </td>
                     <td class="py-4 px-4 font-mono font-bold text-zinc-300">
-                      {item.duration_ms} ms
+                      {formatDuration(item.duration_ms || 0)}
                     </td>
                     <td class="py-4 px-4 text-zinc-400 truncate max-w-md" title={item.message}>
                       {item.message || 'Không có thông điệp'}
