@@ -886,6 +886,20 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           configBadge = '<span class="text-[10px] text-zinc-600">Trống (Mặc định)</span>';
         }
 
+        // Status badge
+        const _epCur = String(m.episodeCurrent || '').toLowerCase();
+        const _epTot = String(m.episodeTotal || '').toLowerCase();
+        const _isMovie = m.type === 'movie' || m.type === 'single';
+        const _isCompleted = m.status === 'completed' || _epCur === 'full' || _epTot === 'full' || _epCur.includes('hoàn tất');
+        let statusBadge;
+        if (_isMovie) {
+          statusBadge = '<span class="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/20 text-[9px] font-bold">PHIM LẺ</span>';
+        } else if (_isCompleted) {
+          statusBadge = '<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold">HOÀN THÀNH</span>';
+        } else {
+          statusBadge = '<span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20 text-[9px] font-bold">ĐANG CHIẾU</span>';
+        }
+
         return `
           <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
             <td class="px-6 py-4">
@@ -896,6 +910,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <td class="px-6 py-4 font-semibold text-white">
               <a href="/phim/${m.slug}" target="_blank" class="hover:text-primary transition-colors">${m.title || m.name}</a>
               <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${m.originalTitle || m.origin_name || ''}</div>
+              <div class="mt-1">${statusBadge}</div>
             </td>
             <td class="px-6 py-4 text-zinc-400">${(m.genres || []).join(', ') || m.category || 'N/A'}</td>
             <td class="px-6 py-4 text-zinc-400 font-medium">${m.category || 'Khác'} / ${m.releaseYear || m.year || 'N/A'}</td>
