@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { job, limit } = body;
+    const { job, limit, resume } = body;
     const validJobs = ['sync-kkphim', 'membership-check', 'crawl-new-movies'];
     
     if (!job || (!validJobs.includes(job) && job !== 'all')) {
@@ -46,7 +46,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const results: Record<string, any> = {};
       for (const j of validJobs) {
         try {
-          const params = j === 'sync-kkphim' && limit ? { limit } : undefined;
+          const params = j === 'sync-kkphim' && limit ? { limit, resume: resume !== undefined ? resume : true } : undefined;
           results[j] = await runJob(j, params);
         } catch (err: any) {
           results[j] = { error: err.message };
@@ -54,7 +54,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
       return apiResponse(results, 'success', 'Đã chạy tất cả tác vụ!', 200, request);
     } else {
-      const params = job === 'sync-kkphim' && limit ? { limit } : undefined;
+      const params = job === 'sync-kkphim' && limit ? { limit, resume: resume !== undefined ? resume : true } : undefined;
       const result = await runJob(job, params);
       return apiResponse(result, 'success', `Đã chạy tác vụ ${job} thành công!`, 200, request);
     }

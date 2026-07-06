@@ -11,6 +11,7 @@ export const GET: APIRoute = async ({ request }) => {
   const notificationsToInsert: any[] = [];
   const detailsLog: string[] = [];
   let cronLogId: string | null = null;
+  let lastProcessedSeq: number | null = null;
 
   try {
     const url = new URL(request.url);
@@ -30,14 +31,20 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
+    let resume = true;
+    const resumeParam = url.searchParams.get('resume');
+    if (resumeParam === 'false') {
+      resume = false;
+    }
+
     // ★ GHI LOG NGAY LẬP TỨC khi bắt đầu chạy (status = 'running')
     // Nếu Worker bị timeout/kill, log này vẫn tồn tại trong DB để admin biết
     try {
       const { data: logEntry } = await supabase.from('txa_cron_logs').insert({
         job_name: 'sync-kkphim',
         status: 'running',
-        message: `Đang đồng bộ phim ongoing (limit: ${limit})... Nếu trạng thái này không chuyển sang "success" sau vài phút, Worker đã bị timeout.`,
-        details: { limit, started_at: new Date().toISOString() },
+        message: `Đang đồng bộ phim ongoing (limit: ${limit}, resume: ${resume})... Nếu trạng thái này không chuyển sang "success" sau vài phút, Worker đã bị timeout.`,
+        details: { limit, resume, started_at: new Date().toISOString() },
         duration_ms: 0
       }).select('id').single();
       
@@ -48,15 +55,73 @@ export const GET: APIRoute = async ({ request }) => {
       console.error('[sync-kkphim] Failed to write initial running log:', logErr);
     }
 
-    // 1. Fetch all ongoing movies from Supabase
-    const { data: movies, error: fetchErr } = await supabase
+    // 1. Fetch ongoing movies from Supabase (resumable round-robin queue)
+    let lastSeq: number | null = null;
+    if (resume) {
+      try {
+        const { data: lastLog } = await supabase
+          .from('txa_cron_logs')
+          .select('details')
+          .eq('job_name', 'sync-kkphim')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (lastLog && lastLog.details && typeof lastLog.details === 'object') {
+          const detailsObj = lastLog.details as Record<string, any>;
+          if (detailsObj.last_processed_seq) {
+            lastSeq = parseInt(detailsObj.last_processed_seq, 10) || null;
+          }
+        }
+      } catch (err) {
+        console.error('[sync-kkphim] Failed to fetch last log sequence:', err);
+      }
+    }
+
+    let query = supabase
       .from('movies')
-      .select('id, title, slug, episodes, poster_url, episode_current, source')
+      .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source')
       .eq('status', 'ongoing')
-      .limit(limit);
+      .order('movie_id_seq', { ascending: true });
+
+    if (lastSeq !== null) {
+      query = query.gt('movie_id_seq', lastSeq);
+      detailsLog.push(`[System]: Tiếp tục quét từ sau sequence ${lastSeq}`);
+    } else {
+      detailsLog.push(`[System]: Bắt đầu quét từ đầu danh sách`);
+    }
+
+    let { data: movies, error: fetchErr } = await query.limit(limit);
 
     if (fetchErr) {
       throw fetchErr;
+    }
+
+    // Wrap around: if resume is true, and we hit the end of the list (got fewer movies than limit),
+    // fetch the remaining movies starting from the beginning.
+    if (resume && lastSeq !== null && (!movies || movies.length < limit)) {
+      const currentFetchedCount = movies ? movies.length : 0;
+      const remainingLimit = limit - currentFetchedCount;
+
+      if (remainingLimit > 0) {
+        detailsLog.push(`[System]: Đạt đến cuối danh sách ongoing. Quay vòng quét tiếp ${remainingLimit} phim từ đầu.`);
+        const { data: wrapMovies, error: wrapErr } = await supabase
+          .from('movies')
+          .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source')
+          .eq('status', 'ongoing')
+          .order('movie_id_seq', { ascending: true })
+          .limit(remainingLimit);
+
+        if (wrapErr) {
+          throw wrapErr;
+        }
+
+        if (wrapMovies && wrapMovies.length > 0) {
+          const existingIds = new Set(movies ? movies.map(m => m.id) : []);
+          const uniqueWrapMovies = wrapMovies.filter(m => !existingIds.has(m.id));
+          movies = [...(movies || []), ...uniqueWrapMovies];
+        }
+      }
     }
 
     if (!movies || movies.length === 0) {
@@ -66,7 +131,7 @@ export const GET: APIRoute = async ({ request }) => {
         await supabase.from('txa_cron_logs').update({
           status: 'success',
           message: `Không có phim ongoing nào để đồng bộ (limit: ${limit}).`,
-          details: { updated_count: 0, total_movies: 0, limit },
+          details: { updated_count: 0, total_movies: 0, limit, last_processed_seq: lastSeq },
           duration_ms: duration
         }).eq('id', cronLogId);
       }
@@ -223,6 +288,12 @@ export const GET: APIRoute = async ({ request }) => {
         }
       }));
 
+      // Find the maximum movie_id_seq in this chunk
+      const seqs = chunk.map(m => Number(m.movie_id_seq) || 0).filter(s => s > 0);
+      if (seqs.length > 0) {
+        lastProcessedSeq = Math.max(...seqs);
+      }
+
       // ★ CẬP NHẬT LOG TIẾN ĐỘ mỗi 10 phim để tránh mất data khi timeout
       if (cronLogId && processedCount % 10 === 0) {
         const elapsed = Date.now() - startTime;
@@ -235,6 +306,7 @@ export const GET: APIRoute = async ({ request }) => {
               processed_count: processedCount,
               total_movies: totalMovies,
               limit,
+              last_processed_seq: lastProcessedSeq,
               log: detailsLog.slice(-20) // Last 20 entries to keep payload small
             },
             duration_ms: elapsed
@@ -272,6 +344,7 @@ export const GET: APIRoute = async ({ request }) => {
           total_movies: totalMovies,
           notifications_sent: notificationsToInsert.length,
           limit,
+          last_processed_seq: lastProcessedSeq,
           log: detailsLog
         },
         duration_ms: duration
@@ -288,6 +361,7 @@ export const GET: APIRoute = async ({ request }) => {
           total_movies: totalMovies,
           notifications_sent: notificationsToInsert.length,
           limit,
+          last_processed_seq: lastProcessedSeq,
           log: detailsLog
         },
         duration_ms: duration
@@ -319,6 +393,7 @@ export const GET: APIRoute = async ({ request }) => {
             updated_count: updatedCount,
             processed_count: processedCount,
             total_movies: totalMovies,
+            last_processed_seq: lastProcessedSeq,
             log: detailsLog
           },
           duration_ms: duration
@@ -335,6 +410,7 @@ export const GET: APIRoute = async ({ request }) => {
             updated_count: updatedCount,
             processed_count: processedCount,
             total_movies: totalMovies,
+            last_processed_seq: lastProcessedSeq,
             log: detailsLog
           },
           duration_ms: duration
