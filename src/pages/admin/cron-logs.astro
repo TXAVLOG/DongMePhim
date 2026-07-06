@@ -325,6 +325,10 @@ function formatDuration(ms: number) {
                     <td class="py-4 px-4">
                       {item.status === 'success' ? (
                         <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider">Thành công</span>
+                      ) : item.status === 'running' ? (
+                        <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase tracking-wider animate-pulse">Đang chạy</span>
+                      ) : item.status === 'partial' ? (
+                        <span class="px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20 text-[10px] font-bold uppercase tracking-wider">Gián đoạn</span>
                       ) : (
                         <span class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider">Lỗi</span>
                       )}
@@ -396,7 +400,14 @@ ${formattedJson}
         const status = row.getAttribute('data-status');
 
         const matchJob = jobFilter === 'all' || job === jobFilter;
-        const matchStatus = statusFilter === 'all' || status === statusFilter;
+        let matchStatus = false;
+        if (statusFilter === 'all') {
+          matchStatus = true;
+        } else if (statusFilter === 'success') {
+          matchStatus = status === 'success';
+        } else if (statusFilter === 'error') {
+          matchStatus = status === 'error' || status === 'partial' || status === 'running';
+        }
 
         if (matchJob && matchStatus) {
           row.classList.remove('hidden');

@@ -75,126 +75,158 @@ export const GET: APIRoute = async ({ request }) => {
 
     totalMovies = movies.length;
 
-    // 2. Scan each movie
-    for (const movie of movies) {
-      processedCount++;
-      try {
-        const slug = movie.slug;
-        const isVsmov = movie.source === 'vsmov';
-        const res = await fetch(isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`);
-        if (!res.ok) {
-          detailsLog.push(`${slug}: HTTP ${res.status} (skip)`);
-          continue;
-        }
+    let subrequestsCount = cronLogId ? 2 : 1; // 1 for initial insert, 1 for select movies
+    const isDev = !import.meta.env.PROD;
+    const maxDurationMs = isDev ? 55000 : 8500; // 55s for local, 8.5s for serverless to prevent timeout
+    const maxSubrequests = 45; // Cloudflare worker subrequest limit is 50, leave some margin for final updates
+    let limitReached = false;
 
-        const data = await res.json() as any;
-        if (!data || !data.movie || !data.episodes) {
-          detailsLog.push(`${slug}: Empty payload (skip)`);
-          continue;
-        }
+    // 2. Scan movies in parallel chunks of 5
+    const chunkSize = 5;
+    for (let i = 0; i < movies.length; i += chunkSize) {
+      const elapsed = Date.now() - startTime;
 
-        const detailedMovie = mapKKPhimToMovieDetail(data, movie.source || 'kkphim');
-        if (!detailedMovie || !detailedMovie.episodes) {
-          detailsLog.push(`${slug}: No episodes parsed (skip)`);
-          continue;
-        }
+      // Check resource limits before processing the next chunk
+      if (subrequestsCount >= maxSubrequests) {
+        detailsLog.push(`[System]: Dừng đồng bộ sớm do đạt giới hạn subrequests của Cloudflare (Đã chạy ${processedCount}/${totalMovies} phim, subrequests: ${subrequestsCount})`);
+        limitReached = true;
+        break;
+      }
 
-        const newEpisodes = detailedMovie.episodes;
-        const oldEpisodes = movie.episodes || [];
+      if (elapsed > maxDurationMs) {
+        detailsLog.push(`[System]: Dừng đồng bộ sớm để tránh timeout hệ thống (Đã chạy ${processedCount}/${totalMovies} phim, elapsed: ${(elapsed / 1000).toFixed(1)}s)`);
+        limitReached = true;
+        break;
+      }
 
-        const getEpCount = (eps: any[]) => {
-          let count = 0;
-          eps.forEach(server => {
-            const dataList = server.serverData || server.server_data || [];
-            count += dataList.length;
-          });
-          return count;
-        };
+      const chunk = movies.slice(i, i + chunkSize);
 
-        const mergedEpisodes = mergeMovieEpisodes(oldEpisodes, newEpisodes);
-        const mergedCount = getEpCount(mergedEpisodes);
-        const oldCount = getEpCount(oldEpisodes);
-
-        if (mergedCount > oldCount) {
-          const latestServer = mergedEpisodes[0] || {};
-          const latestServerData = latestServer.serverData || [];
-          const latestEp = latestServerData[latestServerData.length - 1] || {};
-          const latestEpName = latestEp.name ? `Tập ${latestEp.name}` : `Tập ${mergedCount}`;
-
-          const { error: updateErr } = await supabase
-            .from('movies')
-            .update({
-              episodes: mergedEpisodes,
-              episode_current: latestEpName,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', movie.id);
-
-          if (updateErr) {
-            detailsLog.push(`${slug}: DB update error: ${updateErr.message}`);
-            continue;
+      // Process chunk concurrently
+      await Promise.all(chunk.map(async (movie) => {
+        processedCount++;
+        try {
+          const slug = movie.slug;
+          const isVsmov = movie.source === 'vsmov';
+          
+          subrequestsCount++;
+          const res = await fetch(isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`);
+          if (!res.ok) {
+            detailsLog.push(`${slug}: HTTP ${res.status} (skip)`);
+            return;
           }
 
-          updatedCount++;
-          detailsLog.push(`${slug}: ✅ ${oldCount}→${mergedCount} tập (${latestEpName})`);
+          const data = await res.json() as any;
+          if (!data || !data.movie || !data.episodes) {
+            detailsLog.push(`${slug}: Empty payload (skip)`);
+            return;
+          }
 
-          // Find users who favorited this movie for notifications
-          const { data: watchlists } = await supabase
-            .from('watch_lists')
-            .select('user_id')
-            .eq('movie_id', movie.id);
+          const detailedMovie = mapKKPhimToMovieDetail(data, movie.source || 'kkphim');
+          if (!detailedMovie || !detailedMovie.episodes) {
+            detailsLog.push(`${slug}: No episodes parsed (skip)`);
+            return;
+          }
 
-          if (watchlists && watchlists.length > 0) {
-            const mData = data.movie || {};
-            const isSingle = mData.type === 'single' || 
-                             mData.type === 'movie' || 
-                             mData.episode_total === '1';
+          const newEpisodes = detailedMovie.episodes;
+          const oldEpisodes = movie.episodes || [];
 
-            const epCurrentStr = latestEpName.toLowerCase();
-            const isLastEpisode = !isSingle && (
-              mData.status === 'completed' || 
-              epCurrentStr.includes('end') || 
-              epCurrentStr.includes('cuối') || 
-              epCurrentStr.includes('hoàn') || 
-              epCurrentStr.includes('trọn bộ') ||
-              (mData.episode_total && epCurrentStr.includes(mData.episode_total))
-            );
+          const getEpCount = (eps: any[]) => {
+            let count = 0;
+            eps.forEach(server => {
+              const dataList = server.serverData || server.server_data || [];
+              count += dataList.length;
+            });
+            return count;
+          };
 
-            let notifTitle = `Tập mới: ${movie.title}`;
-            let notifBody = `${latestEpName} (${mData.quality || 'FHD'} - ${mData.lang || 'Vietsub'}) đã được cập nhật thành công. Xem ngay thôi!`;
+          const mergedEpisodes = mergeMovieEpisodes(oldEpisodes, newEpisodes);
+          const mergedCount = getEpCount(mergedEpisodes);
+          const oldCount = getEpCount(oldEpisodes);
 
-            if (isSingle) {
-              notifTitle = `Bản chiếu mới: ${movie.title}`;
-              notifBody = `Phim đã cập nhật bản chiếu ${mData.quality || 'FHD'} (${mData.lang || 'Vietsub'}). Xem ngay tại DongMePhim!`;
-            } else if (isLastEpisode) {
-              notifTitle = `Tập cuối trọn bộ: ${movie.title}`;
-              notifBody = `${latestEpName} đã chính thức cập nhật! Phim đã trọn bộ, xem ngay kẻo lỡ!`;
+          if (mergedCount > oldCount) {
+            const latestServer = mergedEpisodes[0] || {};
+            const latestServerData = latestServer.serverData || [];
+            const latestEp = latestServerData[latestServerData.length - 1] || {};
+            const latestEpName = latestEp.name ? `Tập ${latestEp.name}` : `Tập ${mergedCount}`;
+
+            subrequestsCount++;
+            const { error: updateErr } = await supabase
+              .from('movies')
+              .update({
+                episodes: mergedEpisodes,
+                episode_current: latestEpName,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', movie.id);
+
+            if (updateErr) {
+              detailsLog.push(`${slug}: DB update error: ${updateErr.message}`);
+              return;
             }
 
-            const uniqueUserIds = [...new Set(watchlists.map(w => w.user_id))];
-            uniqueUserIds.forEach(userId => {
-              notificationsToInsert.push({
-                user_id: userId,
-                title: notifTitle,
-                body: notifBody,
-                image_url: movie.poster_url || "",
-                is_read: false,
-                created_at: new Date().toISOString(),
-                movie_slug: movie.slug,
-                episode_name: latestEpName
+            updatedCount++;
+            detailsLog.push(`${slug}: ✅ ${oldCount}→${mergedCount} tập (${latestEpName})`);
+
+            // Find users who favorited this movie for notifications
+            subrequestsCount++;
+            const { data: watchlists } = await supabase
+              .from('watch_lists')
+              .select('user_id')
+              .eq('movie_id', movie.id);
+
+            if (watchlists && watchlists.length > 0) {
+              const mData = data.movie || {};
+              const isSingle = mData.type === 'single' || 
+                               mData.type === 'movie' || 
+                               mData.episode_total === '1';
+
+              const epCurrentStr = latestEpName.toLowerCase();
+              const isLastEpisode = !isSingle && (
+                mData.status === 'completed' || 
+                epCurrentStr.includes('end') || 
+                epCurrentStr.includes('cuối') || 
+                epCurrentStr.includes('hoàn') || 
+                epCurrentStr.includes('trọn bộ') ||
+                (mData.episode_total && epCurrentStr.includes(mData.episode_total))
+              );
+
+              let notifTitle = `Tập mới: ${movie.title}`;
+              let notifBody = `${latestEpName} (${mData.quality || 'FHD'} - ${mData.lang || 'Vietsub'}) đã được cập nhật thành công. Xem ngay thôi!`;
+
+              if (isSingle) {
+                notifTitle = `Bản chiếu mới: ${movie.title}`;
+                notifBody = `Phim đã cập nhật bản chiếu ${mData.quality || 'FHD'} (${mData.lang || 'Vietsub'}). Xem ngay tại DongMePhim!`;
+              } else if (isLastEpisode) {
+                notifTitle = `Tập cuối trọn bộ: ${movie.title}`;
+                notifBody = `${latestEpName} đã chính thức cập nhật! Phim đã trọn bộ, xem ngay kẻo lỡ!`;
+              }
+
+              const uniqueUserIds = [...new Set(watchlists.map(w => w.user_id))];
+              uniqueUserIds.forEach(userId => {
+                notificationsToInsert.push({
+                  user_id: userId,
+                  title: notifTitle,
+                  body: notifBody,
+                  image_url: movie.poster_url || "",
+                  is_read: false,
+                  created_at: new Date().toISOString(),
+                  movie_slug: movie.slug,
+                  episode_name: latestEpName
+                });
               });
-            });
+            }
+          } else {
+            detailsLog.push(`${slug}: Không có tập mới (${oldCount} tập)`);
           }
-        } else {
-          detailsLog.push(`${slug}: Không có tập mới (${oldCount} tập)`);
+        } catch (movieErr: any) {
+          detailsLog.push(`${movie.slug}: ❌ ${movieErr.message}`);
         }
-      } catch (movieErr: any) {
-        detailsLog.push(`${movie.slug}: ❌ ${movieErr.message}`);
-      }
+      }));
 
       // ★ CẬP NHẬT LOG TIẾN ĐỘ mỗi 10 phim để tránh mất data khi timeout
       if (cronLogId && processedCount % 10 === 0) {
         const elapsed = Date.now() - startTime;
+        subrequestsCount++;
         try {
           await supabase.from('txa_cron_logs').update({
             message: `Đang đồng bộ... ${processedCount}/${totalMovies} phim (${updatedCount} cập nhật, ${(elapsed / 1000).toFixed(1)}s)`,
@@ -213,6 +245,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     // 3. Batch insert notifications
     if (notificationsToInsert.length > 0) {
+      subrequestsCount++;
       const { error: notifErr } = await supabase
         .from('notifications')
         .insert(notificationsToInsert);
@@ -222,12 +255,17 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
-    // 4. ★ CẬP NHẬT LOG CUỐI CÙNG → success
+    // 4. ★ CẬP NHẬT LOG CUỐI CÙNG → success hoặc partial
     const duration = Date.now() - startTime;
+    const finalStatus = limitReached ? 'partial' : 'success';
+    const finalMessage = limitReached
+      ? `Đồng bộ bị giới hạn: đã xử lý ${processedCount}/${totalMovies} phim (${updatedCount} cập nhật, ${(duration / 1000).toFixed(1)}s).`
+      : `Đồng bộ hoàn tất: ${updatedCount}/${totalMovies} phim cập nhật (limit: ${limit}, ${(duration / 1000).toFixed(1)}s).`;
+
     if (cronLogId) {
       await supabase.from('txa_cron_logs').update({
-        status: 'success',
-        message: `Đồng bộ hoàn tất: ${updatedCount}/${totalMovies} phim cập nhật (limit: ${limit}, ${(duration / 1000).toFixed(1)}s).`,
+        status: finalStatus,
+        message: finalMessage,
         details: {
           updated_count: updatedCount,
           processed_count: processedCount,
@@ -242,8 +280,8 @@ export const GET: APIRoute = async ({ request }) => {
       // Fallback: insert new log if initial insert failed
       await supabase.from('txa_cron_logs').insert({
         job_name: 'sync-kkphim',
-        status: 'success',
-        message: `Đồng bộ hoàn tất: ${updatedCount}/${totalMovies} phim cập nhật (limit: ${limit}, ${(duration / 1000).toFixed(1)}s).`,
+        status: finalStatus,
+        message: finalMessage,
         details: {
           updated_count: updatedCount,
           processed_count: processedCount,
