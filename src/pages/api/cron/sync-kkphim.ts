@@ -212,7 +212,11 @@ export const GET: APIRoute = async ({ request }) => {
             const latestServer = mergedEpisodes[0] || {};
             const latestServerData = latestServer.serverData || [];
             const latestEp = latestServerData[latestServerData.length - 1] || {};
-            const latestEpName = latestEp.name ? `Tập ${latestEp.name}` : `Tập ${mergedCount}`;
+            const latestEpName = latestEp.name
+              ? (latestEp.name.trim().toLowerCase().startsWith('tập')
+                ? latestEp.name.trim()
+                : `Tập ${latestEp.name.trim()}`)
+              : `Tập ${mergedCount}`;
 
             subrequestsCount++;
             const { error: updateErr } = await supabase
