@@ -28,37 +28,62 @@ const staticMovies = await MovieService.getMovies();
   </header>
 
   <!-- Filter & Search Panel -->
-  <section class="glass-panel p-6 rounded-3xl mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-    <div class="relative group w-full md:w-80">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-dim group-focus-within:text-primary transition-colors">search</span>
-      <input id="movie-search" class="bg-surface-container border border-glass-stroke rounded-full pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary w-full transition-all focus:outline-none placeholder:text-zinc-500 text-white" placeholder="Tìm kiếm tên phim, thể loại..." type="text"/>
-    </div>
-    
-    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-      <!-- Bulk Action Button -->
-      <button id="bulk-delete-btn" class="hidden px-4 py-2.5 bg-rose-600/10 border border-rose-500/20 hover:bg-rose-600/20 text-rose-400 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
-        <span class="material-symbols-outlined text-sm">delete_sweep</span>
-        <span id="bulk-delete-text">Xóa đã chọn (0)</span>
-      </button>
-
-      <button id="bulk-scan-btn" class="hidden px-4 py-2.5 bg-emerald-600/10 border border-emerald-500/20 hover:bg-emerald-600/20 text-emerald-400 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer" data-txatooltip="Quét tập mới dựa theo nguồn API (phimapi.com)">
-        <span class="material-symbols-outlined text-sm">sync</span>
-        <span id="bulk-scan-text">Quét tập mới (0)</span>
-      </button>
-
-      <select id="filter-type" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
-        <option value="all">Tất cả định dạng</option>
-        <option value="movie">Phim Lẻ</option>
-        <option value="series">Phim Bộ</option>
-      </select>
+  <section class="glass-panel p-6 rounded-3xl mb-8 flex flex-col gap-4">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="relative group w-full md:w-80">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-dim group-focus-within:text-primary transition-colors">search</span>
+        <input id="movie-search" class="bg-surface-container border border-glass-stroke rounded-full pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary w-full transition-all focus:outline-none placeholder:text-zinc-500 text-white" placeholder="Tìm kiếm tên phim, thể loại..." type="text"/>
+      </div>
       
-      <select id="filter-source" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
-        <option value="all">Tất cả nguồn</option>
-        <option value="static">Hệ thống (Static)</option>
-        <option value="crawled">Đã Thu thập (Crawled)</option>
-      </select>
+      <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <!-- Bulk Action Button -->
+        <button id="bulk-delete-btn" class="hidden px-4 py-2.5 bg-rose-600/10 border border-rose-500/20 hover:bg-rose-600/20 text-rose-400 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+          <span class="material-symbols-outlined text-sm">delete_sweep</span>
+          <span id="bulk-delete-text">Xóa đã chọn (0)</span>
+        </button>
+
+        <button id="bulk-scan-btn" class="hidden px-4 py-2.5 bg-emerald-600/10 border border-emerald-500/20 hover:bg-emerald-600/20 text-emerald-400 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2 cursor-pointer" data-txatooltip="Quét tập mới dựa theo nguồn API (phimapi.com)">
+          <span class="material-symbols-outlined text-sm">sync</span>
+          <span id="bulk-scan-text">Quét tập mới (0)</span>
+        </button>
+
+        <select id="filter-type" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
+          <option value="all">Tất cả định dạng</option>
+          <option value="movie">Phim Lẻ</option>
+          <option value="series">Phim Bộ</option>
+        </select>
+        
+        <select id="filter-source" class="bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-zinc-300 w-full md:w-auto cursor-pointer">
+          <option value="all">Tất cả nguồn</option>
+          <option value="static">Hệ thống (Static)</option>
+          <option value="crawled">Đã Thu thập (Crawled)</option>
+        </select>
+      </div>
+    </div>
+    <!-- Status filter + page size row -->
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-1 bg-surface-container border border-glass-stroke rounded-xl p-1">
+        <button id="status-filter-all" onclick="setStatusFilter('all')" class="status-filter-btn active-filter px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">Tất cả</button>
+        <button id="status-filter-ongoing" onclick="setStatusFilter('ongoing')" class="status-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">Đang chiếu</button>
+        <button id="status-filter-completed" onclick="setStatusFilter('completed')" class="status-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">Hoàn thành</button>
+        <button id="status-filter-movie" onclick="setStatusFilter('movie')" class="status-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">Phim lẻ / Full</button>
+      </div>
+      <div class="flex items-center gap-2 ml-auto">
+        <span class="text-xs text-text-dim font-bold whitespace-nowrap">Hiển thị:</span>
+        <select id="page-size-select" class="bg-surface-container border border-glass-stroke rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-primary text-zinc-300 cursor-pointer">
+          <option value="10">10 / trang</option>
+          <option value="25">25 / trang</option>
+          <option value="50">50 / trang</option>
+          <option value="100">100 / trang</option>
+        </select>
+      </div>
     </div>
   </section>
+
+  <style>
+    .status-filter-btn { color: #71717a; }
+    .status-filter-btn.active-filter { background: rgba(99,102,241,0.15); color: #818cf8; }
+  </style>
 
   <!-- Movies Table -->
   <section class="glass-panel rounded-3xl overflow-hidden mb-8">
@@ -130,7 +155,8 @@ const staticMovies = await MovieService.getMovies();
         let allMovies = [];
         let currentFilteredList = [];
         let currentPage = 1;
-        const itemsPerPage = 10;
+        let itemsPerPage = 10;
+        let statusFilter = 'all'; // 'all' | 'ongoing' | 'completed' | 'movie'
 
         // Selection State
         let selectedMovies = [];
@@ -377,7 +403,7 @@ const staticMovies = await MovieService.getMovies();
           }).join('');
 
           if (showCountText) {
-            showCountText.textContent = `HIỂN THỊ ${paginatedList.length} TRÊN TỔNG SỐ ${allMovies.length} PHIM`;
+            showCountText.textContent = `HIỂN THỊ ${startIndex + 1}–${Math.min(endIndex, totalItems)} / ${totalItems} PHIM`;
           }
 
           if (paginationInfo) {
@@ -387,6 +413,16 @@ const staticMovies = await MovieService.getMovies();
           if (prevBtn) prevBtn.disabled = (currentPage === 1);
           if (nextBtn) nextBtn.disabled = (currentPage === totalPages);
         }
+
+        window.setStatusFilter = function(filter) {
+          statusFilter = filter;
+          currentPage = 1;
+          ['all','ongoing','completed','movie'].forEach(f => {
+            const btn = document.getElementById('status-filter-' + f);
+            if (btn) btn.classList.toggle('active-filter', filter === f);
+          });
+          filterAndSearch();
+        };
 
         function filterAndSearch() {
           resetSelections();
@@ -412,6 +448,19 @@ const staticMovies = await MovieService.getMovies();
             filtered = filtered.filter(m => m.source === source);
           }
 
+          if (statusFilter !== 'all') {
+            filtered = filtered.filter(m => {
+              const epCur = String(m.episodeCurrent || '').toLowerCase();
+              const epTot = String(m.episodeTotal || '').toLowerCase();
+              const isCompleted = m.status === 'completed' || epCur === 'full' || epTot === 'full' || epCur.includes('hoàn tất');
+              const isMovie = m.type === 'movie' || m.type === 'single';
+              if (statusFilter === 'completed') return isCompleted && !isMovie;
+              if (statusFilter === 'movie') return isMovie;
+              if (statusFilter === 'ongoing') return !isCompleted && !isMovie;
+              return true;
+            });
+          }
+
           currentFilteredList = filtered;
           displayPage(1);
         }
@@ -424,6 +473,11 @@ const staticMovies = await MovieService.getMovies();
         if (searchInput) searchInput.oninput = filterAndSearch;
         if (filterType) filterType.onchange = filterAndSearch;
         if (filterSource) filterSource.onchange = filterAndSearch;
+        const pageSizeSelect = document.getElementById('page-size-select');
+        if (pageSizeSelect) pageSizeSelect.onchange = () => {
+          itemsPerPage = Math.min(100, Number(pageSizeSelect.value) || 10);
+          displayPage(1);
+        };
 
         // Bind Select All Checkbox
         const selectAllCheckbox = document.getElementById('select-all-checkbox');
