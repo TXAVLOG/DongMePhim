@@ -7,11 +7,11 @@
 	},
 	"scripts": {
 		"dev": "astro dev",
-		"build": "astro build",
+		"build": "astro build && node post-build.js",
 		"preview": "astro build && astro preview",
 		"astro": "astro",
 		"generate-types": "wrangler types",
-		"deploy": "astro build && wrangler deploy",
+		"deploy": "npm run build && wrangler deploy",
 		"deploy-push": "npm run deploy && git add . && git commit -m \"update\" && git push",
 		"cf-typegen": "wrangler types"
 	},
