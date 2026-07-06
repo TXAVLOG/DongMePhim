@@ -627,10 +627,27 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
       subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabFilter.classList.remove('hidden');
       subTabUrl.classList.add('hidden');
       subTabBatch.classList.add('hidden');
+      if (subTabUpdate) subTabUpdate.classList.add('hidden');
     });
+
+    if (subTabUpdateBtn) {
+      subTabUpdateBtn.addEventListener('click', () => {
+        if (isRunning) return;
+        standardSubTab = 'update';
+        subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
+        subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+        subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+        subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+        if (subTabUpdate) subTabUpdate.classList.remove('hidden');
+        subTabUrl.classList.add('hidden');
+        subTabBatch.classList.add('hidden');
+        subTabFilter.classList.add('hidden');
+      });
+    }
 
     // Filter type switches
     filterCountryBtn.addEventListener('click', () => {
