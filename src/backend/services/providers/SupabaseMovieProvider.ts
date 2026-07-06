@@ -45,20 +45,33 @@ export class SupabaseMovieProvider implements IMovieProvider {
         query = query.order('updated_at', { ascending: false, nullsFirst: false });
       }
 
-      // Giới hạn ở cấp độ database
-      const defaultLimit = 1000;
-      let dbLimit = params?.limit || defaultLimit;
-      if (params?.category && params?.limit) {
-        dbLimit = params.limit * 2; // Lấy rộng hơn phòng trường hợp JS lọc lại
+      // Lấy toàn bộ phim bằng range-based pagination (Supabase giới hạn 1000/request)
+      // Nếu có limit cụ thể thì dùng limit, nếu không thì lấy hết bằng vòng lặp
+      let rawMovies: any[] = [];
+      if (params?.limit) {
+        let dbLimit = params.limit;
+        if (params?.category) dbLimit = params.limit * 2; // Lấy rộng hơn phòng khi JS lọc lại
+        query = query.limit(dbLimit);
+        const { data: limitedMovies, error: limitErr } = await query;
+        if (limitErr) throw limitErr;
+        rawMovies = limitedMovies || [];
+      } else {
+        // Lấy tất cả phim không có limit - dùng range() vì Supabase tối đa 1000/lần
+        let from = 0;
+        const batchSize = 1000;
+        while (true) {
+          const { data: batch, error: batchError } = await query.range(from, from + batchSize - 1);
+          if (batchError) throw batchError;
+          if (!batch || batch.length === 0) break;
+          rawMovies = rawMovies.concat(batch);
+          if (batch.length < batchSize) break;
+          from += batchSize;
+        }
       }
-      query = query.limit(dbLimit);
-
-      const { data: dbMovies, error } = await query;
-      if (error) throw error;
 
       let moviesList: Movie[] = [];
-      if (dbMovies && dbMovies.length > 0) {
-        moviesList = dbMovies.map((m: any) => ({
+      if (rawMovies && rawMovies.length > 0) {
+        moviesList = rawMovies.map((m: any) => ({
           id: m.id,
           title: m.title,
           originalTitle: m.original_title,
