@@ -55,6 +55,10 @@ export interface Episode {
   timeIntroEnd?: number;
   timeOutroStart?: number;
   timeOutroEnd?: number;
+  time_intro_start?: number;
+  time_intro_end?: number;
+  time_outro_start?: number;
+  time_outro_end?: number;
   airDate?: string;
   airTime?: string;
   thumbUrl?: string;

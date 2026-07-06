@@ -2450,10 +2450,10 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   onChangeQuality={(item) => {
                     console.log('Chất lượng phát: ', item.html);
                   }}
-                  timeIntroStart={currentEpisode?.timeIntroStart}
-                  timeIntroEnd={currentEpisode?.timeIntroEnd}
-                  timeOutroStart={currentEpisode?.timeOutroStart}
-                  timeOutroEnd={currentEpisode?.timeOutroEnd}
+                  timeIntroStart={currentEpisode?.timeIntroStart || currentEpisode?.time_intro_start}
+                  timeIntroEnd={currentEpisode?.timeIntroEnd || currentEpisode?.time_intro_end}
+                  timeOutroStart={currentEpisode?.timeOutroStart || currentEpisode?.time_outro_start}
+                  timeOutroEnd={currentEpisode?.timeOutroEnd || currentEpisode?.time_outro_end}
                   siteName={siteName}
                   siteUrl={siteUrl}
                   maxResolution={userPermissions?.max_resolution}
@@ -2485,10 +2485,10 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   onChangeQuality={(item) => {
                     console.log('Chất lượng phát: ', item.html);
                   }}
-                  timeIntroStart={currentEpisode?.timeIntroStart}
-                  timeIntroEnd={currentEpisode?.timeIntroEnd}
-                  timeOutroStart={currentEpisode?.timeOutroStart}
-                  timeOutroEnd={currentEpisode?.timeOutroEnd}
+                  timeIntroStart={currentEpisode?.timeIntroStart || currentEpisode?.time_intro_start}
+                  timeIntroEnd={currentEpisode?.timeIntroEnd || currentEpisode?.time_intro_end}
+                  timeOutroStart={currentEpisode?.timeOutroStart || currentEpisode?.time_outro_start}
+                  timeOutroEnd={currentEpisode?.timeOutroEnd || currentEpisode?.time_outro_end}
                   siteName={siteName}
                   siteUrl={siteUrl}
                   maxResolution={userPermissions?.max_resolution}

@@ -1218,6 +1218,10 @@ interface ArtPlayerProps {
   timeIntroEnd?: number;
   timeOutroStart?: number;
   timeOutroEnd?: number;
+  time_intro_start?: number;
+  time_intro_end?: number;
+  time_outro_start?: number;
+  time_outro_end?: number;
   siteName?: string;
   siteUrl?: string;
   maxResolution?: 'SD' | 'HD' | 'FHD' | '4K';
@@ -1267,33 +1271,43 @@ const setAutoSkipSetting = (value: boolean) => {
   }
 };
 
-export const ArtPlayer: React.FC<ArtPlayerProps> = ({
-  url,
-  title,
-  poster,
-  currentTime = 0,
-  onTimeUpdate,
-  onEnded,
-  onPlayerReady,
-  subtitles = [],
-  qualities = [],
-  onChangeQuality,
-  timeIntroStart = 0,
-  timeIntroEnd = 0,
-  timeOutroStart = 0,
-  timeOutroEnd = 0,
-  siteName = 'DongMePhim',
-  siteUrl = 'https://dongmephim.com',
-  maxResolution = '4K',
-  hideWatermark = false,
-  autoplay = false,
-  storyboardUrl,
-  autoNextEpisode = false,
-  nextEpisode,
-  onNextEpisode,
-  prevEpisode,
-  onPrevEpisode
-}) => {
+export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
+  const {
+    url,
+    title,
+    poster,
+    currentTime = 0,
+    onTimeUpdate,
+    onEnded,
+    onPlayerReady,
+    subtitles = [],
+    qualities = [],
+    onChangeQuality,
+    timeIntroStart: rawTimeIntroStart = 0,
+    timeIntroEnd: rawTimeIntroEnd = 0,
+    timeOutroStart: rawTimeOutroStart = 0,
+    timeOutroEnd: rawTimeOutroEnd = 0,
+    time_intro_start: rawTimeIntroStartSnake,
+    time_intro_end: rawTimeIntroEndSnake,
+    time_outro_start: rawTimeOutroStartSnake,
+    time_outro_end: rawTimeOutroEndSnake,
+    siteName = 'DongMePhim',
+    siteUrl = 'https://dongmephim.com',
+    maxResolution = '4K',
+    hideWatermark = false,
+    autoplay = false,
+    storyboardUrl,
+    autoNextEpisode = false,
+    nextEpisode,
+    onNextEpisode,
+    prevEpisode,
+    onPrevEpisode
+  } = props;
+
+  const timeIntroStart = Number(rawTimeIntroStart || rawTimeIntroStartSnake) || 0;
+  const timeIntroEnd = Number(rawTimeIntroEnd || rawTimeIntroEndSnake) || 0;
+  const timeOutroStart = Number(rawTimeOutroStart || rawTimeOutroStartSnake) || 0;
+  const timeOutroEnd = Number(rawTimeOutroEnd || rawTimeOutroEndSnake) || 0;
   const artRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<Artplayer | null>(null);
   const [isOffline, setIsOffline] = useState(typeof window !== 'undefined' ? !navigator.onLine : false);
