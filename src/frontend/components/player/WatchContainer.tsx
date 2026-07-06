@@ -1585,9 +1585,45 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [isHacked, setIsHacked] = useState<boolean>(false);
   const playerGetTimeRef = useRef<(() => number) | null>(null);
   const adVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const [dynamicSubtitles, setDynamicSubtitles] = useState<any[]>([]);
+
+  useEffect(() => {
+    setDynamicSubtitles([]);
+    if (!currentEpisode) return;
+
+    const embedUrl = currentEpisode.linkEmbed || '';
+    const isVsmov = embedUrl.includes('streamvsmov.com') || embedUrl.includes('vsmov.com');
+
+    if (isVsmov) {
+      fetch(`/api/vsmov-subtitles?url=${encodeURIComponent(embedUrl)}`)
+        .then(res => {
+          if (res.ok) return res.json();
+          return [];
+        })
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDynamicSubtitles(data);
+          }
+        })
+        .catch(err => {
+          console.error('Error loading VSMOV subtitles:', err);
+        });
+    }
+  }, [currentEpisode]);
+
   const resolvedSubtitles = useMemo(() => {
     if (!currentEpisode) return [];
     const subs = [...(currentEpisode.subtitles || [])];
+    
+    // Add dynamic subtitles if they don't already exist by label (case-insensitive)
+    const existingLabels = new Set(subs.map(s => (s.label || '').toLowerCase()));
+    for (const ds of dynamicSubtitles) {
+      if (!existingLabels.has((ds.label || '').toLowerCase())) {
+        subs.push(ds);
+      }
+    }
+
     const rawSrt = (currentEpisode as any).subtitles_srt || (currentEpisode as any).subtitlesSrt;
     if (rawSrt && rawSrt.trim()) {
       try {
@@ -1599,7 +1635,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
       }
     }
     return subs;
-  }, [currentEpisode]);
+  }, [currentEpisode, dynamicSubtitles]);
 
   // DevTools detection with admin bypass
   useEffect(() => {
