@@ -8,17 +8,28 @@ if (fs.existsSync(entryPath)) {
     const secret = 'txa-cron-kkphim-2026-secure';
     const scheduledCode = `
 export const scheduled = async (controller, env, ctx) => {
-  console.log('[Cron] Cloudflare scheduled event triggered:', controller.scheduledTime);
+  console.log('[Cron] Cloudflare scheduled event triggered:', controller.scheduledTime, 'Cron:', controller.cron);
   try {
-    const url1 = 'https://dongmephim.online/api/cron/sync-kkphim?secret=${secret}';
-    const url2 = 'https://dongmephim.online/api/cron/membership-check?secret=${secret}';
+    const secret = '${secret}';
     
-    // Execute both cron jobs concurrently and locally using Astro's server fetch handler
-    const res1 = await w.fetch(new Request(url1), env, ctx);
-    console.log('[Cron] sync-kkphim result status:', res1.status);
-    
-    const res2 = await w.fetch(new Request(url2), env, ctx);
-    console.log('[Cron] membership-check result status:', res2.status);
+    if (controller.cron === '0 0 * * *') {
+      // 7:00 AM VN time (00:00 UTC) - Run crawl-new-movies
+      console.log('[Cron] Executing crawl-new-movies...');
+      const urlCrawl = 'https://dongmephim.online/api/cron/crawl-new-movies?secret=' + secret;
+      const resCrawl = await w.fetch(new Request(urlCrawl), env, ctx);
+      console.log('[Cron] crawl-new-movies result status:', resCrawl.status);
+    } else {
+      // 15-minute intervals between 12:00 PM and 12:00 AM - Run sync-kkphim and membership-check
+      console.log('[Cron] Executing standard sync and membership checks...');
+      const url1 = 'https://dongmephim.online/api/cron/sync-kkphim?secret=' + secret;
+      const url2 = 'https://dongmephim.online/api/cron/membership-check?secret=' + secret;
+      
+      const res1 = await w.fetch(new Request(url1), env, ctx);
+      console.log('[Cron] sync-kkphim result status:', res1.status);
+      
+      const res2 = await w.fetch(new Request(url2), env, ctx);
+      console.log('[Cron] membership-check result status:', res2.status);
+    }
   } catch (err) {
     console.error('[Cron] Error running scheduled event:', err);
   }
