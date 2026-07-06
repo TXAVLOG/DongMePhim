@@ -6,6 +6,7 @@ import { getEmailTemplate } from '@templates/emails/emailReader';
 import { SmtpClient } from '@lib/api/smtpClient';
 
 export const GET: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
   try {
     const url = new URL(request.url);
     const secret = url.searchParams.get('secret') || request.headers.get('x-cron-secret');
@@ -172,6 +173,18 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
+    const duration = Date.now() - startTime;
+    await supabase.from('txa_cron_logs').insert({
+      job_name: 'membership-check',
+      status: 'success',
+      message: `Quét hạn dùng thành công. Gửi ${warningSent} cảnh báo và hạ cấp ${expiredProcessed} tài khoản.`,
+      details: {
+        warnings_sent: warningSent,
+        expired_processed: expiredProcessed
+      },
+      duration_ms: duration
+    });
+
     return apiResponse({
       warnings_sent: warningSent,
       expired_processed: expiredProcessed,
@@ -179,6 +192,18 @@ export const GET: APIRoute = async ({ request }) => {
     }, 'success', '', 200, request);
 
   } catch (err: any) {
+    const duration = Date.now() - startTime;
+    try {
+      await supabase.from('txa_cron_logs').insert({
+        job_name: 'membership-check',
+        status: 'error',
+        message: err.message || 'Lỗi hệ thống',
+        details: { error_stack: err.stack },
+        duration_ms: duration
+      });
+    } catch (dbLogErr) {
+      console.error('Failed to log cron error to db:', dbLogErr);
+    }
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };

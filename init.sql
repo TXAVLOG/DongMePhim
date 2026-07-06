@@ -791,3 +791,18 @@ CREATE TABLE IF NOT EXISTS public.txa_promo_code_uses (
 
 ALTER TABLE public.txa_promo_code_uses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_txa_promo_code_uses" ON public.txa_promo_code_uses FOR ALL TO public USING (true);
+
+-- Table: public.txa_cron_logs
+CREATE TABLE IF NOT EXISTS public.txa_cron_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  job_name character varying NOT NULL,
+  status character varying NOT NULL,
+  message text,
+  details jsonb,
+  duration_ms integer,
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
+
+ALTER TABLE public.txa_cron_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_txa_cron_logs" ON public.txa_cron_logs FOR ALL TO public USING (true);

@@ -4,6 +4,7 @@ import { supabase } from '@lib/supabase';
 import { mapKKPhimToMovieDetail, mergeMovieEpisodes } from '@services/providers/LocalMovieProvider';
 
 export const GET: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
   try {
     const url = new URL(request.url);
     const secret = url.searchParams.get('secret') || request.headers.get('x-cron-secret');
@@ -151,12 +152,36 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
+    const duration = Date.now() - startTime;
+    await supabase.from('txa_cron_logs').insert({
+      job_name: 'sync-kkphim',
+      status: 'success',
+      message: `Successfully synchronized ongoing movies. Updated ${updatedCount} movies.`,
+      details: {
+        updated_count: updatedCount,
+        notifications_sent: notificationsToInsert.length
+      },
+      duration_ms: duration
+    });
+
     return apiResponse({
       updated: updatedCount,
       notifications_sent: notificationsToInsert.length,
       message: `Successfully synchronized ongoing movies. Updated ${updatedCount} movies.`
     }, 'success', '', 200, request);
   } catch (err: any) {
+    const duration = Date.now() - startTime;
+    try {
+      await supabase.from('txa_cron_logs').insert({
+        job_name: 'sync-kkphim',
+        status: 'error',
+        message: err.message || 'Lỗi hệ thống',
+        details: { error_stack: err.stack },
+        duration_ms: duration
+      });
+    } catch (dbLogErr) {
+      console.error('Failed to log cron error to db:', dbLogErr);
+    }
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };

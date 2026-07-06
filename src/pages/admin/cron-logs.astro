@@ -1,0 +1,238 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { supabase } from '@lib/supabase';
+
+// Fetch latest 100 logs from public.txa_cron_logs
+const { data: logs, error } = await supabase
+  .from('txa_cron_logs')
+  .select('*')
+  .order('created_at', { ascending: false })
+  .limit(100);
+
+const initialLogs = logs || [];
+
+// Calculate simple stats
+const totalRuns = initialLogs.length;
+const successRuns = initialLogs.filter(l => l.status === 'success').length;
+const errorRuns = totalRuns - successRuns;
+const successRate = totalRuns > 0 ? Math.round((successRuns / totalRuns) * 100) : 100;
+const avgDuration = totalRuns > 0 ? Math.round(initialLogs.reduce((acc, curr) => acc + (curr.duration_ms || 0), 0) / totalRuns) : 0;
+---
+
+<AdminLayout title="Nhật ký Cron tự động">
+  <div class="space-y-6">
+    
+    <!-- Header Block -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-6 rounded-2xl">
+      <div>
+        <h1 class="text-2xl font-black text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-purple-400 text-3xl">history_toggle_off</span>
+          Nhật Ký Cron Tự Động (Cron Logs)
+        </h1>
+        <p class="text-xs text-zinc-400 mt-1">Theo dõi tiến trình đồng bộ phim và quét hạn tài khoản chạy ngầm trên Cloudflare Workers</p>
+      </div>
+      <button 
+        type="button" 
+        onclick="window.location.reload()"
+        class="px-5 py-2.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+      >
+        <span class="material-symbols-outlined text-base">refresh</span>
+        <span>Làm mới</span>
+      </button>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-6">
+      <div class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+          <span class="material-symbols-outlined text-2xl">sync_alt</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Tổng số lần chạy</span>
+          <span class="text-xl font-black text-white">{totalRuns} <span class="text-[10px] text-zinc-500 font-normal">lượt gần nhất</span></span>
+        </div>
+      </div>
+
+      <div class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <span class="material-symbols-outlined text-2xl">check_circle</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Tỷ lệ thành công</span>
+          <span class="text-xl font-black text-emerald-400">{successRate}% <span class="text-[10px] text-zinc-500 font-normal">({successRuns}/{totalRuns})</span></span>
+        </div>
+      </div>
+
+      <div class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+          <span class="material-symbols-outlined text-2xl">error</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Số lượt lỗi</span>
+          <span class="text-xl font-black text-red-400">{errorRuns} <span class="text-[10px] text-zinc-500 font-normal">lượt thất bại</span></span>
+        </div>
+      </div>
+
+      <div class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <span class="material-symbols-outlined text-2xl">schedule</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Thời gian chạy trung bình</span>
+          <span class="text-xl font-black text-white">{avgDuration} <span class="text-xs text-zinc-400">ms</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Control Bar -->
+    <div class="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <span class="text-xs text-zinc-400 font-bold shrink-0">Lọc theo Tác vụ:</span>
+        <select id="filter-job" onchange="filterLogsTable()" class="bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none font-bold w-full sm:w-auto">
+          <option value="all">🔍 Tất cả các tác vụ</option>
+          <option value="sync-kkphim">🔄 Đồng bộ phim (sync-kkphim)</option>
+          <option value="membership-check">👤 Quét hạn tài khoản (membership-check)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <span class="text-xs text-zinc-400 font-bold shrink-0">Trạng thái:</span>
+        <select id="filter-status" onchange="filterLogsTable()" class="bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none font-bold w-full sm:w-auto">
+          <option value="all">🔍 Tất cả trạng thái</option>
+          <option value="success">🟢 Thành công</option>
+          <option value="error">🔴 Lỗi / Thất bại</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Logs Table Container -->
+    <div class="glass-panel rounded-2xl overflow-hidden p-6">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-glass-stroke/40 text-[11px] text-zinc-400 uppercase tracking-wider font-bold">
+              <th class="py-3.5 px-4 w-48">Thời Gian Chạy</th>
+              <th class="py-3.5 px-4 w-52">Tên Tác Vụ</th>
+              <th class="py-3.5 px-4 w-32">Trạng Thái</th>
+              <th class="py-3.5 px-4 w-32">Thời Gian Xử Lý</th>
+              <th class="py-3.5 px-4">Thông Điệp Chi Tiết</th>
+              <th class="py-3.5 px-4 text-right w-24">Chi Tiết</th>
+            </tr>
+          </thead>
+          <tbody id="logs-tbody" class="divide-y divide-glass-stroke/30 text-xs font-body-main">
+            {initialLogs.length === 0 ? (
+              <tr>
+                <td colspan="6" class="py-12 text-center text-zinc-500 font-bold">
+                  Hệ thống chưa ghi nhận log nào. Vui lòng đợi Cloudflare triggers hoạt động!
+                </td>
+              </tr>
+            ) : (
+              initialLogs.map((item) => {
+                const dateStr = new Date(item.created_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+                return (
+                  <tr class="hover:bg-white/5 transition-all log-row" data-job={item.job_name} data-status={item.status}>
+                    <td class="py-4 px-4 font-mono text-zinc-300 font-bold">
+                      {dateStr}
+                    </td>
+                    <td class="py-4 px-4 font-bold text-zinc-100">
+                      {item.job_name === 'sync-kkphim' ? (
+                        <span class="flex items-center gap-1 text-purple-400">
+                          <span class="material-symbols-outlined text-sm">sync</span>
+                          <span>sync-kkphim</span>
+                        </span>
+                      ) : (
+                        <span class="flex items-center gap-1 text-sky-400">
+                          <span class="material-symbols-outlined text-sm">badge</span>
+                          <span>membership-check</span>
+                        </span>
+                      )}
+                    </td>
+                    <td class="py-4 px-4">
+                      {item.status === 'success' ? (
+                        <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider">Thành công</span>
+                      ) : (
+                        <span class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider">Lỗi</span>
+                      )}
+                    </td>
+                    <td class="py-4 px-4 font-mono font-bold text-zinc-300">
+                      {item.duration_ms} ms
+                    </td>
+                    <td class="py-4 px-4 text-zinc-400 truncate max-w-md" title={item.message}>
+                      {item.message || 'Không có thông điệp'}
+                    </td>
+                    <td class="py-4 px-4 text-right">
+                      <button 
+                        type="button" 
+                        onclick={`viewLogDetails('${item.id}', ${JSON.stringify(item.details).replace(/'/g, "\\'")})`}
+                        class="p-2 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg text-purple-400 transition-all cursor-pointer inline-flex items-center justify-center border-none"
+                        data-txatooltip="Xem chi tiết dữ liệu JSON"
+                      >
+                        <span class="material-symbols-outlined text-base">visibility</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</AdminLayout>
+
+<script is:inline>
+  (function() {
+    window.viewLogDetails = function(id, details) {
+      if (!details) {
+        if (window.showGlobalToast) window.showGlobalToast('Không có dữ liệu chi tiết!', 'info');
+        return;
+      }
+      
+      const formattedJson = JSON.stringify(details, null, 2);
+      const content = `
+        <div class="pt-2 text-xs space-y-3">
+          <p class="text-zinc-400">Metadata JSON của lần chạy:</p>
+          <div class="border border-zinc-800 rounded-xl bg-zinc-950 p-4 font-mono overflow-auto max-h-80 text-[11px] text-emerald-400 select-text leading-relaxed whitespace-pre">
+${formattedJson}
+          </div>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: '📊 Chi Tiết Log Metadata',
+          content: content,
+          confirmText: 'Đóng',
+          cancelText: '',
+          onConfirm: () => {}
+        });
+      }
+    };
+
+    window.filterLogsTable = function() {
+      const jobFilter = document.getElementById('filter-job').value;
+      const statusFilter = document.getElementById('filter-status').value;
+      const rows = document.querySelectorAll('.log-row');
+
+      rows.forEach(row => {
+        const job = row.getAttribute('data-job');
+        const status = row.getAttribute('data-status');
+
+        const matchJob = jobFilter === 'all' || job === jobFilter;
+        const matchStatus = statusFilter === 'all' || status === statusFilter;
+
+        if (matchJob && matchStatus) {
+          row.classList.remove('hidden');
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+    };
+
+    // Auto highlight active nav item
+    const navItem = document.getElementById('nav-cron-logs');
+    if (navItem) navItem.classList.add('sidebar-active');
+  })();
+</script>
