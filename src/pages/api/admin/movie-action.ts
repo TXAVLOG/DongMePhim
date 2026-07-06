@@ -333,8 +333,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       if (hasNewEpisode && savedMovie) {
         const settings = await SettingService.getSettings();
         const localsAny = locals as any;
-        if (localsAny?.runtime?.ctx?.waitUntil) {
-          localsAny.runtime.ctx.waitUntil(
+        const cfContext = localsAny?.cfContext || localsAny?.runtime?.ctx;
+        if (cfContext?.waitUntil) {
+          cfContext.waitUntil(
             sendEpisodeUpdateEmails(savedMovie.id, movieSlug, moviePayload, settings)
           );
         } else {
