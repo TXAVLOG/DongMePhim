@@ -99,6 +99,7 @@ function formatDuration(ms: number) {
           <option value="all">🔍 Tất cả các tác vụ</option>
           <option value="sync-kkphim">🔄 Đồng bộ phim (sync-kkphim)</option>
           <option value="membership-check">👤 Quét hạn tài khoản (membership-check)</option>
+          <option value="crawl-new-movies">🎬 Cào phim tự động (crawl-new-movies)</option>
         </select>
       </div>
 
@@ -146,6 +147,11 @@ function formatDuration(ms: number) {
                         <span class="flex items-center gap-1 text-purple-400">
                           <span class="material-symbols-outlined text-sm">sync</span>
                           <span>sync-kkphim</span>
+                        </span>
+                      ) : item.job_name === 'crawl-new-movies' ? (
+                        <span class="flex items-center gap-1 text-emerald-400">
+                          <span class="material-symbols-outlined text-sm">movie_filter</span>
+                          <span>crawl-new-movies</span>
                         </span>
                       ) : (
                         <span class="flex items-center gap-1 text-sky-400">
