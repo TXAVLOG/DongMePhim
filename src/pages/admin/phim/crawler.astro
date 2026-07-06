@@ -327,17 +327,42 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
   <!-- Local Crawled Inventory List -->
   <div class="glass-panel rounded-3xl border border-glass-stroke p-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-      <h3 class="font-bold text-lg text-white flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">video_library</span>
-        Kho phim đã cào cục bộ (<span id="crawledCount" class="text-primary font-black">0</span> phim)
-      </h3>
-      <button id="clearAllCrawledBtn" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
-        Xóa tất cả phim cào
-      </button>
+    <div class="flex flex-col gap-4 mb-6">
+      <!-- Header row -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h3 class="font-bold text-lg text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">video_library</span>
+          Kho phim đã cào cục bộ (<span id="crawledCount" class="text-primary font-black">0</span> phim)
+        </h3>
+        <button id="clearAllCrawledBtn" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
+          Xóa tất cả phim cào
+        </button>
+      </div>
+      <!-- Filter + Page-size toolbar -->
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Status filter -->
+        <div class="flex items-center gap-1 bg-zinc-900/70 border border-glass-stroke rounded-xl p-1">
+          <button id="crawledFilterAll" onclick="setCrawledFilter('all')" class="crawled-filter-btn active px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">Tất cả</button>
+          <button id="crawledFilterOngoing" onclick="setCrawledFilter('ongoing')" class="crawled-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">Đang chiếu</button>
+          <button id="crawledFilterCompleted" onclick="setCrawledFilter('completed')" class="crawled-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">Hoàn thành</button>
+          <button id="crawledFilterMovie" onclick="setCrawledFilter('movie')" class="crawled-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">Phim lẻ / Full</button>
+        </div>
+        <!-- Page size selector -->
+        <div class="flex items-center gap-2 ml-auto">
+          <span class="text-xs text-zinc-500 font-bold whitespace-nowrap">Hiển thị:</span>
+          <select id="crawledPageSizeSelect" onchange="setCrawledPageSize(Number(this.value))" class="bg-zinc-900 border border-glass-stroke text-white text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary cursor-pointer">
+            <option value="10">10 / trang</option>
+            <option value="25">25 / trang</option>
+            <option value="50" selected>50 / trang</option>
+            <option value="100">100 / trang</option>
+          </select>
+        </div>
+        <!-- Filtered count badge -->
+        <span id="crawledFilteredCount" class="text-xs text-zinc-500 font-bold whitespace-nowrap"></span>
+      </div>
     </div>
     
-    <div class="overflow-x-auto max-h-[400px] custom-scrollbar">
+    <div class="overflow-x-auto max-h-[500px] custom-scrollbar">
       <table class="w-full text-left">
         <thead class="bg-zinc-950/70 text-[10px] font-bold text-zinc-500 uppercase tracking-wider sticky top-0 backdrop-blur-md">
           <tr>
@@ -346,7 +371,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <th class="px-6 py-3">Thể Loại</th>
             <th class="px-6 py-3">Quốc Gia / Năm</th>
             <th class="px-6 py-3">Tập hiện tại</th>
-            <th class="px-6 py-3">Phụ đề & Timings</th>
+            <th class="px-6 py-3">Phụ đề &amp; Timings</th>
             <th class="px-6 py-3 text-right">Thao tác</th>
           </tr>
         </thead>
@@ -369,6 +394,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     </div>
   </div>
 
+  <style>
+    .crawled-filter-btn { color: #71717a; }
+    .crawled-filter-btn.active { background: rgba(var(--color-primary-rgb,99,102,241),0.15); color: var(--color-primary,#818cf8); }
+  </style>
+
   <script is:inline data-astro-rerun>
     (function() {
       // State
@@ -385,7 +415,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       let cartSlugs = new Map(); // slug -> { name, type, episodeCurrent }
       let existingMoviesMap = {};
       let crawledCurrentPage = 1;
-      const crawledLimit = 9999;
+      let crawledPageSize = 50;
+      let crawledStatusFilter = 'all'; // 'all' | 'ongoing' | 'completed' | 'movie'
 
       // Cache for fetched metadata
       let kkphimGenres = [];
@@ -829,17 +860,55 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       }
     }
 
-    function renderCrawledList() {
-      const list = crawledListCache;
+    window.setCrawledFilter = function(filter) {
+      crawledStatusFilter = filter;
+      crawledCurrentPage = 1;
+      // Update button active states
+      ['All','Ongoing','Completed','Movie'].forEach(f => {
+        const btn = document.getElementById('crawledFilter' + f);
+        if (btn) btn.classList.toggle('active', filter === f.toLowerCase());
+      });
+      renderCrawledList();
+    };
 
-      document.getElementById('crawledCount').textContent = list.length;
+    window.setCrawledPageSize = function(size) {
+      crawledPageSize = Math.min(100, Math.max(1, size));
+      crawledCurrentPage = 1;
+      renderCrawledList();
+    };
+
+    function getFilteredCrawledList() {
+      const list = crawledListCache || [];
+      if (crawledStatusFilter === 'all') return list;
+      return list.filter(m => {
+        const epCur = String(m.episodeCurrent || '').toLowerCase();
+        const epTot = String(m.episodeTotal || '').toLowerCase();
+        const isCompleted = m.status === 'completed' || epCur === 'full' || epTot === 'full' || epCur.includes('hoàn tất') || epCur === epTot;
+        const isMovie = m.type === 'movie' || m.type === 'single' || epCur === 'full';
+        if (crawledStatusFilter === 'completed') return isCompleted && !isMovie;
+        if (crawledStatusFilter === 'movie') return isMovie;
+        if (crawledStatusFilter === 'ongoing') return !isCompleted && !isMovie;
+        return true;
+      });
+    }
+
+    function renderCrawledList() {
+      const filteredList = getFilteredCrawledList();
+      const totalAll = (crawledListCache || []).length;
+
+      document.getElementById('crawledCount').textContent = totalAll;
+      const filteredCountEl = document.getElementById('crawledFilteredCount');
+      if (filteredCountEl) {
+        filteredCountEl.textContent = crawledStatusFilter !== 'all' ? `(Lọc: ${filteredList.length} phim)` : '';
+      }
+
       const crawledMoviesBody = document.getElementById('crawledMoviesBody');
       const emptyCrawled = document.getElementById('emptyCrawled');
       const crawledPagination = document.getElementById('crawledPagination');
 
-      if (list.length === 0) {
-        crawledMoviesBody.innerHTML = '';
-        emptyCrawled.classList.remove('hidden');
+      if (filteredList.length === 0) {
+        crawledMoviesBody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-xs text-zinc-500 italic">Không có phim nào khớp với bộ lọc đã chọn.</td></tr>`;
+        emptyCrawled.classList.add('hidden');
         if (crawledPagination) crawledPagination.classList.add('hidden');
         return;
       }
@@ -847,14 +916,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       if (crawledPagination) crawledPagination.classList.remove('hidden');
 
       // Pagination math
-      const totalItems = list.length;
-      const totalPages = Math.ceil(totalItems / crawledLimit) || 1;
+      const totalItems = filteredList.length;
+      const totalPages = Math.ceil(totalItems / crawledPageSize) || 1;
       if (crawledCurrentPage > totalPages) crawledCurrentPage = totalPages;
       if (crawledCurrentPage < 1) crawledCurrentPage = 1;
 
-      const startIndex = (crawledCurrentPage - 1) * crawledLimit;
-      const endIndex = startIndex + crawledLimit;
-      const paginatedList = list.slice(startIndex, endIndex);
+      const startIndex = (crawledCurrentPage - 1) * crawledPageSize;
+      const endIndex = startIndex + crawledPageSize;
+      const paginatedList = filteredList.slice(startIndex, endIndex);
 
       // Trigger animation
       crawledMoviesBody.classList.remove('animate-fade-in');
@@ -887,6 +956,20 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           configBadge = '<span class="text-[10px] text-zinc-600">Trống (Mặc định)</span>';
         }
 
+        // Status badge
+        const epCur = String(m.episodeCurrent || '').toLowerCase();
+        const epTot = String(m.episodeTotal || '').toLowerCase();
+        const isMovie = m.type === 'movie' || m.type === 'single';
+        const isCompleted = m.status === 'completed' || epCur === 'full' || epTot === 'full' || epCur.includes('hoàn tất');
+        let statusBadge = '';
+        if (isMovie) {
+          statusBadge = '<span class="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/20 text-[9px] font-bold">PHIM LẺ</span>';
+        } else if (isCompleted) {
+          statusBadge = '<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold">HOÀN THÀNH</span>';
+        } else {
+          statusBadge = '<span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20 text-[9px] font-bold">ĐANG CHIẾU</span>';
+        }
+
         return `
           <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
             <td class="px-6 py-4">
@@ -897,6 +980,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <td class="px-6 py-4 font-semibold text-white">
               <a href="/phim/${m.slug}" target="_blank" class="hover:text-primary transition-colors">${m.title || m.name}</a>
               <div class="text-[10px] text-zinc-500 font-mono mt-0.5">${m.originalTitle || m.origin_name || ''}</div>
+              <div class="mt-1">${statusBadge}</div>
             </td>
             <td class="px-6 py-4 text-zinc-400">${(m.genres || []).join(', ') || m.category || 'N/A'}</td>
             <td class="px-6 py-4 text-zinc-400 font-medium">${m.category || 'Khác'} / ${m.releaseYear || m.year || 'N/A'}</td>
@@ -920,7 +1004,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         `;
       }).join('');
 
-      document.getElementById('crawledPaginationInfo').textContent = `Trang ${crawledCurrentPage} / ${totalPages}`;
+      document.getElementById('crawledPaginationInfo').textContent = `Hiển thị ${startIndex + 1}–${Math.min(endIndex, totalItems)} / ${totalItems} phim (Trang ${crawledCurrentPage}/${totalPages})`;
       document.getElementById('crawledPrevBtn').disabled = (crawledCurrentPage === 1);
       document.getElementById('crawledNextBtn').disabled = (crawledCurrentPage === totalPages);
     }
