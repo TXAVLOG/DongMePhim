@@ -29,6 +29,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
           query = query.or('title.ilike.%Châu Tinh Trì%,title.ilike.%Stephen Chow%,actors.cs.["Châu Tinh Trì"],actors.cs.["Stephen Chow"]');
         } else if (catSlug === 'toi-so-con-nguoi-em-roi-do') {
           query = query.or('genres.cs.["Kinh Dị"],genres.cs.["Kinh dị"],genres.cs.["Ma"],genres.cs.["Thriller"],genres.cs.["Horror"]');
+        } else if (catSlug === 'do-mat-dem-khuya') {
+          query = query.or('genres.cs.["Tình Cảm"],genres.cs.["Tâm Lý"],genres.cs.["Lãng Mạn"]');
         } else if (catSlug === 'phim-thai-new') {
           query = query.or('country.eq.Thái Lan,genres.cs.["Thái Lan"]');
         } else {
@@ -149,6 +151,13 @@ export class SupabaseMovieProvider implements IMovieProvider {
             Array.isArray(m.genres) && m.genres.some((g: string) => {
               const lower = (g || '').toLowerCase();
               return lower.includes('kinh dị') || lower.includes('ma') || lower.includes('thriller') || lower.includes('horror');
+            })
+          );
+        } else if (catSlug === 'do-mat-dem-khuya') {
+          result = result.filter(m => 
+            Array.isArray(m.genres) && m.genres.some((g: string) => {
+              const lower = (g || '').toLowerCase();
+              return lower.includes('tình cảm') || lower.includes('tâm lý') || lower.includes('lãng mạn');
             })
           );
         } else if (catSlug === 'phim-thai-new') {

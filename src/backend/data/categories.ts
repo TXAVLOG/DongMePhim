@@ -56,6 +56,11 @@ export const HOMEPAGE_CATEGORIES: CategoryDefinition[] = [
     slug: 'thanh-xuan-hoc-duong',
     title: 'Tuổi Học Trò - Thanh Xuân Của Tôi',
     description: 'Những bộ phim tuổi học trò tình cảm trong sáng, những rung động đầu đời ngọt ngào và đầy kỷ niệm.'
+  },
+  {
+    slug: 'do-mat-dem-khuya',
+    title: 'Bí Mật Giường Chiếu: Đỏ Mặt Đêm Khuya (18+)',
+    description: 'Tuyển tập phim tâm lý tình cảm nóng bỏng, những thước phim chân thực chỉ dành cho khán giả trên 18 tuổi.'
   }
 ];
 

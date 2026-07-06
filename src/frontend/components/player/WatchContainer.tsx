@@ -1080,6 +1080,27 @@ const CommentSystem: React.FC<{
   );
 };
 
+const resolvePlayUrl = (episode: any) => {
+  if (!episode) return '';
+  const m3u8 = episode.linkM3u8 || episode.link_m3u8 || '';
+  if (m3u8) return m3u8;
+  const embed = episode.linkEmbed || episode.link_embed || '';
+  if (embed && (embed.includes('streamvsmov.com') || embed.includes('vsmov.com'))) {
+    try {
+      const url = new URL(embed);
+      const match = url.pathname.match(/\/video\/([a-zA-Z0-9-]+)/);
+      if (match) {
+        const hash = match[1];
+        url.pathname = `/stream/${hash}/master.m3u8`;
+        return url.toString();
+      }
+    } catch (e) {
+      console.error('Error resolving stream URL:', e);
+    }
+  }
+  return embed;
+};
+
 export const WatchContainer: React.FC<WatchContainerProps> = ({
   movie: initialMovie,
   initialEpisodeSlug,
@@ -2434,7 +2455,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               {selectedPlayer === 'txaplayer' ? (
                 <TXAPlayer 
                   key={`txa_${currentEpisode?.slug}_${serverIndex}`}
-                  url={currentEpisode?.linkM3u8 || ''}
+                  url={resolvePlayUrl(currentEpisode)}
                   title={`${movie.title} - ${currentEpisode?.name || ''}`}
                   poster={movie.bannerUrl || movie.posterUrl}
                   currentTime={playbackTime}
@@ -2445,7 +2466,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   }}
                   subtitles={resolvedSubtitles}
                   qualities={[
-                    { html: 'Auto', url: currentEpisode?.linkM3u8 || '', default: true }
+                    { html: 'Auto', url: resolvePlayUrl(currentEpisode), default: true }
                   ]}
                   onChangeQuality={(item) => {
                     console.log('Chất lượng phát: ', item.html);
@@ -2469,7 +2490,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               ) : (
                 <ArtPlayer 
                   key={`art_${currentEpisode?.slug}_${serverIndex}`}
-                  url={currentEpisode?.linkM3u8 || ''}
+                  url={resolvePlayUrl(currentEpisode)}
                   title={`${movie.title} - ${currentEpisode?.name || ''}`}
                   poster={movie.bannerUrl || movie.posterUrl}
                   currentTime={playbackTime}
@@ -2480,7 +2501,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   }}
                   subtitles={resolvedSubtitles}
                   qualities={[
-                    { html: 'Auto', url: currentEpisode?.linkM3u8 || '', default: true }
+                    { html: 'Auto', url: resolvePlayUrl(currentEpisode), default: true }
                   ]}
                   onChangeQuality={(item) => {
                     console.log('Chất lượng phát: ', item.html);

@@ -892,6 +892,13 @@ export class LocalMovieProvider implements IMovieProvider {
             return lower.includes('kinh dị') || lower.includes('ma') || lower.includes('thriller') || lower.includes('horror');
           })
         );
+      } else if (category === 'do-mat-dem-khuya' || category.toLowerCase().includes('đỏ mặt') || category.toLowerCase().includes('giường chiếu') || category.toLowerCase().includes('18+')) {
+        result = result.filter(m => 
+          Array.isArray(m.genres) && m.genres.some((g: string) => {
+            const lower = (g || '').toLowerCase();
+            return lower.includes('tình cảm') || lower.includes('tâm lý') || lower.includes('lãng mạn');
+          })
+        );
       } else if (category === 'phim-thai-new') {
         result = result.filter(m => 
           m.category === 'Thái Lan' || 
