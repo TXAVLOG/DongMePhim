@@ -4,39 +4,58 @@ import path from 'path';
 const entryPath = path.resolve('dist/server/entry.mjs');
 if (fs.existsSync(entryPath)) {
   let content = fs.readFileSync(entryPath, 'utf8');
-  if (!content.includes('export const scheduled')) {
+
+  // Remove any previously injected named export scheduled (from old post-build)
+  content = content.replace(/\nexport const scheduled\s*=[\s\S]*?;\s*$/m, '');
+
+  // Check if scheduled is already on the default export object
+  if (content.includes('.scheduled')) {
+    console.log('scheduled handler already present on default export.');
+  } else {
     const secret = 'txa-cron-kkphim-2026-secure';
-    const scheduledCode = `
-export const scheduled = async (controller, env, ctx) => {
+
+    // Strategy: replace `export { w as default }` with a new default export
+    // that wraps the original worker entry AND adds the scheduled handler.
+    // The variable `w` is `workerEntry` which is `{ fetch: handle }`.
+
+    const oldExportPattern = /export\s*\{\s*(\w+)\s+as\s+default\s*\}/;
+    const match = content.match(oldExportPattern);
+
+    if (match) {
+      const varName = match[0]; // e.g. "export { w as default }"
+      const workerVar = match[1]; // e.g. "w"
+
+      const replacement = `
+const __scheduled_handler = async (controller, env, ctx) => {
   console.log('[Cron] Cloudflare scheduled event triggered:', controller.scheduledTime, 'Cron:', controller.cron);
   try {
-    const secret = '${secret}';
-    
+    const cronSecret = '${secret}';
+
     if (controller.cron === '0 0 * * *') {
       // 7:00 AM VN time (00:00 UTC) - Run crawl-new-movies
       console.log('[Cron] Executing crawl-new-movies...');
-      const urlCrawl = 'https://dongmephim.online/api/cron/crawl-new-movies?secret=' + secret;
+      const urlCrawl = 'https://dongmephim.online/api/cron/crawl-new-movies?secret=' + cronSecret;
       try {
-        const resCrawl = await w.fetch(new Request(urlCrawl), env, ctx);
+        const resCrawl = await ${workerVar}.fetch(new Request(urlCrawl), env, ctx);
         console.log('[Cron] crawl-new-movies result status:', resCrawl.status);
       } catch (errCrawl) {
         console.error('[Cron] Error running crawl-new-movies:', errCrawl);
       }
     } else {
-      // 15-minute intervals between 12:00 PM and 12:00 AM - Run sync-kkphim and membership-check
+      // 15-minute intervals - Run sync-kkphim and membership-check
       console.log('[Cron] Executing standard sync and membership checks...');
-      const url1 = 'https://dongmephim.online/api/cron/sync-kkphim?secret=' + secret;
-      const url2 = 'https://dongmephim.online/api/cron/membership-check?secret=' + secret;
-      
+      const url1 = 'https://dongmephim.online/api/cron/sync-kkphim?secret=' + cronSecret;
+      const url2 = 'https://dongmephim.online/api/cron/membership-check?secret=' + cronSecret;
+
       try {
-        const res1 = await w.fetch(new Request(url1), env, ctx);
+        const res1 = await ${workerVar}.fetch(new Request(url1), env, ctx);
         console.log('[Cron] sync-kkphim result status:', res1.status);
       } catch (err1) {
         console.error('[Cron] Error running sync-kkphim:', err1);
       }
-      
+
       try {
-        const res2 = await w.fetch(new Request(url2), env, ctx);
+        const res2 = await ${workerVar}.fetch(new Request(url2), env, ctx);
         console.log('[Cron] membership-check result status:', res2.status);
       } catch (err2) {
         console.error('[Cron] Error running membership-check:', err2);
@@ -46,12 +65,20 @@ export const scheduled = async (controller, env, ctx) => {
     console.error('[Cron] Error running scheduled event:', err);
   }
 };
+
+const __default_with_scheduled = {
+  fetch: ${workerVar}.fetch,
+  scheduled: __scheduled_handler
+};
+export { __default_with_scheduled as default };
 `;
-    content += scheduledCode;
-    fs.writeFileSync(entryPath, content, 'utf8');
-    console.log('Successfully injected scheduled handler to dist/server/entry.mjs');
-  } else {
-    console.log('scheduled handler already injected in entry.mjs');
+      content = content.replace(oldExportPattern, replacement);
+      fs.writeFileSync(entryPath, content, 'utf8');
+      console.log('Successfully injected scheduled handler INTO default export of dist/server/entry.mjs');
+    } else {
+      console.error('Could not find "export { ... as default }" pattern in entry.mjs');
+      console.log('First 500 chars:', content.substring(0, 500));
+    }
   }
 } else {
   console.error('entry.mjs not found at', entryPath);
