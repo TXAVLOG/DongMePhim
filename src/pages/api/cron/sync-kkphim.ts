@@ -14,12 +14,21 @@ export const GET: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Unauthorized cron trigger', 401, request);
     }
 
+    let limit = 20;
+    const limitParam = url.searchParams.get('limit');
+    if (limitParam) {
+      const parsedLimit = parseInt(limitParam, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        limit = parsedLimit;
+      }
+    }
+
     // 1. Fetch all ongoing movies from Supabase that have source = 'kkphim' or slug exists
     const { data: movies, error: fetchErr } = await supabase
       .from('movies')
       .select('id, title, slug, episodes, poster_url, episode_current, source')
       .eq('status', 'ongoing')
-      .limit(20); // Limit to 20 per cron run to avoid timeouts
+      .limit(limit); // Limit per cron run to avoid timeouts
 
     if (fetchErr) {
       throw fetchErr;

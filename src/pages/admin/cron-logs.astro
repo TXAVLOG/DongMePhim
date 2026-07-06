@@ -112,6 +112,25 @@ function formatDuration(ms: number) {
         </button>
       </div>
 
+      <!-- Global Progress Container (initially hidden) -->
+      <div id="global-progress-container" class="hidden glass-panel p-4 rounded-xl border border-purple-500/20 bg-purple-500/5 mb-4 space-y-2">
+        <div class="flex items-center justify-between text-xs font-bold text-white">
+          <span id="global-progress-status" class="flex items-center gap-1.5">
+            <span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-purple-400 border-t-transparent rounded-full"></span>
+            <span>Đang chạy tuần tự tất cả tác vụ...</span>
+          </span>
+          <span id="global-progress-eta" class="text-purple-400">Tổng ETA: --s</span>
+        </div>
+        <div class="w-full h-2 bg-zinc-950 border border-zinc-800 rounded-full overflow-hidden">
+          <div id="global-progress-bar" class="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-emerald-500 w-0 transition-all duration-300"></div>
+        </div>
+        <div class="flex justify-between text-[9px] text-zinc-500 font-bold font-mono">
+          <span>Khởi đầu</span>
+          <span id="global-progress-percentage">0%</span>
+          <span>Hoàn tất</span>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Card 1: Sync KKPhim -->
         <div class="glass-panel p-5 rounded-2xl flex flex-col justify-between border border-glass-stroke/30 hover:border-purple-500/30 transition-all bg-white/[0.01] hover:bg-white/[0.03]">
@@ -126,15 +145,33 @@ function formatDuration(ms: number) {
               </div>
             </div>
             <p class="text-[11px] text-zinc-400 leading-relaxed">
-              Cập nhật tập phim mới và tiến độ phát sóng cho tối đa 20 phim đang cập nhật (`ongoing`) từ các API của đối tác.
+              Cập nhật tập phim mới và tiến độ phát sóng cho các phim đang cập nhật (`ongoing`) từ các API của đối tác.
             </p>
+            <div class="flex items-center gap-2 mt-2 pt-1">
+              <span class="text-[10px] text-zinc-400 font-bold shrink-0">Giới hạn đồng bộ:</span>
+              <select id="sync-limit-select" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none font-bold">
+                <option value="20">20 phim (Mặc định)</option>
+                <option value="10">10 phim</option>
+                <option value="50">50 phim</option>
+                <option value="100">100 phim</option>
+                <option value="200">200 phim</option>
+                <option value="500">500 phim</option>
+              </select>
+            </div>
           </div>
-          <div class="pt-4 flex justify-end">
+          <div class="pt-4 flex justify-between items-center gap-4">
+            <div id="progress-container-sync-kkphim" class="hidden flex-1 flex items-center gap-3">
+              <div class="flex-1 h-1.5 bg-zinc-950 border border-zinc-800 rounded-full overflow-hidden">
+                <div id="progress-bar-sync-kkphim" class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 w-0 transition-all duration-200"></div>
+              </div>
+              <span id="progress-text-sync-kkphim" class="text-[10px] text-zinc-300 font-bold shrink-0">0%</span>
+              <span id="progress-eta-sync-kkphim" class="text-[10px] text-purple-400 font-bold shrink-0">ETA: --s</span>
+            </div>
             <button 
               type="button" 
               onclick="triggerCronJob('sync-kkphim')"
               id="btn-trigger-sync-kkphim"
-              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer"
+              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <span class="material-symbols-outlined text-sm">play_arrow</span>
               <span>Chạy ngay</span>
@@ -158,12 +195,19 @@ function formatDuration(ms: number) {
               Quét danh sách mới cập nhật và cào tự động 10 phim mới nhất từ nguồn phim đối tác KKPhim & VSMOV vào hệ thống.
             </p>
           </div>
-          <div class="pt-4 flex justify-end">
+          <div class="pt-4 flex justify-between items-center gap-4">
+            <div id="progress-container-crawl-new-movies" class="hidden flex-1 flex items-center gap-3">
+              <div class="flex-1 h-1.5 bg-zinc-950 border border-zinc-800 rounded-full overflow-hidden">
+                <div id="progress-bar-crawl-new-movies" class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 w-0 transition-all duration-200"></div>
+              </div>
+              <span id="progress-text-crawl-new-movies" class="text-[10px] text-zinc-300 font-bold shrink-0">0%</span>
+              <span id="progress-eta-crawl-new-movies" class="text-[10px] text-emerald-400 font-bold shrink-0">ETA: --s</span>
+            </div>
             <button 
               type="button" 
               onclick="triggerCronJob('crawl-new-movies')"
               id="btn-trigger-crawl-new-movies"
-              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer"
+              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <span class="material-symbols-outlined text-sm">play_arrow</span>
               <span>Chạy ngay</span>
@@ -187,12 +231,19 @@ function formatDuration(ms: number) {
               Kiểm tra thời hạn gói cước, hạ cấp tài khoản hết hạn về gói Free và gửi email cảnh báo/thông báo hết hạn tự động.
             </p>
           </div>
-          <div class="pt-4 flex justify-end">
+          <div class="pt-4 flex justify-between items-center gap-4">
+            <div id="progress-container-membership-check" class="hidden flex-1 flex items-center gap-3">
+              <div class="flex-1 h-1.5 bg-zinc-950 border border-zinc-800 rounded-full overflow-hidden">
+                <div id="progress-bar-membership-check" class="h-full bg-gradient-to-r from-sky-500 to-blue-500 w-0 transition-all duration-200"></div>
+              </div>
+              <span id="progress-text-membership-check" class="text-[10px] text-zinc-300 font-bold shrink-0">0%</span>
+              <span id="progress-eta-membership-check" class="text-[10px] text-sky-400 font-bold shrink-0">ETA: --s</span>
+            </div>
             <button 
               type="button" 
               onclick="triggerCronJob('membership-check')"
               id="btn-trigger-membership-check"
-              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer"
+              class="px-3 py-1.5 bg-white/5 border border-glass-stroke/40 hover:bg-white/10 text-white rounded-xl font-bold text-[10px] transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <span class="material-symbols-outlined text-sm">play_arrow</span>
               <span>Chạy ngay</span>
@@ -355,49 +406,231 @@ ${formattedJson}
       });
     };
 
-    window.triggerCronJob = async function(jobName) {
-      const btnId = jobName === 'all' ? 'btn-trigger-all' : `btn-trigger-${jobName}`;
-      const btn = document.getElementById(btnId);
-      if (!btn) return;
-      
-      const originalHtml = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = `
-        <span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full mr-1.5" role="status" aria-hidden="true"></span>
-        <span>Đang chạy...</span>
-      `;
-      
-      if (window.showGlobalToast) {
-        window.showGlobalToast(`Đang gửi yêu cầu kích hoạt tác vụ ${jobName}...`, 'info');
+    async function runSingleJobWithProgress(jobName, isPartOfSequential = false) {
+      const btn = document.getElementById(`btn-trigger-${jobName}`);
+      const progContainer = document.getElementById(`progress-container-${jobName}`);
+      const progBar = document.getElementById(`progress-bar-${jobName}`);
+      const progText = document.getElementById(`progress-text-${jobName}`);
+      const progEta = document.getElementById(`progress-eta-${jobName}`);
+
+      let limitVal = 20;
+      const limitSelect = document.getElementById('sync-limit-select');
+      if (limitSelect && jobName === 'sync-kkphim') {
+        limitVal = parseInt(limitSelect.value, 10) || 20;
       }
 
+      if (btn && progContainer) {
+        btn.classList.add('hidden');
+        progContainer.classList.remove('hidden');
+      }
+
+      let estDurationMs = 1500; // default for membership-check
+      if (jobName === 'sync-kkphim') {
+        estDurationMs = limitVal * 350; // 350ms per movie
+      } else if (jobName === 'crawl-new-movies') {
+        estDurationMs = 8000; // 8 seconds
+      }
+
+      let elapsedMs = 0;
+      let progress = 0;
+
+      const updateProgressUI = () => {
+        if (progBar) progBar.style.width = `${progress}%`;
+        if (progText) progText.textContent = `${Math.round(progress)}%`;
+        const remainingSec = Math.max(0, Math.ceil((estDurationMs - elapsedMs) / 1000));
+        if (progEta) {
+          progEta.textContent = remainingSec > 0 ? `ETA: ${remainingSec}s` : `Xử lý...`;
+          progEta.className = 'text-[10px] text-purple-400 font-bold shrink-0';
+        }
+      };
+
+      updateProgressUI();
+
+      const timer = setInterval(() => {
+        elapsedMs += 100;
+        if (progress < 95) {
+          const ratio = elapsedMs / estDurationMs;
+          progress = Math.min(95, ratio * 95);
+        }
+        updateProgressUI();
+      }, 100);
+
       try {
+        const payload = { job: jobName };
+        if (jobName === 'sync-kkphim') payload.limit = limitVal;
+
         const res = await fetch('/api/admin/cron-trigger', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ job: jobName })
+          body: JSON.stringify(payload)
         });
         
         const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi không xác định');
+
+        clearInterval(timer);
+        progress = 100;
+        if (progBar) progBar.style.width = '100%';
+        if (progText) progText.textContent = '100%';
+        if (progEta) {
+          progEta.textContent = 'Xong!';
+          progEta.className = 'text-[10px] text-emerald-400 font-bold shrink-0';
+        }
         
-        if (res.ok) {
-          if (window.showGlobalToast) {
-            window.showGlobalToast(data.message || `Đã chạy tác vụ ${jobName} thành công!`, 'success');
-          }
+        if (window.showGlobalToast && !isPartOfSequential) {
+          window.showGlobalToast(data.message || `Đã chạy tác vụ ${jobName} thành công!`, 'success');
+        }
+
+        if (!isPartOfSequential) {
           setTimeout(() => {
             window.location.reload();
           }, 1500);
-        } else {
-          throw new Error(data.message || 'Lỗi không xác định từ server');
         }
+        return true;
       } catch (err) {
-        console.error('Trigger cron task error:', err);
-        if (window.showGlobalToast) {
+        clearInterval(timer);
+        progress = 0;
+        if (progBar) progBar.style.width = '0%';
+        if (progText) progText.textContent = 'Lỗi';
+        if (progEta) {
+          progEta.textContent = 'Thất bại';
+          progEta.className = 'text-[10px] text-red-500 font-bold shrink-0';
+        }
+        if (window.showGlobalToast && !isPartOfSequential) {
           window.showGlobalToast(`Lỗi: ${err.message}`, 'error');
         }
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
+        
+        if (!isPartOfSequential) {
+          setTimeout(() => {
+            if (btn && progContainer) {
+              btn.classList.remove('hidden');
+              progContainer.classList.add('hidden');
+            }
+          }, 4000);
+        }
+        throw err;
+      }
+    }
+
+    async function runAllJobsSequentially() {
+      const btnAll = document.getElementById('btn-trigger-all');
+      const globalContainer = document.getElementById('global-progress-container');
+      const globalBar = document.getElementById('global-progress-bar');
+      const globalStatus = document.getElementById('global-progress-status');
+      const globalEta = document.getElementById('global-progress-eta');
+      const globalPercentage = document.getElementById('global-progress-percentage');
+
+      if (btnAll) btnAll.disabled = true;
+      if (globalContainer) {
+        globalContainer.classList.remove('hidden');
+        // Scroll to container smoothly
+        globalContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      const jobs = [
+        { name: 'sync-kkphim', label: 'Đồng bộ phim (sync-kkphim)' },
+        { name: 'membership-check', label: 'Quét hạn dùng (membership-check)' },
+        { name: 'crawl-new-movies', label: 'Cào phim tự động (crawl-new-movies)' }
+      ];
+
+      let limitVal = 20;
+      const limitSelect = document.getElementById('sync-limit-select');
+      if (limitSelect) {
+        limitVal = parseInt(limitSelect.value, 10) || 20;
+      }
+
+      const estDurations = {
+        'sync-kkphim': limitVal * 350,
+        'membership-check': 1500,
+        'crawl-new-movies': 8000
+      };
+
+      const totalEstDurationMs = estDurations['sync-kkphim'] + estDurations['membership-check'] + estDurations['crawl-new-movies'];
+      let elapsedTotalMs = 0;
+      let overallProgress = 0;
+
+      const updateGlobalUI = (currentLabel) => {
+        if (globalBar) globalBar.style.width = `${overallProgress}%`;
+        if (globalPercentage) globalPercentage.textContent = `${Math.round(overallProgress)}%`;
+        const remainingSec = Math.max(0, Math.ceil((totalEstDurationMs - elapsedTotalMs) / 1000));
+        if (globalEta) globalEta.textContent = remainingSec > 0 ? `Tổng ETA: còn ${remainingSec}s` : 'Hoàn tất...';
+        if (globalStatus && currentLabel) {
+          globalStatus.innerHTML = `
+            <span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-purple-400 border-t-transparent rounded-full mr-1"></span>
+            <span>Đang chạy: ${currentLabel}</span>
+          `;
+        }
+      };
+
+      const globalTimer = setInterval(() => {
+        elapsedTotalMs += 100;
+        if (overallProgress < 95) {
+          const ratio = elapsedTotalMs / totalEstDurationMs;
+          overallProgress = Math.min(95, ratio * 95);
+        }
+        updateGlobalUI();
+      }, 100);
+
+      try {
+        for (let i = 0; i < jobs.length; i++) {
+          const job = jobs[i];
+          updateGlobalUI(job.label);
+          await runSingleJobWithProgress(job.name, true);
+        }
+
+        clearInterval(globalTimer);
+        overallProgress = 100;
+        if (globalBar) globalBar.style.width = '100%';
+        if (globalPercentage) globalPercentage.textContent = '100%';
+        if (globalEta) globalEta.textContent = 'Hoàn tất!';
+        if (globalStatus) {
+          globalStatus.innerHTML = `
+            <span class="material-symbols-outlined text-emerald-400 text-sm align-middle mr-1">check_circle</span>
+            <span class="text-emerald-400 font-bold">Đã hoàn thành tất cả các tác vụ!</span>
+          `;
+        }
+
+        if (window.showGlobalToast) {
+          window.showGlobalToast('Đã kích hoạt và hoàn tất tất cả tác vụ thành công!', 'success');
+        }
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (err) {
+        clearInterval(globalTimer);
+        if (globalStatus) {
+          globalStatus.innerHTML = `
+            <span class="material-symbols-outlined text-red-500 text-sm align-middle mr-1">error</span>
+            <span class="text-red-500 font-bold">Gặp lỗi trong quá trình chạy tuần tự!</span>
+          `;
+        }
+        if (window.showGlobalToast) {
+          window.showGlobalToast(`Chạy tuần tự thất bại: ${err.message}`, 'error');
+        }
+        setTimeout(() => {
+          if (globalContainer) globalContainer.classList.add('hidden');
+          if (btnAll) btnAll.disabled = false;
+          
+          // Restore all card buttons
+          jobs.forEach(j => {
+            const btn = document.getElementById(`btn-trigger-${j.name}`);
+            const progContainer = document.getElementById(`progress-container-${j.name}`);
+            if (btn && progContainer) {
+              btn.classList.remove('hidden');
+              progContainer.classList.add('hidden');
+            }
+          });
+        }, 5000);
+      }
+    }
+
+    window.triggerCronJob = async function(jobName) {
+      if (jobName === 'all') {
+        await runAllJobsSequentially();
+      } else {
+        await runSingleJobWithProgress(jobName);
       }
     };
 
