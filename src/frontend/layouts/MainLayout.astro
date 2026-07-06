@@ -4588,12 +4588,13 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           }
         });
         
-        document.addEventListener('DOMContentLoaded', () => {
+        function wirePwaInstall() {
           const banner = document.getElementById('pwa-install-banner');
           const installBtn = document.getElementById('pwa-install-btn');
           const closeBtn = document.getElementById('pwa-install-close');
           
-          if (installBtn) {
+          if (installBtn && !installBtn.dataset.wired) {
+            installBtn.dataset.wired = 'true';
             installBtn.addEventListener('click', async () => {
               if (!deferredPrompt) return;
               deferredPrompt.prompt();
@@ -4604,15 +4605,17 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             });
           }
           
-          if (closeBtn) {
+          if (closeBtn && !closeBtn.dataset.wired) {
+            closeBtn.dataset.wired = 'true';
             closeBtn.addEventListener('click', () => {
               if (banner) banner.classList.add('hidden');
               sessionStorage.setItem('pwa_install_dismissed', 'true');
             });
           }
-        });
+        }
         
         document.addEventListener('astro:page-load', () => {
+          wirePwaInstall();
           const banner = document.getElementById('pwa-install-banner');
           if (banner && !deferredPrompt) {
             banner.classList.add('hidden');

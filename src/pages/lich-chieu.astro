@@ -4,7 +4,7 @@ import { MovieService } from '@services/MovieService';
 import { Button } from '@components/ui/Button';
 
 // Lấy tất cả phim từ Supabase
-const allMovies = await MovieService.getMovies({ type: 'movie', limit: 60 });
+const allMovies = await MovieService.getMovies({ limit: 300 });
 
 // Chuẩn hoá dữ liệu phim — KHÔNG tính "hôm nay / đã qua" ở server nữa,
 // vì server (Supabase/Astro SSR) có thể chạy ở múi giờ khác máy người dùng.
@@ -24,7 +24,7 @@ const scheduleList = allMovies.map((m: any) => {
   };
 });
 
-const nowOnMovies = scheduleList.filter((m: any) => !m.hasSchedule);
+const nowOnMovies = scheduleList.filter((m: any) => !m.hasSchedule).slice(0, 30);
 const upcomingOnMovies = scheduleList.filter((m: any) => m.hasSchedule);
 ---
 

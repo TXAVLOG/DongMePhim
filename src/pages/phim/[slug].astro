@@ -1208,7 +1208,8 @@ if (movie && movie.actors && movie.actors.length > 0) {
             </a>
           `;
         } else {
-          const thumb = ep.thumbUrl || ep.thumb || ep.thumbnail || ep.image || movieBanner || moviePoster || '/logo.png';
+          const epThumb = ep.thumbUrl || ep.thumb || ep.thumbnail || ep.image;
+          const thumb = (epThumb && !epThumb.includes('logo-decoy')) ? epThumb : (movieBanner || moviePoster || '/logo.png');
           epsHtml += `
             <a 
               href="/xem/${movieSlug}?ep=${ep.slug}&sv=${serverIdx}"

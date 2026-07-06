@@ -2857,7 +2857,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                     .filter(({ idx }) => idx >= activeTab * episodesPerTab && idx < (activeTab + 1) * episodesPerTab)
                     .map(({ ep, idx }) => {
                       const isCurrent = idx === episodeIndex;
-                      const thumb = (ep as any).thumbUrl || (ep as any).thumb || (ep as any).thumbnail || (ep as any).image || movie.bannerUrl || movie.posterUrl;
+                      const epThumb = (ep as any).thumbUrl || (ep as any).thumb || (ep as any).thumbnail || (ep as any).image;
+                      const thumb = (epThumb && !epThumb.includes('logo-decoy')) ? epThumb : (movie.bannerUrl || movie.posterUrl || '/logo.png');
                       return (
                         <div 
                           key={ep.slug}

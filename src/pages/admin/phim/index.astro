@@ -590,11 +590,26 @@ const staticMovies = await MovieService.getMovies();
             
             let success = 0;
             let failed = 0;
+            let totalAdded = 0;
             
             if (window.showGlobalToast) window.showGlobalToast('Đang quét tập mới cho ' + selectedMovies.length + ' phim...', 'info');
 
             for (const item of selectedMovies) {
               try {
+                // Fetch old episodes count from internal API
+                let oldEpCount = 0;
+                try {
+                  const oldRes = await fetch('/api/app/movie/' + item.slug);
+                  if (oldRes.ok) {
+                    const oldJson = await oldRes.json();
+                    if (oldJson && oldJson.status === 'success' && oldJson.data && Array.isArray(oldJson.data.servers)) {
+                      oldEpCount = oldJson.data.servers[0]?.server_data?.length || 0;
+                    }
+                  }
+                } catch (e) {
+                  console.warn('Lỗi khi lấy thông tin phim cũ cho ' + item.slug + ':', e);
+                }
+
                 // Determine sourceUrl. If it's stored in allMovies, fetch it. Else fallback to phimapi.com / vsmov.com
                 const mObj = allMovies.find(x => x.slug === item.slug);
                 const isVsmov = mObj && mObj.originalSource === 'vsmov';
@@ -613,6 +628,8 @@ const staticMovies = await MovieService.getMovies();
                   const movieDetailObj = mapKKPhimToMovieDetail(detailData, isVsmov ? 'vsmov' : 'kkphim');
                   movieDetailObj.updatedAt = new Date().toISOString();
                   
+                  const newEpCount = movieDetailObj.episodes[0]?.serverData?.length || 0;
+                  
                   const saveRes = await fetch('/api/admin/movie-action', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -626,6 +643,10 @@ const staticMovies = await MovieService.getMovies();
 
                   if (saveRes.ok) {
                     success++;
+                    const addedCount = newEpCount - oldEpCount;
+                    if (addedCount > 0) {
+                      totalAdded += addedCount;
+                    }
                   } else {
                     failed++;
                   }
@@ -644,10 +665,10 @@ const staticMovies = await MovieService.getMovies();
             bulkScanBtn.innerHTML = oldHtml;
             
             if (window.showGlobalToast) {
-               if (failed > 0) {
-                 window.showGlobalToast('Quét xong! Thành công: ' + success + ', Thất bại: ' + failed, 'warning');
+               if (totalAdded > 0) {
+                 window.showGlobalToast('Quét xong! Đã thêm tổng cộng ' + totalAdded + ' tập mới.', 'success');
                } else {
-                 window.showGlobalToast('Quét tập mới thành công cho ' + success + ' phim!', 'success');
+                 window.showGlobalToast('Không có tập mới nào được cập nhật.', 'success');
                }
             }
             if (success > 0) {
@@ -664,6 +685,20 @@ const staticMovies = await MovieService.getMovies();
           if (window.showGlobalToast) window.showGlobalToast('Đang quét tập mới cho phim ' + slug + '...', 'info');
 
           try {
+            // Fetch old episodes count from internal API
+            let oldEpCount = 0;
+            try {
+              const oldRes = await fetch('/api/app/movie/' + slug);
+              if (oldRes.ok) {
+                const oldJson = await oldRes.json();
+                if (oldJson && oldJson.status === 'success' && oldJson.data && Array.isArray(oldJson.data.servers)) {
+                  oldEpCount = oldJson.data.servers[0]?.server_data?.length || 0;
+                }
+              }
+            } catch (e) {
+              console.warn('Lỗi khi lấy thông tin phim cũ:', e);
+            }
+
             const mObj = allMovies.find(x => x.slug === slug);
             const isVsmov = mObj && mObj.originalSource === 'vsmov';
             let sourceUrl = isVsmov 
@@ -681,6 +716,8 @@ const staticMovies = await MovieService.getMovies();
               const movieDetailObj = mapKKPhimToMovieDetail(detailData, isVsmov ? 'vsmov' : 'kkphim');
               movieDetailObj.updatedAt = new Date().toISOString();
               
+              const newEpCount = movieDetailObj.episodes[0]?.serverData?.length || 0;
+              
               const saveRes = await fetch('/api/admin/movie-action', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -693,8 +730,15 @@ const staticMovies = await MovieService.getMovies();
               });
 
               if (saveRes.ok) {
-                if (window.showGlobalToast) window.showGlobalToast('Quét tập mới thành công!', 'success');
-                setTimeout(() => window.location.reload(), 1000);
+                const addedCount = newEpCount - oldEpCount;
+                if (window.showGlobalToast) {
+                  if (addedCount > 0) {
+                    window.showGlobalToast('Quét tập mới thành công! Đã thêm ' + addedCount + ' tập mới.', 'success');
+                  } else {
+                    window.showGlobalToast('Không có tập mới nào được cập nhật.', 'success');
+                  }
+                }
+                setTimeout(() => window.location.reload(), 1500);
               } else {
                 if (window.showGlobalToast) window.showGlobalToast('Lỗi khi lưu dữ liệu', 'error');
                 btnElement.disabled = false;
