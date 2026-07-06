@@ -24,28 +24,19 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
       }
     }
 
-    // Get imdb_score baseline
+    // Get current rating details from movies table
     const { data: movie } = await supabase
       .from('movies')
-      .select('imdb_score')
+      .select('imdb_score, rating_score, rating_count')
       .eq('slug', slug)
       .maybeSingle();
 
     const imdbScore = movie ? parseFloat(String(movie.imdb_score)) || 0 : 0;
+    const ratingScore = movie && movie.rating_score ? parseFloat(String(movie.rating_score)) : 0;
+    const ratingCount = movie && movie.rating_count ? parseInt(String(movie.rating_count), 10) : 0;
 
-    const { data: ratings } = await supabase
-      .from('txa_movie_ratings')
-      .select('rating')
-      .eq('movie_slug', slug);
-
-    const userRatings = ratings || [];
-    const totalRatings = 1 + userRatings.length;
-    let averageRating = imdbScore;
-
-    if (userRatings.length > 0) {
-      const sum = userRatings.reduce((acc: number, curr: any) => acc + curr.rating, 0);
-      averageRating = parseFloat(((imdbScore + sum) / totalRatings).toFixed(1));
-    }
+    const averageRating = ratingScore > 0 ? ratingScore : imdbScore;
+    const totalRatings = ratingCount > 0 ? ratingCount : (imdbScore > 0 ? 1 : 0);
 
     return apiResponse({
       userRating,
@@ -79,7 +70,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse(null, 'error', 'Điểm đánh giá phải từ 1 đến 10!', 400, request);
     }
 
-    // Check if rating exists
+    // Check if rating exists to block multiple ratings
     const { data: existingRating } = await supabase
       .from('txa_movie_ratings')
       .select('id')
@@ -88,43 +79,40 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .maybeSingle();
 
     if (existingRating) {
-      const { error } = await supabase
-        .from('txa_movie_ratings')
-        .update({ rating: ratingVal })
-        .eq('id', existingRating.id);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from('txa_movie_ratings')
-        .insert({
-          username: user.username,
-          movie_slug: slug,
-          rating: ratingVal
-        });
-      if (error) throw error;
+      return apiResponse(null, 'error', 'Bạn đã đánh giá bộ phim này rồi!', 400, request);
     }
 
-    // Recalculate average: imdb_score (weight 1) + all user ratings
+    // Insert new rating
+    const { error } = await supabase
+      .from('txa_movie_ratings')
+      .insert({
+        username: user.username,
+        movie_slug: slug,
+        rating: ratingVal
+      });
+    if (error) throw error;
+
+    // Fetch the movie's current rating details from 'movies' table
     const { data: movie } = await supabase
       .from('movies')
-      .select('imdb_score')
+      .select('imdb_score, rating_score, rating_count')
       .eq('slug', slug)
       .maybeSingle();
 
     const imdbScore = movie ? parseFloat(String(movie.imdb_score)) || 0 : 0;
+    const currentScore = movie && movie.rating_score ? parseFloat(String(movie.rating_score)) : 0;
+    const currentCount = movie && movie.rating_count ? parseInt(String(movie.rating_count), 10) : 0;
 
-    const { data: ratings } = await supabase
-      .from('txa_movie_ratings')
-      .select('rating')
-      .eq('movie_slug', slug);
+    // Determine baseline rating
+    const baselineScore = currentScore > 0 ? currentScore : (imdbScore > 0 ? imdbScore : ratingVal);
 
-    const userRatings = ratings || [];
-    const userCount = userRatings.length;
-    const sum = userRatings.reduce((acc: number, curr: any) => acc + curr.rating, 0);
-    const averageRating = parseFloat(((imdbScore + sum) / (1 + userCount)).toFixed(1));
-    const totalRatings = 1 + userCount;
+    // Calculate new average: (current_average + new_vote) / 2
+    const averageRating = parseFloat(((baselineScore + ratingVal) / 2).toFixed(1));
 
-    // Sync back to movies table for search/sort
+    // Calculate new count: old_count + 1
+    const totalRatings = currentCount + 1;
+
+    // Sync back to movies table
     await supabase
       .from('movies')
       .update({
