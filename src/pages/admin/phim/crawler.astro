@@ -56,10 +56,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         </div>
 
         <!-- Mode sub-tabs -->
-        <div class="grid grid-cols-3 gap-1 p-1 bg-zinc-950/80 rounded-xl border border-glass-stroke">
+        <div class="grid grid-cols-4 gap-1 p-1 bg-zinc-950/80 rounded-xl border border-glass-stroke">
           <button id="subTabUrlBtn" class="py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all">URL/Slugs</button>
           <button id="subTabBatchBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Số trang</button>
           <button id="subTabFilterBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Lọc/Bộ lọc</button>
+          <button id="subTabUpdateBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Mới cập nhật</button>
         </div>
 
         <!-- Sub-Tab: URL / Slug input -->
@@ -139,6 +140,29 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               <input id="filterPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
             </div>
           </div>
+        </div>
+
+        <!-- Sub-Tab: Recently Updated -->
+        <div id="subTabUpdate" class="space-y-4 hidden">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang bắt đầu</label>
+              <input id="updatePageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang kết thúc</label>
+              <input id="updatePageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Phiên bản API</label>
+            <select id="updateApiVersion" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold">
+              <option value="v3" selected>Version 3 (Khuyên dùng - Đầy đủ nhất)</option>
+              <option value="v2">Version 2 (Độ trễ thấp)</option>
+              <option value="v1">Version 1 (Bản cũ)</option>
+            </select>
+          </div>
+          <p class="text-[10px] text-zinc-500 italic">Quét danh sách các phim mới hoặc phim vừa có tập mới từ nguồn API phimapi.com. Hệ thống sẽ tự động so sánh số tập phim và chỉ cập nhật tập mới, bỏ qua nếu phim đã đủ tập.</p>
         </div>
 
         <!-- Start/Stop buttons -->
@@ -538,9 +562,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     const subTabUrlBtn = document.getElementById('subTabUrlBtn');
     const subTabBatchBtn = document.getElementById('subTabBatchBtn');
     const subTabFilterBtn = document.getElementById('subTabFilterBtn');
+    const subTabUpdateBtn = document.getElementById('subTabUpdateBtn');
     const subTabUrl = document.getElementById('subTabUrl');
     const subTabBatch = document.getElementById('subTabBatch');
     const subTabFilter = document.getElementById('subTabFilter');
+    const subTabUpdate = document.getElementById('subTabUpdate');
 
     const filterCountryBtn = document.getElementById('filterCountryBtn');
     const filterGenreBtn = document.getElementById('filterGenreBtn');
@@ -575,9 +601,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
       subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabUrl.classList.remove('hidden');
       subTabBatch.classList.add('hidden');
       subTabFilter.classList.add('hidden');
+      if (subTabUpdate) subTabUpdate.classList.add('hidden');
     });
 
     subTabBatchBtn.addEventListener('click', () => {
@@ -586,9 +614,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
       subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
+      if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
       subTabBatch.classList.remove('hidden');
       subTabUrl.classList.add('hidden');
       subTabFilter.classList.add('hidden');
+      if (subTabUpdate) subTabUpdate.classList.add('hidden');
     });
 
     subTabFilterBtn.addEventListener('click', () => {
@@ -1457,6 +1487,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           subTabBatchBtn.click();
         } else if (session.standardSubTab === 'filter') {
           subTabFilterBtn.click();
+        } else if (session.standardSubTab === 'update') {
+          if (subTabUpdateBtn) subTabUpdateBtn.click();
         } else {
           subTabUrlBtn.click();
         }
@@ -1612,7 +1644,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         let currentEpisodeCount = existingMoviesMap[slug] || 0;
         let apiEpisodeCount = 0;
 
-        if (dup && !overwrite) {
+        const isUpdateMode = (standardSubTab === 'update');
+        if (dup && !overwrite && !isUpdateMode) {
           skipped++;
           document.getElementById('statSkipped').textContent = skipped;
           addLog(`→ Bỏ qua (đã cào & không ghi đè): ${slug}`, 'warning');
@@ -1923,6 +1956,53 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
         if (slugs.length === 0) {
           if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào từ các trang danh sách!', 'error');
+          return;
+        }
+        
+        runCrawlProcess(slugs);
+      }
+      
+      else if (standardSubTab === 'update') {
+        const startPage = parseInt(document.getElementById('updatePageStart').value) || 1;
+        const endPage = parseInt(document.getElementById('updatePageEnd').value) || 1;
+        const apiVer = document.getElementById('updateApiVersion')?.value || 'v3';
+
+        if (startPage < 1 || endPage < startPage) {
+          if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+          return;
+        }
+
+        addLog(`⏳ Đang tải danh sách phim mới cập nhật (${apiVer.toUpperCase()}) từ trang ${startPage} đến ${endPage}...`);
+        const slugs = [];
+        
+        for (let p = startPage; p <= endPage; p++) {
+          try {
+            let updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat-v3?page=${p}`;
+            if (apiVer === 'v2') {
+              updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat-v2?page=${p}`;
+            } else if (apiVer === 'v1') {
+              updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=40`;
+            }
+
+            const res = await fetch(updateUrl);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            
+            const items = data.data?.items || data.items;
+            if (items && Array.isArray(items)) {
+              items.forEach(item => {
+                if (item.slug) slugs.push(item.slug);
+              });
+              addLog(`✓ Quét xong trang mới cập nhật ${p}: Thêm ${items.length} phim.`);
+            }
+          } catch (e) {
+            addLog(`✗ Lỗi tải trang mới cập nhật ${p}: ${e.message}`, 'error');
+          }
+          await new Promise(r => setTimeout(r, 200));
+        }
+
+        if (slugs.length === 0) {
+          if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào từ danh sách mới cập nhật!', 'error');
           return;
         }
         
