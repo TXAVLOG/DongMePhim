@@ -659,6 +659,7 @@ packages.forEach((pkg: any) => {
 
         function showTooltip(text, target, e) {
           if (!text) return;
+          if (window.matchMedia('(max-width: 768px)').matches) return; // Ẩn tooltip trên mobile
           clearTimeout(hideTimeout);
           tooltip.innerHTML = `<div class="txa-tooltip-content">${text}</div>`;
           tooltip.style.textAlign = text.length > 40 ? 'left' : 'center';

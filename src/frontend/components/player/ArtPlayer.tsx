@@ -2511,8 +2511,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
           padding: 6px 14px !important;
         }
         .art-fullscreen .art-layer-txa-watermark-fixed {
-          top: 30px !important;
-          right: 30px !important;
+          top: 20px !important;
+          right: 20px !important;
         }
         .art-fullscreen .art-layer-txa-watermark-fixed .txa-watermark-wrapper {
           padding: 6px 14px !important;

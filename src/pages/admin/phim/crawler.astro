@@ -1952,7 +1952,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         for (let p = startPage; p <= endPage; p++) {
           try {
             const batchUrl = crawlSource === 'vsmov'
-              ? `https://vsmov.com/api/phim-moi-cap-nhat?page=${p}`
+              ? `https://vsmov.com/api/danh-sach/phim-moi-cap-nhat?page=${p}`
               : `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=100`;
             const res = await fetch(batchUrl);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -2172,7 +2172,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         try {
           const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
           const batchUrl1 = crawlSource === 'vsmov'
-            ? 'https://vsmov.com/api/phim-moi-cap-nhat?page=1'
+            ? 'https://vsmov.com/api/danh-sach/phim-moi-cap-nhat?page=1'
             : 'https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1&limit=40';
           const res = await fetch(batchUrl1);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -2186,7 +2186,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             if (shouldStop) break;
             try {
               const batchUrl = crawlSource === 'vsmov'
-                ? `https://vsmov.com/api/phim-moi-cap-nhat?page=${p}`
+                ? `https://vsmov.com/api/danh-sach/phim-moi-cap-nhat?page=${p}`
                 : `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=40`;
               const pageRes = await fetch(batchUrl);
               const pageData = await pageRes.json();
