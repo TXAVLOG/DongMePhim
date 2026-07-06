@@ -438,6 +438,146 @@ export function getEmailTemplate(filename: string): string {
 </body>
 </html>`;
 
+    case 'movie-request-admin.html':
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yêu cầu phim mới - {site_name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
+              <img src="{site_url}/favicon.png" alt="Logo" style="width:56px;height:56px;margin-bottom:16px;border-radius:12px;box-shadow:0 0 15px rgba(124, 58, 237, 0.2);" />
+              <h2 style="margin:0;font-size:24px;font-weight:800;color:#7c3aed;letter-spacing:-0.5px;text-transform:uppercase;">{site_name} Yêu Cầu Phim</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 30px;">
+              <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#ffffff;">Xin chào Admin,</h3>
+              <p style="margin:0 0 20px;font-size:14px;color:#a1a1aa;line-height:1.6;">Hệ thống vừa nhận được một yêu cầu phim mới từ thành viên <strong style="color:#ffffff;">{username}</strong>.</p>
+              <div style="background-color:#18181b;border:1px solid #27272a;border-radius:16px;padding:20px;margin:24px 0;">
+                <p style="margin:0 0 12px;font-size:13px;color:#7c3aed;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">Thông tin yêu cầu:</p>
+                <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;color:#a1a1aa;line-height:1.8;">
+                  <tr><td width="35%" style="font-weight:600;padding:4px 0;">Tên phim:</td><td style="color:#ffffff;font-weight:bold;padding:4px 0;">{movie_name}</td></tr>
+                  <tr><td style="font-weight:600;padding:4px 0;">Tên gốc:</td><td style="color:#ffffff;padding:4px 0;">{origin_name}</td></tr>
+                  <tr><td style="font-weight:600;padding:4px 0;">Năm sản xuất:</td><td style="color:#ffffff;padding:4px 0;">{publish_year}</td></tr>
+                  <tr><td style="font-weight:600;padding:4px 0;">Tác giả/Đạo diễn:</td><td style="color:#ffffff;padding:4px 0;">{author}</td></tr>
+                  <tr><td style="font-weight:600;padding:4px 0;">Link phim (nếu có):</td><td style="color:#60a5fa;padding:4px 0;word-break:break-all;"><a href="{movie_link}" style="color:#60a5fa;text-decoration:none;">{movie_link}</a></td></tr>
+                  <tr><td style="font-weight:600;padding:4px 0;">Thời gian gửi:</td><td style="color:#ffffff;padding:4px 0;">{send_time}</td></tr>
+                </table>
+              </div>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                <tr><td align="center"><a href="{site_url}/admin/yeu-cau-phim" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #7c3aed, #6d28d9);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(124,58,237,0.3);">Xem danh sách yêu cầu</a></td></tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px 40px;background-color:#0c0c0e;border-top:1px solid rgba(255,255,255,0.03);text-align:center;">
+              <p style="margin:0 0 8px;font-size:11px;color:#52525b;">Hệ thống gửi thư tự động từ {site_name}</p>
+              <p style="margin:0;font-size:10px;color:#3f3f46;">© {year} {site_name}. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    case 'movie-request-approved.html':
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yêu cầu phim của bạn đã được duyệt! - {site_name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
+              <img src="{site_url}/favicon.png" alt="Logo" style="width:56px;height:56px;margin-bottom:16px;border-radius:12px;box-shadow:0 0 15px rgba(16, 185, 129, 0.2);" />
+              <h2 style="margin:0;font-size:24px;font-weight:800;color:#10b981;letter-spacing:-0.5px;text-transform:uppercase;">{site_name} Yêu Cầu Phim</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 30px;">
+              <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#ffffff;">Xin chào {name},</h3>
+              <p style="margin:0 0 20px;font-size:14px;color:#a1a1aa;line-height:1.6;">Chúng tôi vui mừng thông báo rằng yêu cầu phim của bạn đã được phê duyệt thành công!</p>
+              <div style="background-color:#18181b;border:1px solid #10b981;border-radius:16px;padding:20px;margin:24px 0;">
+                <p style="margin:0;font-size:14px;color:#ffffff;line-height:1.6;">Bộ phim: <strong style="color:#10b981;">{movie_name}</strong> đã được cập nhật lên hệ thống.</p>
+              </div>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                <tr><td align="center"><a href="{site_url}" style="display:inline-block;padding:14px 30px;background:linear-gradient(to right, #10b981, #059669);color:#09090b;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(16,185,129,0.3);">Xem phim ngay</a></td></tr>
+              </table>
+              <p style="margin:0;font-size:13px;color:#71717a;line-height:1.6;">Chúc bạn có những giây phút trải nghiệm điện ảnh thú vị tại {site_name}!</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px 40px;background-color:#0c0c0e;border-top:1px solid rgba(255,255,255,0.03);text-align:center;">
+              <p style="margin:0 0 8px;font-size:11px;color:#52525b;">Hệ thống gửi thư tự động từ {site_name}</p>
+              <p style="margin:0;font-size:10px;color:#3f3f46;">© {year} {site_name}. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    case 'movie-request-rejected.html':
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thông báo về yêu cầu phim của bạn - {site_name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
+              <img src="{site_url}/favicon.png" alt="Logo" style="width:56px;height:56px;margin-bottom:16px;border-radius:12px;box-shadow:0 0 15px rgba(239, 68, 68, 0.2);" />
+              <h2 style="margin:0;font-size:24px;font-weight:800;color:#ef4444;letter-spacing:-0.5px;text-transform:uppercase;">{site_name} Yêu Cầu Phim</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 30px;">
+              <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#ffffff;">Xin chào {name},</h3>
+              <p style="margin:0 0 20px;font-size:14px;color:#a1a1aa;line-height:1.6;">Yêu cầu phim <strong style="color:#ffffff;">{movie_name}</strong> của bạn đã bị từ chối.</p>
+              <div style="background-color:#18181b;border:1px solid #ef4444;border-radius:16px;padding:20px;margin:24px 0;">
+                <p style="margin:0 0 8px;font-size:13px;color:#ef4444;font-weight:bold;text-transform:uppercase;">Lý do từ chối:</p>
+                <p style="margin:0;font-size:14px;color:#ffffff;line-height:1.6;">{reject_reason}</p>
+              </div>
+              <p style="margin:0;font-size:13px;color:#71717a;line-height:1.6;">Nếu bạn muốn gửi lại yêu cầu với thông tin chính xác hơn, vui lòng thực hiện lại trong ứng dụng.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px 40px;background-color:#0c0c0e;border-top:1px solid rgba(255,255,255,0.03);text-align:center;">
+              <p style="margin:0 0 8px;font-size:11px;color:#52525b;">Hệ thống gửi thư tự động từ {site_name}</p>
+              <p style="margin:0;font-size:10px;color:#3f3f46;">© {year} {site_name}. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
     default:
       return '';
   }

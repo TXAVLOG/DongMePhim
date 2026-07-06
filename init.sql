@@ -806,3 +806,24 @@ CREATE TABLE IF NOT EXISTS public.txa_cron_logs (
 
 ALTER TABLE public.txa_cron_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_txa_cron_logs" ON public.txa_cron_logs FOR ALL TO public USING (true);
+
+-- Table: public.movie_requests
+CREATE TABLE IF NOT EXISTS public.movie_requests (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  name character varying NOT NULL,
+  origin_name character varying,
+  publish_year integer,
+  link character varying,
+  author character varying,
+  status character varying DEFAULT 'pending'::character varying,
+  reject_reason text,
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id),
+  CONSTRAINT movie_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+
+ALTER TABLE public.movie_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "select_movie_requests" ON public.movie_requests FOR SELECT TO public USING (((user_id = auth.uid()) OR is_admin()));
+CREATE POLICY "insert_movie_requests" ON public.movie_requests FOR INSERT TO public WITH CHECK (true);
+CREATE POLICY "modify_movie_requests" ON public.movie_requests FOR ALL TO public USING (is_admin());

@@ -1,0 +1,257 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { supabase } from '@lib/supabase';
+
+// Fetch all movie requests sorted by created_at descending
+const { data: requests } = await supabase
+  .from('movie_requests')
+  .select('*, users:user_id(username, email, name)')
+  .order('created_at', { ascending: false });
+
+const initialRequests = requests || [];
+---
+
+<AdminLayout title="Quản lý Yêu cầu phim">
+  <div class="space-y-6">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-6 rounded-2xl">
+      <div>
+        <h1 class="text-2xl font-black text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-violet-400 text-3xl">contact_support</span>
+          Danh sách Yêu Cầu Phim
+        </h1>
+        <p class="text-xs text-zinc-400 mt-1">Xem, phê duyệt hoặc từ chối các yêu cầu gửi phim mới từ người dùng ứng dụng</p>
+      </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="glass-panel rounded-2xl overflow-hidden p-6">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-glass-stroke/40 text-[11px] text-zinc-400 uppercase tracking-wider font-bold">
+              <th class="py-3.5 px-4">Tên Phim / Tên Gốc</th>
+              <th class="py-3.5 px-4">Năm / Tác Giả</th>
+              <th class="py-3.5 px-4">Người Yêu Cầu</th>
+              <th class="py-3.5 px-4">Link Phim (Nếu có)</th>
+              <th class="py-3.5 px-4">Thời Gian Gửi</th>
+              <th class="py-3.5 px-4">Trạng Thái</th>
+              <th class="py-3.5 px-4 text-right">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="movie-requests-tbody" class="divide-y divide-glass-stroke/30 text-xs font-body-main">
+            {initialRequests.length === 0 ? (
+              <tr>
+                <td colspan="7" class="py-12 text-center text-zinc-500 font-bold">
+                  Không tìm thấy yêu cầu phim nào từ người dùng.
+                </td>
+              </tr>
+            ) : (
+              initialRequests.map((item) => {
+                const timeStr = new Date(item.created_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+                const requesterName = item.users?.name || item.users?.username || 'Thành viên';
+                const requesterEmail = item.users?.email || 'Không có email';
+                
+                return (
+                  <tr class="hover:bg-white/5 transition-all">
+                    <!-- Film Name & Origin Name -->
+                    <td class="py-4 px-4">
+                      <div class="font-bold text-white text-sm">{item.name}</div>
+                      {item.origin_name && <div class="text-[11px] text-zinc-400 mt-0.5">{item.origin_name}</div>}
+                    </td>
+                    
+                    <!-- Year & Author -->
+                    <td class="py-4 px-4">
+                      <div class="font-semibold text-zinc-300">{item.publish_year || 'Chưa rõ'}</div>
+                      <div class="text-[10px] text-zinc-400">{item.author || 'Chưa rõ'}</div>
+                    </td>
+
+                    <!-- Requester -->
+                    <td class="py-4 px-4">
+                      <div class="font-semibold text-zinc-200">{requesterName}</div>
+                      <div class="text-[10px] text-zinc-500">{requesterEmail}</div>
+                    </td>
+
+                    <!-- Link -->
+                    <td class="py-4 px-4 max-w-xs truncate">
+                      {item.link ? (
+                        <a 
+                          href={item.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          class="text-blue-400 hover:underline inline-flex items-center gap-1"
+                          data-txatooltip={item.link}
+                        >
+                          <span class="material-symbols-outlined text-sm">link</span>
+                          <span class="truncate">{item.link}</span>
+                        </a>
+                      ) : (
+                        <span class="text-zinc-500 italic">Không cung cấp</span>
+                      )}
+                    </td>
+
+                    <!-- Time -->
+                    <td class="py-4 px-4 text-zinc-400 font-mono">
+                      {timeStr}
+                    </td>
+
+                    <!-- Status -->
+                    <td class="py-4 px-4">
+                      {item.status === 'approved' && (
+                        <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase">Đã Duyệt</span>
+                      )}
+                      {item.status === 'rejected' && (
+                        <span 
+                          onclick={`viewRejectReason('${(item.reject_reason || '').replace(/'/g, "\\'")}')`}
+                          class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold uppercase cursor-pointer hover:bg-red-500/20 active:scale-95 transition-all"
+                          data-txatooltip="Nhấp để xem lý do từ chối"
+                        >
+                          Từ Chối ⓘ
+                        </span>
+                      )}
+                      {item.status === 'pending' && (
+                        <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase animate-pulse">Chờ Duyệt</span>
+                      )}
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-4 px-4 text-right space-x-1.5">
+                      {item.status === 'pending' ? (
+                        <>
+                          <button 
+                            type="button" 
+                            onclick={`approveRequest('${item.id}', '${item.name.replace(/'/g, "\\'")}')`}
+                            class="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer border-none"
+                            data-txatooltip="Phê duyệt và thông báo cho người dùng"
+                          >
+                            <span class="material-symbols-outlined text-base">check_circle</span>
+                          </button>
+                          <button 
+                            type="button" 
+                            onclick={`rejectRequest('${item.id}', '${item.name.replace(/'/g, "\\'")}')`}
+                            class="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-all cursor-pointer border-none"
+                            data-txatooltip="Từ chối yêu cầu và nhập lý do"
+                          >
+                            <span class="material-symbols-outlined text-base">cancel</span>
+                          </button>
+                        </>
+                      ) : (
+                        <span class="text-zinc-600 font-bold text-[10px] uppercase">Không có thao tác</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</AdminLayout>
+
+<script is:inline>
+  (function() {
+    let submitting = false;
+
+    window.approveRequest = function(id, name) {
+      if (submitting) return;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: '✓ Phê duyệt yêu cầu phim',
+          content: `<p class="text-xs text-zinc-300 pt-2">Bạn có chắc chắn muốn phê duyệt yêu cầu phim <strong>${name}</strong>? Hệ thống sẽ gửi email và thông báo đẩy báo tin vui cho người dùng!</p>`,
+          confirmText: 'Phê duyệt',
+          cancelText: 'Hủy',
+          onConfirm: async () => {
+            submitting = true;
+            try {
+              const res = await fetch('/api/admin/movie-requests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'approve', id: id })
+              });
+              const result = await res.json();
+              if (res.ok && result.status === 'success') {
+                if (window.showGlobalToast) window.showGlobalToast('Phê duyệt yêu cầu thành công!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi khi duyệt!', 'error');
+              }
+            } catch (e) {
+              if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối máy chủ!', 'error');
+            } finally {
+              submitting = false;
+            }
+          }
+        });
+      }
+    };
+
+    window.rejectRequest = function(id, name) {
+      if (submitting) return;
+
+      const content = `
+        <div class="space-y-3 text-xs text-left pt-2">
+          <p class="text-zinc-300">Nhập lý do từ chối yêu cầu phim <strong>${name}</strong>. Lý do này sẽ được gửi kèm trong email và thông báo gửi đến người dùng:</p>
+          <textarea id="modal-reject-reason" rows="4" placeholder="Ví dụ: Phim này thuộc bản quyền quốc gia không thể chiếu / Không tìm thấy nguồn video chất lượng..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-red-500 font-semibold text-xs leading-relaxed resize-none"></textarea>
+        </div>
+      `;
+
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: '✕ Từ chối yêu cầu phim',
+          content: content,
+          confirmText: 'Từ chối yêu cầu',
+          cancelText: 'Hủy',
+          type: 'danger',
+          onConfirm: async () => {
+            const reason = document.getElementById('modal-reject-reason').value.trim();
+            if (!reason) {
+              if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập lý do từ chối!', 'error');
+              return;
+            }
+
+            submitting = true;
+            try {
+              const res = await fetch('/api/admin/movie-requests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'reject', id: id, reject_reason: reason })
+              });
+              const result = await res.json();
+              if (res.ok && result.status === 'success') {
+                if (window.showGlobalToast) window.showGlobalToast('Đã từ chối yêu cầu!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi khi từ chối!', 'error');
+              }
+            } catch (e) {
+              if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối máy chủ!', 'error');
+            } finally {
+              submitting = false;
+            }
+          }
+        });
+      }
+    };
+
+    window.viewRejectReason = function(reason) {
+      if (window.txamodal) {
+        window.txamodal.show({
+          title: 'ⓘ Lý do từ chối yêu cầu',
+          content: `<div class="pt-2 text-xs text-zinc-300 leading-relaxed">${reason}</div>`,
+          confirmText: 'Đóng',
+          cancelText: '',
+          onConfirm: () => {}
+        });
+      }
+    };
+
+    // Auto highlight active nav item
+    const navItem = document.getElementById('nav-movie-requests');
+    if (navItem) navItem.classList.add('sidebar-active');
+  })();
+</script>
