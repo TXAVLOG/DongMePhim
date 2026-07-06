@@ -72,7 +72,29 @@ export const MovieService = {
           // Sắp xếp phim theo đúng thứ tự mà admin đã kéo thả
           movies.sort((a, b) => configuredSlugs.indexOf(a.slug) - configuredSlugs.indexOf(b.slug));
 
-          let result = movies;
+          let result = [...movies];
+          const isTop10 = category.includes('top-10-phim-le') || category.includes('top-10-phim-bo');
+
+          if (!isTop10 && params.limit && result.length < params.limit) {
+            // Lấy thêm phim cùng thể loại để lấp đầy limit
+            const extraNeeded = params.limit - result.length;
+            const categoryMovies = await movieProvider.getMovies({
+              ...params,
+              slugs: undefined,
+              limit: params.limit * 2
+            });
+
+            const existingSlugs = new Set(result.map(m => m.slug));
+            let added = 0;
+            for (const m of categoryMovies) {
+              if (!existingSlugs.has(m.slug)) {
+                result.push(m);
+                added++;
+                if (added >= extraNeeded) break;
+              }
+            }
+          }
+
           if (params.limit) {
             result = result.slice(0, params.limit);
           }
