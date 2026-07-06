@@ -434,6 +434,151 @@ export function mergeStoredEpisodesConfig(movieSlug: string, episodes: any[]): a
   });
 }
 
+export function mergeMovieEpisodes(existingServers: any[], newServers: any[]): any[] {
+  if (!Array.isArray(existingServers) || existingServers.length === 0) {
+    return newServers || [];
+  }
+  if (!Array.isArray(newServers) || newServers.length === 0) {
+    return existingServers || [];
+  }
+
+  // Clone existing servers to avoid mutating references
+  const mergedServers = JSON.parse(JSON.stringify(existingServers));
+
+  for (const newServer of newServers) {
+    const incomingServerName = newServer.serverName || newServer.server_name || "Server VIP";
+    const incomingEpisodes = Array.isArray(newServer.serverData || newServer.server_data) 
+      ? (newServer.serverData || newServer.server_data) 
+      : [];
+
+    // Find if the server exists (case-insensitive)
+    let existingServer = mergedServers.find(
+      (s: any) => (s.serverName || s.server_name || '').toLowerCase() === incomingServerName.toLowerCase()
+    );
+
+    if (!existingServer) {
+      // Just push the new server
+      mergedServers.push(newServer);
+    } else {
+      // Ensure existingServer has serverData array
+      if (!Array.isArray(existingServer.serverData)) {
+        existingServer.serverData = existingServer.server_data || [];
+      }
+
+      for (const newEp of incomingEpisodes) {
+        const epSlug = newEp.slug;
+        const newLinkM3u8 = newEp.linkM3u8 || newEp.link_m3u8 || '';
+        const newLinkEmbed = newEp.linkEmbed || newEp.link_embed || '';
+
+        const existingEpIdx = existingServer.serverData.findIndex(
+          (ep: any) => ep.slug === epSlug
+        );
+
+        if (existingEpIdx === -1) {
+          existingServer.serverData.push(newEp);
+        } else {
+          const existingEp = existingServer.serverData[existingEpIdx];
+          const existingLinkM3u8 = existingEp.linkM3u8 || existingEp.link_m3u8 || '';
+          const existingLinkEmbed = existingEp.linkEmbed || existingEp.link_embed || '';
+
+          if (existingLinkM3u8 !== newLinkM3u8 || existingLinkEmbed !== newLinkEmbed) {
+            // Different link! Push to a different server
+            let serverIndex = 2;
+            let targetServerName = `${incomingServerName} ${serverIndex}`;
+            let altServer = mergedServers.find(
+              (s: any) => (s.serverName || s.server_name || '').toLowerCase() === targetServerName.toLowerCase()
+            );
+
+            while (true) {
+              if (!altServer) {
+                altServer = {
+                  serverName: targetServerName,
+                  serverData: []
+                };
+                mergedServers.push(altServer);
+                break;
+              }
+
+              if (!Array.isArray(altServer.serverData)) {
+                altServer.serverData = altServer.server_data || [];
+              }
+
+              const altEpIdx = altServer.serverData.findIndex((ep: any) => ep.slug === epSlug);
+              if (altEpIdx === -1) {
+                break;
+              }
+
+              const altEp = altServer.serverData[altEpIdx];
+              const altLinkM3u8 = altEp.linkM3u8 || altEp.link_m3u8 || '';
+              const altLinkEmbed = altEp.linkEmbed || altEp.link_embed || '';
+
+              if (altLinkM3u8 === newLinkM3u8 && altLinkEmbed === newLinkEmbed) {
+                break;
+              }
+
+              serverIndex++;
+              targetServerName = `${incomingServerName} ${serverIndex}`;
+              altServer = mergedServers.find(
+                (s: any) => (s.serverName || s.server_name || '').toLowerCase() === targetServerName.toLowerCase()
+              );
+            }
+
+            if (!Array.isArray(altServer.serverData)) {
+              altServer.serverData = altServer.server_data || [];
+            }
+
+            const altEpIdx = altServer.serverData.findIndex((ep: any) => ep.slug === epSlug);
+            if (altEpIdx === -1) {
+              altServer.serverData.push(newEp);
+            }
+          } else {
+            // Update other properties in place
+            existingServer.serverData[existingEpIdx] = {
+              ...existingEp,
+              ...newEp,
+              linkM3u8: existingLinkM3u8,
+              linkEmbed: existingLinkEmbed
+            };
+          }
+        }
+      }
+    }
+  }
+
+  // Sort episodes and normalize output structure to use camelCase
+  return mergedServers.map((server: any) => {
+    const srvData = Array.isArray(server.serverData || server.server_data) ? (server.serverData || server.server_data) : [];
+    
+    // Sort
+    srvData.sort((a: any, b: any) => {
+      const aNum = parseInt(a.name?.replace(/\D/g, '') || '');
+      const bNum = parseInt(b.name?.replace(/\D/g, '') || '');
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+
+    return {
+      serverName: server.serverName || server.server_name || "Server VIP",
+      serverData: srvData.map((ep: any) => ({
+        name: ep.name || '',
+        slug: ep.slug || `tap-${ep.name}`,
+        filename: ep.filename || '',
+        linkEmbed: ep.linkEmbed || ep.link_embed || '',
+        linkM3u8: ep.linkM3u8 || ep.link_m3u8 || '',
+        subtitles: ep.subtitles || ep.subtitles_data || [],
+        timeIntroStart: ep.timeIntroStart || ep.time_intro_start || 0,
+        timeIntroEnd: ep.timeIntroEnd || ep.time_intro_end || 0,
+        timeOutroStart: ep.timeOutroStart || ep.time_outro_start || 0,
+        timeOutroEnd: ep.timeOutroEnd || ep.time_outro_end || 0,
+        airDate: ep.airDate || ep.air_date || '',
+        airTime: ep.airTime || ep.air_time || ''
+      }))
+    };
+  });
+}
+
 export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): MovieDetail {
   const m = data.movie;
   const defaultCdn = source === 'vsmov' ? 'https://vsmov.com' : 'https://phimimg.com';

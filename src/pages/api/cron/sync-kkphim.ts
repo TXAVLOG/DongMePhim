@@ -1,15 +1,15 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
-import { mapKKPhimToMovieDetail } from '@services/providers/LocalMovieProvider';
+import { mapKKPhimToMovieDetail, mergeMovieEpisodes } from '@services/providers/LocalMovieProvider';
 
 export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
     const secret = url.searchParams.get('secret') || request.headers.get('x-cron-secret');
-    const expectedSecret = import.meta.env.CRON_SECRET || 'txa-cron-kkphim-2026-secure';
+    const expectedSecret = (import.meta as any).env.CRON_SECRET || 'txa-cron-kkphim-2026-secure';
 
-    if (secret !== expectedSecret && import.meta.env.PROD) {
+    if (secret !== expectedSecret && (import.meta as any).env.PROD) {
       return apiResponse(null, 'error', 'Unauthorized cron trigger', 401, request);
     }
 
@@ -59,21 +59,22 @@ export const GET: APIRoute = async ({ request }) => {
           return count;
         };
 
-        const newCount = getEpCount(newEpisodes);
+        const mergedEpisodes = mergeMovieEpisodes(oldEpisodes, newEpisodes);
+        const mergedCount = getEpCount(mergedEpisodes);
         const oldCount = getEpCount(oldEpisodes);
 
-        if (newCount > oldCount) {
+        if (mergedCount > oldCount) {
           // Dynamic episode current text
-          const latestServer = newEpisodes[0] || {};
+          const latestServer = mergedEpisodes[0] || {};
           const latestServerData = latestServer.serverData || [];
           const latestEp = latestServerData[latestServerData.length - 1] || {};
-          const latestEpName = latestEp.name ? `Tập ${latestEp.name}` : `Tập ${newCount}`;
+          const latestEpName = latestEp.name ? `Tập ${latestEp.name}` : `Tập ${mergedCount}`;
 
           // Update database
           const { error: updateErr } = await supabase
             .from('movies')
             .update({
-              episodes: newEpisodes,
+              episodes: mergedEpisodes,
               episode_current: latestEpName,
               updated_at: new Date().toISOString()
             })

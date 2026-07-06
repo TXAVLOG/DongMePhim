@@ -5,6 +5,7 @@ import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 import { SmtpClient } from '@lib/api/smtpClient';
 import { getEmailTemplate } from '@templates/emails/emailReader';
+import { mergeMovieEpisodes } from '@services/providers/LocalMovieProvider';
 
 // GET: Lấy chi tiết phim qua MovieService (tự động fallback DB/Seed/API)
 export const GET: APIRoute = async ({ request }) => {
@@ -270,10 +271,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       // Preserve existing views and get previous episode current to detect updates
       let existingMovie: any = null;
       let existingViews = 0;
+      let existingEpisodes: any[] = [];
       try {
         const { data: existing } = await supabase
           .from('movies')
-          .select('views, episode_current, title')
+          .select('views, episode_current, title, episodes')
           .eq('slug', movieSlug)
           .maybeSingle();
         if (existing) {
@@ -281,8 +283,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
           if (typeof existing.views === 'number') {
             existingViews = existing.views;
           }
+          if (Array.isArray(existing.episodes)) {
+            existingEpisodes = existing.episodes;
+          }
         }
       } catch (_) {}
+
+      const mergedEpisodes = mergeMovieEpisodes(existingEpisodes, episodes);
 
       // Map trường chuẩn sang cột database
       const moviePayload = {
@@ -306,7 +313,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         genres: Array.isArray(m.genres) ? m.genres : [],
         actors: Array.isArray(m.actors) ? m.actors : (Array.isArray(m.actor) ? m.actor : []),
         directors: Array.isArray(m.directors) ? m.directors : (Array.isArray(m.director) ? m.director : []),
-        episodes: episodes,
+        episodes: mergedEpisodes,
         seasons: m.seasons || (m.type === 'movie' || m.type === 'single' ? 'Bản Điện Ảnh' : 'Phần 1'),
         trailer_url: m.trailerUrl || m.trailer_url || '',
         broadcast_schedule: m.broadcastSchedule || null,

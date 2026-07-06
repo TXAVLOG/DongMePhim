@@ -9,9 +9,9 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
     const secret = url.searchParams.get('secret') || request.headers.get('x-cron-secret');
-    const expectedSecret = import.meta.env.CRON_SECRET || 'txa-cron-kkphim-2026-secure';
+    const expectedSecret = (import.meta as any).env.CRON_SECRET || 'txa-cron-kkphim-2026-secure';
 
-    if (secret !== expectedSecret && import.meta.env.PROD) {
+    if (secret !== expectedSecret && (import.meta as any).env.PROD) {
       return apiResponse(null, 'error', 'Unauthorized cron trigger', 401, request);
     }
 

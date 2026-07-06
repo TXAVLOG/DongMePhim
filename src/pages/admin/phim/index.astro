@@ -126,7 +126,7 @@ const staticMovies = await MovieService.getMovies();
         const nextBtn = document.getElementById('movie-next-btn');
         const paginationInfo = document.getElementById('movie-pagination-info');
 
-        let staticList = staticMovies.map(m => ({ ...m, source: m.isStatic ? 'static' : 'crawled' }));
+        let staticList = staticMovies.map(m => ({ ...m, originalSource: m.source, source: m.isStatic ? 'static' : 'crawled' }));
         let allMovies = [];
         let currentFilteredList = [];
         let currentPage = 1;
@@ -440,9 +440,10 @@ const staticMovies = await MovieService.getMovies();
           });
         }
 
-        function mapKKPhimToMovieDetail(data) {
+        function mapKKPhimToMovieDetail(data, source = 'kkphim') {
           const m = data.movie;
-          const cdnDomain = "https://phimimg.com";
+          const defaultCdn = source === 'vsmov' ? 'https://vsmov.com' : 'https://phimimg.com';
+          const cdnDomain = data.pathImage || data.APP_DOMAIN_CDN_IMAGE || defaultCdn;
           
           let posterUrl = m.poster_url || '';
           if (posterUrl && !posterUrl.startsWith('http')) {
@@ -540,9 +541,12 @@ const staticMovies = await MovieService.getMovies();
 
             for (const item of selectedMovies) {
               try {
-                // Determine sourceUrl. If it's stored in allMovies, fetch it. Else fallback to phimapi.com
+                // Determine sourceUrl. If it's stored in allMovies, fetch it. Else fallback to phimapi.com / vsmov.com
                 const mObj = allMovies.find(x => x.slug === item.slug);
-                let sourceUrl = 'https://phimapi.com/phim/' + item.slug;
+                const isVsmov = mObj && mObj.originalSource === 'vsmov';
+                let sourceUrl = isVsmov 
+                  ? 'https://vsmov.com/api/phim/' + item.slug
+                  : 'https://phimapi.com/phim/' + item.slug;
                 if (mObj && mObj.sourceUrl && mObj.sourceUrl.trim() !== '') {
                   sourceUrl = mObj.sourceUrl;
                 }
@@ -552,7 +556,7 @@ const staticMovies = await MovieService.getMovies();
                 const detailData = await res.json();
 
                 if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
-                  const movieDetailObj = mapKKPhimToMovieDetail(detailData);
+                  const movieDetailObj = mapKKPhimToMovieDetail(detailData, isVsmov ? 'vsmov' : 'kkphim');
                   movieDetailObj.updatedAt = new Date().toISOString();
                   
                   const saveRes = await fetch('/api/admin/movie-action', {
@@ -607,7 +611,10 @@ const staticMovies = await MovieService.getMovies();
 
           try {
             const mObj = allMovies.find(x => x.slug === slug);
-            let sourceUrl = 'https://phimapi.com/phim/' + slug;
+            const isVsmov = mObj && mObj.originalSource === 'vsmov';
+            let sourceUrl = isVsmov 
+              ? 'https://vsmov.com/api/phim/' + slug
+              : 'https://phimapi.com/phim/' + slug;
             if (mObj && mObj.sourceUrl && mObj.sourceUrl.trim() !== '') {
               sourceUrl = mObj.sourceUrl;
             }
@@ -617,7 +624,7 @@ const staticMovies = await MovieService.getMovies();
             const detailData = await res.json();
 
             if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
-              const movieDetailObj = mapKKPhimToMovieDetail(detailData);
+              const movieDetailObj = mapKKPhimToMovieDetail(detailData, isVsmov ? 'vsmov' : 'kkphim');
               movieDetailObj.updatedAt = new Date().toISOString();
               
               const saveRes = await fetch('/api/admin/movie-action', {
