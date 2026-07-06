@@ -1863,7 +1863,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             
             // Format log message depending on source and whether movie is new or updated
             const sourceLabel = crawlSource.toUpperCase();
-            if (currentEpisodeCount > 0) {
+            if (currentEpisodeCount > 0 && currentEpisodeCount < 9000 && apiEpisodeCount > currentEpisodeCount) {
               const addedCount = apiEpisodeCount - currentEpisodeCount;
               addLog(`✓ Cào thành công từ ${sourceLabel} & đã lưu vào DB: "${movieDetailObj.title}" (Cập nhật +${addedCount} tập)`, 'success');
             } else {
