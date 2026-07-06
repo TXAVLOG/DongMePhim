@@ -26,7 +26,9 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       body: n.body,
       image_url: n.image_url || "",
       is_read: n.is_read || false,
-      created_at: n.created_at
+      created_at: n.created_at,
+      movie_slug: n.movie_slug || "",
+      episode_name: n.episode_name || ""
     }));
 
     return apiResponse(mapped, 'success', '', 200, request);

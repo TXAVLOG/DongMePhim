@@ -147,10 +147,10 @@ async function sendEpisodeUpdateEmails(movieId: string, movieSlug: string, movie
     const userIds = favoritedUsers.map((fu: any) => fu.user_id).filter(Boolean);
     if (userIds.length === 0) return;
 
-    // 2. Fetch user details (email, username, name)
+    // 2. Fetch user details (id, email, username, name)
     const { data: usersList, error: usersError } = await supabase
       .from('users')
-      .select('email, username, name')
+      .select('id, email, username, name')
       .in('id', userIds);
 
     if (usersError) {
@@ -160,14 +160,62 @@ async function sendEpisodeUpdateEmails(movieId: string, movieSlug: string, movie
 
     if (!usersList || usersList.length === 0) return;
 
-    // 3. Load email template
+    // 3. Construct custom title and body based on movie type and episode status
+    const isSingle = moviePayload.type === 'single' || 
+                     moviePayload.type === 'movie' || 
+                     moviePayload.episode_total === '1';
+
+    const epCurrentStr = (moviePayload.episode_current || '').toLowerCase();
+    const isLastEpisode = !isSingle && (
+      moviePayload.status === 'completed' || 
+      epCurrentStr.includes('end') || 
+      epCurrentStr.includes('cuối') || 
+      epCurrentStr.includes('hoàn') || 
+      epCurrentStr.includes('trọn bộ') ||
+      (moviePayload.episode_total && epCurrentStr.includes(moviePayload.episode_total))
+    );
+
+    let notifTitle = `Tập mới: ${moviePayload.title}`;
+    let notifBody = `${moviePayload.episode_current} (${moviePayload.quality} - ${moviePayload.lang}) đã được cập nhật thành công. Xem ngay thôi!`;
+
+    if (isSingle) {
+      notifTitle = `Bản chiếu mới: ${moviePayload.title}`;
+      notifBody = `Phim đã cập nhật bản chiếu ${moviePayload.quality} (${moviePayload.lang}). Xem ngay tại DongMePhim!`;
+    } else if (isLastEpisode) {
+      notifTitle = `Tập cuối trọn bộ: ${moviePayload.title}`;
+      notifBody = `${moviePayload.episode_current} đã chính thức cập nhật! Phim đã trọn bộ, xem ngay kẻo lỡ!`;
+    }
+
+    // 4. Batch insert notifications into Supabase notifications table
+    const notificationsToInsert = usersList.map((user: any) => ({
+      user_id: user.id,
+      title: notifTitle,
+      body: notifBody,
+      image_url: moviePayload.poster_url || "",
+      is_read: false,
+      created_at: new Date().toISOString(),
+      movie_slug: movieSlug,
+      episode_name: moviePayload.episode_current
+    }));
+
+    if (notificationsToInsert.length > 0) {
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert(notificationsToInsert);
+      
+      if (notifError) {
+        console.error('[Notification] Error inserting notifications:', notifError);
+      }
+    }
+
+    // 4. Load email template
     const htmlTemplate = getEmailTemplate('movie-episode-update.html');
     const siteUrl = settings.general.site_url || 'https://dongmephim.online';
     const siteName = settings.general.site_name || 'DongMePhim';
     const movieLink = `${siteUrl.replace(/\/$/, '')}/phim/${movieSlug}`;
     const year = new Date().getFullYear().toString();
 
-    // 4. Send emails to each user
+    // 5. Send emails to each user
     for (const user of usersList) {
       if (!user.email) continue;
       

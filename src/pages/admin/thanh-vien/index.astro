@@ -478,6 +478,23 @@ const packages = settings.packages || [];
               minute: '2-digit'
             }) : '—';
             
+            let displayName = u.name || 'Người dùng';
+            let usernameText = '';
+
+            if (u.username && u.username.includes('@')) {
+              if (displayName === 'Người dùng') {
+                displayName = u.username.split('@')[0];
+              }
+            } else if (u.username) {
+              if (displayName === 'Người dùng' || displayName === u.username) {
+                displayName = u.username;
+              } else {
+                usernameText = `(@${u.username})`;
+              }
+            }
+
+            const initials = displayName.substring(0, 2).toUpperCase() || 'US';
+
             const pkg = packages.find(p => p.id === u.package) || packages.find(p => p.title === u.package);
             let styleClass = '';
             let styleAttr = '';
@@ -512,11 +529,11 @@ const packages = settings.packages || [];
                 <td class="px-8 py-4">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-surface-container border border-glass-stroke flex items-center justify-center text-text-dim font-bold text-sm uppercase">
-                      ${u.username.substring(0, 2)}
+                      ${initials}
                     </div>
                     <div>
                       <div class="flex items-center gap-2">
-                        <p class="text-sm font-semibold group-hover:text-primary transition-colors font-outfit">${u.username}</p>
+                        <p class="text-sm font-semibold group-hover:text-primary transition-colors font-outfit">${displayName}${usernameText ? ` <span class="text-xs text-text-dim font-normal font-mono">${usernameText}</span>` : ''}</p>
                         ${u.roles === 'admin' ? '<span class="text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-black uppercase tracking-wider font-outfit">Admin</span>' : ''}
                       </div>
                       <p class="text-[10px] text-text-dim mt-0.5 font-outfit">${u.email}</p>
@@ -574,12 +591,20 @@ const packages = settings.packages || [];
           if (query) {
             filtered = filtered.filter(u => 
               u.username.toLowerCase().includes(query) || 
-              (u.email && u.email.toLowerCase().includes(query))
+              (u.email && u.email.toLowerCase().includes(query)) ||
+              (u.name && u.name.toLowerCase().includes(query))
             );
           }
 
           if (pack !== 'all') {
-            filtered = filtered.filter(u => u.package === pack);
+            filtered = filtered.filter(u => {
+              const uPkg = packages.find(p => p.id === u.package || p.title === u.package);
+              const filterPkg = packages.find(p => p.id === pack || p.title === pack);
+              if (!uPkg || !filterPkg) {
+                return u.package === pack;
+              }
+              return uPkg.id === filterPkg.id;
+            });
           }
 
           if (role !== 'all') {
@@ -726,16 +751,29 @@ const packages = settings.packages || [];
                 if (filtered.length === 0) {
                   dropdown.innerHTML = '<div class="px-4 py-3 text-zinc-500 italic text-center">Không tìm thấy thành viên phù hợp</div>';
                 } else {
-                  dropdown.innerHTML = filtered.map(u => 
-                    '<div class="giveaway-dropdown-item flex items-center gap-3 px-3 py-2.5 hover:bg-purple-600/10 cursor-pointer transition-all border-b border-zinc-800/50 last:border-none" data-username="' + u.username + '" data-avatar="' + (u.avatar || '') + '" data-email="' + (u.email || '') + '">' +
+                  dropdown.innerHTML = filtered.map(u => {
+                    let displayName = u.name || 'Người dùng';
+                    let usernameText = '';
+                    if (u.username && u.username.includes('@')) {
+                      if (displayName === 'Người dùng') {
+                        displayName = u.username.split('@')[0];
+                      }
+                    } else if (u.username) {
+                      if (displayName === 'Người dùng' || displayName === u.username) {
+                        displayName = u.username;
+                      } else {
+                        usernameText = ` (@${u.username})`;
+                      }
+                    }
+                    return '<div class="giveaway-dropdown-item flex items-center gap-3 px-3 py-2.5 hover:bg-purple-600/10 cursor-pointer transition-all border-b border-zinc-800/50 last:border-none" data-username="' + u.username + '" data-avatar="' + (u.avatar || '') + '" data-email="' + (u.email || '') + '">' +
                       '<img src="' + (u.avatar || '/logo-decoy.png') + '" class="w-7 h-7 rounded-full object-cover border border-zinc-700" onerror="this.src=\'/logo-decoy.png\'" />' +
                       '<div class="flex-1 min-w-0">' +
-                        '<p class="text-white font-bold text-xs truncate">' + u.username + '</p>' +
+                        '<p class="text-white font-bold text-xs truncate">' + displayName + usernameText + '</p>' +
                         '<p class="text-zinc-500 text-[10px] truncate">' + (u.email || 'Không có email') + '</p>' +
                       '</div>' +
                       '<span class="text-[9px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-bold uppercase">' + (u.package || 'free') + '</span>' +
-                    '</div>'
-                  ).join('');
+                    '</div>';
+                  }).join('');
                 }
 
                 dropdown.classList.remove('hidden');

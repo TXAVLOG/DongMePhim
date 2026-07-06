@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ request }) => {
       password: u.password,
       name: u.name || 'Người dùng',
       role: u.role || 'user',
-      roles: u.role || 'users', // Hỗ trợ cả 2 định dạng
+      roles: u.role === 'user' ? 'users' : (u.role || 'users'), // Hỗ trợ cả 2 định dạng
       avatar: u.avatar_url || '',
       gender: u.gender || '',
       province: u.province || '',
@@ -81,7 +81,7 @@ export const POST: APIRoute = async ({ request }) => {
           username,
           email,
           password: password || '123456', // default pass if empty
-          role: role || roles || 'user',
+          role: (role === 'users' || roles === 'users') ? 'user' : (role || roles || 'user'),
           name: username,
           avatar_url: `https://www.gravatar.com/avatar/${emailHash}?d=identicon`,
           package: userPackage || 'free',
@@ -114,7 +114,10 @@ export const POST: APIRoute = async ({ request }) => {
       const updates: any = {};
       if (email !== undefined) updates.email = email;
       if (password !== undefined) updates.password = password;
-      if (role !== undefined || roles !== undefined) updates.role = role || roles;
+      if (role !== undefined || roles !== undefined) {
+        const finalRole = role || roles;
+        updates.role = finalRole === 'users' ? 'user' : finalRole;
+      }
       if (userPackage !== undefined) updates.package = userPackage;
       if (status !== undefined) updates.status = status;
       if (emailVerified !== undefined) updates.email_verified = emailVerified;
@@ -328,7 +331,8 @@ export const POST: APIRoute = async ({ request }) => {
             updates.expiry_date = null;
           }
         } else if (bulkAction.startsWith('role-')) {
-          updates.role = bulkAction.substring(5);
+          const bulkRole = bulkAction.substring(5);
+          updates.role = bulkRole === 'users' ? 'user' : bulkRole;
         } else if (bulkAction.startsWith('verified-')) {
           updates.email_verified = (bulkAction.substring(9) === 'true');
         } else {

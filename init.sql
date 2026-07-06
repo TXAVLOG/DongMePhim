@@ -506,6 +506,8 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   image_url character varying,
   is_read boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
+  movie_slug character varying,
+  episode_name character varying,
   PRIMARY KEY (id),
   CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );

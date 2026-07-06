@@ -94,15 +94,43 @@ export const GET: APIRoute = async ({ request }) => {
             .eq('movie_id', movie.id);
 
           if (watchlists && watchlists.length > 0) {
+            const mData = data.movie || {};
+            const isSingle = mData.type === 'single' || 
+                             mData.type === 'movie' || 
+                             mData.episode_total === '1';
+
+            const epCurrentStr = latestEpName.toLowerCase();
+            const isLastEpisode = !isSingle && (
+              mData.status === 'completed' || 
+              epCurrentStr.includes('end') || 
+              epCurrentStr.includes('cuối') || 
+              epCurrentStr.includes('hoàn') || 
+              epCurrentStr.includes('trọn bộ') ||
+              (mData.episode_total && epCurrentStr.includes(mData.episode_total))
+            );
+
+            let notifTitle = `Tập mới: ${movie.title}`;
+            let notifBody = `${latestEpName} (${mData.quality || 'FHD'} - ${mData.lang || 'Vietsub'}) đã được cập nhật thành công. Xem ngay thôi!`;
+
+            if (isSingle) {
+              notifTitle = `Bản chiếu mới: ${movie.title}`;
+              notifBody = `Phim đã cập nhật bản chiếu ${mData.quality || 'FHD'} (${mData.lang || 'Vietsub'}). Xem ngay tại DongMePhim!`;
+            } else if (isLastEpisode) {
+              notifTitle = `Tập cuối trọn bộ: ${movie.title}`;
+              notifBody = `${latestEpName} đã chính thức cập nhật! Phim đã trọn bộ, xem ngay kẻo lỡ!`;
+            }
+
             const uniqueUserIds = [...new Set(watchlists.map(w => w.user_id))];
             uniqueUserIds.forEach(userId => {
               notificationsToInsert.push({
                 user_id: userId,
-                title: `Tập mới: ${movie.title}`,
-                body: `${latestEpName} đã được cập nhật thành công. Xem ngay thôi!`,
+                title: notifTitle,
+                body: notifBody,
                 image_url: movie.poster_url || "",
                 is_read: false,
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                movie_slug: movie.slug,
+                episode_name: latestEpName
               });
             });
           }

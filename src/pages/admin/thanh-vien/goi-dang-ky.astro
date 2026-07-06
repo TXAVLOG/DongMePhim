@@ -276,7 +276,8 @@ const groupedPackages = packages.map((pkg: any) => {
         // Filter if searched
         const filteredUsers = loadedUsers.filter(u => 
           (u.username || '').toLowerCase().includes(searchVal) || 
-          (u.email || '').toLowerCase().includes(searchVal)
+          (u.email || '').toLowerCase().includes(searchVal) ||
+          (u.name || '').toLowerCase().includes(searchVal)
         );
 
         const paginationContainer = document.getElementById('activeSubsPagination');
@@ -301,7 +302,22 @@ const groupedPackages = packages.map((pkg: any) => {
         const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
         tbody.innerHTML = paginatedUsers.map(u => {
-          const initials = u.username ? u.username.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
+          let displayName = u.name || 'Người dùng';
+          let usernameText = '';
+
+          if (u.username && u.username.includes('@')) {
+            if (displayName === 'Người dùng') {
+              displayName = u.username.split('@')[0];
+            }
+          } else if (u.username) {
+            if (displayName === 'Người dùng' || displayName === u.username) {
+              displayName = u.username;
+            } else {
+              usernameText = ` (@${u.username})`;
+            }
+          }
+
+          const initials = displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'US';
           
           let pkgBadge = '';
           let bgClass = 'bg-surface-container-highest text-on-surface-variant border-glass-stroke';
@@ -337,7 +353,7 @@ const groupedPackages = packages.map((pkg: any) => {
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">${initials}</div>
                   <div>
-                    <p class="font-bold text-[14px] text-white">${u.username || 'Người dùng'}</p>
+                    <p class="font-bold text-[14px] text-white">${displayName}${usernameText ? `<span class="text-xs text-zinc-400 font-normal font-mono">${usernameText}</span>` : ''}</p>
                     <p class="text-[12px] text-zinc-400">${u.email || ''}</p>
                   </div>
                 </div>
@@ -421,10 +437,29 @@ const groupedPackages = packages.map((pkg: any) => {
           const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
           const imgHtml = `<button onclick="viewReceiptImage('${item.txid}')" class="text-primary hover:underline font-bold text-xs cursor-pointer flex items-center gap-1 bg-transparent border-none"><span class="material-symbols-outlined text-sm">image</span>Xem ảnh</button>`;
 
+          const userObj = loadedUsers.find(u => u.username === item.username);
+          let userDisplayName = item.username;
+          if (userObj) {
+            let displayName = userObj.name || 'Người dùng';
+            if (userObj.username && userObj.username.includes('@')) {
+              if (displayName === 'Người dùng') {
+                displayName = userObj.username.split('@')[0];
+              }
+              userDisplayName = displayName;
+            } else {
+              if (displayName !== 'Người dùng' && displayName !== userObj.username) {
+                userDisplayName = `${displayName} (@${userObj.username})`;
+              }
+            }
+          }
+
           return `
             <tr class="hover:bg-white/5 transition-colors">
               <td class="px-8 py-4 font-mono text-zinc-400">${(item.txid || '').substring(0, 10)}...</td>
-              <td class="px-8 py-4 font-semibold text-white">${item.username}</td>
+              <td class="px-8 py-4 font-semibold text-white">
+                <div>${userDisplayName}</div>
+                <div class="text-[10px] text-zinc-400 font-normal font-outfit mt-0.5">${item.email || (userObj ? userObj.email : '')}</div>
+              </td>
               <td class="px-8 py-4 text-zinc-300">${item.packageTitle} (${item.cycle === 'annual' ? 'Hàng năm' : 'Hàng tháng'})</td>
               <td class="px-8 py-4 text-zinc-300 font-bold">${formattedPrice}</td>
               <td class="px-8 py-4">${imgHtml}</td>
@@ -637,9 +672,24 @@ const groupedPackages = packages.map((pkg: any) => {
           defaultExpiry = new Date(d30.getTime() - d30.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         }
 
+        let displayName = u.name || 'Người dùng';
+        let userDisplayStr = u.username;
+        if (u.username && u.username.includes('@')) {
+          if (displayName === 'Người dùng') {
+            displayName = u.username.split('@')[0];
+          }
+          userDisplayStr = `${displayName} (${u.email || u.username})`;
+        } else {
+          if (displayName !== 'Người dùng' && displayName !== u.username) {
+            userDisplayStr = `${displayName} (@${u.username})`;
+          } else {
+            userDisplayStr = `${u.username} (${u.email || ''})`;
+          }
+        }
+
         const modalContent = `
           <div class="space-y-4 text-left">
-            <p class="text-xs text-zinc-400">Thay đổi gói thành viên cho tài khoản <strong class="text-white">${u.username}</strong></p>
+            <p class="text-xs text-zinc-400">Thay đổi gói thành viên cho tài khoản <strong class="text-white">${userDisplayStr}</strong></p>
             <div class="space-y-1">
               <label class="text-[10px] text-zinc-400 font-bold uppercase">Chọn gói cước</label>
               <select id="member-package-select" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" onchange="toggleMemberExpiryWrapper(this.value)">
