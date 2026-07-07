@@ -1,34 +1,188 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
+import { SettingService } from '@services/SettingService';
 
 export const GET: APIRoute = async ({ request }) => {
   try {
-    const servers = new Set<string>();
-    servers.add("DongMePhim VIP"); // Luôn đảm bảo có DongMePhim VIP
+    // 1. Lấy danh sách server được cấu hình từ bảng settings
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'servers')
+      .maybeSingle();
 
-    // 1. Lấy từ Supabase
-    const { data: movies, error } = await supabase
+    let configuredServers: string[] = [];
+    if (!settingsError && settingsData && Array.isArray(settingsData.value)) {
+      configuredServers = settingsData.value;
+    } else {
+      configuredServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+    }
+
+    // 2. Thống kê số lượng phim sử dụng mỗi server
+    const { data: movies, error: moviesError } = await supabase
       .from('movies')
       .select('episodes');
 
-    if (!error && movies) {
+    const movieCounts: Record<string, number> = {};
+    if (!moviesError && movies) {
       movies.forEach((m: any) => {
         if (Array.isArray(m.episodes)) {
+          const movieServers = new Set<string>();
           m.episodes.forEach((server: any) => {
             const name = server.serverName || server.server_name;
-            if (name) servers.add(name);
+            if (name) movieServers.add(name);
+          });
+          movieServers.forEach(name => {
+            movieCounts[name] = (movieCounts[name] || 0) + 1;
           });
         }
       });
     }
 
-    // 2. Fallback thêm các server mặc định khác
-    const defaultServers = ["FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
-    defaultServers.forEach(srv => servers.add(srv));
+    // 3. Hợp nhất danh sách server cấu hình và các server thực tế trong database
+    const resultList: { name: string; movieCount: number }[] = [];
+    const addedNames = new Set<string>();
 
-    return apiResponse(Array.from(servers), 'success', '', 200, request);
+    configuredServers.forEach(name => {
+      if (!addedNames.has(name)) {
+        resultList.push({
+          name,
+          movieCount: movieCounts[name] || 0
+        });
+        addedNames.add(name);
+      }
+    });
+
+    Object.keys(movieCounts).forEach(name => {
+      if (!addedNames.has(name)) {
+        resultList.push({
+          name,
+          movieCount: movieCounts[name] || 0
+        });
+        addedNames.add(name);
+      }
+    });
+
+    return apiResponse(resultList, 'success', '', 200, request);
   } catch (err: any) {
-    return apiResponse(["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"], 'error', err.message || 'Lỗi hệ thống', 500, request);
+    return apiResponse([], 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
+
+export const POST: APIRoute = async ({ request }) => {
+  try {
+    const body = await request.json() as any;
+    const { action, name, oldName, newName, deleteFromMovies } = body;
+
+    // Lấy cấu hình hiện tại
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'servers')
+      .maybeSingle();
+
+    let configuredServers: string[] = [];
+    if (!settingsError && settingsData && Array.isArray(settingsData.value)) {
+      configuredServers = settingsData.value;
+    } else {
+      configuredServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+    }
+
+    if (action === 'create' && name) {
+      const trimmedName = name.trim();
+      if (!configuredServers.includes(trimmedName)) {
+        configuredServers.push(trimmedName);
+      }
+    } else if (action === 'update' && oldName && newName) {
+      const trimmedOld = oldName.trim();
+      const trimmedNew = newName.trim();
+      
+      configuredServers = configuredServers.map(s => s === trimmedOld ? trimmedNew : s);
+
+      // Cập nhật tên server trong toàn bộ phim ở cơ sở dữ liệu
+      const { data: movies, error: fetchErr } = await supabase
+        .from('movies')
+        .select('id, episodes');
+
+      if (!fetchErr && movies) {
+        for (const movie of movies) {
+          if (Array.isArray(movie.episodes)) {
+            let updated = false;
+            const newEpisodes = movie.episodes.map((ep: any) => {
+              const sName = ep.serverName || ep.server_name;
+              if (sName === trimmedOld) {
+                updated = true;
+                return {
+                  ...ep,
+                  serverName: trimmedNew,
+                  server_name: trimmedNew
+                };
+              }
+              return ep;
+            });
+
+            if (updated) {
+              await supabase
+                .from('movies')
+                .update({ episodes: newEpisodes })
+                .eq('id', movie.id);
+            }
+          }
+        }
+      }
+    } else if (action === 'delete' && name) {
+      const trimmedName = name.trim();
+      configuredServers = configuredServers.filter(s => s !== trimmedName);
+
+      // Nếu người dùng chọn xóa tập phim trên server này khỏi database
+      if (deleteFromMovies) {
+        const { data: movies, error: fetchErr } = await supabase
+          .from('movies')
+          .select('id, episodes');
+
+        if (!fetchErr && movies) {
+          for (const movie of movies) {
+            if (Array.isArray(movie.episodes)) {
+              const originalLen = movie.episodes.length;
+              const newEpisodes = movie.episodes.filter((ep: any) => {
+                const sName = ep.serverName || ep.server_name;
+                return sName !== trimmedName;
+              });
+
+              if (newEpisodes.length !== originalLen) {
+                await supabase
+                  .from('movies')
+                  .update({ episodes: newEpisodes })
+                  .eq('id', movie.id);
+              }
+            }
+          }
+        }
+      }
+    } else {
+      return apiResponse(null, 'error', 'Hành động không hợp lệ!', 400, request);
+    }
+
+    // Lưu lại vào bảng settings
+    const { error: upsertError } = await supabase
+      .from('settings')
+      .upsert({
+        key: 'servers',
+        value: configuredServers,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+
+    if (upsertError) {
+      throw upsertError;
+    }
+
+    // Xóa cache
+    SettingService.clearCache();
+
+    return apiResponse({ success: true, servers: configuredServers }, 'success', 'Cập nhật server thành công!', 200, request);
+  } catch (err: any) {
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
+  }
+};
+

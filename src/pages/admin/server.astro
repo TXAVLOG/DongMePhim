@@ -32,6 +32,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           <tr class="bg-zinc-950/40">
             <th class="px-6 py-4 font-label-caps text-zinc-500 text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">STT</th>
             <th class="px-6 py-4 font-label-caps text-zinc-500 text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">Tên Server</th>
+            <th class="px-6 py-4 font-label-caps text-zinc-500 text-[11px] uppercase tracking-widest border-b border-glass-stroke whitespace-nowrap">Số phim</th>
             <th class="px-6 py-4 font-label-caps text-zinc-500 text-[11px] uppercase tracking-widest border-b border-glass-stroke text-right whitespace-nowrap">Thao tác</th>
           </tr>
         </thead>
@@ -41,65 +42,109 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       </table>
     </div>
     <!-- Pagination / Count Stats -->
-    <div class="p-6 border-t border-glass-stroke flex justify-between items-center bg-white/5">
-      <p id="server-count" class="font-body-main text-sm text-zinc-400">Đang tải...</p>
+    <div class="p-6 border-t border-glass-stroke flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/5">
+      <div class="flex items-center gap-6">
+        <p id="server-count" class="font-body-main text-sm text-zinc-400">Đang tải...</p>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-zinc-400 whitespace-nowrap">Số dòng mỗi trang:</span>
+          <select id="page-size-select" class="bg-zinc-900 border border-glass-stroke rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+      <div id="pagination-controls" class="flex gap-1.5 items-center">
+        <!-- JS render pagination buttons -->
+      </div>
     </div>
   </div>
 
   <script is:inline>
     (function() {
       let serversState = [];
-      const defaultServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+      let currentFiltered = [];
+      let currentPage = 1;
+      let itemsPerPage = 10;
 
-      function loadServers() {
+      async function loadServers() {
+        const countEl = document.getElementById('server-count');
+        if (countEl) countEl.textContent = 'Đang tải dữ liệu từ database...';
+        
         try {
-          const stored = localStorage.getItem('txa_servers');
-          if (stored) {
-            serversState = JSON.parse(stored);
+          const res = await fetch('/api/admin/servers');
+          const json = await res.json();
+          if (json.status === 'success' || json.data) {
+            serversState = json.data || [];
           } else {
-            serversState = [...defaultServers];
-            localStorage.setItem('txa_servers', JSON.stringify(serversState));
+            if (window.showGlobalToast) window.showGlobalToast('Lỗi tải danh sách server từ database!', 'error');
+            serversState = [];
           }
         } catch (e) {
-          serversState = [...defaultServers];
+          console.error("Lỗi khi fetch servers:", e);
+          if (window.showGlobalToast) window.showGlobalToast('Không thể kết nối đến API backend!', 'error');
+          serversState = [];
         }
-        renderServers();
+        
+        filterAndRender();
       }
 
-      function renderServers(filterText = '') {
+      function filterAndRender() {
+        const filterText = document.getElementById('server-search')?.value || '';
+        currentFiltered = serversState.filter(item => 
+          item.name && item.name.toLowerCase().includes(filterText.toLowerCase())
+        );
+
+        const totalPages = Math.ceil(currentFiltered.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+
+        renderServersTable();
+        renderPagination(totalPages);
+      }
+
+      function renderServersTable() {
         const tbody = document.getElementById('serverTableBody');
         const countEl = document.getElementById('server-count');
         if (!tbody) return;
 
-        const filtered = serversState.filter(name => 
-          name.toLowerCase().includes(filterText.toLowerCase())
-        );
-
-        if (filtered.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-8 text-center text-zinc-500 italic">Không tìm thấy máy chủ nào.</td></tr>`;
+        if (currentFiltered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-zinc-500 italic">Không tìm thấy máy chủ nào.</td></tr>`;
           if (countEl) countEl.textContent = `Tổng cộng: 0 mục`;
           return;
         }
 
-        tbody.innerHTML = filtered.map((name, index) => {
-          const originalIndex = serversState.indexOf(name);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const listToDisplay = currentFiltered.slice(startIndex, endIndex);
+
+        tbody.innerHTML = listToDisplay.map((item, index) => {
+          const globalIndex = serversState.findIndex(s => s.name === item.name);
+          const displaySTT = startIndex + index + 1;
+          
           return `
             <tr class="hover:bg-white/5 transition-colors group">
-              <td class="px-6 py-4 font-semibold text-zinc-500 w-24">${index + 1}</td>
+              <td class="px-6 py-4 font-semibold text-zinc-500 w-24">${displaySTT}</td>
               <td class="px-6 py-4 font-bold text-white text-[14px]">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                     <span class="material-symbols-outlined text-[18px]">dns</span>
                   </div>
-                  <span>${name}</span>
+                  <span>${item.name}</span>
                 </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold font-mono">
+                  ${item.movieCount} phim
+                </span>
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex justify-end gap-2">
-                  <button onclick="editServer(${originalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-amber-400 hover:bg-amber-400/10 transition-all cursor-pointer" data-txatooltip="Chỉnh sửa">
+                  <button onclick="editServer(${globalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-amber-400 hover:bg-amber-400/10 transition-all cursor-pointer" data-txatooltip="Chỉnh sửa">
                     <span class="material-symbols-outlined text-[18px]">edit</span>
                   </button>
-                  <button onclick="deleteServer(${originalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer" data-txatooltip="Xóa">
+                  <button onclick="deleteServer(${globalIndex})" class="p-2 rounded-lg bg-white/5 border border-glass-stroke text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer" data-txatooltip="Xóa">
                     <span class="material-symbols-outlined text-[18px]">delete</span>
                   </button>
                 </div>
@@ -108,62 +153,191 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           `;
         }).join('');
 
-        if (countEl) countEl.textContent = `Tổng cộng: ${filtered.length} / ${serversState.length} mục`;
+        if (countEl) {
+          const showingStart = currentFiltered.length > 0 ? startIndex + 1 : 0;
+          const showingEnd = Math.min(endIndex, currentFiltered.length);
+          countEl.textContent = `Hiển thị ${showingStart} - ${showingEnd} trên tổng số ${currentFiltered.length} máy chủ`;
+        }
       }
 
+      function renderPagination(totalPages) {
+        const container = document.getElementById('pagination-controls');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+          container.innerHTML = '';
+          return;
+        }
+
+        let html = '';
+
+        // Nút Trước
+        html += `
+          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg bg-zinc-900 border border-glass-stroke text-xs font-bold text-zinc-300 disabled:opacity-40 disabled:pointer-events-none hover:bg-zinc-800 transition-all cursor-pointer flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">chevron_left</span>
+          </button>
+        `;
+
+        // Các số trang
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        if (startPage > 1) {
+          html += `<button onclick="changePage(1)" class="w-8 h-8 rounded-lg bg-zinc-900 border border-glass-stroke text-xs font-bold hover:bg-zinc-800 transition-all text-zinc-300 cursor-pointer">1</button>`;
+          if (startPage > 2) {
+            html += `<span class="text-zinc-500 px-1">...</span>`;
+          }
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+          const isActive = p === currentPage;
+          html += `
+            <button onclick="changePage(${p})" class="w-8 h-8 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+              isActive 
+                ? 'bg-primary border-primary text-slate-950 font-extrabold shadow-lg shadow-primary/20' 
+                : 'bg-zinc-900 border-glass-stroke text-zinc-300 hover:bg-zinc-800'
+            }">
+              ${p}
+            </button>
+          `;
+        }
+
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            html += `<span class="text-zinc-500 px-1">...</span>`;
+          }
+          html += `<button onclick="changePage(${totalPages})" class="w-8 h-8 rounded-lg bg-zinc-900 border border-glass-stroke text-xs font-bold hover:bg-zinc-800 transition-all text-zinc-300 cursor-pointer">${totalPages}</button>`;
+        }
+
+        // Nút Sau
+        html += `
+          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg bg-zinc-900 border border-glass-stroke text-xs font-bold text-zinc-300 disabled:opacity-40 disabled:pointer-events-none hover:bg-zinc-800 transition-all cursor-pointer flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+          </button>
+        `;
+
+        container.innerHTML = html;
+      }
+
+      window.changePage = function(page) {
+        currentPage = page;
+        filterAndRender();
+      };
+
       window.editServer = function(index) {
-        const name = serversState[index];
+        const server = serversState[index];
+        if (!server) return;
+
         const html = `
           <div style="display:flex;flex-direction:column;gap:8px;min-width:300px">
             <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;margin-bottom:4px">Tên máy chủ phát</label>
-            <input type="text" id="server-modal-name" value="${name.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: Thuyết Minh VIP" />
+            <input type="text" id="server-modal-name" value="${server.name.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.3);color:#fff;font-size:13px" placeholder="Ví dụ: Thuyết Minh VIP" />
+            <p style="font-size:11px;color:#f59e0b;margin-top:4px;line-height:1.4">💡 Hệ thống sẽ tự động đổi tên server này cho toàn bộ tập phim có liên quan.</p>
           </div>
         `;
+
         if (window.txamodal) {
           window.txamodal.show({
             title: 'Chỉnh sửa Server',
             message: html,
             confirmText: 'Lưu thay đổi',
             cancelText: 'Hủy bỏ',
-            onConfirm: () => {
+            onConfirm: async () => {
               const newName = document.getElementById('server-modal-name')?.value.trim();
               if (!newName) {
                 if (window.showGlobalToast) window.showGlobalToast('Tên server không được để trống!', 'error');
-                return;
+                return false;
               }
-              if (serversState.includes(newName) && serversState.indexOf(newName) !== index) {
+              if (serversState.some(s => s.name === newName && s.name !== server.name)) {
                 if (window.showGlobalToast) window.showGlobalToast('Tên server đã tồn tại!', 'error');
-                return;
+                return false;
               }
-              serversState[index] = newName;
-              localStorage.setItem('txa_servers', JSON.stringify(serversState));
-              renderServers(document.getElementById('server-search')?.value || '');
-              if (window.showGlobalToast) window.showGlobalToast('Cập nhật máy chủ thành công!', 'success');
+
+              if (window.showGlobalToast) window.showGlobalToast('Đang cập nhật tên server trong database...', 'info');
+
+              try {
+                const res = await fetch('/api/admin/servers', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'update',
+                    oldName: server.name,
+                    newName: newName
+                  })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                  if (window.showGlobalToast) window.showGlobalToast('Cập nhật máy chủ thành công!', 'success');
+                  await loadServers();
+                } else {
+                  throw new Error(json.message);
+                }
+              } catch (e) {
+                if (window.showGlobalToast) window.showGlobalToast(e.message || 'Lỗi khi cập nhật server!', 'error');
+                return false;
+              }
             }
           });
         }
       };
 
       window.deleteServer = function(index) {
-        const name = serversState[index];
-        const doDelete = () => {
-          serversState.splice(index, 1);
-          localStorage.setItem('txa_servers', JSON.stringify(serversState));
-          renderServers(document.getElementById('server-search')?.value || '');
-          if (window.showGlobalToast) window.showGlobalToast('Đã xóa máy chủ phát thành công!', 'success');
+        const server = serversState[index];
+        if (!server) return;
+
+        const html = `
+          <div style="display:flex;flex-direction:column;gap:12px;min-width:300px">
+            <p>Bạn có chắc chắn muốn xóa vĩnh viễn server <span class="text-white font-bold">"${server.name}"</span> khỏi cấu hình? Thao tác này không thể hoàn tác.</p>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#a78bfa;cursor:pointer;margin-top:8px">
+              <input type="checkbox" id="delete-from-movies-chk" style="width:16px;height:16px;accent-color:#a78bfa" />
+              <span>Đồng thời xóa các tập phim sử dụng server này</span>
+            </label>
+          </div>
+        `;
+
+        const doDelete = async (deleteFromMovies) => {
+          if (window.showGlobalToast) window.showGlobalToast('Đang xóa server khỏi database...', 'info');
+          try {
+            const res = await fetch('/api/admin/servers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'delete',
+                name: server.name,
+                deleteFromMovies: deleteFromMovies
+              })
+            });
+            const json = await res.json();
+            if (json.status === 'success') {
+              if (window.showGlobalToast) window.showGlobalToast('Đã xóa máy chủ phát thành công!', 'success');
+              await loadServers();
+            } else {
+              throw new Error(json.message);
+            }
+          } catch (e) {
+            if (window.showGlobalToast) window.showGlobalToast(e.message || 'Lỗi khi xóa server!', 'error');
+          }
         };
 
         if (window.txamodal) {
           window.txamodal.show({
             title: 'Xóa Server Phát',
-            message: `Bạn có chắc chắn muốn xóa vĩnh viễn server <span class="text-white font-bold">"${name}"</span>? Thao tác này không thể hoàn tác.`,
+            message: html,
             type: 'danger',
             confirmText: 'Xóa máy chủ',
             cancelText: 'Hủy bỏ',
-            onConfirm: doDelete
+            onConfirm: () => {
+              const deleteFromMovies = document.getElementById('delete-from-movies-chk')?.checked || false;
+              doDelete(deleteFromMovies);
+            }
           });
-        } else if (confirm(`Xóa máy chủ ${name}?`)) {
-          doDelete();
+        } else if (confirm(`Xóa máy chủ ${server.name}?`)) {
+          doDelete(false);
         }
       };
 
@@ -172,37 +346,66 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         const html = `
           <div style="display:flex;flex-direction:column;gap:8px;min-width:300px">
             <label style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;margin-bottom:4px">Tên máy chủ phát mới</label>
-            <input type="text" id="server-modal-name" value="" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:13px" placeholder="Ví dụ: Google Drive VIP" />
+            <input type="text" id="server-modal-name" value="" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.3);color:#fff;font-size:13px" placeholder="Ví dụ: Google Drive VIP" />
           </div>
         `;
+
         if (window.txamodal) {
           window.txamodal.show({
             title: 'Thêm Server Mới',
             message: html,
             confirmText: 'Thêm mới',
             cancelText: 'Hủy bỏ',
-            onConfirm: () => {
+            onConfirm: async () => {
               const newName = document.getElementById('server-modal-name')?.value.trim();
               if (!newName) {
                 if (window.showGlobalToast) window.showGlobalToast('Tên server không được để trống!', 'error');
-                return;
+                return false;
               }
-              if (serversState.includes(newName)) {
+              if (serversState.some(s => s.name === newName)) {
                 if (window.showGlobalToast) window.showGlobalToast('Tên server đã tồn tại!', 'error');
-                return;
+                return false;
               }
-              serversState.push(newName);
-              localStorage.setItem('txa_servers', JSON.stringify(serversState));
-              renderServers(document.getElementById('server-search')?.value || '');
-              if (window.showGlobalToast) window.showGlobalToast('Đã thêm máy chủ phát mới!', 'success');
+
+              if (window.showGlobalToast) window.showGlobalToast('Đang thêm server mới...', 'info');
+
+              try {
+                const res = await fetch('/api/admin/servers', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'create',
+                    name: newName
+                  })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                  if (window.showGlobalToast) window.showGlobalToast('Đã thêm máy chủ phát mới!', 'success');
+                  const searchInput = document.getElementById('server-search');
+                  if (searchInput) searchInput.value = '';
+                  await loadServers();
+                } else {
+                  throw new Error(json.message);
+                }
+              } catch (e) {
+                if (window.showGlobalToast) window.showGlobalToast(e.message || 'Lỗi khi thêm server!', 'error');
+                return false;
+              }
             }
           });
         }
       });
 
-      // Lắng nghe tìm kiếm
-      document.getElementById('server-search')?.addEventListener('input', (e) => {
-        renderServers(e.target.value);
+      // Lắng nghe tìm kiếm và đổi số dòng hiển thị
+      document.getElementById('server-search')?.addEventListener('input', () => {
+        currentPage = 1;
+        filterAndRender();
+      });
+
+      document.getElementById('page-size-select')?.addEventListener('change', (e) => {
+        itemsPerPage = parseInt(e.target.value, 10);
+        currentPage = 1;
+        filterAndRender();
       });
 
       // Init
