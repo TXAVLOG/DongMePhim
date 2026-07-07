@@ -1950,6 +1950,10 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             bodyEl.innerHTML = options.message || options.content || '';
           }
           
+          if (typeof options.onShow === 'function') {
+            try { options.onShow(); } catch(e) { console.error(e); }
+          }
+          
           if (options.cancelText) {
             cancelBtn.textContent = options.cancelText;
             cancelBtn.classList.remove('hidden');
@@ -1993,9 +1997,15 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             document.body.style.overflow = '';
           };
 
-          confirmBtn.onclick = () => {
-            closeModal();
-            if (typeof options.onConfirm === 'function') options.onConfirm();
+          confirmBtn.onclick = async () => {
+            if (typeof options.onConfirm === 'function') {
+              const shouldClose = await options.onConfirm();
+              if (shouldClose !== false) {
+                closeModal();
+              }
+            } else {
+              closeModal();
+            }
           };
 
           cancelBtn.onclick = () => {
