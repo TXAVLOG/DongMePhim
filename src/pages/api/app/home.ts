@@ -92,8 +92,13 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     // TV Shows (type tvshows)
     const tvshowsList = allMovies.filter((m: any) => m.type === 'tvshows').slice(0, 15).map(mapMovie);
 
-    // Phim Chiếu Rạp (genres contains 'Chiếu Rạp')
-    const theaterList = allMovies.filter((m: any) => m.genres && m.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'))).slice(0, 15).map(mapMovie);
+    // Phim Chiếu Rạp (genres contains 'Chiếu Rạp', fallback to hot movies if empty)
+    let theaterFiltered = allMovies.filter((m: any) => m.genres && m.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp')));
+    if (theaterFiltered.length === 0) {
+      theaterFiltered = allMovies.filter((m: any) => m.type === 'movie' || m.type === 'hoathinh')
+        .sort((a: any, b: any) => (b.views || 0) - (a.views || 0));
+    }
+    const theaterList = theaterFiltered.slice(0, 15).map(mapMovie);
 
     return apiResponse({
       favorite_ids: favoriteIds,

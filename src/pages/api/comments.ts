@@ -236,10 +236,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const authorName = (author || 'Ẩn danh').trim();
+    const escapedAuthor = `"${authorName.replace(/"/g, '\\"')}"`;
     const { data: userData } = await supabase
       .from('users')
       .select('avatar, gender, package, role')
-      .or(`name.eq.${authorName},username.eq.${authorName}`)
+      .or(`name.eq.${escapedAuthor},username.eq.${escapedAuthor}`)
       .maybeSingle();
 
     const newComment = {
