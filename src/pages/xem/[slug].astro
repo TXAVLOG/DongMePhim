@@ -4,6 +4,8 @@ import { WatchContainer } from '@components/player/WatchContainer.tsx';
 import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 import NotFound from '@components/ui/NotFound.astro';
+import { supabase } from '@lib/supabase';
+import type { Movie } from '@apptypes/movie';
 
 const { slug } = Astro.params;
 
@@ -137,6 +139,77 @@ if (filteredMovie && filteredMovie.episodes) {
 
 // Fetch related movies
 const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : [];
+
+// Fetch related seasons/parts of the same series
+let relatedParts: Movie[] = [];
+if (movie) {
+  const getBaseTitle = (t: string) => {
+    return t
+      .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
+      .replace(/\s*-\s*$/, '')
+      .trim();
+  };
+  const baseTitle = getBaseTitle(movie.title);
+  
+  const isSupabase = (import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase') === 'supabase';
+  let candidateMovies: Movie[] = [];
+
+  if (isSupabase) {
+    try {
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
+      const { data: dbCandidates } = await supabase
+        .from('movies')
+        .select(selectFields)
+        .ilike('title', `%${baseTitle}%`);
+        
+      if (dbCandidates) {
+        candidateMovies = dbCandidates.map((m: any) => ({
+          id: m.id,
+          title: m.title,
+          originalTitle: m.original_title,
+          slug: m.slug,
+          description: m.description || '',
+          posterUrl: m.poster_url || '',
+          bannerUrl: m.banner_url || m.poster_url || '',
+          releaseYear: m.release_year || 2024,
+          durationMinutes: m.duration_minutes || '45 phút/tập',
+          type: m.type,
+          status: m.status,
+          episodeCurrent: m.episode_current || '1',
+          episodeTotal: m.episode_total || '1',
+          quality: m.quality || 'FHD',
+          lang: m.lang || 'Vietsub',
+          imdbScore: Number(m.imdb_score) || 8.0,
+          views: Number(m.views) || 0,
+          category: m.country || 'Khác',
+          genres: Array.isArray(m.genres) ? m.genres : [],
+          updatedAt: m.updated_at || new Date().toISOString(),
+          seasons: m.seasons || undefined
+        }));
+      }
+    } catch (e) {
+      console.error("Error fetching related parts from Supabase:", e);
+    }
+  } else {
+    candidateMovies = await MovieService.getMovies();
+  }
+
+  const normalize = (t: string) => {
+    return t
+      .toLowerCase()
+      .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
+      .replace(/\s*-\s*$/, '')
+      .trim();
+  };
+  const targetBase = normalize(movie.title);
+
+  relatedParts = candidateMovies.filter((m: Movie) => {
+    const mBaseTitle = normalize(m.title);
+    return targetBase.length > 2 && mBaseTitle === targetBase;
+  }).sort((a: Movie, b: Movie) => {
+    return a.releaseYear - b.releaseYear || a.title.localeCompare(b.title);
+  });
+}
 ---
 
 {movie ? (
@@ -153,6 +226,28 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
         </h1>
       </div>
 
+      <!-- Dropdown Chọn Phần phim khác (Seasons Dropdown) -->
+      {relatedParts.length > 1 && (
+        <div id="movie-seasons-dropdown-wrapper" class="mb-6">
+          <div class="glass-card bg-surface-card border border-glass-stroke rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-base">layers</span>
+              <span class="text-xs font-bold text-white">Xem các phần phim khác của tác phẩm:</span>
+            </div>
+            <div class="relative min-w-[200px]">
+              <select id="seasons-redirect-select" class="w-full bg-zinc-900 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary cursor-pointer appearance-none">
+                {relatedParts.map(part => (
+                  <option value={`/xem/${part.slug}`} selected={part.slug === movie.slug}>
+                    {part.title} ({part.seasons || `${part.releaseYear}`})
+                  </option>
+                ))}
+              </select>
+              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">keyboard_arrow_down</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <WatchContainer 
         client:load 
         movie={filteredMovie!} 
@@ -166,6 +261,16 @@ const relatedMovies = movie ? await MovieService.getRelatedMovies(movie.id) : []
         siteUrl={settings.general.site_url}
       />
     </div>
+
+    <script>
+      // Seasons Dropdown redirects
+      const seasonsSelect = document.getElementById('seasons-redirect-select') as HTMLSelectElement | null;
+      if (seasonsSelect) {
+        seasonsSelect.addEventListener('change', (e: any) => {
+          window.location.href = e.target.value;
+        });
+      }
+    </script>
   </MainLayout>
 ) : (
   <MainLayout title={`Không tìm thấy phim | ${settings.general.site_name}`}>

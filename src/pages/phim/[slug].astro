@@ -210,8 +210,8 @@ let relatedParts: Movie[] = [];
 if (movie) {
   const getBaseTitle = (t: string) => {
     return t
-      .replace(/(?:phần|ss|season|part|tập|phim|bộ)\s*\d+/gi, '')
-      .replace(/\s+\d+$/g, '')
+      .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
+      .replace(/\s*-\s*$/, '')
       .trim();
   };
   const baseTitle = getBaseTitle(movie.title);
@@ -262,8 +262,8 @@ if (movie) {
   const normalize = (t: string) => {
     return t
       .toLowerCase()
-      .replace(/(?:phần|ss|season|part|tập|phim|bộ)\s*\d+/gi, '')
-      .replace(/\s+\d+$/g, '')
+      .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
+      .replace(/\s*-\s*$/, '')
       .trim();
   };
   const targetBase = normalize(movie.title);
