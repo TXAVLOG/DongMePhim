@@ -35,7 +35,7 @@ let unreleasedEpisode = null;
 
 if (movie && movie.episodes && movie.episodes.length > 0) {
   // Sort servers in descending order of episode count so that the server with the most episodes is first
-  movie.episodes.sort((a, b) => {
+  movie.episodes.sort((a: any, b: any) => {
     const aLen = (a.serverData || a.server_data || []).length;
     const bLen = (b.serverData || b.server_data || []).length;
     return bLen - aLen;
