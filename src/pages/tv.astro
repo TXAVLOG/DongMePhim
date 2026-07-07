@@ -1,0 +1,116 @@
+---
+import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
+
+const settings = await SettingService.getSettings();
+const siteName = settings.general.site_name || 'DongMePhim';
+const apkUrl = settings.app.app_smart_tv_url || settings.app.app_android_download_url || 'https://app.nrotxa.online/TPHIMX.apk';
+const apkSize = settings.app.app_smart_tv_size || '66 MB';
+---
+
+<MainLayout title={`Cài đặt Smart TV | ${siteName}`}>
+  <main class="min-h-screen bg-[#090A0F] text-white pt-24 pb-16 px-6 relative overflow-hidden font-sans">
+    <!-- Ambient Background Lighting -->
+    <div class="absolute top-[10%] left-[-15%] w-[60%] h-[50%] rounded-full bg-violet-600/10 blur-[130px] pointer-events-none"></div>
+    <div class="absolute bottom-[20%] right-[-10%] w-[50%] h-[60%] rounded-full bg-blue-600/10 blur-[130px] pointer-events-none"></div>
+
+    <div class="max-w-4xl mx-auto relative z-10">
+      <!-- Title Header -->
+      <div class="text-center mb-12">
+        <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-amber-400 mb-6">
+          <span class="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          KỶ NGUYÊN STREAMING TRÊN TV
+        </span>
+        <h1 class="text-3xl md:text-5xl font-black text-white uppercase tracking-tight mb-4 leading-tight">
+          Cài đặt DongMePhim <br />
+          <span class="bg-gradient-to-r from-primary via-secondary to-pink-500 bg-clip-text text-transparent">cho Smart TV / Android TV</span>
+        </h1>
+        <p class="text-sm text-gray-400 max-w-xl mx-auto leading-relaxed mt-2">
+          Mang cả thế giới điện ảnh chất lượng cao lên màn hình lớn của bạn. Trải nghiệm mượt mà, hỗ trợ điều khiển remote D-Pad và chất lượng 4K cực nét.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-5 gap-8 items-start">
+        <!-- Direct Download Button (Left 2 cols) -->
+        <div class="md:col-span-2 space-y-6">
+          <div class="p-6 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-xl">
+            <h3 class="text-sm font-black uppercase tracking-wider mb-4 text-white">Tải Xuống Trực Tiếp</h3>
+            <p class="text-xs text-gray-400 leading-relaxed mb-6">
+              Bạn có thể tải trực tiếp file APK về USB để cắm vào TV hoặc tải ngay trên trình duyệt web của Smart TV.
+            </p>
+            
+            <a 
+              href={apkUrl}
+              download
+              class="flex items-center justify-center gap-3 w-full py-4 bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_24px_rgba(115,125,253,0.3)] transition-all hover:scale-[1.02] rounded-2xl text-xs font-black uppercase tracking-widest text-white cursor-pointer border-none no-underline text-center"
+            >
+              <span class="material-symbols-outlined">download</span>
+              TẢI APK CHO TV ({apkSize})
+            </a>
+            
+            <div class="mt-4 text-[10px] text-center text-gray-500 font-bold uppercase tracking-wider">
+              Hỗ trợ: Android TV, Google TV, Fire TV, TV Box
+            </div>
+          </div>
+        </div>
+
+        <!-- Sideload instructions (Right 3 cols) -->
+        <div class="md:col-span-3 p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-xl space-y-6">
+          <h3 class="text-sm font-black uppercase tracking-wider text-white border-b border-white/5 pb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">install_desktop</span>
+            HƯỚNG DẪN CÀI ĐẶT NHANH QUA DOWNLOADER
+          </h3>
+
+          <div class="space-y-6 text-xs text-gray-300">
+            <!-- Step 1 -->
+            <div class="flex gap-4">
+              <div class="h-6 w-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-black shrink-0">1</div>
+              <div>
+                <h4 class="font-bold text-white mb-1">Cài đặt ứng dụng Downloader trên TV</h4>
+                <p class="text-gray-400 leading-relaxed">
+                  Mở kho ứng dụng (Google Play Store / CH Play) trên Smart TV, tìm kiếm ứng dụng tên là <strong>Downloader</strong> và bấm cài đặt.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="flex gap-4">
+              <div class="h-6 w-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-black shrink-0">2</div>
+              <div>
+                <h4 class="font-bold text-white mb-1">Nhập mã tải nhanh (Shortcode)</h4>
+                <p class="text-gray-400 leading-relaxed">
+                  Mở ứng dụng Downloader lên, tại ô nhập địa chỉ URL, gõ chính xác mã số:
+                </p>
+                <div class="my-3 inline-flex items-center gap-4 px-5 py-2.5 bg-black/40 border border-white/5 rounded-2xl">
+                  <span class="text-2xl font-black text-amber-400 tracking-wider">87910</span>
+                  <span class="text-[9px] text-gray-500 font-bold uppercase border-l border-white/10 pl-4 leading-none">MÃ DOWNLOADER<br/>DONGMEPHIM TV</span>
+                </div>
+                <p class="text-gray-400 leading-relaxed">
+                  Sau đó bấm nút <strong>Go</strong> trên bàn phím ảo. Ứng dụng sẽ tự động tải file cài đặt về.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="flex gap-4">
+              <div class="h-6 w-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-black shrink-0">3</div>
+              <div>
+                <h4 class="font-bold text-white mb-1">Cài đặt và Cấp quyền</h4>
+                <p class="text-gray-400 leading-relaxed">
+                  Khi quá trình tải file APK hoàn tất, Downloader sẽ tự động mở trình cài đặt. Nếu TV hiện thông báo chặn, vui lòng bấm <b>Cài đặt (Settings)</b> -> <i>Bật quyền cài đặt ứng dụng từ **Nguồn không xác định (Unknown Sources)** cho app Downloader, sau đó quay lại tiến hành cài đặt bình thường.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</MainLayout>
+
+<style>
+  /* Outfits fonts style matching main */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+</style>

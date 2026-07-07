@@ -847,3 +847,51 @@ ALTER TABLE public.movie_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "select_movie_requests" ON public.movie_requests FOR SELECT TO public USING (((user_id = auth.uid()) OR is_admin()));
 CREATE POLICY "insert_movie_requests" ON public.movie_requests FOR INSERT TO public WITH CHECK (true);
 CREATE POLICY "modify_movie_requests" ON public.movie_requests FOR ALL TO public USING (is_admin());
+
+-- Table: public.txa_tv_devices
+-- Lưu thông tin thiết bị TV đã đăng ký
+CREATE TABLE IF NOT EXISTS public.txa_tv_devices (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  device_id character varying NOT NULL UNIQUE,        -- Unique ID thiết bị TV
+  device_name character varying NOT NULL,              -- Tên TV (e.g. "Samsung Living Room")
+  device_model character varying,                       -- Model TV
+  device_os character varying,                          -- Android TV / Google TV
+  os_version character varying,                         -- Version OS
+  screen_resolution character varying,                  -- "1920x1080" / "3840x2160"
+  ip_address character varying,                         -- IP local
+  user_id uuid,                                         -- User đã pair (NULL = chưa pair)
+  pair_code character varying,                          -- Mã pair hiện tại (TXTV + 4 số)
+  pair_code_expires_at timestamp with time zone,        -- Hết hạn mã pair
+  is_active boolean DEFAULT true,
+  last_seen_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id),
+  CONSTRAINT txa_tv_devices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+ALTER TABLE public.txa_tv_devices ENABLE ROW LEVEL SECURITY;
+
+-- Table: public.txa_tv_pairing_sessions
+-- Quản lý các phiên đăng nhập/pair giữa Mobile ↔ TV
+CREATE TABLE IF NOT EXISTS public.txa_tv_pairing_sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  device_id character varying NOT NULL,                 -- TV device_id
+  pair_code character varying NOT NULL,                 -- Mã 8 số: TXTV + 4 số random
+  qr_token character varying UNIQUE,                    -- Token QR code (unique per session)
+  qr_payload text,                                      -- Encoded QR data (encrypted)
+  session_type character varying NOT NULL DEFAULT 'code', -- 'code' | 'qr'
+  status character varying NOT NULL DEFAULT 'pending',  -- 'pending' | 'waiting_confirm' | 'confirmed' | 'rejected' | 'expired'
+  user_id uuid,                                         -- User đang pair (set khi mobile nhập mã)
+  user_info jsonb,                                      -- Cache user info (name, avatar, etc.)
+  location_info jsonb,                                  -- Vị trí TV (cho xác nhận QR)
+  expires_at timestamp with time zone NOT NULL,         -- Mã hết hạn (code: 10min, QR: 30s)
+  confirmed_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
+ALTER TABLE public.txa_tv_pairing_sessions ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+CREATE POLICY "all_txa_tv_devices" ON public.txa_tv_devices FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "all_txa_tv_pairing_sessions" ON public.txa_tv_pairing_sessions FOR ALL TO public USING (true) WITH CHECK (true);
+

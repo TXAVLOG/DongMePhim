@@ -1059,6 +1059,25 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
       })();
     </script>
 
+    <script is:inline>
+      function toggleMobileDownloadMenu(e) {
+        e.stopPropagation();
+        const menu = document.getElementById('mobile-download-menu');
+        if (menu) {
+          menu.classList.toggle('opacity-0');
+          menu.classList.toggle('invisible');
+        }
+      }
+
+      document.addEventListener('click', () => {
+        const menu = document.getElementById('mobile-download-menu');
+        if (menu && !menu.classList.contains('invisible')) {
+          menu.classList.add('opacity-0');
+          menu.classList.add('invisible');
+        }
+      });
+    </script>
+
     <!-- Mở thẻ bọc chính -->
     <div id="main-app-container">
     {isHome && (
@@ -1109,9 +1128,22 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                 <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-8 w-auto dyn-logo-img" />
             </a>
             <div class="flex items-center gap-3">
-                <a href="/tai-app" class="p-2 rounded-xl bg-white/5 border border-white/10 text-amber-400 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all w-9 h-9 cursor-pointer" title="Tải ứng dụng">
-                    <span class="material-symbols-outlined text-[18px]">devices</span>
-                </a>
+                <div class="relative">
+                    <button id="mobile-download-btn" class="p-2 rounded-xl bg-white/5 border border-white/10 text-amber-400 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all w-9 h-9 cursor-pointer border-none bg-transparent" title="Tải ứng dụng" onclick="toggleMobileDownloadMenu(event)">
+                        <span class="material-symbols-outlined text-[18px]">devices</span>
+                    </button>
+                    <!-- Mobile Dropdown Menu -->
+                    <div id="mobile-download-menu" class="absolute right-0 top-full mt-2 w-52 bg-zinc-950/98 border border-glass-stroke rounded-2xl shadow-2xl p-2 opacity-0 invisible transition-all duration-300 flex flex-col gap-1 backdrop-blur-xl z-50">
+                        <a href="/tai-app" class="px-3.5 py-3 text-xs font-bold text-on-surface-variant hover:text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 rounded-xl no-underline">
+                            <span class="material-symbols-outlined text-[16px] text-amber-400">smartphone</span>
+                            <span>Bản Mobile / Tablet</span>
+                        </a>
+                        <a href="/tv" class="px-3.5 py-3 text-xs font-bold text-on-surface-variant hover:text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2.5 rounded-xl no-underline">
+                            <span class="material-symbols-outlined text-[16px] text-amber-400">live_tv</span>
+                            <span>Bản Smart TV (APK)</span>
+                        </a>
+                    </div>
+                </div>
                 <a href="/goi-dich-vu" class="auth-user hidden p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center hover:bg-primary/20 active:scale-95 transition-all w-9 h-9 cursor-pointer" title="Gói dịch vụ của tôi">
                     <span class="material-symbols-outlined text-[18px]">card_membership</span>
                 </a>
@@ -1199,19 +1231,40 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
 
             <!-- Right Group: App Download & Member View -->
             <div class="flex items-center gap-4 shrink-0">
-                <!-- Tải ứng dụng button -->
-                <a href="/tai-app" class="hidden xl:flex items-center gap-2.5 px-3 py-1.5 rounded-2xl hover:bg-white/5 transition-all text-left group shrink-0">
-                    <div class="w-6 h-6 text-amber-400 group-hover:scale-105 transition-transform shrink-0">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M11 16.9C11.17 16.9 11.3 16.76 11.3 16.6V11.6C11.3 9.28 13.18 7.4 15.5 7.4H18.8C18.92 7.4 19.04 7.41 19.16 7.43C19.37 7.47 19.6 7.33 19.6 7.11V6.7C19.6 6.67 19.6 6.64 19.59 6.61C19.25 4.67 17.45 3.2 15.4 3.2H6.8C4.43 3.2 2.5 5.13 2.5 7.5V12.6C2.5 14.97 4.43 16.9 6.8 16.9H8.24L7.86 19.25H5.86C5.45 19.25 5.11 19.59 5.11 20C5.11 20.41 5.45 20.75 5.86 20.75H10.76C11.17 20.75 11.51 20.41 11.51 20C11.51 19.59 11.17 19.25 10.76 19.25H9.38L9.76 16.9H11Z" fill="currentColor"></path>
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M17.19 18.46C16.77 18.46 16.43 18.12 16.43 17.7C16.43 17.28 16.77 16.93 17.19 16.93C17.61 16.93 17.95 17.28 17.95 17.7C17.95 18.12 17.61 18.46 17.19 18.46ZM18.8 8.9H15.5C14.04 8.9 12.8 10.14 12.8 11.6V18.1C12.8 19.59 14.01 20.8 15.5 20.8H18.8C20.29 20.8 21.5 19.59 21.5 18.1V11.6C21.5 10.14 20.26 8.9 18.8 8.9Z" fill="#ffffff"></path>
-                        </svg>
+                <!-- Tải ứng dụng button with Dropdown -->
+                <div class="relative group hidden xl:block shrink-0">
+                    <button class="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl hover:bg-white/5 transition-all text-left cursor-pointer border-none bg-transparent">
+                        <div class="w-6 h-6 text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M11 16.9C11.17 16.9 11.3 16.76 11.3 16.6V11.6C11.3 9.28 13.18 7.4 15.5 7.4H18.8C18.92 7.4 19.04 7.41 19.16 7.43C19.37 7.47 19.6 7.33 19.6 7.11V6.7C19.6 6.67 19.6 6.64 19.59 6.61C19.25 4.67 17.45 3.2 15.4 3.2H6.8C4.43 3.2 2.5 5.13 2.5 7.5V12.6C2.5 14.97 4.43 16.9 6.8 16.9H8.24L7.86 19.25H5.86C5.45 19.25 5.11 19.59 5.11 20C5.11 20.41 5.45 20.75 5.86 20.75H10.76C11.17 20.75 11.51 20.41 11.51 20C11.51 19.59 11.17 19.25 10.76 19.25H9.38L9.76 16.9H11Z" fill="currentColor"></path>
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M17.19 18.46C16.77 18.46 16.43 18.12 16.43 17.7C16.43 17.28 16.77 16.93 17.19 16.93C17.61 16.93 17.95 17.28 17.95 17.7C17.95 18.12 17.61 18.46 17.19 18.46ZM18.8 8.9H15.5C14.04 8.9 12.8 10.14 12.8 11.6V18.1C12.8 19.59 14.01 20.8 15.5 20.8H18.8C20.29 20.8 21.5 19.59 21.5 18.1V11.6C21.5 10.14 20.26 8.9 18.8 8.9Z" fill="#ffffff"></path>
+                            </svg>
+                        </div>
+                        <div class="flex flex-col leading-none">
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5 flex items-center gap-0.5">
+                                Tải ứng dụng <span class="material-symbols-outlined text-[10px] group-hover:rotate-180 transition-transform duration-300 font-bold">keyboard_arrow_down</span>
+                            </span>
+                            <span class="text-xs font-black text-white">{settings.general.site_name}</span>
+                        </div>
+                    </button>
+                    <!-- Glassmorphic Dropdown -->
+                    <div class="absolute right-0 top-full mt-2 w-64 bg-zinc-950/95 border border-glass-stroke rounded-2xl shadow-2xl p-2.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col gap-1 backdrop-blur-xl z-50">
+                        <a href="/tai-app" class="px-4 py-3 text-xs font-bold text-on-surface-variant hover:text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-3 rounded-xl no-underline">
+                            <span class="material-symbols-outlined text-[18px] text-amber-400">smartphone</span>
+                            <div class="flex flex-col">
+                                <span>Ứng Dụng Di Động</span>
+                                <span class="text-[9px] text-gray-500 font-normal">Dành cho Điện thoại / Máy tính bảng</span>
+                            </div>
+                        </a>
+                        <a href="/tv" class="px-4 py-3 text-xs font-bold text-on-surface-variant hover:text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-3 rounded-xl no-underline">
+                            <span class="material-symbols-outlined text-[18px] text-amber-400">live_tv</span>
+                            <div class="flex flex-col">
+                                <span>Ứng Dụng Smart TV</span>
+                                <span class="text-[9px] text-gray-500 font-normal">Android TV / Google TV / Fire TV</span>
+                            </div>
+                        </a>
                     </div>
-                    <div class="flex flex-col leading-none">
-                        <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Tải ứng dụng</span>
-                        <span class="text-xs font-black text-white">{settings.general.site_name}</span>
-                    </div>
-                </a>
+                </div>
                 
                 <!-- Guest View / Logged In View -->
                 <div class="flex gap-2 items-center">
