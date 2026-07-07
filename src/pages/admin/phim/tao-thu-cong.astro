@@ -251,6 +251,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         },
         episodes: []
       };
+      window.movieData = movieData;
 
       const activeMode = "local"; // Always local mode for manual creation
       const saveMovieBtn = document.getElementById("saveMovieBtn");

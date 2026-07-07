@@ -252,6 +252,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         isStatic: false,
         source: "manual"
       };
+      window.movieData = movieData;
 
       let editSlug = "";
       let systemServers = ["DongMePhim VIP", "FPT Fast", "Vietsub", "Thuyết Minh", "Lồng Tiếng"];
