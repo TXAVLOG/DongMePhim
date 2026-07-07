@@ -44,7 +44,7 @@ const __scheduled_handler = async (controller, env, ctx) => {
     } else {
       // 15-minute intervals - Run sync-kkphim and membership-check
       console.log('[Cron] Executing standard sync and membership checks...');
-      const url1 = 'https://dongmephim.online/api/cron/sync-kkphim?secret=' + cronSecret;
+      const url1 = 'https://dongmephim.online/api/cron/sync-kkphim?secret=' + cronSecret + '&cron=true';
       const url2 = 'https://dongmephim.online/api/cron/membership-check?secret=' + cronSecret;
 
       try {
