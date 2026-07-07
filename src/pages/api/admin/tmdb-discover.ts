@@ -4,6 +4,7 @@ import { TMDBCrawlerService } from '@services/TMDBCrawlerService';
 export const ALL: APIRoute = async ({ url }) => {
   const genre = url.searchParams.get('genre');
   const country = url.searchParams.get('country');
+  const year = url.searchParams.get('year');
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = parseInt(url.searchParams.get('limit') || '40');
 
@@ -11,6 +12,7 @@ export const ALL: APIRoute = async ({ url }) => {
     const results = await TMDBCrawlerService.discoverMovies({
       genre: genre || undefined,
       country: country || undefined,
+      year: year || undefined,
       page,
       limit
     });

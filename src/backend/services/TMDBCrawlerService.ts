@@ -156,12 +156,12 @@ export class TMDBCrawlerService {
     return data.production_countries?.[0]?.name || 'Âu Mỹ';
   }
 
-  static async discoverMovies(options: { genre?: string; country?: string; page?: number; limit?: number }): Promise<any[]> {
+  static async discoverMovies(options: { genre?: string; country?: string; year?: string; page?: number; limit?: number }): Promise<any[]> {
     try {
       const settings = await SettingService.getSettings();
       const apiKey = (settings.general as any).tmdb_api_key || '211be8d45c0d31404f644ecdcf9caad5';
 
-      const { genre, country, page = 1, limit = 40 } = options;
+      const { genre, country, year, page = 1, limit = 40 } = options;
       
       let discoverUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=vi-VN&page=${page}`;
       
@@ -171,6 +171,10 @@ export class TMDBCrawlerService {
       
       if (country) {
         discoverUrl += `&with_origin_country=${country}`;
+      }
+
+      if (year) {
+        discoverUrl += `&primary_release_year=${year}`;
       }
 
       const res = await fetch(discoverUrl);

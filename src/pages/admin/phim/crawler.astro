@@ -623,6 +623,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <select id="searchMode" class="bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
               <option value="movie">Tìm theo tên phim</option>
               <option value="actor">Tìm theo diễn viên</option>
+              <option value="year">Tìm theo năm sản xuất</option>
             </select>
             <input type="text" id="searchKeyword" class="flex-grow bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập tên phim hoặc tên diễn viên..."/>
             <button id="searchOnlineBtn" class="bg-primary text-on-primary font-bold px-4 rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer whitespace-nowrap">
@@ -1585,6 +1586,20 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       }
     });
 
+    const searchModeSelect = document.getElementById('searchMode');
+    if (searchModeSelect && searchKeywordInput) {
+      searchModeSelect.addEventListener('change', () => {
+        const mode = searchModeSelect.value;
+        if (mode === 'movie') {
+          searchKeywordInput.placeholder = 'Nhập tên phim... (VD: Avengers)';
+        } else if (mode === 'actor') {
+          searchKeywordInput.placeholder = 'Nhập tên diễn viên... (VD: Chris Evans)';
+        } else if (mode === 'year') {
+          searchKeywordInput.placeholder = 'Nhập năm sản xuất... (VD: 2024)';
+        }
+      });
+    }
+
     searchOnlineBtn.addEventListener('click', async () => {
       const keyword = searchKeywordInput.value.trim();
       if (!keyword) {
@@ -1602,25 +1617,39 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         let responseData;
         
         if (crawlSource === 'tmdb') {
-          // Use TMDB API for search
-          searchUrl = `/api/admin/tmdb-search?keyword=${encodeURIComponent(keyword)}&limit=40`;
+          // Use TMDB API for search / discover by year
+          if (searchMode === 'year') {
+            searchUrl = `/api/admin/tmdb-discover?year=${encodeURIComponent(keyword)}&limit=40`;
+          } else {
+            searchUrl = `/api/admin/tmdb-search?keyword=${encodeURIComponent(keyword)}&limit=40`;
+          }
           const res = await fetch(searchUrl);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           responseData = await res.json();
         } else if (crawlSource === 'vsmov') {
           // Use VSMOV API
-          searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(keyword)}`;
+          if (searchMode === 'year') {
+            searchUrl = `https://vsmov.com/api/nam/${encodeURIComponent(keyword)}`;
+          } else {
+            searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(keyword)}`;
+          }
           const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(searchUrl));
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const resJson = await res.json();
           responseData = resJson.data;
         } else {
           // Use KKPhim API
-          searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`;
           const isActor = searchMode === 'actor';
-          if (isActor) {
+          const isYear = searchMode === 'year';
+          
+          if (isYear) {
+            searchUrl = `https://phimapi.com/v1/api/nam/${encodeURIComponent(keyword)}`;
+          } else if (isActor) {
             searchUrl = `/api/admin/actor-search?keyword=${encodeURIComponent(keyword)}`;
+          } else {
+            searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`;
           }
+          
           const finalUrl = isActor ? searchUrl : ('/api/admin/proxy-crawler?url=' + encodeURIComponent(searchUrl));
           const res = await fetch(finalUrl);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1638,10 +1667,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           items = responseData.data?.items || [];
           cdnDomain = responseData.data?.pathImage || 'https://phimimg.com';
         } else if (crawlSource === 'vsmov') {
-          items = responseData.items || [];
+          items = responseData.items || responseData.data?.items || [];
           cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://vsmov.com';
         } else {
-          items = responseData.data?.items || [];
+          items = responseData.data?.items || responseData.items || [];
           cdnDomain = responseData.data?.pathImage || responseData.data?.APP_DOMAIN_CDN_IMAGE || 'https://phimimg.com';
         }
         
