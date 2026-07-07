@@ -61,7 +61,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <option value="by_genre">🏷️ Lọc theo thể loại</option>
             <option value="by_country">🌍 Lọc theo quốc gia</option>
             <option value="by_year">📅 Lọc theo năm phát hành</option>
-            <option value="by_search">🔍 Tìm kiếm &amp; cào từ khóa</option>
             <option value="direct_slug">📝 Nhập URL / Slugs thủ công</option>
           </select>
         </div>
@@ -197,29 +196,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           </div>
         </div>
 
-        <!-- 6. Theo từ khóa -->
-        <div id="kkphimBlockSearch" class="space-y-4 hidden">
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Từ khóa tìm kiếm</label>
-            <input id="kkphimSearchKeyword" type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary" placeholder="Nhập từ khóa... (VD: avengers)"/>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
-              <input id="kkphimSearchPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
-              <input id="kkphimSearchPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
-            </div>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
-            <input id="kkphimSearchLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
-          </div>
-        </div>
-
-        <!-- 7. Nhập URL / Slugs thủ công -->
+        <!-- 6. Nhập URL / Slugs thủ công -->
         <div id="kkphimBlockDirect" class="space-y-4 hidden">
           <div>
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập URL phim hoặc Slugs (Mỗi dòng 1 phim)</label>
@@ -264,7 +241,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <option value="by_country">🌍 Lọc theo quốc gia</option>
             <option value="by_year">📅 Lọc theo năm phát hành</option>
             <option value="by_code">🎟️ Lọc theo mã Code (Showtimes)</option>
-            <option value="by_search">🔍 Tìm kiếm &amp; cào từ khóa</option>
             <option value="direct_slug">📝 Nhập URL / Slugs thủ công</option>
           </select>
         </div>
@@ -407,29 +383,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           </div>
         </div>
 
-        <!-- 6. Theo từ khóa -->
-        <div id="vsmovBlockSearch" class="space-y-4 hidden">
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Từ khóa tìm kiếm</label>
-            <input id="vsmovSearchKeyword" type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary" placeholder="Nhập từ khóa... (VD: avengers)"/>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
-              <input id="vsmovSearchPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
-              <input id="vsmovSearchPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
-            </div>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
-            <input id="vsmovSearchLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
-          </div>
-        </div>
-
-        <!-- 7. Nhập URL / Slugs thủ công -->
+        <!-- 6. Nhập URL / Slugs thủ công -->
         <div id="vsmovBlockDirect" class="space-y-4 hidden">
           <div>
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập URL phim hoặc Slugs (Mỗi dòng 1 phim)</label>
