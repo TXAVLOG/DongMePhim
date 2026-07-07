@@ -2420,6 +2420,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       addLog(`🎉 TIẾN TRÌNH CÀO PHIM KẾT THÚC! Thành công: ${success}, Bỏ qua: ${skipped}, Lỗi: ${failed}`, 'success');
       if (window.showGlobalToast) window.showGlobalToast(`Cào hoàn tất! Thành công: ${success} phim.`, 'success');
 
+      // Reload local crawled list to update counter and table dynamically
+      try {
+        await loadExistingMoviesDict();
+        renderCrawledList();
+      } catch (e) {
+        console.error('Error reloading movie list after crawl:', e);
+      }
+
       // Restore search container if on advanced tab
       if (activeTab === 'advanced') {
         containerSearchTab.classList.remove('hidden');
