@@ -23,6 +23,14 @@ Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate
 
 // Logic for episode pagination & filtering unreleased episodes
 const rawServers = movie ? (movie.episodes || []) : [];
+// Sort servers in descending order of episode count so that the server with the most episodes is first
+if (rawServers.length > 0) {
+  rawServers.sort((a, b) => {
+    const aLen = (a.serverData || a.server_data || []).length;
+    const bLen = (b.serverData || b.server_data || []).length;
+    return bLen - aLen;
+  });
+}
 let servers = [];
 let nextAiringEpisode = null;
 
