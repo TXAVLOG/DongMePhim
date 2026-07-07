@@ -481,6 +481,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
       };
 
       // Server & Ep UI Rendering
+      // Server & Ep UI Rendering
       function renderServers() {
         if (movieData.episodes.length === 0) {
           serversContainer.innerHTML = "";
@@ -494,8 +495,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             const subsList = ep.subtitles || [];
             const subsHtml = subsList.map((sub, subIdx) => `
               <div class="flex flex-wrap items-center gap-2 p-2 bg-zinc-950 rounded-lg border border-glass-stroke/50">
-                <input type="text" class="flex-1 min-w-[80px] bg-zinc-900 border border-glass-stroke rounded px-2 py-1 text-xs focus:outline-none text-white" placeholder="Nhãn" value="${sub.label}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].subtitles[${subIdx}].label = this.value"/>
-                <input type="text" class="flex-[3] min-w-[150px] bg-zinc-900 border border-glass-stroke rounded px-2 py-1 text-xs focus:outline-none text-white font-mono" placeholder="URL file SRT/VTT" value="${sub.file}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].subtitles[${subIdx}].file = this.value"/>
+                <input type="text" class="flex-1 min-w-[80px] bg-zinc-900 border border-glass-stroke rounded px-2 py-1 text-xs focus:outline-none text-white" placeholder="Nhãn" value="${sub.label}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-sub-idx="${subIdx}" data-field="sub_label"/>
+                <input type="text" class="flex-[3] min-w-[150px] bg-zinc-900 border border-glass-stroke rounded px-2 py-1 text-xs focus:outline-none text-white font-mono" placeholder="URL file SRT/VTT" value="${sub.file}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-sub-idx="${subIdx}" data-field="sub_file"/>
                 <label class="flex items-center gap-1 text-[10px] font-bold text-zinc-400 cursor-pointer select-none">
                   <input type="radio" name="sub-def-${serverIdx}-${epIdx}" ${sub.default ? "checked" : ""} onchange="toggleSubDefault(${serverIdx}, ${epIdx}, ${subIdx})" class="accent-primary"/> Mặc định
                 </label>
@@ -508,7 +509,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             return `
               <div class="p-4 bg-zinc-900/60 border border-glass-stroke/70 rounded-2xl relative space-y-4">
                 <div class="flex justify-between items-center gap-2">
-                  <input type="text" class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-xs font-bold text-white w-28 focus:outline-none" value="${ep.name}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].name = this.value; movieData.episodes[${serverIdx}].server_data[${epIdx}].slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')"/>
+                  <input type="text" class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-xs font-bold text-white w-28 focus:outline-none" value="${ep.name}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="name"/>
                   <button type="button" onclick="deleteEpisode(${serverIdx}, ${epIdx})" class="text-zinc-500 hover:text-red-400 p-1 cursor-pointer bg-transparent border-none">
                     <span class="material-symbols-outlined text-lg">delete</span>
                   </button>
@@ -516,39 +517,39 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Đường dẫn m3u8 (HLS)</label>
-                    <input type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-2 px-3 text-xs focus:outline-none text-zinc-200 font-mono" value="${ep.link_m3u8}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].link_m3u8 = this.value"/>
+                    <input type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-2 px-3 text-xs focus:outline-none text-zinc-200 font-mono" value="${ep.link_m3u8 || ''}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="link_m3u8"/>
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Đường dẫn Embed phát</label>
-                    <input type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-2 px-3 text-xs focus:outline-none text-zinc-200 font-mono" value="${ep.link_embed}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].link_embed = this.value"/>
+                    <input type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-2 px-3 text-xs focus:outline-none text-zinc-200 font-mono" value="${ep.link_embed || ''}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="link_embed"/>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div>
                     <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Bắt đầu Intro (giây)</label>
-                    <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_intro_start}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].time_intro_start = parseInt(this.value) || 0"/>
+                    <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_intro_start}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="time_intro_start"/>
                   </div>
                   <div>
                     <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Bỏ qua Intro (giây)</label>
-                    <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_intro_end}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].time_intro_end = parseInt(this.value) || 0"/>
+                    <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_intro_end}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="time_intro_end"/>
                   </div>
                   <div>
                     <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Bắt đầu Outro (giây)</label>
-                    <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_outro_start}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].time_outro_start = parseInt(this.value) || 0"/>
+                    <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_outro_start}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="time_outro_start"/>
                   </div>
                   <div>
                     <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Outro đến (giây)</label>
-                    <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_outro_end}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].time_outro_end = parseInt(this.value) || 0"/>
+                    <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_outro_end}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="time_outro_end"/>
                   </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-glass-stroke/30">
                   <div>
                     <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Ngày chiếu tập này</label>
-                    <input type="date" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1 px-2.5 text-xs text-white" value="${ep.airDate || ep.air_date || ""}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].air_date = this.value; movieData.episodes[${serverIdx}].server_data[${epIdx}].airDate = this.value"/>
+                    <input type="date" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1 px-2.5 text-xs text-white" value="${ep.airDate || ep.air_date || ""}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="air_date"/>
                   </div>
                   <div>
                     <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Giờ chiếu tập này</label>
-                    <input type="time" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1 px-2.5 text-xs text-white" value="${ep.airTime || ep.air_time || ""}" oninput="movieData.episodes[${serverIdx}].server_data[${epIdx}].air_time = this.value; movieData.episodes[${serverIdx}].server_data[${epIdx}].airTime = this.value"/>
+                    <input type="time" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1 px-2.5 text-xs text-white" value="${ep.airTime || ep.air_time || ""}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="air_time"/>
                   </div>
                 </div>
                 <div class="mt-2 space-y-2">
@@ -565,7 +566,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               <div class="flex justify-between items-center gap-2">
                 <div class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-zinc-500">dns</span>
-                  <select class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-sm font-bold text-white w-48 focus:outline-none" onchange="movieData.episodes[${serverIdx}].server_name = this.value">
+                  <select class="bg-zinc-950 border border-glass-stroke rounded-lg px-3 py-1.5 text-sm font-bold text-white w-48 focus:outline-none" data-server-idx="${serverIdx}" data-field="server_name">
                     ${systemServers.map(s => `<option value="${s}" ${server.server_name === s ? "selected" : ""}>${s}</option>`).join("")}
                     ${!systemServers.includes(server.server_name) ? `<option value="${server.server_name}" selected>${server.server_name}</option>` : ""}
                   </select>
@@ -658,6 +659,81 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         movieData.episodes[srvIdx].server_data[epIdx].subtitles.forEach((s, idx) => s.default = (idx === subIdx));
         renderServers();
       };
+
+      // Event delegation for episode/server fields to update movieData in memory
+      serversContainer.addEventListener("input", (e) => {
+        const input = e.target;
+        if (!input) return;
+        const serverIdx = parseInt(input.getAttribute("data-server-idx"));
+        const epIdx = parseInt(input.getAttribute("data-ep-idx"));
+        const subIdx = parseInt(input.getAttribute("data-sub-idx"));
+        const field = input.getAttribute("data-field");
+
+        if (isNaN(serverIdx)) return;
+
+        const server = movieData.episodes[serverIdx];
+        if (!server) return;
+
+        if (field === 'server_name') {
+          server.server_name = input.value;
+          return;
+        }
+
+        if (isNaN(epIdx)) return;
+        const ep = server.server_data[epIdx];
+        if (!ep) return;
+
+        if (!isNaN(subIdx)) {
+          if (!ep.subtitles) ep.subtitles = [];
+          const sub = ep.subtitles[subIdx];
+          if (!sub) return;
+          if (field === 'sub_label') {
+            sub.label = input.value;
+          } else if (field === 'sub_file') {
+            sub.file = input.value;
+          }
+          return;
+        }
+
+        if (field === 'name') {
+          ep.name = input.value;
+          ep.slug = input.value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        } else if (field === 'link_m3u8') {
+          ep.link_m3u8 = input.value;
+        } else if (field === 'link_embed') {
+          ep.link_embed = input.value;
+        } else if (field === 'time_intro_start') {
+          ep.time_intro_start = parseInt(input.value) || 0;
+        } else if (field === 'time_intro_end') {
+          ep.time_intro_end = parseInt(input.value) || 0;
+        } else if (field === 'time_outro_start') {
+          ep.time_outro_start = parseInt(input.value) || 0;
+        } else if (field === 'time_outro_end') {
+          ep.time_outro_end = parseInt(input.value) || 0;
+        } else if (field === 'air_date') {
+          ep.air_date = input.value;
+          ep.airDate = input.value;
+        } else if (field === 'air_time') {
+          ep.air_time = input.value;
+          ep.airTime = input.value;
+        }
+      });
+
+      serversContainer.addEventListener("change", (e) => {
+        const select = e.target;
+        if (!select) return;
+        const serverIdx = parseInt(select.getAttribute("data-server-idx"));
+        const field = select.getAttribute("data-field");
+
+        if (isNaN(serverIdx)) return;
+
+        const server = movieData.episodes[serverIdx];
+        if (!server) return;
+
+        if (field === 'server_name') {
+          server.server_name = select.value;
+        }
+      });
 
       // Calculator logic
       const calcH = document.getElementById("calcH");
@@ -769,7 +845,11 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               slug: slug,
               movieData: {
                 ...moviePayload,
-                overwriteEpisodes: true
+                overwriteEpisodes: true,
+                movie: {
+                  ...moviePayload.movie,
+                  overwriteEpisodes: true
+                }
               },
               isStatic: false
             })
