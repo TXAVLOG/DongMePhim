@@ -31,53 +31,53 @@ const __scheduled_handler = async (controller, env, ctx) => {
   try {
     const cronSecret = '${secret}';
 
-    if (controller.cron === '15 18 * * *') {
-      // 1:15 AM VN time (18:15 UTC) - Run ALL 3 tasks sequentially with progress
-      console.log('[Cron 1:15AM] ═══════════════════════════════════════');
-      console.log('[Cron 1:15AM] Bắt đầu chạy toàn bộ 3 tác vụ hàng ngày...');
+    if (controller.cron === '30 18 * * *') {
+      // 1:30 AM VN time (18:30 UTC) - Run ALL 3 tasks sequentially with progress
+      console.log('[Cron 1:30AM] ═══════════════════════════════════════');
+      console.log('[Cron 1:30AM] Bắt đầu chạy toàn bộ 3 tác vụ hàng ngày...');
       const allStartTime = Date.now();
       const taskResults = {};
 
       // Task 1: sync-kkphim
-      console.log('[Cron 1:15AM] [1/3] Đang chạy sync-kkphim...');
+      console.log('[Cron 1:30AM] [1/3] Đang chạy sync-kkphim...');
       const urlSync = 'https://dongmephim.online/api/cron/sync-kkphim?secret=' + cronSecret + '&cron=true&limit=10&resume=true';
       try {
         const resSync = await ${workerVar}.fetch(new Request(urlSync), env, ctx);
         taskResults['sync-kkphim'] = resSync.status;
-        console.log('[Cron 1:15AM] [1/3] sync-kkphim hoàn tất, status:', resSync.status);
+        console.log('[Cron 1:30AM] [1/3] sync-kkphim hoàn tất, status:', resSync.status);
       } catch (errSync) {
         taskResults['sync-kkphim'] = 'error';
-        console.error('[Cron 1:15AM] [1/3] sync-kkphim LỖI:', errSync);
+        console.error('[Cron 1:30AM] [1/3] sync-kkphim LỖI:', errSync);
       }
 
       // Task 2: crawl-new-movies
-      console.log('[Cron 1:15AM] [2/3] Đang chạy crawl-new-movies...');
+      console.log('[Cron 1:30AM] [2/3] Đang chạy crawl-new-movies...');
       const urlCrawl = 'https://dongmephim.online/api/cron/crawl-new-movies?secret=' + cronSecret;
       try {
         const resCrawl = await ${workerVar}.fetch(new Request(urlCrawl), env, ctx);
         taskResults['crawl-new-movies'] = resCrawl.status;
-        console.log('[Cron 1:15AM] [2/3] crawl-new-movies hoàn tất, status:', resCrawl.status);
+        console.log('[Cron 1:30AM] [2/3] crawl-new-movies hoàn tất, status:', resCrawl.status);
       } catch (errCrawl) {
         taskResults['crawl-new-movies'] = 'error';
-        console.error('[Cron 1:15AM] [2/3] crawl-new-movies LỖI:', errCrawl);
+        console.error('[Cron 1:30AM] [2/3] crawl-new-movies LỖI:', errCrawl);
       }
 
       // Task 3: membership-check
-      console.log('[Cron 1:15AM] [3/3] Đang chạy membership-check...');
+      console.log('[Cron 1:30AM] [3/3] Đang chạy membership-check...');
       const urlMember = 'https://dongmephim.online/api/cron/membership-check?secret=' + cronSecret;
       try {
         const resMember = await ${workerVar}.fetch(new Request(urlMember), env, ctx);
         taskResults['membership-check'] = resMember.status;
-        console.log('[Cron 1:15AM] [3/3] membership-check hoàn tất, status:', resMember.status);
+        console.log('[Cron 1:30AM] [3/3] membership-check hoàn tất, status:', resMember.status);
       } catch (errMember) {
         taskResults['membership-check'] = 'error';
-        console.error('[Cron 1:15AM] [3/3] membership-check LỖI:', errMember);
+        console.error('[Cron 1:30AM] [3/3] membership-check LỖI:', errMember);
       }
 
       const totalElapsed = ((Date.now() - allStartTime) / 1000).toFixed(1);
-      console.log('[Cron 1:15AM] ═══════════════════════════════════════');
-      console.log('[Cron 1:15AM] Hoàn tất tất cả 3 tác vụ trong ' + totalElapsed + 's');
-      console.log('[Cron 1:15AM] Kết quả:', JSON.stringify(taskResults));
+      console.log('[Cron 1:30AM] ═══════════════════════════════════════');
+      console.log('[Cron 1:30AM] Hoàn tất tất cả 3 tác vụ trong ' + totalElapsed + 's');
+      console.log('[Cron 1:30AM] Kết quả:', JSON.stringify(taskResults));
 
     } else if (controller.cron === '0 0 * * *') {
       // 7:00 AM VN time (00:00 UTC) - Run crawl-new-movies
