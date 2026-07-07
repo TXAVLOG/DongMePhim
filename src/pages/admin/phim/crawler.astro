@@ -12,12 +12,18 @@ import AdminLayout from '@layouts/AdminLayout.astro';
   </header>
 
   <!-- Main Crawler Tabs -->
-  <div class="flex border-b border-glass-stroke gap-4 mb-6">
-    <button id="tabStandardBtn" class="pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer">
-      Cào phim tiêu chuẩn
+  <div class="flex flex-wrap border-b border-glass-stroke gap-4 mb-6">
+    <button id="tabKkphimBtn" class="pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-sm">movie</span> KKPhim API Pro
     </button>
-    <button id="tabAdvancedBtn" class="pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer">
-      Tìm kiếm trực tuyến & Giỏ hàng
+    <button id="tabVsmovBtn" class="pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-sm">link</span> VSMOV API Pro
+    </button>
+    <button id="tabTmdbBtn" class="pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-sm">globe</span> TMDB API
+    </button>
+    <button id="tabAdvancedBtn" class="pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-sm">shopping_cart</span> Tìm kiếm &amp; Giỏ hàng
     </button>
   </div>
 
@@ -25,153 +31,493 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     
     <!-- Left panel: Settings & Controls -->
     <div class="xl:col-span-4 space-y-6">
-      
-      <!-- Source Configuration -->
+      <!-- Hidden controls for backward compatibility -->
+      <input type="hidden" id="crawlSource" value="kkphim" />
+
+      <!-- General Configuration (Overwrite checkbox) -->
       <div class="glass-panel rounded-2xl p-6 border border-glass-stroke shadow-2xl">
-        <div class="flex items-center gap-2 mb-4">
+        <div class="flex items-center gap-2 mb-2">
           <span class="material-symbols-outlined text-primary text-xl">tune</span>
           <h2 class="font-bold text-sm text-white uppercase tracking-wider">Cấu hình chung</h2>
         </div>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nguồn dữ liệu</label>
-            <select id="crawlSource" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
-              <option value="kkphim">KKPhim API (phimapi.com)</option>
-              <option value="vsmov">VSMOV API (vsmov.com)</option>
-              <option value="tmdb">TMDB API (themoviedb.org)</option>
-            </select>
-          </div>
-          <div class="flex items-center gap-3 py-1">
-            <input class="rounded border-glass-stroke bg-zinc-950 text-primary focus:ring-primary w-4 h-4 cursor-pointer" id="overwrite" type="checkbox" checked />
-            <label class="text-xs text-zinc-400 cursor-pointer select-none" for="overwrite">Ghi đè phim đã cào (Cập nhật tập mới)</label>
-          </div>
+        <div class="flex items-center gap-3 py-1">
+          <input class="rounded border-glass-stroke bg-zinc-950 text-primary focus:ring-primary w-4 h-4 cursor-pointer" id="overwrite" type="checkbox" checked />
+          <label class="text-xs text-zinc-400 cursor-pointer select-none" for="overwrite">Ghi đè phim đã cào (Cập nhật tập mới)</label>
         </div>
       </div>
 
-      <!-- STANDARD CRAWLERS PANEL -->
-      <div id="panelStandard" class="glass-panel rounded-2xl p-6 border border-glass-stroke space-y-5">
+      <!-- PANEL KKPHIM PRO -->
+      <div id="panelKkphim" class="glass-panel rounded-2xl p-6 border border-glass-stroke space-y-4">
         <div class="flex items-center gap-2 mb-2">
-          <span class="material-symbols-outlined text-secondary text-xl">layers</span>
-          <h2 class="font-bold text-sm text-white uppercase tracking-wider font-display-hero">Chế độ cào chuẩn</h2>
+          <span class="material-symbols-outlined text-primary text-xl font-bold">movie</span>
+          <h2 class="font-bold text-sm text-white uppercase tracking-wider font-display-hero">Cấu hình KKPhim API Pro</h2>
+        </div>
+        
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Phương thức thu thập</label>
+          <select id="kkphimMode" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold">
+            <option value="new_updated">🆕 Mới cập nhật (Mặc định)</option>
+            <option value="by_type">🗂️ Danh sách theo loại phim</option>
+            <option value="by_genre">🏷️ Lọc theo thể loại</option>
+            <option value="by_country">🌍 Lọc theo quốc gia</option>
+            <option value="by_year">📅 Lọc theo năm phát hành</option>
+            <option value="by_search">🔍 Tìm kiếm &amp; cào từ khóa</option>
+            <option value="direct_slug">📝 Nhập URL / Slugs thủ công</option>
+          </select>
         </div>
 
-        <!-- Mode sub-tabs -->
-        <div class="grid grid-cols-4 gap-1 p-1 bg-zinc-950/80 rounded-xl border border-glass-stroke">
-          <button id="subTabUrlBtn" class="py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all">URL/Slugs</button>
-          <button id="subTabBatchBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Số trang</button>
-          <button id="subTabFilterBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Lọc/Bộ lọc</button>
-          <button id="subTabUpdateBtn" class="py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all">Mới cập nhật</button>
-        </div>
-
-        <!-- Sub-Tab: URL / Slug input -->
-        <div id="subTabUrl" class="space-y-4">
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập URL phim hoặc Slugs (Mỗi dòng 1 phim)</label>
-            <textarea id="crawlUrlsInput" rows="5" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs font-mono placeholder:text-zinc-700" placeholder="https://kkphim1.com/phim/digimon-beatbreak&#10;tro-choi-con-muc"></textarea>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Hoặc Tải lên file TXT chứa link/slugs</label>
-            <div class="relative flex items-center justify-center border-2 border-dashed border-glass-stroke rounded-xl p-4 hover:border-primary/50 transition-all bg-zinc-950/40">
-              <input type="file" id="crawlTxtUpload" accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-              <div class="text-center space-y-1">
-                <span class="material-symbols-outlined text-2xl text-zinc-500" id="uploadIcon">upload_file</span>
-                <p class="text-xs text-zinc-400 font-bold" id="uploadText">Nhấp để chọn hoặc kéo thả file .txt</p>
-                <p class="text-[10px] text-zinc-500">Mỗi URL/slug trên 1 dòng</p>
-              </div>
-            </div>
-          </div>
-          <div class="text-[11px] text-zinc-500 italic flex items-center gap-1" id="detectCountText">
-            <span class="material-symbols-outlined text-sm">check_circle</span> Phát hiện 0 phim hợp lệ.
-          </div>
-        </div>
-
-        <!-- Sub-Tab: Batch range -->
-        <div id="subTabBatch" class="space-y-4 hidden">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang bắt đầu</label>
-              <input id="pageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang kết thúc</label>
-              <input id="pageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
-            </div>
-          </div>
-          <p class="text-[10px] text-zinc-500 italic">Mỗi trang chứa 20 bộ phim mới cập nhật.</p>
-          <div class="border-t border-glass-stroke/50 pt-3">
-            <button id="crawlAllBtn" class="w-full py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer">
-              ⚠️ Cào toàn bộ API (All)
-            </button>
-          </div>
-        </div>
-
-        <!-- Sub-Tab: Country / Genre filters -->
-        <div id="subTabFilter" class="space-y-4 hidden">
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1.5">Bộ lọc cào</label>
-            <div class="grid grid-cols-2 gap-2 mb-3">
-              <button id="filterCountryBtn" class="py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all">Quốc gia</button>
-              <button id="filterGenreBtn" class="py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all">Thể loại</button>
-            </div>
-          </div>
-
-          <!-- Select lists -->
-          <div id="filterCountryPanel">
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Quốc gia</label>
-            <select id="selectedCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary mb-3">
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-
-          <div id="filterGenrePanel" class="hidden">
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Thể loại</label>
-            <select id="selectedGenre" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary mb-3">
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-
+        <!-- KKPhim blocks -->
+        <!-- 1. Mới cập nhật -->
+        <div id="kkphimBlockNewUpdated" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
-              <input id="filterPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+              <input id="kkphimNewPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
             </div>
             <div>
               <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
-              <input id="filterPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sub-Tab: Recently Updated -->
-        <div id="subTabUpdate" class="space-y-4 hidden">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang bắt đầu</label>
-              <input id="updatePageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang kết thúc</label>
-              <input id="updatePageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
+              <input id="kkphimNewPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
             </div>
           </div>
           <div>
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Phiên bản API</label>
-            <select id="updateApiVersion" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold">
-              <option value="v3" selected>Version 3 (Khuyên dùng - Đầy đủ nhất)</option>
-              <option value="v2">Version 2 (Độ trễ thấp)</option>
+            <select id="kkphimApiVersion" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold">
+              <option value="v3" selected>Version 3 (Khuyên dùng)</option>
+              <option value="v2">Version 2</option>
               <option value="v1">Version 1 (Bản cũ)</option>
             </select>
           </div>
-          <p class="text-[10px] text-zinc-500 italic">Quét danh sách các phim mới hoặc phim vừa có tập mới từ nguồn API phimapi.com. Hệ thống sẽ tự động so sánh số tập phim và chỉ cập nhật tập mới, bỏ qua nếu phim đã đủ tập.</p>
         </div>
 
-        <!-- Start/Stop buttons -->
+        <!-- 2. Theo loại phim -->
+        <div id="kkphimBlockType" class="space-y-4 hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Loại phim</label>
+              <select id="kkphimType" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+                <option value="phim-le">Phim Lẻ</option>
+                <option value="phim-bo">Phim Bộ</option>
+                <option value="hoat-hinh">Hoạt Hình</option>
+                <option value="tv-shows">TV Shows</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Định dạng API</label>
+              <select id="kkphimTypeFormat" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold">
+                <option value="format2" selected>Format 2 (/v1/api/...)</option>
+                <option value="format1">Format 1 (Classic)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="kkphimTypePageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="kkphimTypePageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="kkphimTypeLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 3. Theo thể loại -->
+        <div id="kkphimBlockGenre" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Thể loại</label>
+            <select id="kkphimSelectedGenre" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="kkphimGenrePageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="kkphimGenrePageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="kkphimGenreLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 4. Theo quốc gia -->
+        <div id="kkphimBlockCountry" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Quốc gia</label>
+            <select id="kkphimSelectedCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="kkphimCountryPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="kkphimCountryPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="kkphimCountryLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 5. Theo năm -->
+        <div id="kkphimBlockYear" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Năm phát hành</label>
+            <select id="kkphimSelectedYear" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="kkphimYearPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="kkphimYearPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="kkphimYearLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 6. Theo từ khóa -->
+        <div id="kkphimBlockSearch" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Từ khóa tìm kiếm</label>
+            <input id="kkphimSearchKeyword" type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary" placeholder="Nhập từ khóa... (VD: avengers)"/>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="kkphimSearchPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="kkphimSearchPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="kkphimSearchLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 7. Nhập URL / Slugs thủ công -->
+        <div id="kkphimBlockDirect" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập URL phim hoặc Slugs (Mỗi dòng 1 phim)</label>
+            <textarea id="kkphimUrlsInput" rows="4" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs font-mono placeholder:text-zinc-700" placeholder="https://kkphim1.com/phim/digimon-beatbreak&#10;tro-choi-con-muc"></textarea>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Hoặc Tải lên file TXT</label>
+            <div class="relative flex items-center justify-center border-2 border-dashed border-glass-stroke rounded-xl p-4 hover:border-primary/50 transition-all bg-zinc-950/40">
+              <input type="file" id="kkphimTxtUpload" accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <div class="text-center space-y-1">
+                <span class="material-symbols-outlined text-xl text-zinc-500" id="kkphimUploadIcon">upload_file</span>
+                <p class="text-[11px] text-zinc-400 font-bold" id="kkphimUploadText">Nhập hoặc kéo thả file .txt</p>
+              </div>
+            </div>
+          </div>
+          <div class="text-[10px] text-zinc-500 italic flex items-center gap-1" id="kkphimDetectCountText">
+            <span class="material-symbols-outlined text-xs">check_circle</span> Phát hiện 0 phim hợp lệ.
+          </div>
+        </div>
+
+        <!-- Action Button standard cào -->
         <div class="flex gap-2 pt-2">
-          <button id="startStandardBtn" class="flex-1 bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs">
-            <span class="material-symbols-outlined text-lg">play_arrow</span> Bắt đầu cào
+          <button id="startKkphimBtn" class="flex-1 bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs">
+            <span class="material-symbols-outlined text-lg">play_arrow</span> Bắt đầu cào KKPhim
           </button>
-          <button id="stopStandardBtn" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 hover:scale-[1.02] active:scale-95 transition-all py-3 px-4 rounded-xl cursor-pointer flex items-center justify-center hidden">
-            <span class="material-symbols-outlined">stop</span>
+        </div>
+      </div>
+
+      <!-- PANEL VSMOV PRO -->
+      <div id="panelVsmov" class="glass-panel rounded-2xl p-6 border border-glass-stroke space-y-4 hidden">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-secondary text-xl font-bold">link</span>
+          <h2 class="font-bold text-sm text-white uppercase tracking-wider font-display-hero">Cấu hình VSMOV API Pro</h2>
+        </div>
+        
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Phương thức thu thập</label>
+          <select id="vsmovMode" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold">
+            <option value="new_updated">🆕 Mới cập nhật (Mặc định)</option>
+            <option value="by_type">🗂️ Danh sách theo loại phim</option>
+            <option value="by_genre">🏷️ Lọc theo thể loại</option>
+            <option value="by_country">🌍 Lọc theo quốc gia</option>
+            <option value="by_year">📅 Lọc theo năm phát hành</option>
+            <option value="by_code">🎟️ Lọc theo mã Code (Showtimes)</option>
+            <option value="by_search">🔍 Tìm kiếm &amp; cào từ khóa</option>
+            <option value="direct_slug">📝 Nhập URL / Slugs thủ công</option>
+          </select>
+        </div>
+
+        <!-- VSMOV blocks -->
+        <!-- 1. Mới cập nhật -->
+        <div id="vsmovBlockNewUpdated" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="vsmovNewPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="vsmovNewPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" type="number" min="1" value="1"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Theo loại phim -->
+        <div id="vsmovBlockType" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Loại phim</label>
+            <select id="vsmovType" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <option value="single">Phim Lẻ (single)</option>
+              <option value="series">Phim Bộ (series)</option>
+              <option value="hoathinh">Hoạt Hình (hoathinh)</option>
+              <option value="tvshows">TV Shows (tvshows)</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="vsmovTypePageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="vsmovTypePageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="vsmovTypeLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 3. Theo thể loại -->
+        <div id="vsmovBlockGenre" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Thể loại</label>
+            <select id="vsmovSelectedGenre" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="vsmovGenrePageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="vsmovGenrePageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="vsmovGenreLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 4. Theo quốc gia -->
+        <div id="vsmovBlockCountry" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Quốc gia</label>
+            <select id="vsmovSelectedCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="vsmovCountryPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="vsmovCountryPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="vsmovCountryLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 5. Theo năm -->
+        <div id="vsmovBlockYear" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Năm phát hành</label>
+            <select id="vsmovSelectedYear" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="vsmovYearPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="vsmovYearPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="vsmovYearLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 5.2. Theo mã Code -->
+        <div id="vsmovBlockCode" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Mã Code (Showtimes)</label>
+            <input id="vsmovSearchCode" type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary" placeholder="Ví dụ: netflix-2024" value="netflix-2024"/>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="vsmovCodePageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="vsmovCodePageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="vsmovCodeLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 6. Theo từ khóa -->
+        <div id="vsmovBlockSearch" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Từ khóa tìm kiếm</label>
+            <input id="vsmovSearchKeyword" type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary" placeholder="Nhập từ khóa... (VD: avengers)"/>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="vsmovSearchPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="vsmovSearchPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
+            <input id="vsmovSearchLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
+          </div>
+        </div>
+
+        <!-- 7. Nhập URL / Slugs thủ công -->
+        <div id="vsmovBlockDirect" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập URL phim hoặc Slugs (Mỗi dòng 1 phim)</label>
+            <textarea id="vsmovUrlsInput" rows="4" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs font-mono placeholder:text-zinc-700" placeholder="https://vsmov.com/phim/lightyear-canh-sat-vu-tru&#10;cuoc-chien-vo-cuc"></textarea>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Hoặc Tải lên file TXT</label>
+            <div class="relative flex items-center justify-center border-2 border-dashed border-glass-stroke rounded-xl p-4 hover:border-primary/50 transition-all bg-zinc-950/40">
+              <input type="file" id="vsmovTxtUpload" accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <div class="text-center space-y-1">
+                <span class="material-symbols-outlined text-xl text-zinc-500" id="vsmovUploadIcon">upload_file</span>
+                <p class="text-[11px] text-zinc-400 font-bold" id="vsmovUploadText">Nhập hoặc kéo thả file .txt</p>
+              </div>
+            </div>
+          </div>
+          <div class="text-[10px] text-zinc-500 italic flex items-center gap-1" id="vsmovDetectCountText">
+            <span class="material-symbols-outlined text-xs">check_circle</span> Phát hiện 0 phim hợp lệ.
+          </div>
+        </div>
+
+        <!-- Action Button standard cào -->
+        <div class="flex gap-2 pt-2">
+          <button id="startVsmovBtn" class="flex-1 bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs">
+            <span class="material-symbols-outlined text-lg">play_arrow</span> Bắt đầu cào VSMOV
+          </button>
+        </div>
+      </div>
+
+      <!-- PANEL TMDB -->
+      <div id="panelTmdb" class="glass-panel rounded-2xl p-6 border border-glass-stroke space-y-4 hidden">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-primary text-xl font-bold">globe</span>
+          <h2 class="font-bold text-sm text-white uppercase tracking-wider font-display-hero">Cấu hình TMDB API</h2>
+        </div>
+        
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Phương thức thu thập</label>
+          <select id="tmdbMode" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold">
+            <option value="by_discover">🌐 Khám phá theo bộ lọc</option>
+            <option value="direct_slug">📝 Nhập ID TMDB thủ công</option>
+          </select>
+        </div>
+
+        <!-- TMDB blocks -->
+        <!-- 1. Discover filters -->
+        <div id="tmdbBlockDiscover" class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1.5">Bộ lọc cào</label>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              <button id="tmdbFilterCountryBtn" class="py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all">Quốc gia</button>
+              <button id="tmdbFilterGenreBtn" class="py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all">Thể loại</button>
+            </div>
+          </div>
+          <div id="tmdbFilterCountryPanel">
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Quốc gia</label>
+            <select id="tmdbSelectedCountry" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div id="tmdbFilterGenrePanel" class="hidden">
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Chọn Thể loại</label>
+            <select id="tmdbSelectedGenre" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
+              <input id="tmdbDiscoverPageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
+              <input id="tmdbDiscoverPageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Direct IDs -->
+        <div id="tmdbBlockDirect" class="space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Nhập ID TMDB (Mỗi dòng 1 ID)</label>
+            <textarea id="tmdbIdsInput" rows="4" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-xs font-mono placeholder:text-zinc-700" placeholder="1011989&#10;572802"></textarea>
+          </div>
+          <div class="text-[10px] text-zinc-500 italic" id="tmdbDetectCountText">Phát hiện 0 ID hợp lệ.</div>
+        </div>
+
+        <!-- Start button for TMDB -->
+        <div class="flex gap-2 pt-2">
+          <button id="startTmdbBtn" class="flex-1 bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs">
+            <span class="material-symbols-outlined text-lg">play_arrow</span> Bắt đầu cào TMDB
           </button>
         </div>
       </div>
@@ -202,7 +548,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         </div>
       </div>
 
-      <!-- Stats Summary Box -->
+      <!-- stopStandardBtn hidden somewhere else -->
+      <button id="stopStandardBtn" class="hidden"></button>
+
       <div class="glass-panel rounded-2xl p-6 border border-glass-stroke">
         <h3 class="font-bold text-xs text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
           <span class="material-symbols-outlined text-primary text-lg">analytics</span> Thống kê cào phim
@@ -267,6 +615,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <span class="material-symbols-outlined text-primary">search</span> Tìm kiếm phim trực tuyến
           </h3>
           <div class="flex-grow flex flex-wrap sm:flex-nowrap gap-2 w-full">
+            <select id="searchSourceSelect" class="bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
+              <option value="kkphim">Nguồn: KKPhim API</option>
+              <option value="vsmov">Nguồn: VSMOV API</option>
+              <option value="tmdb">Nguồn: TMDB API</option>
+            </select>
             <select id="searchMode" class="bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
               <option value="movie">Tìm theo tên phim</option>
               <option value="actor">Tìm theo diễn viên</option>
@@ -372,8 +725,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
   <script is:inline data-astro-rerun>
     (function() {
       // State
-      let activeTab = 'standard'; // 'standard' | 'advanced'
-      let standardSubTab = 'url'; // 'url' | 'batch' | 'filter'
+      let activeTab = 'kkphim'; // 'kkphim' | 'vsmov' | 'tmdb' | 'advanced'
       let filterType = 'country'; // 'country' | 'genre'
       let isRunning = false;
       let shouldStop = false;
@@ -506,42 +858,57 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       }
 
       function populateFilterDropdowns() {
-        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
-        const countrySelect = document.getElementById('selectedCountry');
-        const genreSelect = document.getElementById('selectedGenre');
-
-        if (!countrySelect || !genreSelect) return;
-
-        countrySelect.innerHTML = '';
-        genreSelect.innerHTML = '';
-
-        if (crawlSource === 'tmdb') {
-          tmdbCountries.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.code;
-            opt.textContent = `${c.name} (${c.code})`;
-            countrySelect.appendChild(opt);
-          });
-
-          tmdbGenres.forEach(g => {
-            const opt = document.createElement('option');
-            opt.value = g.id.toString();
-            opt.textContent = g.name;
-            genreSelect.appendChild(opt);
-          });
-        } else {
+        // Populating KKPhim selectors
+        const kkCountry = document.getElementById('kkphimSelectedCountry');
+        const kkGenre = document.getElementById('kkphimSelectedGenre');
+        if (kkCountry && kkGenre) {
+          kkCountry.innerHTML = '';
+          kkGenre.innerHTML = '';
           kkphimCountries.forEach(c => {
             const opt = document.createElement('option');
-            opt.value = c.slug;
-            opt.textContent = c.name;
-            countrySelect.appendChild(opt);
+            opt.value = c.slug; opt.textContent = c.name;
+            kkCountry.appendChild(opt);
           });
-
           kkphimGenres.forEach(g => {
             const opt = document.createElement('option');
-            opt.value = g.slug;
-            opt.textContent = g.name;
-            genreSelect.appendChild(opt);
+            opt.value = g.slug; opt.textContent = g.name;
+            kkGenre.appendChild(opt);
+          });
+        }
+
+        // Populating VSMOV selectors
+        const vsCountry = document.getElementById('vsmovSelectedCountry');
+        const vsGenre = document.getElementById('vsmovSelectedGenre');
+        if (vsCountry && vsGenre) {
+          vsCountry.innerHTML = '';
+          vsGenre.innerHTML = '';
+          kkphimCountries.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.slug; opt.textContent = c.name;
+            vsCountry.appendChild(opt);
+          });
+          kkphimGenres.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.slug; opt.textContent = g.name;
+            vsGenre.appendChild(opt);
+          });
+        }
+
+        // Populating TMDB selectors
+        const tmdbCountry = document.getElementById('tmdbSelectedCountry');
+        const tmdbGenre = document.getElementById('tmdbSelectedGenre');
+        if (tmdbCountry && tmdbGenre) {
+          tmdbCountry.innerHTML = '';
+          tmdbGenre.innerHTML = '';
+          tmdbCountries.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.code; opt.textContent = `${c.name} (${c.code})`;
+            tmdbCountry.appendChild(opt);
+          });
+          tmdbGenres.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id.toString(); opt.textContent = g.name;
+            tmdbGenre.appendChild(opt);
           });
         }
       }
@@ -551,120 +918,164 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       });
 
     // Elements
-    const tabStandardBtn = document.getElementById('tabStandardBtn');
+    const tabKkphimBtn = document.getElementById('tabKkphimBtn');
+    const tabVsmovBtn = document.getElementById('tabVsmovBtn');
+    const tabTmdbBtn = document.getElementById('tabTmdbBtn');
     const tabAdvancedBtn = document.getElementById('tabAdvancedBtn');
-    const panelStandard = document.getElementById('panelStandard');
+
+    const panelKkphim = document.getElementById('panelKkphim');
+    const panelVsmov = document.getElementById('panelVsmov');
+    const panelTmdb = document.getElementById('panelTmdb');
     const panelAdvanced = document.getElementById('panelAdvanced');
     const containerSearchTab = document.getElementById('containerSearchTab');
     const logsTerminal = document.getElementById('logsTerminal');
     const statusIndicator = document.getElementById('statusIndicator');
 
-    const subTabUrlBtn = document.getElementById('subTabUrlBtn');
-    const subTabBatchBtn = document.getElementById('subTabBatchBtn');
-    const subTabFilterBtn = document.getElementById('subTabFilterBtn');
-    const subTabUpdateBtn = document.getElementById('subTabUpdateBtn');
-    const subTabUrl = document.getElementById('subTabUrl');
-    const subTabBatch = document.getElementById('subTabBatch');
-    const subTabFilter = document.getElementById('subTabFilter');
-    const subTabUpdate = document.getElementById('subTabUpdate');
-
-    const filterCountryBtn = document.getElementById('filterCountryBtn');
-    const filterGenreBtn = document.getElementById('filterGenreBtn');
-    const filterCountryPanel = document.getElementById('filterCountryPanel');
-    const filterGenrePanel = document.getElementById('filterGenrePanel');
-
     // Tab Switches
-    tabStandardBtn.addEventListener('click', () => {
-      if (isRunning) return;
-      activeTab = 'standard';
-      tabStandardBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer";
-      tabAdvancedBtn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer";
-      panelStandard.classList.remove('hidden');
-      panelAdvanced.classList.add('hidden');
-      containerSearchTab.classList.add('hidden');
-    });
+    function resetTabStyles() {
+      [tabKkphimBtn, tabVsmovBtn, tabTmdbBtn, tabAdvancedBtn].forEach(btn => {
+        if (btn) btn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center gap-1.5";
+      });
+      [panelKkphim, panelVsmov, panelTmdb, panelAdvanced].forEach(panel => {
+        if (panel) panel.classList.add('hidden');
+      });
+      if (containerSearchTab) containerSearchTab.classList.add('hidden');
+    }
 
-    tabAdvancedBtn.addEventListener('click', () => {
-      if (isRunning) return;
-      activeTab = 'advanced';
-      tabAdvancedBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer";
-      tabStandardBtn.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white transition-all cursor-pointer";
-      panelAdvanced.classList.remove('hidden');
-      panelStandard.classList.add('hidden');
-      containerSearchTab.classList.remove('hidden');
-    });
-
-    // Sub-tab Switches
-    subTabUrlBtn.addEventListener('click', () => {
-      if (isRunning) return;
-      standardSubTab = 'url';
-      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
-      subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      subTabUrl.classList.remove('hidden');
-      subTabBatch.classList.add('hidden');
-      subTabFilter.classList.add('hidden');
-      if (subTabUpdate) subTabUpdate.classList.add('hidden');
-    });
-
-    subTabBatchBtn.addEventListener('click', () => {
-      if (isRunning) return;
-      standardSubTab = 'batch';
-      subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
-      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      subTabBatch.classList.remove('hidden');
-      subTabUrl.classList.add('hidden');
-      subTabFilter.classList.add('hidden');
-      if (subTabUpdate) subTabUpdate.classList.add('hidden');
-    });
-
-    subTabFilterBtn.addEventListener('click', () => {
-      if (isRunning) return;
-      standardSubTab = 'filter';
-      subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
-      subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      if (subTabUpdateBtn) subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-      subTabFilter.classList.remove('hidden');
-      subTabUrl.classList.add('hidden');
-      subTabBatch.classList.add('hidden');
-      if (subTabUpdate) subTabUpdate.classList.add('hidden');
-    });
-
-    if (subTabUpdateBtn) {
-      subTabUpdateBtn.addEventListener('click', () => {
+    if (tabKkphimBtn) {
+      tabKkphimBtn.addEventListener('click', () => {
         if (isRunning) return;
-        standardSubTab = 'update';
-        subTabUpdateBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg bg-primary/20 text-primary cursor-pointer transition-all";
-        subTabUrlBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-        subTabBatchBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-        subTabFilterBtn.className = "py-2 text-[10px] font-bold text-center rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all";
-        if (subTabUpdate) subTabUpdate.classList.remove('hidden');
-        subTabUrl.classList.add('hidden');
-        subTabBatch.classList.add('hidden');
-        subTabFilter.classList.add('hidden');
+        activeTab = 'kkphim';
+        document.getElementById('crawlSource').value = 'kkphim';
+        resetTabStyles();
+        tabKkphimBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-1.5";
+        panelKkphim.classList.remove('hidden');
       });
     }
 
-    // Filter type switches
-    filterCountryBtn.addEventListener('click', () => {
-      filterType = 'country';
-      filterCountryBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all";
-      filterGenreBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all";
-      filterCountryPanel.classList.remove('hidden');
-      filterGenrePanel.classList.add('hidden');
-    });
+    if (tabVsmovBtn) {
+      tabVsmovBtn.addEventListener('click', () => {
+        if (isRunning) return;
+        activeTab = 'vsmov';
+        document.getElementById('crawlSource').value = 'vsmov';
+        resetTabStyles();
+        tabVsmovBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-1.5";
+        panelVsmov.classList.remove('hidden');
+      });
+    }
 
-    filterGenreBtn.addEventListener('click', () => {
-      filterType = 'genre';
-      filterGenreBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all";
-      filterCountryBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all";
-      filterGenrePanel.classList.remove('hidden');
-      filterCountryPanel.classList.add('hidden');
-    });
+    if (tabTmdbBtn) {
+      tabTmdbBtn.addEventListener('click', () => {
+        if (isRunning) return;
+        activeTab = 'tmdb';
+        document.getElementById('crawlSource').value = 'tmdb';
+        resetTabStyles();
+        tabTmdbBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-1.5";
+        panelTmdb.classList.remove('hidden');
+      });
+    }
+
+    if (tabAdvancedBtn) {
+      tabAdvancedBtn.addEventListener('click', () => {
+        if (isRunning) return;
+        activeTab = 'advanced';
+        resetTabStyles();
+        tabAdvancedBtn.className = "pb-3 text-sm font-bold border-b-2 border-primary text-primary transition-all cursor-pointer flex items-center gap-1.5";
+        panelAdvanced.classList.remove('hidden');
+        containerSearchTab.classList.remove('hidden');
+      });
+    }
+
+    // Dynamic blocks show/hide for KKPhim Mode selector
+    const kkphimMode = document.getElementById('kkphimMode');
+    if (kkphimMode) {
+      kkphimMode.addEventListener('change', (e) => {
+        const mode = e.target.value;
+        ['kkphimBlockNewUpdated', 'kkphimBlockType', 'kkphimBlockGenre', 'kkphimBlockCountry', 'kkphimBlockYear', 'kkphimBlockSearch', 'kkphimBlockDirect'].forEach(id => {
+          document.getElementById(id)?.classList.add('hidden');
+        });
+        if (mode === 'new_updated') document.getElementById('kkphimBlockNewUpdated').classList.remove('hidden');
+        else if (mode === 'by_type') document.getElementById('kkphimBlockType').classList.remove('hidden');
+        else if (mode === 'by_genre') document.getElementById('kkphimBlockGenre').classList.remove('hidden');
+        else if (mode === 'by_country') document.getElementById('kkphimBlockCountry').classList.remove('hidden');
+        else if (mode === 'by_year') document.getElementById('kkphimBlockYear').classList.remove('hidden');
+        else if (mode === 'by_search') document.getElementById('kkphimBlockSearch').classList.remove('hidden');
+        else if (mode === 'direct_slug') document.getElementById('kkphimBlockDirect').classList.remove('hidden');
+      });
+    }
+
+    // Dynamic blocks show/hide for VSMOV Mode selector
+    const vsmovMode = document.getElementById('vsmovMode');
+    if (vsmovMode) {
+      vsmovMode.addEventListener('change', (e) => {
+        const mode = e.target.value;
+        ['vsmovBlockNewUpdated', 'vsmovBlockType', 'vsmovBlockGenre', 'vsmovBlockCountry', 'vsmovBlockYear', 'vsmovBlockCode', 'vsmovBlockSearch', 'vsmovBlockDirect'].forEach(id => {
+          document.getElementById(id)?.classList.add('hidden');
+        });
+        if (mode === 'new_updated') document.getElementById('vsmovBlockNewUpdated').classList.remove('hidden');
+        else if (mode === 'by_type') document.getElementById('vsmovBlockType').classList.remove('hidden');
+        else if (mode === 'by_genre') document.getElementById('vsmovBlockGenre').classList.remove('hidden');
+        else if (mode === 'by_country') document.getElementById('vsmovBlockCountry').classList.remove('hidden');
+        else if (mode === 'by_year') document.getElementById('vsmovBlockYear').classList.remove('hidden');
+        else if (mode === 'by_code') document.getElementById('vsmovBlockCode').classList.remove('hidden');
+        else if (mode === 'by_search') document.getElementById('vsmovBlockSearch').classList.remove('hidden');
+        else if (mode === 'direct_slug') document.getElementById('vsmovBlockDirect').classList.remove('hidden');
+      });
+    }
+
+    // Dynamic blocks show/hide for TMDB Mode selector
+    const tmdbMode = document.getElementById('tmdbMode');
+    if (tmdbMode) {
+      tmdbMode.addEventListener('change', (e) => {
+        const mode = e.target.value;
+        document.getElementById('tmdbBlockDiscover')?.classList.add('hidden');
+        document.getElementById('tmdbBlockDirect')?.classList.add('hidden');
+        if (mode === 'by_discover') document.getElementById('tmdbBlockDiscover').classList.remove('hidden');
+        else if (mode === 'direct_slug') document.getElementById('tmdbBlockDirect').classList.remove('hidden');
+      });
+    }
+
+    // TMDB sub filter toggles
+    const tmdbFilterCountryBtn = document.getElementById('tmdbFilterCountryBtn');
+    const tmdbFilterGenreBtn = document.getElementById('tmdbFilterGenreBtn');
+    const tmdbFilterCountryPanel = document.getElementById('tmdbFilterCountryPanel');
+    const tmdbFilterGenrePanel = document.getElementById('tmdbFilterGenrePanel');
+
+    if (tmdbFilterCountryBtn) {
+      tmdbFilterCountryBtn.addEventListener('click', () => {
+        filterType = 'country';
+        tmdbFilterCountryBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all";
+        tmdbFilterGenreBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all";
+        tmdbFilterCountryPanel.classList.remove('hidden');
+        tmdbFilterGenrePanel.classList.add('hidden');
+      });
+    }
+
+    if (tmdbFilterGenreBtn) {
+      tmdbFilterGenreBtn.addEventListener('click', () => {
+        filterType = 'genre';
+        tmdbFilterGenreBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-primary bg-primary/20 text-primary cursor-pointer transition-all";
+        tmdbFilterCountryBtn.className = "py-2 rounded-lg text-[10px] font-bold border border-glass-stroke text-zinc-400 hover:text-white cursor-pointer transition-all";
+        tmdbFilterGenrePanel.classList.remove('hidden');
+        tmdbFilterCountryPanel.classList.add('hidden');
+      });
+    }
+
+    function populateYearsDropdowns() {
+      const currentYear = new Date().getFullYear();
+      ['kkphimSelectedYear', 'vsmovSelectedYear'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+          select.innerHTML = '';
+          for (let y = currentYear; y >= 2000; y--) {
+            const opt = document.createElement('option');
+            opt.value = y.toString();
+            opt.textContent = y.toString();
+            select.appendChild(opt);
+          }
+        }
+      });
+    }
 
     // URL slug parser helper
     function extractSlug(input) {
@@ -1096,7 +1507,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         const localCount = existingMoviesMap[item.slug] || 0;
         const isAlreadyInDb = existingMoviesMap[item.slug] !== undefined;
         const isSelected = cartSlugs.has(item.slug);
-        const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
+        const typeLabel = (item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ') + ` [${item.source.toUpperCase()}]`;
 
         let posterUrl = item.poster_url || item.thumb_url || '';
         if (posterUrl) {
@@ -1148,7 +1559,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
             <td class="px-5 py-3 text-center">
               ${showCheckbox 
-                ? `<input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}', '${tmdbId}', '${tmdbType}')" 
+                ? `<input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}', '${tmdbId}', '${tmdbType}', '${crawlSource}')" 
                          ${isSelected ? 'checked' : ''} data-crawled="${isAlreadyInDb && !hasNewEpisodes ? 'true' : 'false'}" class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer item-checkbox"/>`
                 : '<span class="text-zinc-600 text-xs font-bold select-none" data-txatooltip="Phim đã cào đầy đủ">—</span>'
               }
@@ -1210,9 +1621,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     });
 
     // Cart management
-    window.toggleCartItem = function(checkbox, slug, name, type = 'single', episodeCurrent = '', tmdbId = '', tmdbType = '') {
+    window.toggleCartItem = function(checkbox, slug, name, type = 'single', episodeCurrent = '', tmdbId = '', tmdbType = '', source = 'kkphim') {
       if (checkbox.checked) {
-        cartSlugs.set(slug, { name, type, episodeCurrent, tmdbId, tmdbType });
+        cartSlugs.set(slug, { name, type, episodeCurrent, tmdbId, tmdbType, source });
       } else {
         cartSlugs.delete(slug);
       }
@@ -1260,7 +1671,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         type: val.type,
         episodeCurrent: val.episodeCurrent,
         tmdbId: val.tmdbId,
-        tmdbType: val.tmdbType
+        tmdbType: val.tmdbType,
+        source: val.source || 'kkphim'
       }));
 
       const totalPages = Math.ceil(items.length / cartPageSize);
@@ -1271,7 +1683,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
       const tableRows = paginatedItems.map((item, idx) => {
         const globalIdx = startIdx + idx + 1;
-        const typeLabel = item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ';
+        const typeLabel = (item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ') + ` [${item.source.toUpperCase()}]`;
         const crawlType = item.type === 'single' ? 'Cào phim full' : `Cào phim bộ (${item.episodeCurrent || 'Đang cập nhật'})`;
 
         return `
@@ -1374,7 +1786,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
     // MAP KKPHIM DATA HELPER
     function mapKKPhimToMovieDetail(data, source = 'kkphim') {
-      const m = data.movie;
+      const m = data.movie || data.item;
       const defaultCdn = source === 'vsmov' ? 'https://vsmov.com' : 'https://phimimg.com';
       const cdnDomain = data.pathImage || data.APP_DOMAIN_CDN_IMAGE || defaultCdn;
       
@@ -1387,16 +1799,18 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         bannerUrl = `${cdnDomain}/${bannerUrl.replace(/^\//, '')}`;
       }
 
-      const genres = Array.isArray(m.category) ? m.category.map(c => c.name) : [];
+      const catList = m.category || m.categories;
+      const genres = Array.isArray(catList) ? catList.map(c => c.name) : [];
       
       let category = "Khác";
-      if (Array.isArray(m.category) && m.category.length > 0) {
-        category = m.category[0].name;
+      if (Array.isArray(catList) && catList.length > 0) {
+        category = catList[0].name;
       }
 
+      const countryList = m.country || m.countries;
       let country = "Khác";
-      if (Array.isArray(m.country) && m.country.length > 0) {
-        country = m.country[0].name;
+      if (Array.isArray(countryList) && countryList.length > 0) {
+        country = countryList[0].name;
       }
 
       let type = 'series';
@@ -1474,8 +1888,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     ageRating: type === 'movie' ? 'T16' : 'T13',
     genres: genres,
     seasons: type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1',
-    actors: Array.isArray(m.actor) ? m.actor.filter(Boolean) : [],
-    directors: Array.isArray(m.director) ? m.director.filter(Boolean) : [],
+    actors: Array.isArray(m.actor || m.actors) ? (m.actor || m.actors).filter(Boolean) : [],
+    directors: Array.isArray(m.director || m.directors) ? (m.director || m.directors).filter(Boolean) : [],
     trailerUrl: m.trailer_url || '',
     episodes: finalEpisodes
   };
@@ -1491,7 +1905,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         overwrite: document.getElementById('overwrite')?.checked ?? true,
         logsHTML: document.getElementById('logTerminalBody')?.innerHTML || '',
         activeTab,
-        standardSubTab,
         timestamp: Date.now()
       };
       localStorage.setItem('webfilm_crawl_session', JSON.stringify(session));
@@ -1536,17 +1949,12 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       // Switch Tab
       if (session.activeTab === 'advanced') {
         tabAdvancedBtn.click();
+      } else if (session.activeTab === 'vsmov') {
+        tabVsmovBtn.click();
+      } else if (session.activeTab === 'tmdb') {
+        tabTmdbBtn.click();
       } else {
-        tabStandardBtn.click();
-        if (session.standardSubTab === 'batch') {
-          subTabBatchBtn.click();
-        } else if (session.standardSubTab === 'filter') {
-          subTabFilterBtn.click();
-        } else if (session.standardSubTab === 'update') {
-          if (subTabUpdateBtn) subTabUpdateBtn.click();
-        } else {
-          subTabUrlBtn.click();
-        }
+        tabKkphimBtn.click();
       }
 
       // Hide search container during crawl if on advanced tab
@@ -1647,13 +2055,20 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       const progressPercent = document.getElementById('progressPercent');
       const mainProgressBar = document.getElementById('mainProgressBar');
       const progressTimeEstimate = document.getElementById('progressTimeEstimate');
-      const startStandardBtn = document.getElementById('startStandardBtn');
       const stopStandardBtn = document.getElementById('stopStandardBtn');
 
       progressSection.classList.remove('hidden');
       statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-primary animate-pulse';
-      startStandardBtn.classList.add('pointer-events-none', 'opacity-40');
-      stopStandardBtn.classList.remove('hidden');
+      const startButtons = [
+        document.getElementById('startKkphimBtn'),
+        document.getElementById('startVsmovBtn'),
+        document.getElementById('startTmdbBtn'),
+        document.getElementById('startCartCrawlBtn')
+      ];
+      startButtons.forEach(btn => {
+        if (btn) btn.classList.add('pointer-events-none', 'opacity-40');
+      });
+      if (stopStandardBtn) stopStandardBtn.classList.remove('hidden');
 
       if (startIndex === 0) {
         addLog(`🚀 Khởi động tiến trình cào ${slugsList.length} phim trong hàng đợi...`, 'system');
@@ -1694,20 +2109,35 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         progressPercent.textContent = `${pct}%`;
         mainProgressBar.style.width = `${pct}%`;
 
+        // Dynamically get crawlSource for this item (mixed source support)
+        let itemSource = 'kkphim';
+        const cartItem = cartSlugs.get(slug);
+        if (cartItem && cartItem.source) {
+          itemSource = cartItem.source;
+        } else {
+          itemSource = document.getElementById('crawlSource')?.value || 'kkphim';
+        }
+        document.getElementById('crawlSource').value = itemSource;
+        const crawlSource = itemSource;
+
         // Check if exists in database
         const dup = existingMoviesMap[slug] !== undefined;
         let currentEpisodeCount = existingMoviesMap[slug] || 0;
         let apiEpisodeCount = 0;
 
-        const isUpdateMode = (standardSubTab === 'update');
+        let isUpdateMode = false;
+        if (crawlSource === 'kkphim') {
+          isUpdateMode = (document.getElementById('kkphimMode')?.value === 'new_updated');
+        } else if (crawlSource === 'vsmov') {
+          isUpdateMode = (document.getElementById('vsmovMode')?.value === 'new_updated');
+        }
+        
         if (dup && !overwrite && !isUpdateMode) {
           skipped++;
           document.getElementById('statSkipped').textContent = skipped;
           addLog(`→ Bỏ qua (đã cào & không ghi đè): ${slug}`, 'warning');
           continue;
         }
-
-        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
         const sourceLabel = crawlSource.toUpperCase();
         addLog(`⏳ Đang cào dữ liệu chi tiết từ ${sourceLabel} cho slug: ${slug}...`);
         
@@ -1753,14 +2183,15 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             if (resJson.status !== 'success') throw new Error(resJson.message || 'Lỗi tải chi tiết phim');
             const detailData = resJson.data;
 
-            if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
+            const movieObj = detailData?.movie || detailData?.item;
+            if (detailData && movieObj && Array.isArray(detailData.episodes)) {
               // Compare episodes count to see if update exists
               apiEpisodeCount = Math.max(...(detailData.episodes || []).map((server) => (server.server_data || server.serverData || []).length), 0);
 
               if (!overwrite && currentEpisodeCount > 0 && apiEpisodeCount <= currentEpisodeCount) {
                 skipped++;
                 document.getElementById('statSkipped').textContent = skipped;
-                addLog(`→ Bỏ qua vì đã đầy đủ tập phim (${currentEpisodeCount}/${apiEpisodeCount} tập): "${detailData.movie.name}"`, 'warning');
+                addLog(`→ Bỏ qua vì đã đầy đủ tập phim (${currentEpisodeCount}/${apiEpisodeCount} tập): "${movieObj.name}"`, 'warning');
                 continue;
               }
 
@@ -1769,9 +2200,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               movieDetailObj.source = isVsmov ? 'vsmov' : 'kkphim';
             
               // Fetch TMDB images and override if available
-              if (detailData.movie.tmdb && detailData.movie.tmdb.id) {
-                const tmdbId = detailData.movie.tmdb.id;
-                const tmdbType = detailData.movie.tmdb.type === 'tv' ? 'tv' : 'movie';
+              if (movieObj.tmdb && movieObj.tmdb.id) {
+                const tmdbId = movieObj.tmdb.id;
+                const tmdbType = movieObj.tmdb.type === 'tv' ? 'tv' : 'movie';
                 try {
                   const tmdbRes = await fetch(`/api/tmdb-proxy?path=/3/${tmdbType}/${tmdbId}&language=vi-VN`);
                   if (tmdbRes.ok) {
@@ -1789,8 +2220,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                     // If it's a TV Show, fetch season details to get episode thumbnail stills
                     if (tmdbType === 'tv') {
                       let seasonNumber = 1;
-                      if (detailData.movie.tmdb.season !== undefined) {
-                        seasonNumber = parseInt(detailData.movie.tmdb.season) || 1;
+                      if (movieObj.tmdb.season !== undefined) {
+                        seasonNumber = parseInt(movieObj.tmdb.season) || 1;
                       } else {
                         const seasonsName = movieDetailObj.seasons || '';
                         const matchSeason = seasonsName.match(/\d+/);
@@ -1929,8 +2360,16 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       document.getElementById('btnResumeCrawl')?.classList.add('hidden');
       document.getElementById('btnCancelCrawl')?.classList.add('hidden');
 
-      startStandardBtn.classList.remove('pointer-events-none', 'opacity-40');
-      stopStandardBtn.classList.add('hidden');
+      const startButtons = [
+        document.getElementById('startKkphimBtn'),
+        document.getElementById('startVsmovBtn'),
+        document.getElementById('startTmdbBtn'),
+        document.getElementById('startCartCrawlBtn')
+      ];
+      startButtons.forEach(btn => {
+        if (btn) btn.classList.remove('pointer-events-none', 'opacity-40');
+      });
+      if (stopStandardBtn) stopStandardBtn.classList.add('hidden');
       statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
       progressTimeEstimate.textContent = 'Hoàn tất!';
       addLog(`🎉 TIẾN TRÌNH CÀO PHIM KẾT THÚC! Thành công: ${success}, Bỏ qua: ${skipped}, Lỗi: ${failed}`, 'success');
@@ -1942,175 +2381,753 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       }
     }
 
-    // Trigger crawl standard
-    const startStandardBtn = document.getElementById('startStandardBtn');
-    const stopStandardBtn = document.getElementById('stopStandardBtn');
+    // Trigger crawlers for each tab
+    const startStandardBtn = document.getElementById('startStandardBtn'); // dummy reference
+    const startKkphimBtn = document.getElementById('startKkphimBtn');
+    const startVsmovBtn = document.getElementById('startVsmovBtn');
+    const startTmdbBtn = document.getElementById('startTmdbBtn');
 
-    startStandardBtn.addEventListener('click', async () => {
-      if (isRunning) return;
+    // KKPhim detect count & txt upload
+    const kkphimUrlsInput = document.getElementById('kkphimUrlsInput');
+    const kkphimDetectCountText = document.getElementById('kkphimDetectCountText');
+    const kkphimTxtUpload = document.getElementById('kkphimTxtUpload');
+    const kkphimUploadText = document.getElementById('kkphimUploadText');
+    const kkphimUploadIcon = document.getElementById('kkphimUploadIcon');
 
-      if (standardSubTab === 'url') {
-        const lines = crawlUrlsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
-        const slugs = [];
-        lines.forEach(line => {
-          const slug = extractSlug(line);
-          if (slug) slugs.push(slug);
-        });
-
-        if (slugs.length === 0) {
-          if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy đường dẫn hoặc slug phim nào hợp lệ!', 'error');
-          return;
-        }
-
-        runCrawlProcess(slugs);
+    function updateKkphimDetectCount() {
+      if (!kkphimUrlsInput) return;
+      const lines = kkphimUrlsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
+      let valid = 0;
+      lines.forEach(line => {
+        const slug = extractSlug(line);
+        if (slug) valid++;
+      });
+      if (kkphimDetectCountText) {
+        kkphimDetectCountText.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span> Phát hiện ${valid} phim hợp lệ từ dòng nhập.`;
       }
-      
-      else if (standardSubTab === 'batch') {
-        const startPage = parseInt(document.getElementById('pageStart').value) || 1;
-        const endPage = parseInt(document.getElementById('pageEnd').value) || 1;
+    }
+    if (kkphimUrlsInput) {
+      kkphimUrlsInput.addEventListener('input', updateKkphimDetectCount);
+    }
 
-        if (startPage < 1 || endPage < startPage) {
-          if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
-          return;
+    if (kkphimTxtUpload) {
+      kkphimTxtUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (kkphimUploadText) kkphimUploadText.textContent = `Đang đọc file: ${file.name}...`;
+        if (kkphimUploadIcon) {
+          kkphimUploadIcon.className = 'material-symbols-outlined text-xl text-primary animate-spin';
+          kkphimUploadIcon.textContent = 'sync';
         }
-
-        addLog(`⏳ Đang tải danh sách phim từ trang ${startPage} đến ${endPage}...`);
-        const slugs = [];
-        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
-        
-        for (let p = startPage; p <= endPage; p++) {
-          try {
-            const batchUrl = crawlSource === 'vsmov'
-              ? `https://vsmov.com/api/danh-sach/phim-moi-cap-nhat?page=${p}`
-              : `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=100`;
-            const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(batchUrl));
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const resJson = await res.json();
-            const data = resJson.data;
-            
-            const items = data.data?.items || data.items;
-            if (items && Array.isArray(items)) {
-              items.forEach(item => {
-                if (item.slug) slugs.push(item.slug);
-              });
-              addLog(`✓ Quét xong trang danh sách ${p}: Thêm ${items.length} phim.`);
-            }
-          } catch (e) {
-            addLog(`✗ Lỗi tải trang danh sách ${p}: ${e.message}`, 'error');
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const lines = event.target.result.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+          const validLines = [];
+          let invalidCount = 0;
+          lines.forEach(line => {
+            const slug = extractSlug(line);
+            if (slug) validLines.push(line);
+            else invalidCount++;
+          });
+          if (kkphimUrlsInput) kkphimUrlsInput.value = validLines.join('\n');
+          updateKkphimDetectCount();
+          if (kkphimUploadText) kkphimUploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
+          if (kkphimUploadIcon) {
+            kkphimUploadIcon.className = 'material-symbols-outlined text-xl text-emerald-400';
+            kkphimUploadIcon.textContent = 'check_circle';
           }
-          await new Promise(r => setTimeout(r, 200));
-        }
+          if (window.showGlobalToast) window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+        };
+        reader.readAsText(file);
+      });
+    }
 
-        if (slugs.length === 0) {
-          if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào từ các trang danh sách!', 'error');
-          return;
-        }
-        
-        runCrawlProcess(slugs);
+    // VSMOV detect count & txt upload
+    const vsmovUrlsInput = document.getElementById('vsmovUrlsInput');
+    const vsmovDetectCountText = document.getElementById('vsmovDetectCountText');
+    const vsmovTxtUpload = document.getElementById('vsmovTxtUpload');
+    const vsmovUploadText = document.getElementById('vsmovUploadText');
+    const vsmovUploadIcon = document.getElementById('vsmovUploadIcon');
+
+    function updateVsmovDetectCount() {
+      if (!vsmovUrlsInput) return;
+      const lines = vsmovUrlsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
+      let valid = 0;
+      lines.forEach(line => {
+        const slug = extractSlug(line);
+        if (slug) valid++;
+      });
+      if (vsmovDetectCountText) {
+        vsmovDetectCountText.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span> Phát hiện ${valid} phim hợp lệ từ dòng nhập.`;
       }
-      
-      else if (standardSubTab === 'update') {
-        const startPage = parseInt(document.getElementById('updatePageStart').value) || 1;
-        const endPage = parseInt(document.getElementById('updatePageEnd').value) || 1;
-        const apiVer = document.getElementById('updateApiVersion')?.value || 'v3';
+    }
+    if (vsmovUrlsInput) {
+      vsmovUrlsInput.addEventListener('input', updateVsmovDetectCount);
+    }
 
-        if (startPage < 1 || endPage < startPage) {
-          if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
-          return;
+    if (vsmovTxtUpload) {
+      vsmovTxtUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (vsmovUploadText) vsmovUploadText.textContent = `Đang đọc file: ${file.name}...`;
+        if (vsmovUploadIcon) {
+          vsmovUploadIcon.className = 'material-symbols-outlined text-xl text-primary animate-spin';
+          vsmovUploadIcon.textContent = 'sync';
         }
-
-        addLog(`⏳ Đang tải danh sách phim mới cập nhật (${apiVer.toUpperCase()}) từ trang ${startPage} đến ${endPage}...`);
-        const slugs = [];
-        
-        for (let p = startPage; p <= endPage; p++) {
-          try {
-            let updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat-v3?page=${p}`;
-            if (apiVer === 'v2') {
-              updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat-v2?page=${p}&limit=100`;
-            } else if (apiVer === 'v1') {
-              updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=100`;
-            }
-
-            const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(updateUrl));
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const resJson = await res.json();
-            const data = resJson.data;
-            
-            const items = data.data?.items || data.items;
-            if (items && Array.isArray(items)) {
-              items.forEach(item => {
-                if (item.slug) slugs.push(item.slug);
-              });
-              addLog(`✓ Quét xong trang mới cập nhật ${p}: Thêm ${items.length} phim.`);
-            }
-          } catch (e) {
-            addLog(`✗ Lỗi tải trang mới cập nhật ${p}: ${e.message}`, 'error');
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const lines = event.target.result.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+          const validLines = [];
+          let invalidCount = 0;
+          lines.forEach(line => {
+            const slug = extractSlug(line);
+            if (slug) validLines.push(line);
+            else invalidCount++;
+          });
+          if (vsmovUrlsInput) vsmovUrlsInput.value = validLines.join('\n');
+          updateVsmovDetectCount();
+          if (vsmovUploadText) vsmovUploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
+          if (vsmovUploadIcon) {
+            vsmovUploadIcon.className = 'material-symbols-outlined text-xl text-emerald-400';
+            vsmovUploadIcon.textContent = 'check_circle';
           }
-          await new Promise(r => setTimeout(r, 200));
-        }
+          if (window.showGlobalToast) window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+        };
+        reader.readAsText(file);
+      });
+    }
 
-        if (slugs.length === 0) {
-          if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào từ danh sách mới cập nhật!', 'error');
-          return;
-        }
-        
-        runCrawlProcess(slugs);
+    // TMDB detect count
+    const tmdbIdsInput = document.getElementById('tmdbIdsInput');
+    const tmdbDetectCountText = document.getElementById('tmdbDetectCountText');
+    function updateTmdbDetectCount() {
+      if (!tmdbIdsInput) return;
+      const lines = tmdbIdsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
+      let valid = 0;
+      lines.forEach(line => {
+        if (/^\d+$/.test(line)) valid++;
+      });
+      if (tmdbDetectCountText) {
+        tmdbDetectCountText.textContent = `Phát hiện ${valid} ID TMDB hợp lệ.`;
       }
-      
-      else if (standardSubTab === 'filter') {
-        const startPage = parseInt(document.getElementById('filterPageStart').value) || 1;
-        const endPage = parseInt(document.getElementById('filterPageEnd').value) || 1;
+    }
+    if (tmdbIdsInput) {
+      tmdbIdsInput.addEventListener('input', updateTmdbDetectCount);
+    }
 
-        if (startPage < 1 || endPage < startPage) {
-          if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang lọc không hợp lệ!', 'error');
-          return;
+    // KKPhim Start Click Listener
+    if (startKkphimBtn) {
+      startKkphimBtn.addEventListener('click', async () => {
+        if (isRunning) return;
+        const mode = document.getElementById('kkphimMode').value;
+        document.getElementById('crawlSource').value = 'kkphim';
+
+        if (mode === 'direct_slug') {
+          const lines = document.getElementById('kkphimUrlsInput').value.split('\n').map(l => l.trim()).filter(Boolean);
+          const slugs = [];
+          lines.forEach(line => {
+            const slug = extractSlug(line);
+            if (slug) slugs.push(slug);
+          });
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy đường dẫn hoặc slug phim nào hợp lệ!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
         }
+        else if (mode === 'new_updated') {
+          const startPage = parseInt(document.getElementById('kkphimNewPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('kkphimNewPageEnd').value) || 1;
+          const apiVer = document.getElementById('kkphimApiVersion')?.value || 'v3';
 
-        const slugs = [];
-        const country = document.getElementById('selectedCountry').value;
-        const genre = document.getElementById('selectedGenre').value;
-        const crawlSource = document.getElementById('crawlSource')?.value || 'kkphim';
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
 
-        // Check if using TMDB format (numeric genre or 2-letter country code)
-        const isTMDBGenre = /^\d+$/.test(genre);
-        const isTMDBCountry = /^[A-Z]{2}$/.test(country);
+          addLog(`⏳ Đang tải danh sách phim mới cập nhật (KKPhim ${apiVer.toUpperCase()}) từ trang ${startPage} đến ${endPage}...`);
+          const slugs = [];
+          
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              let updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat-v3?page=${p}`;
+              if (apiVer === 'v2') {
+                updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat-v2?page=${p}&limit=100`;
+              } else if (apiVer === 'v1') {
+                updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=100`;
+              }
 
-        if (crawlSource === 'tmdb' || isTMDBGenre || isTMDBCountry) {
-          // Use TMDB discover API
-          addLog(`⏳ Đang tải phim từ TMDB: ${filterType === 'country' ? 'Quốc gia ' + country : 'Thể loại ' + genre} (Trang ${startPage}-${endPage})...`);
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(updateUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const data = resJson.data;
+              const items = data?.items || data?.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang mới cập nhật ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang mới cập nhật ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào từ danh sách mới cập nhật!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_type') {
+          const type = document.getElementById('kkphimType').value;
+          const format = document.getElementById('kkphimTypeFormat').value;
+          const startPage = parseInt(document.getElementById('kkphimTypePageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('kkphimTypePageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('kkphimTypeLimit').value) || 20;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim theo loại "${type}" (Format: ${format.toUpperCase()}, Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const typeUrl = format === 'format1'
+                ? `https://phimapi.com/danh-sach/${type}?page=${p}&limit=${limit}`
+                : `https://phimapi.com/v1/api/danh-sach/${type}?page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(typeUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_genre') {
+          const genre = document.getElementById('kkphimSelectedGenre').value;
+          const startPage = parseInt(document.getElementById('kkphimGenrePageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('kkphimGenrePageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('kkphimGenreLimit').value) || 20;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim theo thể loại "${genre}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const genreUrl = `https://phimapi.com/v1/api/the-loai/${genre}?page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(genreUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_country') {
+          const country = document.getElementById('kkphimSelectedCountry').value;
+          const startPage = parseInt(document.getElementById('kkphimCountryPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('kkphimCountryPageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('kkphimCountryLimit').value) || 20;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim theo quốc gia "${country}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const countryUrl = `https://phimapi.com/v1/api/quoc-gia/${country}?page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(countryUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_year') {
+          const year = document.getElementById('kkphimSelectedYear').value;
+          const startPage = parseInt(document.getElementById('kkphimYearPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('kkphimYearPageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('kkphimYearLimit').value) || 20;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim theo năm "${year}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const yearUrl = `https://phimapi.com/v1/api/nam/${year}?page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(yearUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_search') {
+          const keyword = document.getElementById('kkphimSearchKeyword').value.trim();
+          const startPage = parseInt(document.getElementById('kkphimSearchPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('kkphimSearchPageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('kkphimSearchLimit').value) || 20;
+
+          if (!keyword) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập từ khóa tìm kiếm!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tìm kiếm và tải phim theo từ khóa "${keyword}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(searchUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+      });
+    }
+
+    // VSMOV Start Click Listener
+    if (startVsmovBtn) {
+      startVsmovBtn.addEventListener('click', async () => {
+        if (isRunning) return;
+        const mode = document.getElementById('vsmovMode').value;
+        document.getElementById('crawlSource').value = 'vsmov';
+
+        if (mode === 'direct_slug') {
+          const lines = document.getElementById('vsmovUrlsInput').value.split('\n').map(l => l.trim()).filter(Boolean);
+          const slugs = [];
+          lines.forEach(line => {
+            const slug = extractSlug(line);
+            if (slug) slugs.push(slug);
+          });
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy đường dẫn hoặc slug phim nào hợp lệ!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'new_updated') {
+          const startPage = parseInt(document.getElementById('vsmovNewPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('vsmovNewPageEnd').value) || 1;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải danh sách phim mới cập nhật (VSMOV) từ trang ${startPage} đến ${endPage}...`);
+          const slugs = [];
+          
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const updateUrl = `https://vsmov.com/api/danh-sach/phim-moi-cap-nhat?page=${p}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(updateUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang mới cập nhật ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang mới cập nhật ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào từ danh sách mới cập nhật!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_type') {
+          const type = document.getElementById('vsmovType').value;
+          const startPage = parseInt(document.getElementById('vsmovTypePageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('vsmovTypePageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('vsmovTypeLimit').value) || 20;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim theo loại VSMOV "${type}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const typeUrl = `https://vsmov.com/api/danh-sach?type=${type}&page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(typeUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_genre') {
+          const genre = document.getElementById('vsmovSelectedGenre').value;
+          const startPage = parseInt(document.getElementById('vsmovGenrePageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('vsmovGenrePageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('vsmovGenreLimit').value) || 20;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim VSMOV theo thể loại "${genre}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const genreUrl = `https://vsmov.com/api/the-loai/${genre}?page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(genreUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_country') {
+          const country = document.getElementById('vsmovSelectedCountry').value;
+          const startPage = parseInt(document.getElementById('vsmovCountryPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('vsmovCountryPageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('vsmovCountryLimit').value) || 20;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim VSMOV theo quốc gia "${country}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const countryUrl = `https://vsmov.com/api/quoc-gia/${country}?page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(countryUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_year') {
+          const year = document.getElementById('vsmovSelectedYear').value;
+          const startPage = parseInt(document.getElementById('vsmovYearPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('vsmovYearPageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('vsmovYearLimit').value) || 20;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim VSMOV theo năm "${year}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const yearUrl = `https://vsmov.com/api/nam/${year}?page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(yearUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_code') {
+          const codeVal = document.getElementById('vsmovSearchCode').value.trim();
+          const startPage = parseInt(document.getElementById('vsmovCodePageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('vsmovCodePageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('vsmovCodeLimit').value) || 20;
+
+          if (!codeVal) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập mã Code!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tải phim VSMOV theo mã Code "${codeVal}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const codeUrl = `https://vsmov.com/api/code/${codeVal}?page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(codeUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_search') {
+          const keyword = document.getElementById('vsmovSearchKeyword').value.trim();
+          const startPage = parseInt(document.getElementById('vsmovSearchPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('vsmovSearchPageEnd').value) || 1;
+          const limit = parseInt(document.getElementById('vsmovSearchLimit').value) || 20;
+
+          if (!keyword) {
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập từ khóa tìm kiếm!', 'error');
+            return;
+          }
+
+          addLog(`⏳ Đang tìm kiếm và tải phim VSMOV theo từ khóa "${keyword}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
+          const slugs = [];
+
+          for (let p = startPage; p <= endPage; p++) {
+            try {
+              const searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${p}&limit=${limit}`;
+              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(searchUrl));
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const resJson = await res.json();
+              const items = resJson.data?.items || resJson.items || [];
+              if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                  if (item.slug) slugs.push(item.slug);
+                });
+                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
+              }
+            } catch (e) {
+              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+      });
+    }
+
+    // TMDB Start Click Listener
+    if (startTmdbBtn) {
+      startTmdbBtn.addEventListener('click', async () => {
+        if (isRunning) return;
+        const mode = document.getElementById('tmdbMode').value;
+        document.getElementById('crawlSource').value = 'tmdb';
+
+        if (mode === 'direct_slug') {
+          const lines = document.getElementById('tmdbIdsInput').value.split('\n').map(l => l.trim()).filter(Boolean);
+          const slugs = [];
+          lines.forEach(line => {
+            if (/^\d+$/.test(line)) {
+              const dummySlug = `tmdb-${line}`;
+              slugs.push(dummySlug);
+              cartSlugs.set(dummySlug, {
+                name: `TMDB Movie (ID: ${line})`,
+                type: 'single',
+                episodeCurrent: 'Full',
+                tmdbId: line,
+                tmdbType: 'movie',
+                source: 'tmdb'
+              });
+            }
+          });
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy ID TMDB nào hợp lệ (chỉ nhập số)!', 'error');
+            return;
+          }
+          runCrawlProcess(slugs);
+        }
+        else if (mode === 'by_discover') {
+          const startPage = parseInt(document.getElementById('tmdbDiscoverPageStart').value) || 1;
+          const endPage = parseInt(document.getElementById('tmdbDiscoverPageEnd').value) || 1;
+
+          if (startPage < 1 || endPage < startPage) {
+            if (window.showGlobalToast) window.showGlobalToast('Phạm vi số trang không hợp lệ!', 'error');
+            return;
+          }
+
+          const slugs = [];
+          const country = document.getElementById('tmdbSelectedCountry').value;
+          const genre = document.getElementById('tmdbSelectedGenre').value;
+          
+          addLog(`⏳ Đang tải phim từ TMDB Discover: ${filterType === 'country' ? 'Quốc gia ' + country : 'Thể loại ' + genre} (Trang ${startPage}-${endPage})...`);
           
           for (let p = startPage; p <= endPage; p++) {
             try {
               let discoverUrl = `/api/admin/tmdb-discover?page=${p}`;
-              if (filterType === 'country' && isTMDBCountry) {
+              if (filterType === 'country') {
                 discoverUrl += `&country=${country}`;
-              } else if (filterType === 'genre' && isTMDBGenre) {
+              } else {
                 discoverUrl += `&genre=${genre}`;
-              } else if (filterType === 'country' && !isTMDBCountry) {
-                // Try to map country name to code
-                const countryMap = {
-                  'trung-quoc': 'CN',
-                  'han-quoc': 'KR',
-                  'nhat-ban': 'JP',
-                  'au-my': 'US',
-                  'thai-lan': 'TH',
-                  'viet-nam': 'VN'
-                };
-                const countryCode = countryMap[country] || country.toUpperCase();
-                discoverUrl += `&country=${countryCode}`;
-              } else if (filterType === 'genre' && !isTMDBGenre) {
-                // Try to map genre name to ID
-                const genreMap = {
-                  'hanh-dong': '28',
-                  'phieu-luu': '12',
-                  'tinh-cam': '18',
-                  'hoat-hinh': '16',
-                  'khoa-hoc': '878',
-                  'kinh-di': '27',
-                  'hai-huoc': '35'
-                };
-                const genreId = genreMap[genre] || genre;
-                discoverUrl += `&genre=${genreId}`;
               }
 
               const res = await fetch(discoverUrl);
@@ -2120,14 +3137,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 data.data.items.forEach((item) => {
                   if (item.slug) {
                     slugs.push(item.slug);
-                    // Store TMDB info in cart for later crawling
                     if (item.tmdb) {
                       cartSlugs.set(item.slug, {
                         name: item.name,
                         type: item.type,
                         episodeCurrent: item.episode_current,
                         tmdbId: item.tmdb.id,
-                        tmdbType: item.tmdb.type
+                        tmdbType: item.tmdb.type,
+                        source: 'tmdb'
                       });
                     }
                   }
@@ -2135,69 +3152,23 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 addLog(`✓ Quét xong TMDB trang ${p}: Thêm ${data.data.items.length} phim.`);
               }
             } catch (e) {
-              addLog(`✗ Lỗi tải TMDB trang ${p}: ${e.message}`, 'error');
+              addLog(`✗ Lỗi tải TMDB Discover trang ${p}: ${e.message}`, 'error');
             }
             await new Promise(r => setTimeout(r, 200));
           }
-        } else {
-          // Use KKPhim API
-          if (filterType === 'country') {
-            addLog(`⏳ Đang tải phim Quốc gia "${country}": Từ trang ${startPage} đến ${endPage}...`);
-            for (let p = startPage; p <= endPage; p++) {
-              try {
-                const countryUrl = crawlSource === 'vsmov'
-                  ? `https://vsmov.com/api/quoc-gia/${country}?page=${p}`
-                  : `https://phimapi.com/v1/api/quoc-gia/${country}?page=${p}`;
-                 const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(countryUrl));
-                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                 const resJson = await res.json();
-                 const data = resJson.data;
-                if (data && data.data && Array.isArray(data.data.items)) {
-                  data.data.items.forEach(item => {
-                    if (item.slug) slugs.push(item.slug);
-                  });
-                  addLog(`✓ Quét xong quốc gia ${country} trang ${p}: Thêm ${data.data.items.length} phim.`);
-                }
-              } catch (e) {
-                addLog(`✗ Lỗi tải trang quốc gia ${country} trang ${p}: ${e.message}`, 'error');
-              }
-              await new Promise(r => setTimeout(r, 200));
-            }
-          } else {
-            addLog(`⏳ Đang tải phim Thể loại "${genre}": Từ trang ${startPage} đến ${endPage}...`);
-            for (let p = startPage; p <= endPage; p++) {
-              try {
-                const genreUrl = crawlSource === 'vsmov'
-                  ? `https://vsmov.com/api/the-loai/${genre}?page=${p}`
-                  : `https://phimapi.com/v1/api/the-loai/${genre}?page=${p}`;
-                 const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(genreUrl));
-                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                 const resJson = await res.json();
-                 const data = resJson.data;
-                if (data && data.data && Array.isArray(data.data.items)) {
-                  data.data.items.forEach(item => {
-                    if (item.slug) slugs.push(item.slug);
-                  });
-                  addLog(`✓ Quét xong thể loại ${genre} trang ${p}: Thêm ${data.data.items.length} phim.`);
-                }
-              } catch (e) {
-                addLog(`✗ Lỗi tải thể loại ${genre} trang ${p}: ${e.message}`, 'error');
-              }
-              await new Promise(r => setTimeout(r, 200));
-            }
+
+          if (slugs.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast('Không cào được phim nào từ TMDB Discover!', 'error');
+            return;
           }
+          runCrawlProcess(slugs);
         }
+      });
+    }
 
-        if (slugs.length === 0) {
-          if (window.showGlobalToast) window.showGlobalToast('Không lọc được phim nào từ các trang danh sách!', 'error');
-          return;
-        }
-
-        runCrawlProcess(slugs);
-      }
-    });
-
-    document.getElementById('crawlAllBtn').addEventListener('click', async () => {
+    // Dummy crawlAllBtn trigger to prevent console errors if elements missing
+    const dummyCrawlAllBtn = { addEventListener: () => {} };
+    (document.getElementById('crawlAllBtn') || dummyCrawlAllBtn).addEventListener('click', async () => {
       if (isRunning) return;
 
       const performCrawlAll = async () => {
@@ -2318,6 +3289,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         await loadExistingMoviesDict();
         renderCrawledList();
         checkAndRestoreCrawlSession();
+        populateYearsDropdowns();
         await fetchFilterMetadata();
       })();
     })();
