@@ -63,6 +63,7 @@ export const GET: APIRoute = async ({ request }) => {
           .from('txa_cron_logs')
           .select('details')
           .eq('job_name', 'sync-kkphim')
+          .neq('status', 'running')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
