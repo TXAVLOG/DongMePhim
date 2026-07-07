@@ -580,7 +580,7 @@ export function mergeMovieEpisodes(existingServers: any[], newServers: any[]): a
 }
 
 export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): MovieDetail {
-  const m = data.movie;
+  const m = data.movie || data.item;
   const defaultCdn = source === 'vsmov' ? 'https://vsmov.com' : 'https://phimimg.com';
   const cdnDomain = data.pathImage || data.APP_DOMAIN_CDN_IMAGE || defaultCdn;
   
@@ -593,15 +593,18 @@ export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): Mo
     bannerUrl = `${cdnDomain}/${bannerUrl.replace(/^\//, '')}`;
   }
 
-  const genres = Array.isArray(m.category) ? m.category.map((c: any) => c.name) : [];
+  const catList = m.category || m.categories;
+  const genres = Array.isArray(catList) ? catList.map((c: any) => c.name) : [];
   
   let category = "Khác";
-  if (Array.isArray(m.category) && m.category.length > 0) {
-    category = m.category[0].name;
+  if (Array.isArray(catList) && catList.length > 0) {
+    category = catList[0].name;
   }
+  
+  const countryList = m.country || m.countries;
   let country = "Khác";
-  if (Array.isArray(m.country) && m.country.length > 0) {
-    country = m.country[0].name;
+  if (Array.isArray(countryList) && countryList.length > 0) {
+    country = countryList[0].name;
   }
 
   let type: 'movie' | 'series' | 'hoathinh' | 'tvshows' = 'series';
@@ -685,8 +688,8 @@ export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): Mo
     ageRating: type === 'movie' ? 'T16' : 'T13',
     genres: genres,
     seasons: type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1',
-    actors: Array.isArray(m.actor) ? m.actor.filter(Boolean) : [],
-    directors: Array.isArray(m.director) ? m.director.filter(Boolean) : [],
+    actors: Array.isArray(m.actor || m.actors) ? (m.actor || m.actors).filter(Boolean) : [],
+    directors: Array.isArray(m.director || m.directors) ? (m.director || m.directors).filter(Boolean) : [],
     trailerUrl: m.trailer_url || '',
     episodes: finalEpisodes
   };

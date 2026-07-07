@@ -104,7 +104,8 @@ export const GET: APIRoute = async ({ request }) => {
           continue;
         }
         const detailData = await detailRes.json() as any;
-        if (!detailData || !detailData.movie) {
+        const movieObj = detailData?.movie || detailData?.item;
+        if (!detailData || !movieObj) {
           detailsLog.push(`VSMOV: ${slug} (Empty payload)`);
           continue;
         }
