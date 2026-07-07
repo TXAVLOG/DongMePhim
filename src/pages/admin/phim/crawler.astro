@@ -1428,34 +1428,54 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         };
       }) : [];
 
-      return {
-        id: m._id || m.id || `kk-${m.slug}`,
-        title: m.name,
-        originalTitle: m.origin_name,
-        slug: m.slug,
-        description: m.content ? m.content.replace(/<[^>]*>/g, '') : '',
-        posterUrl: posterUrl,
-        bannerUrl: bannerUrl,
-        releaseYear: parseInt(m.year) || 2025,
-        durationMinutes: m.time || (type === 'movie' ? '120 phút' : '45 phút/tập'),
-        type: type,
-        status: m.status === 'completed' ? 'completed' : 'ongoing',
-        episodeCurrent: m.episode_current || (type === 'movie' ? 'Full' : '1'),
-        episodeTotal: m.episode_total || '1',
-        quality: m.quality || 'FHD',
-        lang: m.lang || 'Vietsub',
-        imdbScore: 8.0,
-        category: category,
-        country: country,
-        ageRating: type === 'movie' ? 'T16' : 'T13',
-        genres: genres,
-        seasons: type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1',
-        actors: Array.isArray(m.actor) ? m.actor.filter(Boolean) : [],
-        directors: Array.isArray(m.director) ? m.director.filter(Boolean) : [],
-        trailerUrl: m.trailer_url || '',
-        episodes: episodes
-      };
+  // Check if episodes only have empty/placeholder links
+  let hasActualStreamingLinks = false;
+  for (const srv of episodes) {
+    for (const ep of (srv.serverData || [])) {
+      if ((ep.linkM3u8 || '').trim() || (ep.linkEmbed || '').trim()) {
+        hasActualStreamingLinks = true;
+        break;
+      }
     }
+    if (hasActualStreamingLinks) break;
+  }
+
+  let finalEpisodes = episodes;
+  let finalEpisodeCurrent = m.episode_current || (type === 'movie' ? 'Full' : '1');
+
+  if (!hasActualStreamingLinks) {
+    finalEpisodes = [];
+    finalEpisodeCurrent = "Sắp chiếu";
+  }
+
+  return {
+    id: m._id || m.id || `kk-${m.slug}`,
+    title: m.name,
+    originalTitle: m.origin_name,
+    slug: m.slug,
+    description: m.content ? m.content.replace(/<[^>]*>/g, '') : '',
+    posterUrl: posterUrl,
+    bannerUrl: bannerUrl,
+    releaseYear: parseInt(m.year) || 2025,
+    durationMinutes: m.time || (type === 'movie' ? '120 phút' : '45 phút/tập'),
+    type: type,
+    status: m.status === 'completed' ? 'completed' : 'ongoing',
+    episodeCurrent: finalEpisodeCurrent,
+    episodeTotal: m.episode_total || '1',
+    quality: m.quality || 'FHD',
+    lang: m.lang || 'Vietsub',
+    imdbScore: 8.0,
+    category: category,
+    country: country,
+    ageRating: type === 'movie' ? 'T16' : 'T13',
+    genres: genres,
+    seasons: type === 'movie' ? 'Bản Điện Ảnh' : 'Phần 1',
+    actors: Array.isArray(m.actor) ? m.actor.filter(Boolean) : [],
+    directors: Array.isArray(m.director) ? m.director.filter(Boolean) : [],
+    trailerUrl: m.trailer_url || '',
+    episodes: finalEpisodes
+  };
+}
 
     function saveCrawlSession(slugsList, currentIndex, success, skipped, failed) {
       const session = {

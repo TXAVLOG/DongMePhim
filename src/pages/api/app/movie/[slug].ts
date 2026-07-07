@@ -153,6 +153,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       status: movie.status,
       broadcast_at: movie.broadcastSchedule?.notice || "",
       is_favorite: isFavorite,
+      require_login: movie.require_login || false,
       categories: movie.genres?.map((g: string) => ({ name: g })) || (movie.category ? [{ name: movie.category }] : []),
       actors: movie.actors?.map((a: string) => ({ name: a, role: "" })) || []
     },

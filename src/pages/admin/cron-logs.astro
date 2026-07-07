@@ -346,14 +346,27 @@ function formatDuration(ms: number) {
                       {item.message || 'Không có thông điệp'}
                     </td>
                     <td class="py-4 px-4 text-right">
-                      <button 
-                        type="button" 
-                        onclick={`viewLogDetails('${item.id}', ${JSON.stringify(item.details).replace(/'/g, "\\'")})`}
-                        class="p-2 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg text-purple-400 transition-all cursor-pointer inline-flex items-center justify-center border-none"
-                        data-txatooltip="Xem chi tiết dữ liệu JSON"
-                      >
-                        <span class="material-symbols-outlined text-base">visibility</span>
-                      </button>
+                      <div class="flex items-center justify-end gap-2">
+                        {item.status === 'partial' && item.job_name === 'sync-kkphim' && (
+                          <button 
+                            type="button" 
+                            onclick={`resumeSyncJob(this, ${item.details?.limit || 20})`}
+                            class="px-2.5 py-1.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 text-orange-400 rounded-lg font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1"
+                            data-txatooltip="Tiếp tục quét các phim còn lại"
+                          >
+                            <span class="material-symbols-outlined text-[12px] font-bold">play_arrow</span>
+                            <span>Tiếp tục</span>
+                          </button>
+                        )}
+                        <button 
+                          type="button" 
+                          onclick={`viewLogDetails('${item.id}', ${JSON.stringify(item.details).replace(/'/g, "\\'")})`}
+                          class="p-2 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg text-purple-400 transition-all cursor-pointer inline-flex items-center justify-center border-none"
+                          data-txatooltip="Xem chi tiết dữ liệu JSON"
+                        >
+                          <span class="material-symbols-outlined text-base">visibility</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -652,6 +665,32 @@ ${formattedJson}
         await runAllJobsSequentially();
       } else {
         await runSingleJobWithProgress(jobName);
+      }
+    };
+
+    window.resumeSyncJob = async function(btnElement, limit) {
+      let oldHtml = btnElement.innerHTML;
+      btnElement.disabled = true;
+      btnElement.innerHTML = '<span class="material-symbols-outlined animate-spin text-[12px]">autorenew</span> Đang chạy...';
+      
+      if (window.showGlobalToast) window.showGlobalToast('Đang tiếp tục đồng bộ phim...', 'info');
+      
+      try {
+        const res = await fetch('/api/admin/cron-trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job: 'sync-kkphim', limit: limit || 20, resume: true })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Lỗi không xác định');
+        
+        if (window.showGlobalToast) window.showGlobalToast(data.message || 'Đồng bộ tiếp tục thành công!', 'success');
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        if (window.showGlobalToast) window.showGlobalToast(`Lỗi: ${err.message}`, 'error');
+        btnElement.disabled = false;
+        btnElement.innerHTML = oldHtml;
       }
     };
 

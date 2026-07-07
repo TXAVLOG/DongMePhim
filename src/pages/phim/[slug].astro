@@ -664,6 +664,9 @@ if (movie && movie.actors && movie.actors.length > 0) {
                 <button data-tab="tab-related" class="detail-tab-btn pb-3 text-sm font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer shrink-0">
                   Đề xuất
                 </button>
+                <button data-tab="tab-ratings" class="detail-tab-btn pb-3 text-sm font-bold text-on-surface-variant hover:text-white transition-all cursor-pointer shrink-0">
+                  Đánh giá
+                </button>
               </div>
             </div>
 
@@ -827,6 +830,61 @@ if (movie && movie.actors && movie.actors.length > 0) {
                   <p class="text-xs text-on-surface-variant col-span-full py-4 text-center">Không có đề xuất nào phù hợp.</p>
                 )}
               </div>
+              
+              <!-- Tab 5: Đánh Giá -->
+              <div id="tab-ratings" class="detail-tab-panel hidden space-y-6">
+                <div class="glass-card bg-surface-card border border-glass-stroke rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+                  <!-- Glow backgrounds -->
+                  <div class="absolute -left-20 -top-20 w-80 h-80 bg-primary/5 blur-[120px] rounded-full"></div>
+                  
+                  <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10 border-b border-glass-stroke pb-6">
+                    <div class="space-y-2">
+                      <h3 class="text-xl md:text-2xl font-black text-white flex items-center gap-2 font-outfit uppercase">
+                        <span class="material-symbols-outlined text-amber-400 text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+                        Đánh giá tác phẩm
+                      </h3>
+                      <p class="text-xs text-zinc-400 font-medium">Chia sẻ cảm nhận của bạn về bộ phim này</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 bg-white/5 border border-glass-stroke px-5 py-3 rounded-2xl">
+                      <div class="text-center">
+                        <div class="flex items-center gap-1 justify-center">
+                          <span class="material-symbols-outlined text-amber-400 text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+                          <span class="text-xl font-black text-white font-outfit" id="tab-rating-score-display">--</span>
+                          <span class="text-zinc-500 text-xs font-bold font-outfit">/ 10</span>
+                        </div>
+                        <div class="text-[10px] text-zinc-500 font-bold font-outfit mt-0.5 uppercase tracking-wide">
+                          <span id="tab-rating-count-display">0</span> lượt đánh giá
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="py-8 text-center space-y-5 relative z-10 max-w-md mx-auto">
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_30px_rgba(124,58,237,0.15)]">
+                      <span class="material-symbols-outlined text-3xl text-primary" style="font-variation-settings: 'FILL' 1;">reviews</span>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <h4 class="font-bold text-white text-base font-outfit">Bạn nghĩ gì về bộ phim này?</h4>
+                      <p class="text-xs text-zinc-400 font-medium font-sans leading-relaxed">
+                        Đánh giá của bạn sẽ giúp cộng đồng DongMePhim có thêm thông tin tham khảo hữu ích khi chọn phim xem!
+                      </p>
+                    </div>
+
+                    <div class="pt-3">
+                      <button 
+                        type="button" 
+                        id="btn-trigger-rating-modal"
+                        class="px-8 py-3.5 bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-slate-950 font-black rounded-xl text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20 border-none uppercase tracking-wider cursor-pointer font-bold"
+                      >
+                        Đánh giá ngay
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -837,22 +895,6 @@ if (movie && movie.actors && movie.actors.length > 0) {
                 <span class="material-symbols-outlined text-primary text-base">forum</span>
                 Bình luận (<span id="comments-count">2</span>)
               </h3>
-              <div class="flex gap-2">
-                <button class="px-3.5 py-1 bg-primary/20 text-primary border border-primary/30 rounded-lg text-[10px] font-bold cursor-pointer transition-colors hover:bg-primary/30 active:scale-95" id="btn-show-comments">Bình luận</button>
-                <button class="px-3.5 py-1 bg-surface border border-glass-stroke text-on-surface-variant rounded-lg text-[10px] font-bold hover:text-white cursor-pointer transition-colors active:scale-95" id="btn-show-rating">Đánh giá</button>
-              </div>
-            </div>
-
-            <!-- Khung Nhập Đánh Giá sao -->
-            <div id="rating-input-container" class="hidden p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
-              <span class="text-xs font-bold text-on-surface-variant">Chọn mức điểm đánh giá phim của bạn:</span>
-              <div class="flex gap-1" id="rating-stars-input">
-                <span data-star="1" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
-                <span data-star="2" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
-                <span data-star="3" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
-                <span data-star="4" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
-                <span data-star="5" class="material-symbols-outlined text-gray-500 hover:text-amber-400 cursor-pointer transition-colors text-lg">star</span>
-              </div>
             </div>
 
             <!-- Ô nhập liệu bình luận -->
@@ -1940,11 +1982,9 @@ if (movie && movie.actors && movie.actors.length > 0) {
     const submitCommentBtn = document.getElementById('btn-submit-comment');
     const commentAnonCheck = document.getElementById('comment-anonymous') as HTMLInputElement | null;
     
-    const btnShowComments = document.getElementById('btn-show-comments');
-    const btnShowRating = document.getElementById('btn-show-rating');
-    const ratingContainer = document.getElementById('rating-input-container');
-    const ratingStars = document.querySelectorAll('#rating-stars-input span');
-    
+    const btnTriggerRatingModal = document.getElementById('btn-trigger-rating-modal');
+    const tabRatingScoreDisplay = document.getElementById('tab-rating-score-display');
+    const tabRatingCountDisplay = document.getElementById('tab-rating-count-display');
     const replyToLbl = document.getElementById('reply-to-lbl');
     const cancelReplyBtn = document.getElementById('cancel-reply-btn');
 
@@ -1966,19 +2006,14 @@ if (movie && movie.actors && movie.actors.length > 0) {
             const reviewsDisplay = document.getElementById('reviews-count-display');
             if (ratingDisplay) ratingDisplay.textContent = String(r.averageRating || '--');
             if (reviewsDisplay) reviewsDisplay.textContent = String(r.totalRatings || 0);
+            if (tabRatingScoreDisplay) tabRatingScoreDisplay.textContent = String(r.averageRating || '--');
+            if (tabRatingCountDisplay) tabRatingCountDisplay.textContent = String(r.totalRatings || 0);
+            
             currentUserRating = r.userRating || 0;
-            if (currentUserRating > 0) {
-              selectedRatingStar = currentUserRating;
-              ratingStars.forEach((s, i) => {
-                if (i < currentUserRating) {
-                  s.classList.add('text-amber-400');
-                  s.classList.remove('text-gray-500');
-                  s.classList.remove('hover:text-amber-400');
-                } else {
-                  s.classList.remove('text-amber-400');
-                  s.classList.add('text-gray-500');
-                }
-              });
+            if (currentUserRating > 0 && btnTriggerRatingModal) {
+              btnTriggerRatingModal.textContent = `Bạn đã đánh giá ${currentUserRating} sao`;
+              btnTriggerRatingModal.classList.remove('bg-gradient-to-r', 'from-primary', 'to-secondary');
+              btnTriggerRatingModal.classList.add('bg-zinc-800', 'text-zinc-500', 'border', 'border-zinc-700/50', 'pointer-events-none');
             }
           }
         }
@@ -1987,88 +2022,140 @@ if (movie && movie.actors && movie.actors.length > 0) {
       }
     };
 
-    // Rating star handler - click = submit directly
-    ratingStars.forEach(star => {
-      star.addEventListener('click', async () => {
-        if (isRatingSubmitting) return;
-        const val = parseInt(star.getAttribute('data-star') || '0');
+    if (btnTriggerRatingModal) {
+      btnTriggerRatingModal.addEventListener('click', () => {
         if (currentUserRating > 0) {
-          if (window.showGlobalToast) window.showGlobalToast('Bạn đã đánh giá phim này!', 'info');
+          if (window.showGlobalToast) window.showGlobalToast('Bạn đã đánh giá bộ phim này rồi!', 'info');
           return;
         }
+
         if (requireLogin) {
-          requireLogin(async () => {
-            const username = (window.APP_USER?.username || localStorage.getItem('tlogged_in_as') || '').trim();
-            if (!username) {
-              if (window.showGlobalToast) window.showGlobalToast('Vui lòng đăng nhập để đánh giá!', 'error');
-              return;
-            }
-            isRatingSubmitting = true;
-            try {
-              const res = await fetch('/api/user/rating', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  username,
-                  slug: movieSlug,
-                  rating: val
-                })
-              });
-              if (res.ok) {
-                const result = await res.json() as any;
-                if (result.status === 'success') {
-                  currentUserRating = val;
-                  selectedRatingStar = val;
-                  ratingStars.forEach((s, i) => {
-                    if (i < val) {
-                      s.classList.add('text-amber-400');
-                      s.classList.remove('text-gray-500');
-                    } else {
-                      s.classList.remove('text-amber-400');
-                      s.classList.add('text-gray-500');
-                    }
+          requireLogin(() => {
+            // Open modal to select stars
+            if (window.txamodal) {
+              const formattedScore = tabRatingScoreDisplay ? tabRatingScoreDisplay.textContent : '8.0';
+              const formattedCount = tabRatingCountDisplay ? tabRatingCountDisplay.textContent : '0';
+              
+              let tempRating = 0;
+
+              const modalContentHtml = `
+                <div class="pt-2 text-xs space-y-5 text-center">
+                  <p class="text-zinc-400 text-xs">
+                    Điểm hiện tại: <span class="text-amber-400 font-bold">${formattedScore} ⭐</span> (${formattedCount} lượt đánh giá)
+                  </p>
+                  
+                  <div class="grid grid-cols-5 gap-2.5 pt-2" id="modal-emoji-container">
+                    <button type="button" data-val="10" class="modal-emoji-btn flex flex-col items-center gap-2 p-3 rounded-2xl border border-glass-stroke bg-white/5 transition-all cursor-pointer hover:bg-white/10 outline-none">
+                      <span class="text-3xl">🤩</span>
+                      <span class="text-[10px] text-zinc-300 font-bold">Tuyệt vời</span>
+                    </button>
+                    <button type="button" data-val="8" class="modal-emoji-btn flex flex-col items-center gap-2 p-3 rounded-2xl border border-glass-stroke bg-white/5 transition-all cursor-pointer hover:bg-white/10 outline-none">
+                      <span class="text-3xl">😊</span>
+                      <span class="text-[10px] text-zinc-300 font-bold">Phim hay</span>
+                    </button>
+                    <button type="button" data-val="6" class="modal-emoji-btn flex flex-col items-center gap-2 p-3 rounded-2xl border border-glass-stroke bg-white/5 transition-all cursor-pointer hover:bg-white/10 outline-none">
+                      <span class="text-3xl">😐</span>
+                      <span class="text-[10px] text-zinc-300 font-bold">Khá ổn</span>
+                    </button>
+                    <button type="button" data-val="4" class="modal-emoji-btn flex flex-col items-center gap-2 p-3 rounded-2xl border border-glass-stroke bg-white/5 transition-all cursor-pointer hover:bg-white/10 outline-none">
+                      <span class="text-3xl">😞</span>
+                      <span class="text-[10px] text-zinc-300 font-bold">Phim chán</span>
+                    </button>
+                    <button type="button" data-val="2" class="modal-emoji-btn flex flex-col items-center gap-2 p-3 rounded-2xl border border-glass-stroke bg-white/5 transition-all cursor-pointer hover:bg-white/10 outline-none">
+                      <span class="text-3xl">🤮</span>
+                      <span class="text-[10px] text-zinc-300 font-bold">Dở tệ</span>
+                    </button>
+                  </div>
+                  
+                  <div class="text-center font-bold text-amber-400 text-sm py-1" id="modal-rating-status-text">
+                    Vui lòng chọn mức đánh giá của bạn
+                  </div>
+                </div>
+              `;
+
+              window.txamodal.show({
+                title: 'Đánh Giá Phim',
+                content: modalContentHtml,
+                confirmText: 'Gửi đánh giá',
+                cancelText: 'Đóng',
+                onShow: () => {
+                  const emojiButtons = document.querySelectorAll('.modal-emoji-btn');
+                  const statusText = document.getElementById('modal-rating-status-text');
+                  
+                  emojiButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                      // Remove active styles from all buttons
+                      emojiButtons.forEach(b => {
+                        b.classList.remove('border-primary', 'bg-primary/20');
+                      });
+                      
+                      // Add active styles to clicked button
+                      btn.classList.add('border-primary', 'bg-primary/20');
+                      
+                      const val = parseInt(btn.getAttribute('data-val') || '0', 10);
+                      tempRating = val;
+                      
+                      if (statusText) {
+                        statusText.textContent = `Bạn đã chọn: ${val} / 10 sao`;
+                      }
+                    });
                   });
-                  const r = result.data;
-                  const ratingDisplay = document.getElementById('average-rating-display');
-                  const reviewsDisplay = document.getElementById('reviews-count-display');
-                  if (ratingDisplay) ratingDisplay.textContent = String(r.averageRating || '--');
-                  if (reviewsDisplay) reviewsDisplay.textContent = String(r.totalRatings || 0);
-                  if (window.showGlobalToast) window.showGlobalToast('Đã đánh giá phim!', 'success');
+                },
+                onConfirm: async () => {
+                  if (tempRating === 0) {
+                    if (window.showGlobalToast) window.showGlobalToast('Vui lòng chọn mức đánh giá trước khi gửi!', 'error');
+                    return false; // don't close modal
+                  }
+                  
+                  try {
+                    const res = await fetch('/api/user/rating', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        slug: movieSlug,
+                        rating: tempRating
+                      })
+                    });
+                    
+                    if (res.ok) {
+                      const result = await res.json() as any;
+                      if (result.status === 'success') {
+                        currentUserRating = tempRating;
+                        const r = result.data;
+                        
+                        const ratingDisplay = document.getElementById('average-rating-display');
+                        const reviewsDisplay = document.getElementById('reviews-count-display');
+                        if (ratingDisplay) ratingDisplay.textContent = String(r.averageRating || '--');
+                        if (reviewsDisplay) reviewsDisplay.textContent = String(r.totalRatings || 0);
+                        if (tabRatingScoreDisplay) tabRatingScoreDisplay.textContent = String(r.averageRating || '--');
+                        if (tabRatingCountDisplay) tabRatingCountDisplay.textContent = String(r.totalRatings || 0);
+                        
+                        if (btnTriggerRatingModal) {
+                          btnTriggerRatingModal.textContent = `Bạn đã đánh giá ${tempRating} sao`;
+                          btnTriggerRatingModal.classList.remove('bg-gradient-to-r', 'from-primary', 'to-secondary');
+                          btnTriggerRatingModal.classList.add('bg-zinc-800', 'text-zinc-500', 'border', 'border-zinc-700/50', 'pointer-events-none');
+                        }
+                        
+                        if (window.showGlobalToast) window.showGlobalToast('Cảm ơn bạn đã đánh giá phim!', 'success');
+                        return true; // close modal
+                      } else {
+                        if (window.showGlobalToast) window.showGlobalToast(result.message || 'Lỗi khi đánh giá phim', 'error');
+                        return false;
+                      }
+                    } else {
+                      const errData = (await res.json().catch(() => ({}))) as any;
+                      if (window.showGlobalToast) window.showGlobalToast(errData.message || 'Lỗi hệ thống khi đánh giá phim', 'error');
+                      return false;
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối mạng, vui lòng thử lại!', 'error');
+                    return false;
+                  }
                 }
-              }
-            } catch (e) {
-              console.error(e);
-              if (window.showGlobalToast) window.showGlobalToast('Lỗi khi đánh giá phim', 'error');
-            } finally {
-              isRatingSubmitting = false;
+              });
             }
           });
-        }
-      });
-    });
-
-    if (btnShowRating && ratingContainer) {
-      btnShowRating.addEventListener('click', () => {
-        if (currentUserRating > 0) {
-          if (window.showGlobalToast) window.showGlobalToast(`Bạn đã đánh giá ${currentUserRating} sao!`, 'info');
-          ratingContainer.classList.toggle('hidden');
-          btnShowRating.classList.toggle('bg-primary/20');
-          btnShowRating.classList.toggle('text-primary');
-          return;
-        }
-        requireLogin(() => {
-          ratingContainer.classList.toggle('hidden');
-          btnShowRating.classList.toggle('bg-primary/20');
-          btnShowRating.classList.toggle('text-primary');
-        });
-      });
-    }
-
-    if (btnShowComments) {
-      btnShowComments.addEventListener('click', () => {
-        if (ratingContainer) ratingContainer.classList.add('hidden');
-        if (btnShowRating) {
-          btnShowRating.classList.remove('bg-primary/20', 'text-primary');
         }
       });
     }
@@ -2540,17 +2627,6 @@ if (movie && movie.actors && movie.actors.length > 0) {
           commentTextarea.value = '';
           if (charCounter) charCounter.textContent = '0 / 1000';
           if (commentAnonCheck) commentAnonCheck.checked = false;
-          
-          // Reset stars if rated
-          if (selectedRatingStar > 0) {
-            selectedRatingStar = 0;
-            ratingStars.forEach(s => {
-              s.classList.remove('text-amber-400');
-              s.classList.add('text-gray-500');
-            });
-            if (ratingContainer) ratingContainer.classList.add('hidden');
-            if (btnShowRating) btnShowRating.classList.remove('bg-primary/20', 'text-primary');
-          }
         });
       });
     }

@@ -3,6 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { MovieService } from '@services/MovieService';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
+import { TxaMovieRanker } from '../../../backend/utils/txaMovieRanker';
 
 export const GET: APIRoute = async ({ request, cookies }) => {
   try {
@@ -51,7 +52,8 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         content: m.description || "",
         imdb: { vote_average: parseFloat(m.imdbScore || m.imdb_score) || 0 },
         tmdb: { vote_average: parseFloat(m.tmdbScore || m.tmdb_score || m.imdbScore || m.imdb_score) || 0 },
-        is_favorite: favoriteIds.includes(Number(seqId))
+        is_favorite: favoriteIds.includes(Number(seqId)),
+        require_login: m.require_login || false
       };
     };
 
@@ -76,13 +78,16 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     const hotList = [...allMovies].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 15).map(mapMovie);
 
     // Anime (type hoathinh or genre Hoạt Hình)
-    const animeList = allMovies.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình')))).slice(0, 15).map(mapMovie);
+    const animeFiltered = allMovies.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
+    const animeList = TxaMovieRanker.sortMovies(animeFiltered).slice(0, 15).map(mapMovie);
 
     // Phim Bộ (type series)
-    const seriesList = allMovies.filter((m: any) => m.type === 'series').slice(0, 15).map(mapMovie);
+    const seriesFiltered = allMovies.filter((m: any) => m.type === 'series');
+    const seriesList = TxaMovieRanker.sortMovies(seriesFiltered).slice(0, 15).map(mapMovie);
 
     // Phim Lẻ (type movie)
-    const singleList = allMovies.filter((m: any) => m.type === 'movie').slice(0, 15).map(mapMovie);
+    const singleFiltered = allMovies.filter((m: any) => m.type === 'movie');
+    const singleList = TxaMovieRanker.sortMovies(singleFiltered).slice(0, 15).map(mapMovie);
 
     // TV Shows (type tvshows)
     const tvshowsList = allMovies.filter((m: any) => m.type === 'tvshows').slice(0, 15).map(mapMovie);

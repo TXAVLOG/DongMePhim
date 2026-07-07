@@ -324,8 +324,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       try {
         const { data: existing } = await supabase
           .from('movies')
-          .select('views, episode_current, title, episodes')
-          .eq('slug', movieSlug)
+          .select('id, views, episode_current, title, episodes')
+          .eq('slug', slug)
           .maybeSingle();
         if (existing) {
           existingMovie = existing;
@@ -338,7 +338,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }
       } catch (_) {}
 
-      const mergedEpisodes = mergeMovieEpisodes(existingEpisodes, episodes);
+      const mergedEpisodes = (movieData.overwriteEpisodes === true || m.overwriteEpisodes === true)
+        ? episodes
+        : mergeMovieEpisodes(existingEpisodes, episodes);
 
       // Auto-fetch VSMOV subtitles if source is vsmov or episodes contain vsmov embed URLs
       let enrichedEpisodes = mergedEpisodes;
@@ -364,6 +366,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
           console.error(`[Movie-Action] Error enriching VSMOV subtitles for "${movieSlug}":`, subErr.message);
         }
       }
+
+      const hasVipServer = enrichedEpisodes.some((srv: any) => {
+        const name = srv.serverName || srv.server_name || '';
+        return name.toLowerCase().includes('vip');
+      });
+      const requireLoginVal = m.require_login === true || m.require_login === 'true' || hasVipServer;
 
       // Map trường chuẩn sang cột database
       const moviePayload = {
@@ -392,14 +400,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
         trailer_url: m.trailerUrl || m.trailer_url || '',
         broadcast_schedule: m.broadcastSchedule || null,
         source: m.source || 'manual',
+        require_login: requireLoginVal,
         updated_at: new Date().toISOString()
       };
 
-      const { data: savedMovie, error } = await supabase
-        .from('movies')
-        .upsert(moviePayload, { onConflict: 'slug' })
-        .select('id')
-        .single();
+      let savedMovie = null;
+      let error = null;
+
+      if (existingMovie && existingMovie.id) {
+        const { data, error: updateErr } = await supabase
+          .from('movies')
+          .update(moviePayload)
+          .eq('id', existingMovie.id)
+          .select('id')
+          .single();
+        savedMovie = data;
+        error = updateErr;
+      } else {
+        const { data, error: insertErr } = await supabase
+          .from('movies')
+          .insert(moviePayload)
+          .select('id')
+          .single();
+        savedMovie = data;
+        error = insertErr;
+      }
 
       if (error) {
         console.error('Lỗi khi lưu phim vào Supabase:', error);
@@ -572,6 +597,33 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
       MovieService.clearCache();
       return apiResponse({ success: true }, 'success', 'Xóa phim thành công!', 200, request);
+    }
+
+    // 3. Thao tác đặt giới hạn Đăng nhập cho phim hàng loạt
+    if (action === 'require_login') {
+      const items = body.items || [];
+      const requireLogin = body.requireLogin === true || body.requireLogin === 'true';
+
+      if (items.length === 0) {
+        return apiResponse(null, 'error', 'Thiếu thông tin phim cần cập nhật!', 400, request);
+      }
+
+      const slugs = items.map((x: any) => typeof x === 'string' ? x : x.slug).filter(Boolean);
+
+      if (slugs.length > 0) {
+        const { error } = await supabase
+          .from('movies')
+          .update({ require_login: requireLogin, updated_at: new Date().toISOString() })
+          .in('slug', slugs);
+
+        if (error) {
+          console.error('Lỗi khi cập nhật trạng thái yêu cầu đăng nhập:', error);
+          return apiResponse(null, 'error', `Lỗi database: ${error.message}`, 500, request);
+        }
+      }
+
+      MovieService.clearCache();
+      return apiResponse({ success: true }, 'success', 'Cập nhật giới hạn đăng nhập thành công!', 200, request);
     }
 
     return apiResponse(null, 'error', 'Hành động không hợp lệ!', 400, request);

@@ -87,9 +87,15 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             </div>
           </div>
 
-          <div class="flex items-center gap-2 pt-2 col-span-1 md:col-span-2">
-            <input type="checkbox" id="moviePinned" class="w-4 h-4 rounded border-glass-stroke bg-zinc-950 text-primary focus:ring-0 focus:outline-none cursor-pointer" />
-            <label for="moviePinned" class="text-xs font-bold text-zinc-300 select-none cursor-pointer">Ghim phim này lên Banner chính (Hero Banner)</label>
+          <div class="flex flex-wrap items-center gap-6 pt-2 col-span-1 md:col-span-2">
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="moviePinned" class="w-4 h-4 rounded border-glass-stroke bg-zinc-950 text-primary focus:ring-0 focus:outline-none cursor-pointer" />
+              <label for="moviePinned" class="text-xs font-bold text-zinc-300 select-none cursor-pointer">Ghim phim này lên Banner chính (Hero Banner)</label>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="movieRequireLogin" class="w-4 h-4 rounded border-glass-stroke bg-zinc-950 text-primary focus:ring-0 focus:outline-none cursor-pointer" />
+              <label for="movieRequireLogin" class="text-xs font-bold text-zinc-300 select-none cursor-pointer">Yêu cầu đăng nhập để xem phim</label>
+            </div>
           </div>
 
           <div>
@@ -369,6 +375,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             actor: m.actors || m.actor || [],
             director: m.directors || m.director || [],
             pinned: m.pinned || false,
+            require_login: m.require_login || false,
           };
 
           const rawEps = m.episodes || [];
@@ -418,6 +425,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           document.getElementById("movieYear").value = movieData.movie.year;
           document.getElementById("movieTime").value = movieData.movie.time;
           document.getElementById("moviePinned").checked = !!movieData.movie.pinned;
+          document.getElementById("movieRequireLogin").checked = !!movieData.movie.require_login;
 
           if (m.broadcastSchedule) {
             document.getElementById("scheduleDate").value = m.broadcastSchedule.nextDate || "";
@@ -802,6 +810,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               originalTitle: document.getElementById("movieOriginalTitle").value.trim(),
               slug: slug,
               pinned: document.getElementById("moviePinned").checked,
+              require_login: document.getElementById("movieRequireLogin").checked,
               description: document.getElementById("movieDescription").value.trim(),
               posterUrl: document.getElementById("moviePosterUrl").value.trim() || "https://png.pngtree.com/thumb_back/fh260/background/20250415/pngtree-a-glowing-film-reel-standing-vertically-in-front-image_17193146.jpg",
               bannerUrl: document.getElementById("movieBannerUrl").value.trim() || document.getElementById("moviePosterUrl").value.trim(),
@@ -850,7 +859,10 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             body: JSON.stringify({
               action: "save",
               slug: slug,
-              movieData: moviePayload,
+              movieData: {
+                ...moviePayload,
+                overwriteEpisodes: true
+              },
               isStatic: movieData.isStatic
             })
           });

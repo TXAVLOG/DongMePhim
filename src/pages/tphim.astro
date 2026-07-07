@@ -7,19 +7,16 @@ import { topics } from '@data/topics';
 import { MovieService } from '@services/MovieService';
 import Txaicon from '@components/ui/txaicon.astro';
 import { getHomepageCategories } from '@data/categories';
+import { TxaMovieRanker } from '../backend/utils/txaMovieRanker';
 
 const homepageMappings = await getHomepageCategories();
 
 // Lấy tất cả các slugs được gán thủ công trên trang chủ
-const animeSlugs = homepageMappings['top-anime-he'] || [];
-const top10Slugs = homepageMappings['top-10-phim-le'] || [];
-const top10PhimBoSlugs = homepageMappings['top-10-phim-bo'] || [];
+const animeSlugs: string[] = [];
+const top10Slugs: string[] = [];
+const top10PhimBoSlugs: string[] = [];
 
-const assignedSlugs = [
-  ...animeSlugs,
-  ...top10Slugs,
-  ...top10PhimBoSlugs
-];
+const assignedSlugs: string[] = [];
 
 // Lấy phim theo các slugs được gán và 300 phim mới nhất để làm fallback/sidebar
 const [assignedMovies, latestMovies] = await Promise.all([
@@ -34,28 +31,12 @@ assignedMovies.forEach((m: any) => movieMap.set(m.slug, m));
 const allMoviesForServer = Array.from(movieMap.values());
 
 // Top Anime
-const animeMovies = allMoviesForServer.filter((m: any) => animeSlugs.includes(m.slug));
-const fallbackAnime = allMoviesForServer.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình')))).slice(0, 6);
-const animeMoviesSorted = [...animeMovies].sort((a, b) => animeSlugs.indexOf(a.slug) - animeSlugs.indexOf(b.slug));
-const topAnimeList = animeMovies.length > 0 ? animeMoviesSorted : fallbackAnime;
+const animeFiltered = allMoviesForServer.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
+const topAnimeList = TxaMovieRanker.sortMovies(animeFiltered).slice(0, 6);
 
-// Top 10 Phim Lẻ - Merge manual + auto-fill
-const top10MoviesManual = allMoviesForServer.filter((m: any) => top10Slugs.includes(m.slug));
-const top10MoviesManualSorted = [...top10MoviesManual].sort((a, b) => top10Slugs.indexOf(a.slug) - top10Slugs.indexOf(b.slug));
-const top10MoviesNeeded = 10 - top10MoviesManualSorted.length;
-let top10AutoFillLe: any[] = [];
-if (top10MoviesNeeded > 0) {
-  const manualSlugs = top10Slugs;
-  top10AutoFillLe = [...allMoviesForServer]
-    .filter((m: any) => m.type === 'movie' && !manualSlugs.includes(m.slug))
-    .sort((a: any, b: any) => {
-      const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10 + (a.commentCount || 0) * 5;
-      const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10 + (b.commentCount || 0) * 5;
-      return scoreB - scoreA;
-    })
-    .slice(0, top10MoviesNeeded);
-}
-const top10PhimLeList = [...top10MoviesManualSorted, ...top10AutoFillLe];
+// Top 10 Phim Lẻ
+const phimLeFiltered = allMoviesForServer.filter((m: any) => m.type === 'movie');
+const top10PhimLeList = TxaMovieRanker.sortMovies(phimLeFiltered).slice(0, 10);
 
 // Filter Top Series for Rank slider (server-side)
 const topSeries = allMoviesForServer
@@ -63,23 +44,9 @@ const topSeries = allMoviesForServer
   .sort((a: any, b: any) => ((b.views || 0) + (b.commentCount || 0)) - ((a.views || 0) + (a.commentCount || 0)))
   .slice(0, 10);
 
-// Top 10 Phim Bộ - Merge manual + auto-fill
-const topBoMoviesManual = allMoviesForServer.filter((m: any) => top10PhimBoSlugs.includes(m.slug));
-const topBoMoviesManualSorted = [...topBoMoviesManual].sort((a, b) => top10PhimBoSlugs.indexOf(a.slug) - top10PhimBoSlugs.indexOf(b.slug));
-const topBoMoviesNeeded = 10 - topBoMoviesManualSorted.length;
-let top10AutoFillBo: any[] = [];
-if (topBoMoviesNeeded > 0) {
-  const manualSlugs = top10PhimBoSlugs;
-  top10AutoFillBo = [...allMoviesForServer]
-    .filter((m: any) => m.type === 'series' && !manualSlugs.includes(m.slug))
-    .sort((a: any, b: any) => {
-      const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10 + (a.commentCount || 0) * 5;
-      const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10 + (b.commentCount || 0) * 5;
-      return scoreB - scoreA;
-    })
-    .slice(0, topBoMoviesNeeded);
-}
-const top10PhimBoList = [...topBoMoviesManualSorted, ...top10AutoFillBo];
+// Top 10 Phim Bộ
+const phimBoFiltered = allMoviesForServer.filter((m: any) => m.type === 'series');
+const top10PhimBoList = TxaMovieRanker.sortMovies(phimBoFiltered).slice(0, 10);
 
 // Phim điện ảnh mới coóng - Tự động phân loại (Lọc phim lẻ, ưu tiên chiếu rạp, sắp xếp mới nhất)
 const phimDienAnhList = [...allMoviesForServer]

@@ -145,7 +145,11 @@ export const POST: APIRoute = async ({ request }) => {
           html: compiledHtml
         });
       } catch (logErr) {}
-      return apiResponse(null, 'error', `Gửi lại mã xác minh thất bại: ${sendErr.message}`, 400, request);
+      const friendlyMsg = getFriendlySmtpError(sendErr.message || 'Lỗi kết nối SMTP server');
+      return apiResponse({
+        smtpError: true,
+        smtpMessage: sendErr.message || 'Lỗi kết nối SMTP server'
+      }, 'error', `Gửi lại mã xác minh thất bại: ${friendlyMsg}`, 400, request);
     }
 
     return apiResponse({ success: true, message: 'Gửi lại mã xác minh thành công! Vui lòng kiểm tra email.' }, 'success', '', 200, request, true);
@@ -153,3 +157,17 @@ export const POST: APIRoute = async ({ request }) => {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
+
+function getFriendlySmtpError(rawError: string): string {
+  const err = rawError.toLowerCase();
+  if (err.includes('badcredentials') || err.includes('535') || err.includes('authentication failed')) {
+    return 'Sai thông tin đăng nhập SMTP (Mật khẩu ứng dụng)!';
+  }
+  if (err.includes('connection refused') || err.includes('connect check') || err.includes('etimedout') || err.includes('timeout')) {
+    return 'Không kết nối được SMTP Server (Timeout/Refused)!';
+  }
+  if (err.includes('expected one of') || err.includes('smtp error')) {
+    return 'Máy chủ SMTP từ chối gửi thư (Lỗi cấu hình/giao thức)!';
+  }
+  return rawError;
+}

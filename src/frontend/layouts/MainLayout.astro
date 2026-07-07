@@ -1306,15 +1306,15 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- PREMIUM UNIFIED AUTH MODAL (Redesigned Split Layout)            -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <div id="login-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300 p-4" style="display:none;">
-      <div class="relative w-[92%] sm:w-full max-w-[460px] overflow-hidden rounded-[28px] border border-glass-stroke shadow-[0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#0f172a]/95 animate-[modalZoomIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)] p-8 sm:p-10 flex flex-col justify-center">
+    <div id="login-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300 p-4 overflow-y-auto" style="display:none;">
+      <div class="relative w-[92%] sm:w-full max-w-[460px] max-h-[calc(100dvh-2rem)] sm:max-h-[90vh] overflow-y-auto premium-scrollbar rounded-[28px] border border-glass-stroke shadow-[0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#0f172a]/95 animate-[modalZoomIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)] p-5 xs:p-6 sm:p-10 flex flex-col justify-start">
         <!-- Close button -->
         <button onclick="closeLoginModal()" class="absolute right-5 top-5 text-on-surface-variant hover:text-white hover:rotate-90 transition-all duration-300 z-50 p-2 cursor-pointer bg-transparent border-none">
           <span class="material-symbols-outlined text-xl">close</span>
         </button>
 
         <!-- LOGIN TAB CONTENT -->
-        <div id="auth-tab-login" class="space-y-6">
+        <div id="auth-tab-login" class="space-y-4 sm:space-y-6">
           <div>
             <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Đăng nhập</h2>
             <p class="text-xs text-on-surface-variant mt-2 font-semibold">
@@ -1322,7 +1322,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             </p>
           </div>
           
-          <form id="login-form" class="space-y-4" novalidate>
+          <form id="login-form" class="space-y-3 sm:space-y-4" novalidate>
             <div class="space-y-1.5 auth-field">
               <input type="text" id="login-identity" placeholder="Email hoặc tên đăng nhập..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
               <p class="login-id-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
@@ -1375,7 +1375,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         </div>
 
         <!-- REGISTER TAB CONTENT -->
-        <div id="auth-tab-register" class="space-y-5 hidden">
+        <div id="auth-tab-register" class="space-y-3.5 sm:space-y-5 hidden">
           <div>
             <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Đăng ký tài khoản</h2>
             <p class="text-xs text-on-surface-variant mt-1 font-semibold">
@@ -1383,7 +1383,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             </p>
           </div>
           
-          <form id="register-form" class="space-y-3.5" novalidate>
+          <form id="register-form" class="space-y-2.5 sm:space-y-3.5" novalidate>
             <!-- Username Field -->
             <div class="space-y-1 auth-field relative">
               <input type="text" id="reg-username" name="username" placeholder="Tên tài khoản..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 pl-4 pr-10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
@@ -1495,7 +1495,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
 
         <!-- FORGOT PASSWORD TAB CONTENT -->
         {isSmtpConfigured && (
-          <div id="auth-tab-forgot-password" class="space-y-6 hidden">
+          <div id="auth-tab-forgot-password" class="space-y-4 sm:space-y-6 hidden">
             <div>
               <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Khôi phục mật khẩu</h2>
               <p class="text-xs text-on-surface-variant mt-2 font-semibold">
@@ -1503,7 +1503,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
               </p>
             </div>
 
-            <form id="forgot-password-form" class="space-y-4" novalidate>
+            <form id="forgot-password-form" class="space-y-3 sm:space-y-4" novalidate>
               <div class="space-y-1.5 auth-field">
                 <input type="email" id="forgot-email" name="email" placeholder="Nhập địa chỉ Email..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
                 <p class="forgot-email-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
@@ -1522,7 +1522,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         )}
 
         <!-- EMAIL VERIFICATION TAB CONTENT (OTP / LINK) -->
-        <div id="auth-tab-verify-email" class="space-y-6 hidden">
+        <div id="auth-tab-verify-email" class="space-y-4 sm:space-y-6 hidden">
           <div>
             <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Xác minh tài khoản</h2>
             <p class="text-xs text-on-surface-variant mt-2 font-semibold">
@@ -1530,10 +1530,18 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             </p>
           </div>
 
-          <form id="verify-email-form" class="space-y-4" novalidate>
+          <form id="verify-email-form" class="space-y-3 sm:space-y-4" novalidate>
             <input type="hidden" id="verify-email-hidden" />
-            <div class="space-y-1.5 auth-field relative">
-              <input type="text" id="verify-otp-code" name="code" placeholder="Nhập mã OTP gồm 6 chữ số..." class="w-full bg-white/5 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center tracking-[4px] font-bold font-mono" maxlength="6" required />
+            <input type="hidden" id="verify-otp-code" name="code" />
+            <div class="space-y-1.5 auth-field">
+              <div class="flex gap-2 justify-center items-center py-2" id="otp-digits-container">
+                <input type="text" class="otp-digit-input w-full flex-1 max-w-[46px] aspect-square text-center text-lg font-bold bg-white/5 border border-glass-stroke rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-white font-mono" maxlength="1" pattern="[0-9]*" inputmode="numeric" required />
+                <input type="text" class="otp-digit-input w-full flex-1 max-w-[46px] aspect-square text-center text-lg font-bold bg-white/5 border border-glass-stroke rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-white font-mono" maxlength="1" pattern="[0-9]*" inputmode="numeric" required />
+                <input type="text" class="otp-digit-input w-full flex-1 max-w-[46px] aspect-square text-center text-lg font-bold bg-white/5 border border-glass-stroke rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-white font-mono" maxlength="1" pattern="[0-9]*" inputmode="numeric" required />
+                <input type="text" class="otp-digit-input w-full flex-1 max-w-[46px] aspect-square text-center text-lg font-bold bg-white/5 border border-glass-stroke rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-white font-mono" maxlength="1" pattern="[0-9]*" inputmode="numeric" required />
+                <input type="text" class="otp-digit-input w-full flex-1 max-w-[46px] aspect-square text-center text-lg font-bold bg-white/5 border border-glass-stroke rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-white font-mono" maxlength="1" pattern="[0-9]*" inputmode="numeric" required />
+                <input type="text" class="otp-digit-input w-full flex-1 max-w-[46px] aspect-square text-center text-lg font-bold bg-white/5 border border-glass-stroke rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-white font-mono" maxlength="1" pattern="[0-9]*" inputmode="numeric" required />
+              </div>
               <p class="verify-otp-error text-[10px] text-red-400 font-medium ml-1 h-3 opacity-0 transition-opacity"></p>
             </div>
 
@@ -1552,14 +1560,14 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- GOOGLE OAUTH ADDITIONAL INFO MODAL                              -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <div id="google-extra-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300 p-4" style="display:none;">
-      <div class="relative w-[92%] sm:w-full max-w-[460px] overflow-hidden rounded-[28px] border border-glass-stroke shadow-[0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#0f172a]/95 animate-[modalZoomIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)] p-8 sm:p-10 flex flex-col justify-center">
+    <div id="google-extra-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300 p-4 overflow-y-auto" style="display:none;">
+      <div class="relative w-[92%] sm:w-full max-w-[460px] max-h-[calc(100dvh-2rem)] sm:max-h-[90vh] overflow-y-auto premium-scrollbar rounded-[28px] border border-glass-stroke shadow-[0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#0f172a]/95 animate-[modalZoomIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)] p-5 xs:p-6 sm:p-10 flex flex-col justify-start">
         <!-- Close button -->
         <button onclick="closeGoogleExtraModal()" class="absolute right-5 top-5 text-on-surface-variant hover:text-white hover:rotate-90 transition-all duration-300 z-50 p-2 cursor-pointer bg-transparent border-none">
           <span class="material-symbols-outlined text-xl">close</span>
         </button>
 
-        <div class="space-y-5">
+        <div class="space-y-3.5 sm:space-y-5">
           <div>
             <h2 class="text-2xl font-black text-white tracking-tight font-display-hero">Thông tin bổ sung</h2>
             <p class="text-xs text-on-surface-variant mt-2 font-semibold">
@@ -1567,7 +1575,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             </p>
           </div>
 
-          <form id="google-extra-form" class="space-y-4" novalidate>
+          <form id="google-extra-form" class="space-y-3 sm:space-y-4" novalidate>
             <!-- Gender Selection Field -->
             <div class="space-y-1 auth-field">
               <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Giới tính</label>
@@ -1579,7 +1587,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
             </div>
 
             <!-- Location Select Field (Province & District/Ward) -->
-            <div class="space-y-3">
+            <div class="space-y-2.5 sm:space-y-3">
               <div class="space-y-1 auth-field">
                 <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Tỉnh / Thành phố</label>
                 <select id="google-extra-province" class="w-full bg-slate-900 border border-glass-stroke rounded-xl py-3 px-4 text-xs text-zinc-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer" required>
@@ -3150,6 +3158,9 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           forgotTab?.classList.remove('hidden');
         } else if (tab === 'verify-email') {
           verifyTab?.classList.remove('hidden');
+          if (typeof window.initOtpInputs === 'function') {
+            window.initOtpInputs();
+          }
         }
         
         // Restart simulated Cloudflare Turnstile decoy verification
@@ -3734,7 +3745,30 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                       switchAuthTab('login');
                     }
                   } else {
-                    showGlobalToast(data.message || 'Đã có lỗi xảy ra', 'error');
+                    if (data.data && data.data.smtpError === true) {
+                      // Custom handling for registration success but SMTP send failure
+                      const isAdmin = window.APP_USER && (window.APP_USER.role === 'admin' || window.APP_USER.is_admin === true || window.APP_USER.is_admin === 'true');
+                      let displayMsg = data.message || 'Đăng ký thành công nhưng gửi email xác thực thất bại!';
+                      if (isAdmin && data.data.smtpMessage) {
+                        displayMsg = `[Admin Debug] Lỗi SMTP: ${data.data.smtpMessage}`;
+                      }
+                      showGlobalToast(displayMsg, 'error');
+                      
+                      const verifyEmailHidden = document.getElementById('verify-email-hidden');
+                      if (verifyEmailHidden) verifyEmailHidden.value = data.data.email || email;
+
+                      // Clear password fields
+                      document.getElementById('reg-password').value = '';
+                      document.getElementById('reg-confirm').value = '';
+
+                      if (data.data.method === 'otp') {
+                        switchAuthTab('verify-email');
+                      } else {
+                        switchAuthTab('login');
+                      }
+                    } else {
+                      showGlobalToast(data.message || 'Đã có lỗi xảy ra', 'error');
+                    }
                   }
                 })
                 .catch(err => {
@@ -3886,16 +3920,142 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
           if (res.ok && (data.status === 'success' || data.success === true)) {
             showGlobalToast(data.message || 'Mã xác minh mới đã được gửi!', 'success');
           } else {
-            showGlobalToast(data.message || 'Gửi lại mã thất bại!', 'error');
+            const isAdmin = window.APP_USER && (window.APP_USER.role === 'admin' || window.APP_USER.is_admin === true || window.APP_USER.is_admin === 'true');
+            let displayMsg = data.message || 'Gửi lại mã thất bại!';
+            if (isAdmin && data.data && data.data.smtpMessage) {
+              displayMsg = `[Admin Debug] Lỗi SMTP: ${data.data.smtpMessage}`;
+            }
+            showGlobalToast(displayMsg, 'error');
           }
         } catch (e) {
           showGlobalToast('Lỗi mạng hoặc kết nối máy chủ!', 'error');
         }
       };
 
+      function initOtpInputs() {
+        const container = document.getElementById('otp-digits-container');
+        if (!container) return;
+
+        const inputs = container.querySelectorAll('.otp-digit-input');
+        const hiddenInput = document.getElementById('verify-otp-code');
+        if (inputs.length !== 6 || !hiddenInput) return;
+
+        // Function to update hidden input value
+        function updateHiddenValue() {
+          const code = Array.from(inputs).map(input => input.value).join('');
+          hiddenInput.value = code;
+          
+          // Trigger validation or check validity of form if needed
+          const submitBtn = document.getElementById('verify-submit');
+          if (submitBtn) {
+            if (code.length === 6) {
+              submitBtn.disabled = false;
+              submitBtn.classList.remove('opacity-55', 'cursor-not-allowed');
+              submitBtn.classList.add('hover:brightness-110', 'active:scale-95');
+            } else {
+              submitBtn.disabled = true;
+              submitBtn.classList.add('opacity-55', 'cursor-not-allowed');
+              submitBtn.classList.remove('hover:brightness-110', 'active:scale-95');
+            }
+          }
+        }
+
+        inputs.forEach((input, index) => {
+          // 1. Input event: auto-advance
+          input.addEventListener('input', (e) => {
+            const val = input.value;
+            // Clean value: keep only digits
+            const cleaned = val.replace(/[^0-9]/g, '');
+            input.value = cleaned;
+
+            if (cleaned.length > 0) {
+              // If we entered a character, focus next input
+              if (index < 5) {
+                inputs[index + 1].focus();
+                inputs[index + 1].select();
+              }
+            }
+            updateHiddenValue();
+          });
+
+          // 2. Keydown event: backspace, arrows
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace') {
+              if (input.value === '') {
+                // If current input is empty, focus previous and clear it
+                if (index > 0) {
+                  inputs[index - 1].focus();
+                  inputs[index - 1].value = '';
+                  updateHiddenValue();
+                }
+              } else {
+                input.value = '';
+                updateHiddenValue();
+              }
+              e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+              if (index > 0) {
+                inputs[index - 1].focus();
+                inputs[index - 1].select();
+                e.preventDefault();
+              }
+            } else if (e.key === 'ArrowRight') {
+              if (index < 5) {
+                inputs[index + 1].focus();
+                inputs[index + 1].select();
+                e.preventDefault();
+              }
+            }
+          });
+
+          // 3. Paste event: handle full OTP copy-paste
+          input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedData = (e.clipboardData || window.clipboardData).getData('text');
+            const digits = pastedData.replace(/[^0-9]/g, '').substring(0, 6);
+            
+            for (let i = 0; i < digits.length; i++) {
+              if (inputs[i]) {
+                inputs[i].value = digits[i];
+              }
+            }
+            // Focus the last filled input or the 6th input
+            const focusIndex = Math.min(digits.length, 5);
+            if (inputs[focusIndex]) {
+              inputs[focusIndex].focus();
+            }
+            updateHiddenValue();
+          });
+
+          // 4. Focus event: auto-select text
+          input.addEventListener('focus', () => {
+            input.select();
+          });
+        });
+
+        // Initialize state (clear inputs on start)
+        inputs.forEach(input => input.value = '');
+        hiddenInput.value = '';
+        const submitBtn = document.getElementById('verify-submit');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.classList.add('opacity-55', 'cursor-not-allowed');
+          submitBtn.classList.remove('hover:brightness-110', 'active:scale-95');
+        }
+      }
+      window.initOtpInputs = initOtpInputs;
+
       // Expose globally and call initially
       window.initAuthFormListeners = initAuthFormListeners;
       initAuthFormListeners();
+      
+      // Auto call on page load if active verification tab is open
+      document.addEventListener('astro:page-load', () => {
+        const verifyTab = document.getElementById('auth-tab-verify-email');
+        if (verifyTab && !verifyTab.classList.contains('hidden')) {
+          initOtpInputs();
+        }
+      });
     </script>
     <script is:inline>
       // Scroll effect - using is:inline + astro:page-load for reliability

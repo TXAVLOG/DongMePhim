@@ -42,6 +42,10 @@ export interface Movie {
   updatedAt?: string;
   isStatic?: boolean;
   source?: string;
+  require_login?: boolean;
+  rating_score?: number;
+  rating_count?: number;
+  tmdbScore?: number;
 }
 
 export interface Episode {

@@ -641,6 +641,26 @@ export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): Mo
     };
   }) : [];
 
+  // Check if episodes only have empty/placeholder links
+  let hasActualStreamingLinks = false;
+  for (const srv of episodes) {
+    for (const ep of (srv.serverData || [])) {
+      if ((ep.linkM3u8 || '').trim() || (ep.linkEmbed || '').trim()) {
+        hasActualStreamingLinks = true;
+        break;
+      }
+    }
+    if (hasActualStreamingLinks) break;
+  }
+
+  let finalEpisodes = mergeStoredEpisodesConfig(m.slug, episodes);
+  let finalEpisodeCurrent = m.episode_current || (type === 'movie' ? 'Full' : '1');
+
+  if (!hasActualStreamingLinks) {
+    finalEpisodes = [];
+    finalEpisodeCurrent = "Sắp chiếu";
+  }
+
   return {
     id: m._id || m.id || `kk-${m.slug}`,
     title: m.name,
@@ -653,7 +673,7 @@ export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): Mo
     durationMinutes: m.time || (type === 'movie' ? '120 phút' : '45 phút/tập'),
     type: type,
     status: m.status === 'completed' ? 'completed' : 'ongoing',
-    episodeCurrent: m.episode_current || (type === 'movie' ? 'Full' : '1'),
+    episodeCurrent: finalEpisodeCurrent,
     episodeTotal: m.episode_total || '1',
     quality: m.quality || 'FHD',
     lang: m.lang || 'Vietsub',
@@ -668,7 +688,7 @@ export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): Mo
     actors: Array.isArray(m.actor) ? m.actor.filter(Boolean) : [],
     directors: Array.isArray(m.director) ? m.director.filter(Boolean) : [],
     trailerUrl: m.trailer_url || '',
-    episodes: mergeStoredEpisodesConfig(m.slug, episodes)
+    episodes: finalEpisodes
   };
 }
 

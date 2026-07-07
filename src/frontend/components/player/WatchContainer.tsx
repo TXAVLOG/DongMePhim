@@ -220,6 +220,42 @@ const UnreleasedPlayerPlaceholder: React.FC<{ episode: Episode }> = ({ episode }
   );
 };
 
+const LoginRequiredPlayerPlaceholder: React.FC = () => {
+  const handleLoginClick = () => {
+    if (typeof window !== 'undefined' && (window as any).openLoginModal) {
+      (window as any).openLoginModal();
+    }
+  };
+
+  return (
+    <div className="w-full h-full aspect-video bg-zinc-950/80 border border-glass-stroke rounded-2xl flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-2xl">
+      <div className="absolute inset-0 bg-primary/5 blur-[50px] pointer-events-none"></div>
+      
+      <div className="relative z-10 space-y-6 max-w-lg">
+        <div className="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_30px_rgba(124,58,237,0.2)]">
+          <span className="material-symbols-outlined text-3xl text-primary animate-pulse">lock</span>
+        </div>
+        
+        <div className="space-y-2">
+          <h3 className="font-display-hero text-2xl font-black text-white tracking-wide uppercase">Yêu cầu đăng nhập</h3>
+          <p className="text-sm text-zinc-400 leading-relaxed font-body-main">
+            Bộ phim này yêu cầu đăng nhập tài khoản để xem. Vui lòng đăng nhập hoặc tạo tài khoản miễn phí để thưởng thức bộ phim ngay nhé!
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <button 
+            onClick={handleLoginClick}
+            className="px-8 py-3 bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-slate-950 font-black rounded-xl text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20 border-none uppercase tracking-wider cursor-pointer font-bold"
+          >
+            Đăng nhập ngay
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface WatchContainerProps {
   movie: MovieDetail;
   initialEpisodeSlug?: string;
@@ -1259,6 +1295,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const currentServer = servers[serverIndex] || null;
   const currentEpisode = currentServer?.serverData[episodeIndex] || null;
 
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [currentUserPackage, setCurrentUserPackage] = useState<string>('free');
   const [currentUserPackageTitle, setCurrentUserPackageTitle] = useState<string>('Gói Free');
   const [userPermissions, setUserPermissions] = useState<any>(null);
@@ -1279,6 +1316,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     if (typeof window === 'undefined') return;
     
     const fetchUserAndAds = async (username: string) => {
+      setIsLoggedIn(!!username);
       try {
         const res = await fetch(`/api/auth/me?username=${encodeURIComponent(username)}`);
         let rawPkg = 'free';
@@ -2453,6 +2491,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 </div>
               </div>
             </div>
+          ) : movie.require_login && !isLoggedIn && !isAdChecking ? (
+            <LoginRequiredPlayerPlaceholder />
           ) : isUnreleased && unreleasedEpisode ? (
             <UnreleasedPlayerPlaceholder episode={unreleasedEpisode} />
           ) : isAdChecking ? (

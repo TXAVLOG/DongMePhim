@@ -147,6 +147,7 @@ export const POST: APIRoute = async ({ request }) => {
           .replace(/{year}/g, year);
 
         // Gửi email
+        let smtpErrorMsg = '';
         try {
           const sendResult = await SmtpClient.sendMail({
             host: settings.smtp.smtp_host,
@@ -183,6 +184,7 @@ export const POST: APIRoute = async ({ request }) => {
           } catch (logErr) {}
         } catch (sendErr: any) {
           console.error("[SMTP ERROR] Failed to send verification email:", sendErr);
+          smtpErrorMsg = sendErr.message || 'Lỗi kết nối SMTP server';
           try {
             await supabase.from('txa_email_logs').insert({
               recipient: email,
@@ -202,6 +204,18 @@ export const POST: APIRoute = async ({ request }) => {
             });
           } catch (logErr) {}
         }
+
+        if (smtpErrorMsg) {
+          const friendlyMsg = getFriendlySmtpError(smtpErrorMsg);
+          return apiResponse({
+            success: false,
+            smtpError: true,
+            smtpMessage: smtpErrorMsg,
+            email: email,
+            method: verificationMethod,
+            message: `Đăng ký thành công nhưng gửi email thất bại: ${friendlyMsg}`
+          }, 'error', `Đăng ký thành công nhưng gửi email thất bại: ${friendlyMsg}`, 400, request);
+        }
       }
 
       return apiResponse({
@@ -220,3 +234,17 @@ export const POST: APIRoute = async ({ request }) => {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
+
+function getFriendlySmtpError(rawError: string): string {
+  const err = rawError.toLowerCase();
+  if (err.includes('badcredentials') || err.includes('535') || err.includes('authentication failed')) {
+    return 'Sai thông tin đăng nhập SMTP (Mật khẩu ứng dụng)!';
+  }
+  if (err.includes('connection refused') || err.includes('connect check') || err.includes('etimedout') || err.includes('timeout')) {
+    return 'Không kết nối được SMTP Server (Timeout/Refused)!';
+  }
+  if (err.includes('expected one of') || err.includes('smtp error')) {
+    return 'Máy chủ SMTP từ chối gửi thư (Lỗi cấu hình/giao thức)!';
+  }
+  return rawError;
+}

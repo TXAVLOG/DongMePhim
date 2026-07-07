@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS public.movies (
   rating_count integer DEFAULT 0,
   pinned boolean NOT NULL DEFAULT false,
   source character varying DEFAULT 'manual'::character varying,
+  require_login boolean NOT NULL DEFAULT false,
   PRIMARY KEY (id)
 );
 

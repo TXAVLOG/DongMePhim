@@ -6,7 +6,7 @@ import { slugify, getNameBySlug } from '../../utils/categoryHelper';
 export class SupabaseMovieProvider implements IMovieProvider {
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string, slugs?: string[] }): Promise<Movie[]> {
     try {
-      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source';
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, tmdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source, require_login, rating_score, rating_count';
       
       let query = supabase.from('movies').select(selectFields);
 
@@ -71,6 +71,17 @@ export class SupabaseMovieProvider implements IMovieProvider {
         }
       }
 
+      // Fetch comment counts from Supabase
+      const { data: commentsData } = await supabase.from('txa_comments').select('movie_slug');
+      const commentCounts: Record<string, number> = {};
+      if (commentsData) {
+        for (const c of commentsData) {
+          if (c.movie_slug) {
+            commentCounts[c.movie_slug] = (commentCounts[c.movie_slug] || 0) + 1;
+          }
+        }
+      }
+
       let moviesList: Movie[] = [];
       if (rawMovies && rawMovies.length > 0) {
         moviesList = rawMovies.map((m: any) => ({
@@ -90,8 +101,9 @@ export class SupabaseMovieProvider implements IMovieProvider {
           quality: m.quality || 'FHD',
           lang: m.lang || 'Vietsub',
           imdbScore: Number(m.imdb_score) || 8.0,
+          tmdbScore: m.tmdb_score != null ? Number(m.tmdb_score) : undefined,
           views: Number(m.views) || 0,
-          commentCount: 0,
+          commentCount: commentCounts[m.slug] || 0,
           category: Array.isArray(m.genres) && m.genres.length > 0 ? m.genres[0] : 'Khác',
           country: m.country || 'Khác',
           genres: Array.isArray(m.genres) ? m.genres : [],
@@ -101,7 +113,10 @@ export class SupabaseMovieProvider implements IMovieProvider {
           actors: Array.isArray(m.actors) ? m.actors : [],
           directors: Array.isArray(m.directors) ? m.directors : [],
           episodes: Array.isArray(m.episodes) ? m.episodes : [],
-          source: m.source || 'manual'
+          source: m.source || 'manual',
+          require_login: m.require_login || false,
+          rating_score: m.rating_score != null ? Number(m.rating_score) : undefined,
+          rating_count: m.rating_count != null ? Number(m.rating_count) : undefined
         }));
       }
 
@@ -238,6 +253,12 @@ export class SupabaseMovieProvider implements IMovieProvider {
       }
 
       if (finalDbMovie) {
+        // Query exact count of comments for this movie
+        const { count: commentCount } = await supabase
+          .from('txa_comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('movie_slug', slug);
+
         return {
           id: finalDbMovie.id,
           title: finalDbMovie.title,
@@ -255,8 +276,9 @@ export class SupabaseMovieProvider implements IMovieProvider {
           quality: finalDbMovie.quality || 'FHD',
           lang: finalDbMovie.lang || 'Vietsub',
           imdbScore: Number(finalDbMovie.imdb_score) || 8.0,
+          tmdbScore: finalDbMovie.tmdb_score != null ? Number(finalDbMovie.tmdb_score) : undefined,
           views: Number(finalDbMovie.views) || 0,
-          commentCount: 0,
+          commentCount: commentCount || 0,
           category: Array.isArray(finalDbMovie.genres) && finalDbMovie.genres.length > 0 ? finalDbMovie.genres[0] : 'Khác',
           country: finalDbMovie.country || 'Khác',
           genres: Array.isArray(finalDbMovie.genres) ? finalDbMovie.genres : [],
@@ -267,7 +289,10 @@ export class SupabaseMovieProvider implements IMovieProvider {
           episodes: Array.isArray(finalDbMovie.episodes) ? finalDbMovie.episodes : [],
           isStatic: false,
           broadcastSchedule: finalDbMovie.broadcast_schedule || undefined,
-          source: finalDbMovie.source || 'manual'
+          source: finalDbMovie.source || 'manual',
+          require_login: finalDbMovie.require_login || false,
+          rating_score: finalDbMovie.rating_score != null ? Number(finalDbMovie.rating_score) : undefined,
+          rating_count: finalDbMovie.rating_count != null ? Number(finalDbMovie.rating_count) : undefined
         };
       }
 
@@ -386,7 +411,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
   async getRelatedMovies(movieId: string): Promise<Movie[]> {
     try {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(movieId);
-      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, require_login';
       let query = supabase.from('movies').select(selectFields);
       if (isUuid) {
         query = query.neq('id', movieId);
@@ -427,7 +452,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
           isStatic: false,
           broadcastSchedule: m.broadcast_schedule || undefined,
           actors: Array.isArray(m.actors) ? m.actors : [],
-          directors: Array.isArray(m.directors) ? m.directors : []
+          directors: Array.isArray(m.directors) ? m.directors : [],
+          require_login: m.require_login || false
         }));
 
         if (!isUuid) {
@@ -458,7 +484,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
   async searchMovies(query: string): Promise<Movie[]> {
     try {
-      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url';
+      const selectFields = 'id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, require_login';
       const { data: dbMovies, error } = await supabase
         .from('movies')
         .select(selectFields)
@@ -492,7 +518,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
           genres: Array.isArray(m.genres) ? m.genres : [],
           updatedAt: m.updated_at || new Date().toISOString(),
           actors: Array.isArray(m.actors) ? m.actors : [],
-          directors: Array.isArray(m.directors) ? m.directors : []
+          directors: Array.isArray(m.directors) ? m.directors : [],
+          require_login: m.require_login || false
         }));
       }
 

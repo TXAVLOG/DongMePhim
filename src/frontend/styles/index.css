@@ -3,6 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --breakpoint-xs: 480px;
   --font-sans: "Be Vietnam Pro", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", ui-sans-serif, system-ui, sans-serif;
   --font-body-main: "Be Vietnam Pro", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
   --font-title-md: "Be Vietnam Pro", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
@@ -136,6 +137,26 @@
     transform: translateY(-8px) scale(1.02);
     border-color: var(--color-primary) !important;
     box-shadow: 0 20px 40px -15px rgba(109, 40, 217, 0.35), 0 0 20px 0 rgba(109, 40, 217, 0.15);
+  }
+
+  /* Ultra-thin premium scrollbar */
+  .premium-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .premium-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .premium-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 99px;
+  }
+  .premium-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  .premium-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
   }
 }
 

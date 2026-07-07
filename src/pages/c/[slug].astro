@@ -4,6 +4,7 @@ import Card from '@components/ui/Card.astro';
 import { MovieService } from '@services/MovieService';
 import { HOMEPAGE_CATEGORIES, getHomepageCategories } from '@data/categories';
 import NotFound from '@components/ui/NotFound.astro';
+import { TxaMovieRanker } from '../../backend/utils/txaMovieRanker';
 
 const { slug } = Astro.params;
 
@@ -15,7 +16,19 @@ if (category) {
   const homepageMappings = await getHomepageCategories();
   const assignedSlugs = homepageMappings[category.slug] || [];
   
-  if (category.slug === 'phim-dien-anh-moi') {
+  if (category.slug === 'top-anime-he') {
+    const animeAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
+    const filtered = animeAll.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
+    movies = TxaMovieRanker.sortMovies(filtered).slice(0, 10);
+  } else if (category.slug === 'top-10-phim-le') {
+    const leAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
+    const filtered = leAll.filter((m: any) => m.type === 'movie');
+    movies = TxaMovieRanker.sortMovies(filtered).slice(0, 10);
+  } else if (category.slug === 'top-10-phim-bo') {
+    const boAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
+    const filtered = boAll.filter((m: any) => m.type === 'series');
+    movies = TxaMovieRanker.sortMovies(filtered).slice(0, 10);
+  } else if (category.slug === 'phim-dien-anh-moi') {
     // Tự động phân loại phim điện ảnh mới nhất (lấy từ top 100 phim mới nhất để lọc)
     const latestMovies = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
     movies = latestMovies
@@ -50,8 +63,8 @@ if (category) {
     movies = allMovies.filter((m: any) => 
       m.category === 'Thái Lan' || (Array.isArray(m.genres) && m.genres.some((g: string) => (g || '').toLowerCase().includes('thái')))
     );
-    } else if (category.slug === 'chau-tinh-tri-xem-la-cuoi') {
-      const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+  } else if (category.slug === 'chau-tinh-tri-xem-la-cuoi') {
+    const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
     movies = allMovies.filter((m: any) => 
       Array.isArray(m.actors) && m.actors.some((a: any) => {
         const lower = (typeof a === 'string' ? a : (a && a.name ? a.name : '')).toLowerCase();
@@ -65,28 +78,7 @@ if (category) {
 
     // Fallback nếu không có phim gán thủ công
     if (movies.length === 0) {
-      if (category.slug === 'top-anime-he') {
-        const animeAll = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
-        movies = animeAll.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
-      } else if (category.slug === 'top-10-phim-le') {
-        const leAll = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
-        movies = [...leAll]
-          .filter((m: any) => m.type === 'movie')
-          .sort((a: any, b: any) => {
-            const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10;
-            const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;
-            return scoreB - scoreA;
-          });
-      } else if (category.slug === 'top-10-phim-bo') {
-        const boAll = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
-        movies = [...boAll]
-          .filter((m: any) => m.type === 'series')
-          .sort((a: any, b: any) => {
-            const scoreA = (a.views || 0) + (a.imdbScore || 0) * 10;
-            const scoreB = (b.views || 0) + (b.imdbScore || 0) * 10;
-            return scoreB - scoreA;
-          });
-      } else if (category.slug === 'huyen-thoai-co-tich') {
+      if (category.slug === 'huyen-thoai-co-tich') {
         const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
         movies = allMovies.filter((m: any) =>
           Array.isArray(m.genres) && m.genres.some((g: string) => {
