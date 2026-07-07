@@ -610,25 +610,29 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
       <!-- Advanced Direct Search Container (Tab content) -->
       <div id="containerSearchTab" class="glass-panel rounded-2xl border border-glass-stroke flex flex-col min-h-[450px] hidden">
-        <div class="p-5 border-b border-glass-stroke flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-zinc-900/30">
-          <h3 class="font-bold text-white text-base shrink-0 flex items-center gap-2">
+        <div class="p-5 border-b border-glass-stroke flex flex-col gap-4 bg-zinc-900/30">
+          <h3 class="font-bold text-white text-base flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">search</span> Tìm kiếm phim trực tuyến
           </h3>
-          <div class="flex-grow flex flex-wrap sm:flex-nowrap gap-2 w-full">
-            <select id="searchSourceSelect" class="bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
-              <option value="kkphim">Nguồn: KKPhim API</option>
-              <option value="vsmov">Nguồn: VSMOV API</option>
-              <option value="tmdb">Nguồn: TMDB API</option>
-            </select>
-            <select id="searchMode" class="bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
-              <option value="movie">Tìm theo tên phim</option>
-              <option value="actor">Tìm theo diễn viên</option>
-              <option value="year">Tìm theo năm sản xuất</option>
-            </select>
-            <input type="text" id="searchKeyword" class="flex-grow bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập tên phim hoặc tên diễn viên..."/>
-            <button id="searchOnlineBtn" class="bg-primary text-on-primary font-bold px-4 rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer whitespace-nowrap">
-              Tìm kiếm
-            </button>
+          <div class="grid grid-cols-1 sm:flex sm:flex-nowrap gap-2 w-full">
+            <div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+              <select id="searchSourceSelect" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
+                <option value="kkphim">Nguồn: KKPhim API</option>
+                <option value="vsmov">Nguồn: VSMOV API</option>
+                <option value="tmdb">Nguồn: TMDB API</option>
+              </select>
+              <select id="searchMode" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary font-bold cursor-pointer">
+                <option value="movie">Tìm theo tên phim</option>
+                <option value="actor">Tìm theo diễn viên</option>
+                <option value="year">Tìm theo năm sản xuất</option>
+              </select>
+            </div>
+            <div class="flex gap-2 w-full min-w-0">
+              <input type="text" id="searchKeyword" class="flex-grow bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary min-w-0" placeholder="Nhập tên phim... (VD: Avengers)"/>
+              <button id="searchOnlineBtn" class="bg-primary text-on-primary font-bold px-4 rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer whitespace-nowrap">
+                Tìm kiếm
+              </button>
+            </div>
           </div>
         </div>
         
