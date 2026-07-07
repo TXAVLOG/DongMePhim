@@ -1696,6 +1696,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       const searchResultTable = document.getElementById('searchResultTable');
       const emptySearchResult = document.getElementById('emptySearchResult');
       const selectAllSearch = document.getElementById('selectAllSearch');
+      const searchSource = document.getElementById('searchSourceSelect')?.value || 'kkphim';
 
       if (!items || items.length === 0) {
         searchResultTable.classList.add('hidden');
@@ -1716,7 +1717,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         const localCount = existingMoviesMap[item.slug] || 0;
         const isAlreadyInDb = existingMoviesMap[item.slug] !== undefined;
         const isSelected = cartSlugs.has(item.slug);
-        const typeLabel = (item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ') + ` [${item.source.toUpperCase()}]`;
+        const sourceLabel = (item.source || searchSource).toUpperCase();
+        const typeLabel = (item.type === 'single' ? 'Phim Lẻ' : item.type === 'hoathinh' ? 'Hoạt Hình' : item.type === 'tvshows' ? 'TV Show' : 'Phim Bộ') + ` [${sourceLabel}]`;
 
         let posterUrl = item.poster_url || item.thumb_url || '';
         if (posterUrl) {
@@ -1768,7 +1770,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           <tr class="border-b border-glass-stroke/50 hover:bg-white/5 transition-colors">
             <td class="px-5 py-3 text-center">
               ${showCheckbox 
-                ? `<input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}', '${tmdbId}', '${tmdbType}', '${crawlSource}')" 
+                ? `<input type="checkbox" onchange="toggleCartItem(this, '${item.slug}', '${safeName}', '${item.type}', '${episodeCurrent}', '${tmdbId}', '${tmdbType}', '${searchSource}')" 
                          ${isSelected ? 'checked' : ''} data-crawled="${isAlreadyInDb && !hasNewEpisodes ? 'true' : 'false'}" class="rounded border-zinc-700 bg-zinc-950 text-primary w-3.5 h-3.5 cursor-pointer item-checkbox"/>`
                 : '<span class="text-zinc-600 text-xs font-bold select-none" data-txatooltip="Phim đã cào đầy đủ">—</span>'
               }
