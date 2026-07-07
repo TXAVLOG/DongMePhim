@@ -40,7 +40,7 @@ const __scheduled_handler = async (controller, env, ctx) => {
 
       // Task 1: sync-kkphim
       console.log('[Cron 1:15AM] [1/3] Đang chạy sync-kkphim...');
-      const urlSync = 'https://dongmephim.online/api/cron/sync-kkphim?secret=' + cronSecret + '&cron=true&limit=20&resume=true';
+      const urlSync = 'https://dongmephim.online/api/cron/sync-kkphim?secret=' + cronSecret + '&cron=true&limit=10&resume=true';
       try {
         const resSync = await ${workerVar}.fetch(new Request(urlSync), env, ctx);
         taskResults['sync-kkphim'] = resSync.status;
