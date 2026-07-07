@@ -240,7 +240,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             <option value="by_genre">🏷️ Lọc theo thể loại</option>
             <option value="by_country">🌍 Lọc theo quốc gia</option>
             <option value="by_year">📅 Lọc theo năm phát hành</option>
-            <option value="by_code">🎟️ Lọc theo mã Code (Showtimes)</option>
             <option value="direct_slug">📝 Nhập URL / Slugs thủ công</option>
           </select>
         </div>
@@ -359,29 +358,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           </div>
         </div>
 
-        <!-- 5.2. Theo mã Code -->
-        <div id="vsmovBlockCode" class="space-y-4 hidden">
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Mã Code (Showtimes)</label>
-            <select id="vsmovSelectedCode" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold cursor-pointer">
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang đầu</label>
-              <input id="vsmovCodePageStart" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Trang cuối</label>
-              <input id="vsmovCodePageEnd" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" value="1"/>
-            </div>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Số lượng phim / trang</label>
-            <input id="vsmovCodeLimit" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2 px-3 text-xs focus:outline-none" type="number" min="1" max="100" value="20"/>
-          </div>
-        </div>
+
 
         <!-- 6. Nhập URL / Slugs thủ công -->
         <div id="vsmovBlockDirect" class="space-y-4 hidden">
@@ -705,7 +682,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       let kkphimCountries = [];
       let vsmovGenres = [];
       let vsmovCountries = [];
-      let vsmovCodes = [];
       let tmdbGenres = [];
       let tmdbCountries = [];
 
@@ -723,26 +699,13 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           kkphimCountries = Array.isArray(kkCountriesRes) ? kkCountriesRes : [];
 
           // 1.2. Fetch VSMOV metadata
-          const [vsGenresRes, vsCountriesRes, vsCodesRes] = await Promise.all([
+          const [vsGenresRes, vsCountriesRes] = await Promise.all([
             fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/the-loai')).then(r => r.json().then(j => j.data?.items).catch(() => [])),
-            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/quoc-gia')).then(r => r.json().then(j => j.data?.items).catch(() => [])),
-            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/code')).then(r => r.json().then(j => j.data?.items).catch(() => []))
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/quoc-gia')).then(r => r.json().then(j => j.data?.items).catch(() => []))
           ]);
 
           vsmovGenres = Array.isArray(vsGenresRes) && vsGenresRes.length > 0 ? vsGenresRes : kkphimGenres;
           vsmovCountries = Array.isArray(vsCountriesRes) && vsCountriesRes.length > 0 ? vsCountriesRes : kkphimCountries;
-          vsmovCodes = Array.isArray(vsCodesRes) && vsCodesRes.length > 0
-            ? vsCodesRes.map(item => {
-                if (typeof item === 'string') {
-                  return { name: item, code: item };
-                } else if (item && typeof item === 'object') {
-                  const codeVal = item.code || item.slug || item.id || '';
-                  const nameVal = item.name || codeVal;
-                  return { name: nameVal, code: codeVal };
-                }
-                return null;
-              }).filter(Boolean)
-            : [];
 
           // 2. Fetch TMDB metadata
           const [tmdbMovieGenresRes, tmdbTvGenresRes, tmdbCountriesRes] = await Promise.all([
@@ -778,7 +741,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               })).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
             : [];
 
-          addLog(`✓ Đồng bộ thành công: KKPhim (${kkphimCountries.length} quốc gia, ${kkphimGenres.length} thể loại), VSMOV (${vsmovCountries.length} quốc gia, ${vsmovGenres.length} thể loại, ${vsmovCodes.length} mã code), TMDB (${tmdbCountries.length} quốc gia, ${tmdbGenres.length} thể loại).`, 'success');
+          addLog(`✓ Đồng bộ thành công: KKPhim (${kkphimCountries.length} quốc gia, ${kkphimGenres.length} thể loại), VSMOV (${vsmovCountries.length} quốc gia, ${vsmovGenres.length} thể loại), TMDB (${tmdbCountries.length} quốc gia, ${tmdbGenres.length} thể loại).`, 'success');
           
           populateFilterDropdowns();
         } catch (e) {
@@ -975,13 +938,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           { name: 'Xã Hội Đen', slug: 'xa-hoi-den' }
         ];
 
-        vsmovCodes = [
-          { name: 'Netflix 2024', code: 'netflix-2024' },
-          { name: 'HBO Max', code: 'hbo-max' },
-          { name: 'Disney Plus', code: 'disney-plus' },
-          { name: 'Apple TV', code: 'apple-tv' },
-          { name: 'Amazon Prime', code: 'amazon-prime' }
-        ];
+
 
         tmdbCountries = [
           { code: 'US', name: 'Mỹ' },
@@ -1035,7 +992,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         // Populating VSMOV selectors
         const vsCountry = document.getElementById('vsmovSelectedCountry');
         const vsGenre = document.getElementById('vsmovSelectedGenre');
-        const vsCode = document.getElementById('vsmovSelectedCode');
         if (vsCountry && vsGenre) {
           vsCountry.innerHTML = '';
           vsGenre.innerHTML = '';
@@ -1048,14 +1004,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             const opt = document.createElement('option');
             opt.value = g.slug; opt.textContent = g.name;
             vsGenre.appendChild(opt);
-          });
-        }
-        if (vsCode) {
-          vsCode.innerHTML = '';
-          vsmovCodes.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.code; opt.textContent = c.name;
-            vsCode.appendChild(opt);
           });
         }
 
@@ -1174,7 +1122,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     if (vsmovMode) {
       vsmovMode.addEventListener('change', (e) => {
         const mode = e.target.value;
-        ['vsmovBlockNewUpdated', 'vsmovBlockType', 'vsmovBlockGenre', 'vsmovBlockCountry', 'vsmovBlockYear', 'vsmovBlockCode', 'vsmovBlockSearch', 'vsmovBlockDirect'].forEach(id => {
+        ['vsmovBlockNewUpdated', 'vsmovBlockType', 'vsmovBlockGenre', 'vsmovBlockCountry', 'vsmovBlockYear', 'vsmovBlockDirect'].forEach(id => {
           document.getElementById(id)?.classList.add('hidden');
         });
         if (mode === 'new_updated') document.getElementById('vsmovBlockNewUpdated').classList.remove('hidden');
@@ -1182,8 +1130,6 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         else if (mode === 'by_genre') document.getElementById('vsmovBlockGenre').classList.remove('hidden');
         else if (mode === 'by_country') document.getElementById('vsmovBlockCountry').classList.remove('hidden');
         else if (mode === 'by_year') document.getElementById('vsmovBlockYear').classList.remove('hidden');
-        else if (mode === 'by_code') document.getElementById('vsmovBlockCode').classList.remove('hidden');
-        else if (mode === 'by_search') document.getElementById('vsmovBlockSearch').classList.remove('hidden');
         else if (mode === 'direct_slug') document.getElementById('vsmovBlockDirect').classList.remove('hidden');
       });
     }
@@ -1247,25 +1193,27 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       const trimmed = input.trim();
       if (!trimmed) return null;
       
+      let candidate = trimmed;
       if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
         try {
           const url = new URL(trimmed);
           const pathname = url.pathname;
           const parts = pathname.split('/').filter(Boolean);
           if (parts.length > 0) {
-            return parts[parts.length - 1];
+            candidate = parts[parts.length - 1];
           }
         } catch (e) {
-          const match = trimmed.match(/(?:phim|detail|chitet|info)\/([a-zA-Z0-9\-]+)/);
-          if (match) return match[1];
+          const match = trimmed.match(/(?:phim|detail|chitet|info)\/([a-zA-Z0-9\-_]+)/);
+          if (match) candidate = match[1];
         }
+      } else {
+        candidate = trimmed.split('/').filter(Boolean).pop() || '';
       }
       
-      const cleanSlug = trimmed.split('/').filter(Boolean).pop();
-      if (cleanSlug && /^[a-zA-Z0-9\-]+$/.test(cleanSlug)) {
-        return cleanSlug;
+      if (candidate && /^[a-zA-Z0-9\-_]+$/.test(candidate)) {
+        return candidate;
       }
-      return trimmed;
+      return null;
     }
 
     // Dynamic count input slugs
@@ -2947,45 +2895,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           }
           runCrawlProcess(slugs);
         }
-        else if (mode === 'by_search') {
-          const keyword = document.getElementById('kkphimSearchKeyword').value.trim();
-          const startPage = parseInt(document.getElementById('kkphimSearchPageStart').value) || 1;
-          const endPage = parseInt(document.getElementById('kkphimSearchPageEnd').value) || 1;
-          const limit = parseInt(document.getElementById('kkphimSearchLimit').value) || 20;
 
-          if (!keyword) {
-            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập từ khóa tìm kiếm!', 'error');
-            return;
-          }
-
-          addLog(`⏳ Đang tìm kiếm và tải phim theo từ khóa "${keyword}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
-          const slugs = [];
-
-          for (let p = startPage; p <= endPage; p++) {
-            try {
-              const searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${p}&limit=${limit}`;
-              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(searchUrl));
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const resJson = await res.json();
-              const items = resJson.data?.items || resJson.items || [];
-              if (items && Array.isArray(items)) {
-                items.forEach(item => {
-                  if (item.slug) slugs.push(item.slug);
-                });
-                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
-              }
-            } catch (e) {
-              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
-            }
-            await new Promise(r => setTimeout(r, 200));
-          }
-
-          if (slugs.length === 0) {
-            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
-            return;
-          }
-          runCrawlProcess(slugs);
-        }
       });
     }
 
@@ -3202,84 +3112,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           }
           runCrawlProcess(slugs);
         }
-        else if (mode === 'by_code') {
-          const codeVal = document.getElementById('vsmovSelectedCode').value;
-          const startPage = parseInt(document.getElementById('vsmovCodePageStart').value) || 1;
-          const endPage = parseInt(document.getElementById('vsmovCodePageEnd').value) || 1;
-          const limit = parseInt(document.getElementById('vsmovCodeLimit').value) || 20;
 
-          if (!codeVal) {
-            if (window.showGlobalToast) window.showGlobalToast('Vui lòng chọn mã Code!', 'error');
-            return;
-          }
-
-          addLog(`⏳ Đang tải phim VSMOV theo mã Code "${codeVal}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
-          const slugs = [];
-
-          for (let p = startPage; p <= endPage; p++) {
-            try {
-              const codeUrl = `https://vsmov.com/api/code/${codeVal}?page=${p}&limit=${limit}`;
-              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(codeUrl));
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const resJson = await res.json();
-              const items = resJson.data?.items || resJson.items || [];
-              if (items && Array.isArray(items)) {
-                items.forEach(item => {
-                  if (item.slug) slugs.push(item.slug);
-                });
-                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
-              }
-            } catch (e) {
-              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
-            }
-            await new Promise(r => setTimeout(r, 200));
-          }
-
-          if (slugs.length === 0) {
-            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
-            return;
-          }
-          runCrawlProcess(slugs);
-        }
-        else if (mode === 'by_search') {
-          const keyword = document.getElementById('vsmovSearchKeyword').value.trim();
-          const startPage = parseInt(document.getElementById('vsmovSearchPageStart').value) || 1;
-          const endPage = parseInt(document.getElementById('vsmovSearchPageEnd').value) || 1;
-          const limit = parseInt(document.getElementById('vsmovSearchLimit').value) || 20;
-
-          if (!keyword) {
-            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập từ khóa tìm kiếm!', 'error');
-            return;
-          }
-
-          addLog(`⏳ Đang tìm kiếm và tải phim VSMOV theo từ khóa "${keyword}" (Trang ${startPage}-${endPage}, SL: ${limit})...`);
-          const slugs = [];
-
-          for (let p = startPage; p <= endPage; p++) {
-            try {
-              const searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&page=${p}&limit=${limit}`;
-              const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(searchUrl));
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const resJson = await res.json();
-              const items = resJson.data?.items || resJson.items || [];
-              if (items && Array.isArray(items)) {
-                items.forEach(item => {
-                  if (item.slug) slugs.push(item.slug);
-                });
-                addLog(`✓ Quét xong trang ${p}: Thêm ${items.length} phim.`);
-              }
-            } catch (e) {
-              addLog(`✗ Lỗi tải trang ${p}: ${e.message}`, 'error');
-            }
-            await new Promise(r => setTimeout(r, 200));
-          }
-
-          if (slugs.length === 0) {
-            if (window.showGlobalToast) window.showGlobalToast('Không quét được phim nào!', 'error');
-            return;
-          }
-          runCrawlProcess(slugs);
-        }
       });
     }
 
