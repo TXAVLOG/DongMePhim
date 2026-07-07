@@ -387,7 +387,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         <div id="vsmovBlockCode" class="space-y-4 hidden">
           <div>
             <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-2">Mã Code (Showtimes)</label>
-            <input id="vsmovSearchCode" type="text" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary" placeholder="Ví dụ: netflix-2024" value="netflix-2024"/>
+            <select id="vsmovSelectedCode" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none text-xs focus:ring-1 focus:ring-primary font-bold cursor-pointer">
+              <!-- Populated dynamically -->
+            </select>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -749,6 +751,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       let kkphimCountries = [];
       let vsmovGenres = [];
       let vsmovCountries = [];
+      let vsmovCodes = [];
       let tmdbGenres = [];
       let tmdbCountries = [];
 
@@ -766,13 +769,26 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           kkphimCountries = Array.isArray(kkCountriesRes) ? kkCountriesRes : [];
 
           // 1.2. Fetch VSMOV metadata
-          const [vsGenresRes, vsCountriesRes] = await Promise.all([
+          const [vsGenresRes, vsCountriesRes, vsCodesRes] = await Promise.all([
             fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/the-loai')).then(r => r.json().then(j => j.data?.items).catch(() => [])),
-            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/quoc-gia')).then(r => r.json().then(j => j.data?.items).catch(() => []))
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/quoc-gia')).then(r => r.json().then(j => j.data?.items).catch(() => [])),
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/code')).then(r => r.json().then(j => j.data?.items).catch(() => []))
           ]);
 
           vsmovGenres = Array.isArray(vsGenresRes) && vsGenresRes.length > 0 ? vsGenresRes : kkphimGenres;
           vsmovCountries = Array.isArray(vsCountriesRes) && vsCountriesRes.length > 0 ? vsCountriesRes : kkphimCountries;
+          vsmovCodes = Array.isArray(vsCodesRes) && vsCodesRes.length > 0
+            ? vsCodesRes.map(item => {
+                if (typeof item === 'string') {
+                  return { name: item, code: item };
+                } else if (item && typeof item === 'object') {
+                  const codeVal = item.code || item.slug || item.id || '';
+                  const nameVal = item.name || codeVal;
+                  return { name: nameVal, code: codeVal };
+                }
+                return null;
+              }).filter(Boolean)
+            : [];
 
           // 2. Fetch TMDB metadata
           const [tmdbMovieGenresRes, tmdbTvGenresRes, tmdbCountriesRes] = await Promise.all([
@@ -808,7 +824,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               })).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
             : [];
 
-          addLog(`✓ Đồng bộ thành công: KKPhim (${kkphimCountries.length} quốc gia, ${kkphimGenres.length} thể loại), VSMOV (${vsmovCountries.length} quốc gia, ${vsmovGenres.length} thể loại), TMDB (${tmdbCountries.length} quốc gia, ${tmdbGenres.length} thể loại).`, 'success');
+          addLog(`✓ Đồng bộ thành công: KKPhim (${kkphimCountries.length} quốc gia, ${kkphimGenres.length} thể loại), VSMOV (${vsmovCountries.length} quốc gia, ${vsmovGenres.length} thể loại, ${vsmovCodes.length} mã code), TMDB (${tmdbCountries.length} quốc gia, ${tmdbGenres.length} thể loại).`, 'success');
           
           populateFilterDropdowns();
         } catch (e) {
@@ -1005,6 +1021,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           { name: 'Xã Hội Đen', slug: 'xa-hoi-den' }
         ];
 
+        vsmovCodes = [
+          { name: 'Netflix 2024', code: 'netflix-2024' },
+          { name: 'HBO Max', code: 'hbo-max' },
+          { name: 'Disney Plus', code: 'disney-plus' },
+          { name: 'Apple TV', code: 'apple-tv' },
+          { name: 'Amazon Prime', code: 'amazon-prime' }
+        ];
+
         tmdbCountries = [
           { code: 'US', name: 'Mỹ' },
           { code: 'KR', name: 'Hàn Quốc' },
@@ -1057,6 +1081,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         // Populating VSMOV selectors
         const vsCountry = document.getElementById('vsmovSelectedCountry');
         const vsGenre = document.getElementById('vsmovSelectedGenre');
+        const vsCode = document.getElementById('vsmovSelectedCode');
         if (vsCountry && vsGenre) {
           vsCountry.innerHTML = '';
           vsGenre.innerHTML = '';
@@ -1069,6 +1094,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             const opt = document.createElement('option');
             opt.value = g.slug; opt.textContent = g.name;
             vsGenre.appendChild(opt);
+          });
+        }
+        if (vsCode) {
+          vsCode.innerHTML = '';
+          vsmovCodes.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.code; opt.textContent = c.name;
+            vsCode.appendChild(opt);
           });
         }
 
@@ -3216,13 +3249,13 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           runCrawlProcess(slugs);
         }
         else if (mode === 'by_code') {
-          const codeVal = document.getElementById('vsmovSearchCode').value.trim();
+          const codeVal = document.getElementById('vsmovSelectedCode').value;
           const startPage = parseInt(document.getElementById('vsmovCodePageStart').value) || 1;
           const endPage = parseInt(document.getElementById('vsmovCodePageEnd').value) || 1;
           const limit = parseInt(document.getElementById('vsmovCodeLimit').value) || 20;
 
           if (!codeVal) {
-            if (window.showGlobalToast) window.showGlobalToast('Vui lòng nhập mã Code!', 'error');
+            if (window.showGlobalToast) window.showGlobalToast('Vui lòng chọn mã Code!', 'error');
             return;
           }
 
