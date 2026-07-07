@@ -2066,13 +2066,12 @@ import AdminLayout from '@layouts/AdminLayout.astro';
 
       progressSection.classList.remove('hidden');
       statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-primary animate-pulse';
-      const startButtons = [
+      [
         document.getElementById('startKkphimBtn'),
         document.getElementById('startVsmovBtn'),
         document.getElementById('startTmdbBtn'),
         document.getElementById('startCartCrawlBtn')
-      ];
-      startButtons.forEach(btn => {
+      ].forEach(btn => {
         if (btn) btn.classList.add('pointer-events-none', 'opacity-40');
       });
       if (stopStandardBtn) stopStandardBtn.classList.remove('hidden');
@@ -2367,13 +2366,12 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       document.getElementById('btnResumeCrawl')?.classList.add('hidden');
       document.getElementById('btnCancelCrawl')?.classList.add('hidden');
 
-      const startButtons = [
+      [
         document.getElementById('startKkphimBtn'),
         document.getElementById('startVsmovBtn'),
         document.getElementById('startTmdbBtn'),
         document.getElementById('startCartCrawlBtn')
-      ];
-      startButtons.forEach(btn => {
+      ].forEach(btn => {
         if (btn) btn.classList.remove('pointer-events-none', 'opacity-40');
       });
       if (stopStandardBtn) stopStandardBtn.classList.add('hidden');
