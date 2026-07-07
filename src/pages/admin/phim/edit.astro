@@ -461,9 +461,10 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             // Sync from KKPhim or VSMOV based on movieData.source
             const isVsmov = movieData.source === 'vsmov';
             const syncUrl = isVsmov ? `https://vsmov.com/api/phim/${editSlug}` : `https://phimapi.com/phim/${editSlug}`;
-            const res = await fetch(syncUrl);
+            const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(syncUrl));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            data = await res.json();
+            const resJson = await res.json();
+            data = resJson.data;
           }
 
           if (data && Array.isArray(data.episodes)) {

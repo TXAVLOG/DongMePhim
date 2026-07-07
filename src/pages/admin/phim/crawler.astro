@@ -399,8 +399,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         try {
           // 1. Fetch KKPhim metadata
           const [kkGenresRes, kkCountriesRes] = await Promise.all([
-            fetch('https://phimapi.com/the-loai').then(r => r.json().catch(() => [])),
-            fetch('https://phimapi.com/quoc-gia').then(r => r.json().catch(() => []))
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://phimapi.com/the-loai')).then(r => r.json().then(j => j.data).catch(() => [])),
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://phimapi.com/quoc-gia')).then(r => r.json().then(j => j.data).catch(() => []))
           ]);
 
           kkphimGenres = Array.isArray(kkGenresRes) ? kkGenresRes : [];
@@ -1019,18 +1019,22 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         } else if (crawlSource === 'vsmov') {
           // Use VSMOV API
           searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(keyword)}`;
-          const res = await fetch(searchUrl);
+          const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(searchUrl));
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          responseData = await res.json();
+          const resJson = await res.json();
+          responseData = resJson.data;
         } else {
           // Use KKPhim API
           searchUrl = `https://phimapi.com/v1/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=40`;
-          if (searchMode === 'actor') {
+          const isActor = searchMode === 'actor';
+          if (isActor) {
             searchUrl = `/api/admin/actor-search?keyword=${encodeURIComponent(keyword)}`;
           }
-          const res = await fetch(searchUrl);
+          const finalUrl = isActor ? searchUrl : ('/api/admin/proxy-crawler?url=' + encodeURIComponent(searchUrl));
+          const res = await fetch(finalUrl);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          responseData = await res.json();
+          const resJson = await res.json();
+          responseData = isActor ? resJson : resJson.data;
         }
         
         // Handle standard vs custom endpoint response structures
@@ -1739,24 +1743,15 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             // Crawl from KKPhim API or VSMOV API
             const isVsmov = crawlSource === 'vsmov';
             const detailUrl = isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`;
-            const detailRes = await fetch(detailUrl);
-            if (!detailRes.ok) throw new Error(`HTTP ${detailRes.status}`);
-            
-            let detailData;
-            const detailText = await detailRes.text();
-            try {
-              detailData = JSON.parse(detailText);
-            } catch (jsonErr) {
-              if (detailText.trim().startsWith('<')) {
-                const matchTitle = detailText.match(/<title>([^<]*)<\/title>/i);
-                const htmlTitle = matchTitle ? matchTitle[1].trim() : '';
-                if (htmlTitle.includes('Cloudflare') || htmlTitle.includes('Ray ID') || htmlTitle.includes('502') || htmlTitle.includes('503') || htmlTitle.includes('504')) {
-                  throw new Error(`Lỗi Cloudflare/Mạng từ API Phim: ${htmlTitle || 'Gateway Error'}`);
-                }
-                throw new Error(`API Phim trả về trang HTML thay vì JSON: ${htmlTitle || 'Lỗi hệ thống'}`);
-              }
-              throw new Error(`Không thể phân giải JSON từ API Phim: ${jsonErr.message}`);
+            const detailRes = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(detailUrl));
+            if (!detailRes.ok) {
+              const errJson = await detailRes.json().catch(() => ({}));
+              throw new Error(errJson.message || `HTTP ${detailRes.status}`);
             }
+            
+            const resJson = await detailRes.json();
+            if (resJson.status !== 'success') throw new Error(resJson.message || 'Lỗi tải chi tiết phim');
+            const detailData = resJson.data;
 
             if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
               // Compare episodes count to see if update exists
@@ -1988,9 +1983,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
             const batchUrl = crawlSource === 'vsmov'
               ? `https://vsmov.com/api/danh-sach/phim-moi-cap-nhat?page=${p}`
               : `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=100`;
-            const res = await fetch(batchUrl);
+            const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(batchUrl));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+            const resJson = await res.json();
+            const data = resJson.data;
             
             const items = data.data?.items || data.items;
             if (items && Array.isArray(items)) {
@@ -2035,9 +2031,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               updateUrl = `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=100`;
             }
 
-            const res = await fetch(updateUrl);
+            const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(updateUrl));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+            const resJson = await res.json();
+            const data = resJson.data;
             
             const items = data.data?.items || data.items;
             if (items && Array.isArray(items)) {
@@ -2151,9 +2148,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 const countryUrl = crawlSource === 'vsmov'
                   ? `https://vsmov.com/api/quoc-gia/${country}?page=${p}`
                   : `https://phimapi.com/v1/api/quoc-gia/${country}?page=${p}`;
-                const res = await fetch(countryUrl);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
+                 const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(countryUrl));
+                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                 const resJson = await res.json();
+                 const data = resJson.data;
                 if (data && data.data && Array.isArray(data.data.items)) {
                   data.data.items.forEach(item => {
                     if (item.slug) slugs.push(item.slug);
@@ -2172,9 +2170,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
                 const genreUrl = crawlSource === 'vsmov'
                   ? `https://vsmov.com/api/the-loai/${genre}?page=${p}`
                   : `https://phimapi.com/v1/api/the-loai/${genre}?page=${p}`;
-                const res = await fetch(genreUrl);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
+                 const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(genreUrl));
+                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                 const resJson = await res.json();
+                 const data = resJson.data;
                 if (data && data.data && Array.isArray(data.data.items)) {
                   data.data.items.forEach(item => {
                     if (item.slug) slugs.push(item.slug);
@@ -2208,9 +2207,10 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           const batchUrl1 = crawlSource === 'vsmov'
             ? 'https://vsmov.com/api/danh-sach/phim-moi-cap-nhat?page=1'
             : 'https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=1&limit=40';
-          const res = await fetch(batchUrl1);
+          const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(batchUrl1));
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
+          const resJson = await res.json();
+          const data = resJson.data;
           
           const totalPages = data.pagination?.totalPages || data.data?.params?.pagination?.totalPages || 500;
           addLog(`✓ Tổng số trang phim cần quét: ${totalPages} trang. Bắt đầu thu thập slugs...`, 'system');
@@ -2222,8 +2222,9 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               const batchUrl = crawlSource === 'vsmov'
                 ? `https://vsmov.com/api/danh-sach/phim-moi-cap-nhat?page=${p}`
                 : `https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${p}&limit=40`;
-              const pageRes = await fetch(batchUrl);
-              const pageData = await pageRes.json();
+               const pageRes = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(batchUrl));
+               const pageJson = await pageRes.json();
+               const pageData = pageJson.data;
               const items = pageData.data?.items || pageData.items;
               if (items && Array.isArray(items)) {
                 items.forEach(item => {

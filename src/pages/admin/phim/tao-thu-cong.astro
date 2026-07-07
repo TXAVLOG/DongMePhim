@@ -407,9 +407,10 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             }
 
             const apiEndpoint = isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`;
-            const res = await fetch(apiEndpoint);
+            const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(apiEndpoint));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
+            const resJson = await res.json();
+            const data = resJson.data;
 
             if (data && data.movie) {
               const m = data.movie;

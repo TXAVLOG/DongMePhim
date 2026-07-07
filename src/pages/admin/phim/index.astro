@@ -650,9 +650,10 @@ const staticMovies = await MovieService.getMovies();
                   sourceUrl = mObj.sourceUrl;
                 }
 
-                const res = await fetch(sourceUrl);
+                const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(sourceUrl));
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const detailData = await res.json();
+                const resJson = await res.json();
+                const detailData = resJson.data;
 
                 if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
                   const movieDetailObj = mapKKPhimToMovieDetail(detailData, isVsmov ? 'vsmov' : 'kkphim');
@@ -738,9 +739,10 @@ const staticMovies = await MovieService.getMovies();
               sourceUrl = mObj.sourceUrl;
             }
 
-            const res = await fetch(sourceUrl);
+            const res = await fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent(sourceUrl));
             if (!res.ok) throw new Error('HTTP ' + res.status);
-            const detailData = await res.json();
+            const resJson = await res.json();
+            const detailData = resJson.data;
 
             if (detailData && detailData.movie && Array.isArray(detailData.episodes)) {
               const movieDetailObj = mapKKPhimToMovieDetail(detailData, isVsmov ? 'vsmov' : 'kkphim');
