@@ -3,6 +3,36 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { SettingService } from '@services/SettingService';
 
+// Helper function để lấy toàn bộ danh sách phim vượt giới hạn 1000 dòng của Supabase
+async function fetchAllMoviesEpisodes(selectFields: string = 'episodes') {
+  let allMovies: any[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('movies')
+      .select(selectFields)
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+
+    if (error) {
+      console.error(`Lỗi fetch movies range (${selectFields}):`, error);
+      hasMore = false;
+    } else if (data && data.length > 0) {
+      allMovies = allMovies.concat(data);
+      if (data.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    } else {
+      hasMore = false;
+    }
+  }
+  return allMovies;
+}
+
 export const GET: APIRoute = async ({ request }) => {
   try {
     // 1. Lấy danh sách server được cấu hình từ bảng settings
@@ -20,25 +50,21 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     // 2. Thống kê số lượng phim sử dụng mỗi server
-    const { data: movies, error: moviesError } = await supabase
-      .from('movies')
-      .select('episodes');
+    const movies = await fetchAllMoviesEpisodes('episodes');
 
     const movieCounts: Record<string, number> = {};
-    if (!moviesError && movies) {
-      movies.forEach((m: any) => {
-        if (Array.isArray(m.episodes)) {
-          const movieServers = new Set<string>();
-          m.episodes.forEach((server: any) => {
-            const name = server.serverName || server.server_name;
-            if (name) movieServers.add(name);
-          });
-          movieServers.forEach(name => {
-            movieCounts[name] = (movieCounts[name] || 0) + 1;
-          });
-        }
-      });
-    }
+    movies.forEach((m: any) => {
+      if (Array.isArray(m.episodes)) {
+        const movieServers = new Set<string>();
+        m.episodes.forEach((server: any) => {
+          const name = server.serverName || server.server_name;
+          if (name) movieServers.add(name);
+        });
+        movieServers.forEach(name => {
+          movieCounts[name] = (movieCounts[name] || 0) + 1;
+        });
+      }
+    });
 
     // 3. Hợp nhất danh sách server cấu hình và các server thực tế trong database
     const resultList: { name: string; movieCount: number }[] = [];
@@ -101,33 +127,29 @@ export const POST: APIRoute = async ({ request }) => {
       configuredServers = configuredServers.map(s => s === trimmedOld ? trimmedNew : s);
 
       // Cập nhật tên server trong toàn bộ phim ở cơ sở dữ liệu
-      const { data: movies, error: fetchErr } = await supabase
-        .from('movies')
-        .select('id, episodes');
+      const movies = await fetchAllMoviesEpisodes('id, episodes');
 
-      if (!fetchErr && movies) {
-        for (const movie of movies) {
-          if (Array.isArray(movie.episodes)) {
-            let updated = false;
-            const newEpisodes = movie.episodes.map((ep: any) => {
-              const sName = ep.serverName || ep.server_name;
-              if (sName === trimmedOld) {
-                updated = true;
-                return {
-                  ...ep,
-                  serverName: trimmedNew,
-                  server_name: trimmedNew
-                };
-              }
-              return ep;
-            });
-
-            if (updated) {
-              await supabase
-                .from('movies')
-                .update({ episodes: newEpisodes })
-                .eq('id', movie.id);
+      for (const movie of movies) {
+        if (Array.isArray(movie.episodes)) {
+          let updated = false;
+          const newEpisodes = movie.episodes.map((ep: any) => {
+            const sName = ep.serverName || ep.server_name;
+            if (sName === trimmedOld) {
+              updated = true;
+              return {
+                ...ep,
+                serverName: trimmedNew,
+                server_name: trimmedNew
+              };
             }
+            return ep;
+          });
+
+          if (updated) {
+            await supabase
+              .from('movies')
+              .update({ episodes: newEpisodes })
+              .eq('id', movie.id);
           }
         }
       }
@@ -137,25 +159,21 @@ export const POST: APIRoute = async ({ request }) => {
 
       // Nếu người dùng chọn xóa tập phim trên server này khỏi database
       if (deleteFromMovies) {
-        const { data: movies, error: fetchErr } = await supabase
-          .from('movies')
-          .select('id, episodes');
+        const movies = await fetchAllMoviesEpisodes('id, episodes');
 
-        if (!fetchErr && movies) {
-          for (const movie of movies) {
-            if (Array.isArray(movie.episodes)) {
-              const originalLen = movie.episodes.length;
-              const newEpisodes = movie.episodes.filter((ep: any) => {
-                const sName = ep.serverName || ep.server_name;
-                return sName !== trimmedName;
-              });
+        for (const movie of movies) {
+          if (Array.isArray(movie.episodes)) {
+            const originalLen = movie.episodes.length;
+            const newEpisodes = movie.episodes.filter((ep: any) => {
+              const sName = ep.serverName || ep.server_name;
+              return sName !== trimmedName;
+            });
 
-              if (newEpisodes.length !== originalLen) {
-                await supabase
-                  .from('movies')
-                  .update({ episodes: newEpisodes })
-                  .eq('id', movie.id);
-              }
+            if (newEpisodes.length !== originalLen) {
+              await supabase
+                .from('movies')
+                .update({ episodes: newEpisodes })
+                .eq('id', movie.id);
             }
           }
         }
