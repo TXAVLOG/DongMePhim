@@ -742,6 +742,8 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       // Cache for fetched metadata
       let kkphimGenres = [];
       let kkphimCountries = [];
+      let vsmovGenres = [];
+      let vsmovCountries = [];
       let tmdbGenres = [];
       let tmdbCountries = [];
 
@@ -751,12 +753,21 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         try {
           // 1. Fetch KKPhim metadata
           const [kkGenresRes, kkCountriesRes] = await Promise.all([
-            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://phimapi.com/the-loai')).then(r => r.json().then(j => j.data).catch(() => [])),
-            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://phimapi.com/quoc-gia')).then(r => r.json().then(j => j.data).catch(() => []))
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://phimapi.com/the-loai')).then(r => r.json().then(j => j.data?.items).catch(() => [])),
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://phimapi.com/quoc-gia')).then(r => r.json().then(j => j.data?.items).catch(() => []))
           ]);
 
           kkphimGenres = Array.isArray(kkGenresRes) ? kkGenresRes : [];
           kkphimCountries = Array.isArray(kkCountriesRes) ? kkCountriesRes : [];
+
+          // 1.2. Fetch VSMOV metadata
+          const [vsGenresRes, vsCountriesRes] = await Promise.all([
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/the-loai')).then(r => r.json().then(j => j.data?.items).catch(() => [])),
+            fetch('/api/admin/proxy-crawler?url=' + encodeURIComponent('https://vsmov.com/api/quoc-gia')).then(r => r.json().then(j => j.data?.items).catch(() => []))
+          ]);
+
+          vsmovGenres = Array.isArray(vsGenresRes) && vsGenresRes.length > 0 ? vsGenresRes : kkphimGenres;
+          vsmovCountries = Array.isArray(vsCountriesRes) && vsCountriesRes.length > 0 ? vsCountriesRes : kkphimCountries;
 
           // 2. Fetch TMDB metadata
           const [tmdbMovieGenresRes, tmdbTvGenresRes, tmdbCountriesRes] = await Promise.all([
@@ -792,7 +803,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
               })).sort((a, b) => a.name.localeCompare(b.name, 'vi'))
             : [];
 
-          addLog(`✓ Đồng bộ thành công: KKPhim (${kkphimCountries.length} quốc gia, ${kkphimGenres.length} thể loại), TMDB (${tmdbCountries.length} quốc gia, ${tmdbGenres.length} thể loại).`, 'success');
+          addLog(`✓ Đồng bộ thành công: KKPhim (${kkphimCountries.length} quốc gia, ${kkphimGenres.length} thể loại), VSMOV (${vsmovCountries.length} quốc gia, ${vsmovGenres.length} thể loại), TMDB (${tmdbCountries.length} quốc gia, ${tmdbGenres.length} thể loại).`, 'success');
           
           populateFilterDropdowns();
         } catch (e) {
@@ -802,9 +813,38 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         }
       }
 
-      function useFallbackFilters() {
+            function useFallbackFilters() {
         kkphimCountries = [
           { name: 'Trung Quốc', slug: 'trung-quoc' },
+          { name: 'Hàn Quốc', slug: 'han-quoc' },
+          { name: 'Nhật Bản', slug: 'nhat-ban' },
+          { name: 'Âu Mỹ', slug: 'au-my' },
+          { name: 'Thái Lan', slug: 'thai-lan' },
+          { name: 'Hồng Kông', slug: 'hong-kong' },
+          { name: 'Đài Loan', slug: 'dai-loan' },
+          { name: 'Việt Nam', slug: 'viet-nam' },
+          { name: 'Ấn Độ', slug: 'an-do' },
+          { name: 'Khác', slug: 'khac' }
+        ];
+
+        kkphimGenres = [
+          { name: 'Hành Động', slug: 'hanh-dong' },
+          { name: 'Tình Cảm', slug: 'tinh-cam' },
+          { name: 'Hài Hước', slug: 'hai-huoc' },
+          { name: 'Cổ Trang', slug: 'co-trang' },
+          { name: 'Tâm Lý', slug: 'tam-ly' },
+          { name: 'Hình Sự', slug: 'hinh-su' },
+          { name: 'Viễn Tưởng', slug: 'vien-tuong' },
+          { name: 'Kinh Dị', slug: 'kinh-di' },
+          { name: 'Thần Thoại', slug: 'than-thoai' },
+          { name: 'Võ Thuật', slug: 'vo-thuat' }
+        ];
+
+        vsmovCountries = kkphimCountries;
+        vsmovGenres = kkphimGenres;
+
+        populateFilterDropdowns();
+      },
           { name: 'Hàn Quốc', slug: 'han-quoc' },
           { name: 'Nhật Bản', slug: 'nhat-ban' },
           { name: 'Âu Mỹ', slug: 'au-my' },
@@ -882,12 +922,12 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         if (vsCountry && vsGenre) {
           vsCountry.innerHTML = '';
           vsGenre.innerHTML = '';
-          kkphimCountries.forEach(c => {
+          vsmovCountries.forEach(c => {
             const opt = document.createElement('option');
             opt.value = c.slug; opt.textContent = c.name;
             vsCountry.appendChild(opt);
           });
-          kkphimGenres.forEach(g => {
+          vsmovGenres.forEach(g => {
             const opt = document.createElement('option');
             opt.value = g.slug; opt.textContent = g.name;
             vsGenre.appendChild(opt);
