@@ -1108,6 +1108,7 @@ import AdminLayout from '@layouts/AdminLayout.astro';
     const detectCountText = document.getElementById('detectCountText');
 
     function updateDetectCount() {
+      if (!crawlUrlsInput || !detectCountText) return;
       const lines = crawlUrlsInput.value.split('\n').map(l => l.trim()).filter(Boolean);
       let valid = 0;
       lines.forEach(line => {
@@ -1116,20 +1117,22 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       });
       detectCountText.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span> Phát hiện ${valid} phim hợp lệ từ dòng nhập.`;
     }
-    crawlUrlsInput.addEventListener('input', updateDetectCount);
+    crawlUrlsInput?.addEventListener('input', updateDetectCount);
 
     // File upload handler for TXT files
     const crawlTxtUpload = document.getElementById('crawlTxtUpload');
     const uploadText = document.getElementById('uploadText');
     const uploadIcon = document.getElementById('uploadIcon');
 
-    crawlTxtUpload.addEventListener('change', (e) => {
+    crawlTxtUpload?.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      uploadText.textContent = `Đang đọc file: ${file.name}...`;
-      uploadIcon.className = 'material-symbols-outlined text-2xl text-primary animate-spin';
-      uploadIcon.textContent = 'sync';
+      if (uploadText) uploadText.textContent = `Đang đọc file: ${file.name}...`;
+      if (uploadIcon) {
+        uploadIcon.className = 'material-symbols-outlined text-2xl text-primary animate-spin';
+        uploadIcon.textContent = 'sync';
+      }
 
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -1149,12 +1152,14 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         });
 
         // Populate textarea and update count
-        crawlUrlsInput.value = validLines.join('\n');
+        if (crawlUrlsInput) crawlUrlsInput.value = validLines.join('\n');
         updateDetectCount();
 
-        uploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
-        uploadIcon.className = 'material-symbols-outlined text-2xl text-emerald-400';
-        uploadIcon.textContent = 'check_circle';
+        if (uploadText) uploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
+        if (uploadIcon) {
+          uploadIcon.className = 'material-symbols-outlined text-2xl text-emerald-400';
+          uploadIcon.textContent = 'check_circle';
+        }
 
         if (invalidCount > 0) {
           if (window.showGlobalToast) {
@@ -1170,9 +1175,11 @@ import AdminLayout from '@layouts/AdminLayout.astro';
       };
 
       reader.onerror = () => {
-        uploadText.textContent = 'Lỗi khi đọc file!';
-        uploadIcon.className = 'material-symbols-outlined text-2xl text-red-400';
-        uploadIcon.textContent = 'error';
+        if (uploadText) uploadText.textContent = 'Lỗi khi đọc file!';
+        if (uploadIcon) {
+          uploadIcon.className = 'material-symbols-outlined text-2xl text-red-400';
+          uploadIcon.textContent = 'error';
+        }
         if (window.showGlobalToast) window.showGlobalToast('Lỗi khi đọc file TXT!', 'error');
       };
 
