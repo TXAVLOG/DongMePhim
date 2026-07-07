@@ -835,6 +835,47 @@ const packages = settings.packages || [];
                     <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Email</label>
                     <input type="email" id="modal-email" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập email..." required />
                   </div>
+                  <div class="flex flex-col gap-1 relative">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Mật khẩu</label>
+                    <input type="password" id="modal-password" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập mật khẩu..." required />
+                  </div>
+
+                  <!-- Password Strength Bar & Conditions Indicator -->
+                  <div id="modal-password-strength-container" class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2 hidden">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Độ mạnh mật khẩu</span>
+                      <span id="modal-strength-text" class="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Trống</span>
+                    </div>
+                    <div class="flex gap-1 h-1 w-full rounded-full overflow-hidden bg-zinc-800">
+                      <div id="modal-strength-bar-1" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                      <div id="modal-strength-bar-2" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                      <div id="modal-strength-bar-3" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                      <div id="modal-strength-bar-4" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                    </div>
+                    <div id="modal-password-conditions" class="grid grid-cols-2 gap-x-2 gap-y-1 pt-1.5 border-t border-white/5 text-[8px] text-zinc-500 font-semibold">
+                      <div class="flex items-center gap-1 condition-item" data-cond="length">
+                        <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                        <span>Tối thiểu 8 ký tự</span>
+                      </div>
+                      <div class="flex items-center gap-1 condition-item" data-cond="uppercase">
+                        <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                        <span>1 chữ viết hoa</span>
+                      </div>
+                      <div class="flex items-center gap-1 condition-item" data-cond="lowercase">
+                        <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                        <span>1 chữ viết thường</span>
+                      </div>
+                      <div class="flex items-center gap-1 condition-item" data-cond="number">
+                        <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                        <span>1 chữ số</span>
+                      </div>
+                      <div class="flex items-center gap-1 condition-item col-span-2" data-cond="special">
+                        <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                        <span>1 ký tự đặc biệt</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="grid grid-cols-2 gap-3">
                     <div class="flex flex-col gap-1">
                       <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Gói dịch vụ</label>
@@ -873,13 +914,25 @@ const packages = settings.packages || [];
               onConfirm: async () => {
                 const username = document.getElementById('modal-username').value.trim();
                 const email = document.getElementById('modal-email').value.trim();
+                const password = document.getElementById('modal-password').value.trim();
                 const pack = document.getElementById('modal-package').value;
                 const role = document.getElementById('modal-role').value;
                 const verified = document.getElementById('modal-verified').value === 'true';
                 const status = document.getElementById('modal-status').value;
 
-                if (!username || !email) {
-                  window.showGlobalToast('Vui lòng điền đầy đủ thông tin bắt buộc!', 'error');
+                if (!username || !email || !password) {
+                  window.showGlobalToast('Vui lòng điền đầy đủ các trường bắt buộc!', 'error');
+                  return;
+                }
+
+                // Check password strength
+                const isPwdValid = password.length >= 8 && 
+                                   /[A-Z]/.test(password) && 
+                                   /[a-z]/.test(password) && 
+                                   /[0-9]/.test(password) && 
+                                   /[^A-Za-z0-9]/.test(password);
+                if (!isPwdValid) {
+                  window.showGlobalToast('Mật khẩu chưa đủ mạnh! Phải thỏa mãn cả 5 điều kiện.', 'error');
                   return;
                 }
 
@@ -897,6 +950,7 @@ const packages = settings.packages || [];
                       action: 'add',
                       username,
                       email,
+                      password,
                       package: pack,
                       role,
                       emailVerified: verified,
@@ -916,6 +970,94 @@ const packages = settings.packages || [];
                 }
               }
             });
+
+            // Setup password validation after modal is shown
+            setTimeout(() => {
+              const pwdInput = document.getElementById('modal-password');
+              if (pwdInput) {
+                pwdInput.addEventListener('input', function() {
+                  const val = this.value;
+                  const strengthContainer = document.getElementById('modal-password-strength-container');
+                  if (strengthContainer) strengthContainer.classList.remove('hidden');
+
+                  const conds = {
+                    length: val.length >= 8,
+                    uppercase: /[A-Z]/.test(val),
+                    lowercase: /[a-z]/.test(val),
+                    number: /[0-9]/.test(val),
+                    special: /[^A-Za-z0-9]/.test(val)
+                  };
+
+                  let passedCount = 0;
+                  Object.entries(conds).forEach(([key, passed]) => {
+                    const item = document.querySelector(`#modal-password-conditions .condition-item[data-cond="${key}"]`);
+                    if (item) {
+                      const icon = item.querySelector('.material-symbols-outlined');
+                      if (val.length === 0) {
+                        item.className = 'flex items-center gap-1 condition-item text-zinc-500';
+                        if (icon) icon.textContent = 'radio_button_unchecked';
+                      } else if (passed) {
+                        passedCount++;
+                        item.className = 'flex items-center gap-1 condition-item text-emerald-400';
+                        if (icon) icon.textContent = 'check_circle';
+                      } else {
+                        item.className = 'flex items-center gap-1 condition-item text-rose-500';
+                        if (icon) icon.textContent = 'cancel';
+                      }
+                    }
+                  });
+
+                  const strengthTextEl = document.getElementById('modal-strength-text');
+                  const bars = [
+                    document.getElementById('modal-strength-bar-1'),
+                    document.getElementById('modal-strength-bar-2'),
+                    document.getElementById('modal-strength-bar-3'),
+                    document.getElementById('modal-strength-bar-4')
+                  ];
+
+                  bars.forEach(b => { if (b) b.className = 'h-full w-1/4 rounded-full bg-zinc-800 transition-all duration-300'; });
+
+                  if (val.length === 0) {
+                    if (strengthTextEl) {
+                      strengthTextEl.textContent = 'Trống';
+                      strengthTextEl.className = 'text-[8px] font-black uppercase tracking-widest text-zinc-500';
+                    }
+                    return;
+                  }
+
+                  let strengthLabel = 'Rất yếu';
+                  let strengthColor = 'bg-rose-500';
+                  let activeBars = 1;
+
+                  if (passedCount <= 2) {
+                    strengthLabel = 'Yếu';
+                    strengthColor = 'bg-rose-500';
+                    activeBars = 1;
+                  } else if (passedCount === 3) {
+                    strengthLabel = 'Trung bình';
+                    strengthColor = 'bg-amber-500';
+                    activeBars = 2;
+                  } else if (passedCount === 4) {
+                    strengthLabel = 'Mạnh';
+                    strengthColor = 'bg-yellow-400';
+                    activeBars = 3;
+                  } else if (passedCount === 5) {
+                    strengthLabel = 'Cực kỳ bảo mật';
+                    strengthColor = 'bg-emerald-400';
+                    activeBars = 4;
+                  }
+
+                  if (strengthTextEl) {
+                    strengthTextEl.textContent = strengthLabel;
+                    strengthTextEl.className = `text-[8px] font-black uppercase tracking-widest transition-colors ${passedCount <= 2 ? 'text-rose-400' : passedCount === 3 ? 'text-amber-400' : passedCount === 4 ? 'text-yellow-400' : 'text-emerald-400'}`;
+                  }
+
+                  for (let i = 0; i < activeBars; i++) {
+                    if (bars[i]) bars[i].className = `h-full w-1/4 rounded-full transition-all duration-300 ${strengthColor}`;
+                  }
+                });
+              }
+            }, 100);
           };
         }
 
