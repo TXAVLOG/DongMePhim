@@ -65,6 +65,8 @@ export interface AppSettings {
   app_smart_tv_url?: string;
   app_smart_tv_size?: string;
   app_smart_tv_sha256?: string;
+  app_maintenance_enable?: boolean;
+  app_maintenance_message?: string;
 }
 
 export interface UserSettings {

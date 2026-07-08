@@ -5,8 +5,12 @@ import { SettingService } from '@services/SettingService';
 export const GET: APIRoute = async ({ request }) => {
   const settings = await SettingService.getSettings();
 
+  const maintenanceMode = settings.app.app_maintenance_enable ?? settings.general.maintenance_enable ?? false;
+  const maintenanceMessage = settings.app.app_maintenance_message || settings.general.maintenance_message || "Ứng dụng đang được bảo trì định kỳ để nâng cao hiệu năng. Vui lòng quay lại sau ít phút!";
+
   return apiResponse({
-    maintenance_mode: settings.general.maintenance_enable,
+    maintenance_mode: maintenanceMode,
+    maintenance_message: maintenanceMessage,
     is_active: true,
     ios_active: true,
     data: {

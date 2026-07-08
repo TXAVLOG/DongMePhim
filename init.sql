@@ -387,7 +387,9 @@ INSERT INTO public.settings (key, value) VALUES (
     "app_smart_tv_enable": false,
     "app_smart_tv_url": "",
     "app_smart_tv_size": "",
-    "app_smart_tv_sha256": ""
+    "app_smart_tv_sha256": "",
+    "app_maintenance_enable": false,
+    "app_maintenance_message": "Ứng dụng đang được bảo trì định kỳ để nâng cao hiệu năng. Vui lòng quay lại sau ít phút!"
   }'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
 
