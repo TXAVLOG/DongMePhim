@@ -86,6 +86,49 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       }
     } catch (_) {}
 
+    // Fetch related seasons/parts of the same series
+    let relatedParts: any[] = [];
+    try {
+      const getBaseTitle = (t: string) => {
+        return t
+          .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
+          .replace(/\s*-\s*$/, '')
+          .trim();
+      };
+      const baseTitle = getBaseTitle(movie.title);
+      
+      const { data: dbCandidates } = await supabase
+        .from('movies')
+        .select('title, slug, release_year, seasons')
+        .ilike('title', `%${baseTitle}%`);
+        
+      if (dbCandidates) {
+        const normalize = (t: string) => {
+          return t
+            .toLowerCase()
+            .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
+            .replace(/\s*-\s*$/, '')
+            .trim();
+        };
+        const targetBase = normalize(movie.title);
+
+        const filtered = dbCandidates.filter((m: any) => {
+          const mBaseTitle = normalize(m.title);
+          return targetBase.length > 2 && mBaseTitle === targetBase;
+        }).sort((a: any, b: any) => {
+          return (a.release_year || 0) - (b.release_year || 0) || a.title.localeCompare(b.title);
+        });
+
+        relatedParts = filtered.map((part: any) => ({
+          name: part.title,
+          slug: part.slug,
+          season_name: part.seasons || `Phần ${part.release_year || ''}`
+        }));
+      }
+    } catch (e) {
+      console.error("Error fetching related parts for API:", e);
+    }
+
     if (allowedServers.length === 0) {
       const packagesList = settings.packages || [];
       const freePkg = packagesList.find((p: any) => p.id === 'free');
@@ -155,7 +198,8 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       is_favorite: isFavorite,
       require_login: movie.require_login || false,
       categories: movie.genres?.map((g: string) => ({ name: g })) || (movie.category ? [{ name: movie.category }] : []),
-      actors: movie.actors?.map((a: string) => ({ name: a, role: "" })) || []
+      actors: movie.actors?.map((a: string) => ({ name: a, role: "" })) || [],
+      seasons: relatedParts
     },
     ads,
     history: historyData,
