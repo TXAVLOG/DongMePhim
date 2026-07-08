@@ -1268,22 +1268,34 @@ import AdminLayout from '@layouts/AdminLayout.astro';
         if (crawlUrlsInput) crawlUrlsInput.value = validLines.join('\n');
         updateDetectCount();
 
-        if (uploadText) uploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
-        if (uploadIcon) {
-          uploadIcon.className = 'material-symbols-outlined text-2xl text-emerald-400';
-          uploadIcon.textContent = 'check_circle';
-        }
-
-        if (invalidCount > 0) {
-          if (window.showGlobalToast) {
-            window.showGlobalToast(`Đã bỏ qua ${invalidCount} dòng không hợp lệ!`, 'warning');
+        if (validLines.length === 0) {
+          if (uploadText) uploadText.textContent = `Lỗi: 0 dòng hợp lệ từ ${file.name}`;
+          if (uploadIcon) {
+            uploadIcon.className = 'material-symbols-outlined text-2xl text-red-400';
+            uploadIcon.textContent = 'error';
           }
-          addLog(`⚠️ Đã tải file .txt nhưng phát hiện ${invalidCount} dòng không hợp lệ và bị bỏ qua.`, 'warning');
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Không tìm thấy dòng nào hợp lệ trong file!', 'error');
+          }
+          addLog(`✗ Lỗi tải file .txt: Không có dòng nào hợp lệ.`, 'error');
         } else {
-          if (window.showGlobalToast) {
-            window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+          if (uploadText) uploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
+          if (uploadIcon) {
+            uploadIcon.className = 'material-symbols-outlined text-2xl text-emerald-400';
+            uploadIcon.textContent = 'check_circle';
           }
-          addLog(`✓ Đã tải thành công ${validLines.length} phim từ file .txt.`, 'success');
+
+          if (invalidCount > 0) {
+            if (window.showGlobalToast) {
+              window.showGlobalToast(`Phát hiện ${invalidCount} dòng không hợp lệ đã bị bỏ qua!`, 'warning');
+            }
+            addLog(`⚠️ Đã tải file .txt nhưng phát hiện ${invalidCount} dòng không hợp lệ và bị bỏ qua.`, 'warning');
+          } else {
+            if (window.showGlobalToast) {
+              window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+            }
+            addLog(`✓ Đã tải thành công ${validLines.length} phim từ file .txt.`, 'success');
+          }
         }
       };
 
@@ -2587,12 +2599,37 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           });
           if (kkphimUrlsInput) kkphimUrlsInput.value = validLines.join('\n');
           updateKkphimDetectCount();
-          if (kkphimUploadText) kkphimUploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
-          if (kkphimUploadIcon) {
-            kkphimUploadIcon.className = 'material-symbols-outlined text-xl text-emerald-400';
-            kkphimUploadIcon.textContent = 'check_circle';
+          
+          if (validLines.length === 0) {
+            if (kkphimUploadText) kkphimUploadText.textContent = `Lỗi: 0 dòng hợp lệ từ ${file.name}`;
+            if (kkphimUploadIcon) {
+              kkphimUploadIcon.className = 'material-symbols-outlined text-xl text-red-400';
+              kkphimUploadIcon.textContent = 'error';
+            }
+            if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy dòng nào hợp lệ trong file!', 'error');
+            addLog(`✗ Lỗi tải file .txt (KKPhim): Không có dòng nào hợp lệ.`, 'error');
+          } else {
+            if (kkphimUploadText) kkphimUploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
+            if (kkphimUploadIcon) {
+              kkphimUploadIcon.className = 'material-symbols-outlined text-xl text-emerald-400';
+              kkphimUploadIcon.textContent = 'check_circle';
+            }
+            if (invalidCount > 0) {
+              if (window.showGlobalToast) window.showGlobalToast(`Phát hiện ${invalidCount} dòng không hợp lệ đã bị bỏ qua!`, 'warning');
+              addLog(`⚠️ Đã tải file .txt nhưng phát hiện ${invalidCount} dòng không hợp lệ và bị bỏ qua.`, 'warning');
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+              addLog(`✓ Đã tải thành công ${validLines.length} phim từ file .txt.`, 'success');
+            }
           }
-          if (window.showGlobalToast) window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+        };
+        reader.onerror = () => {
+          if (kkphimUploadText) kkphimUploadText.textContent = 'Lỗi khi đọc file!';
+          if (kkphimUploadIcon) {
+            kkphimUploadIcon.className = 'material-symbols-outlined text-xl text-red-400';
+            kkphimUploadIcon.textContent = 'error';
+          }
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi khi đọc file TXT!', 'error');
         };
         reader.readAsText(file);
       });
@@ -2642,12 +2679,37 @@ import AdminLayout from '@layouts/AdminLayout.astro';
           });
           if (vsmovUrlsInput) vsmovUrlsInput.value = validLines.join('\n');
           updateVsmovDetectCount();
-          if (vsmovUploadText) vsmovUploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
-          if (vsmovUploadIcon) {
-            vsmovUploadIcon.className = 'material-symbols-outlined text-xl text-emerald-400';
-            vsmovUploadIcon.textContent = 'check_circle';
+          
+          if (validLines.length === 0) {
+            if (vsmovUploadText) vsmovUploadText.textContent = `Lỗi: 0 dòng hợp lệ từ ${file.name}`;
+            if (vsmovUploadIcon) {
+              vsmovUploadIcon.className = 'material-symbols-outlined text-xl text-red-400';
+              vsmovUploadIcon.textContent = 'error';
+            }
+            if (window.showGlobalToast) window.showGlobalToast('Không tìm thấy dòng nào hợp lệ trong file!', 'error');
+            addLog(`✗ Lỗi tải file .txt (VSMOV): Không có dòng nào hợp lệ.`, 'error');
+          } else {
+            if (vsmovUploadText) vsmovUploadText.textContent = `Đã tải: ${file.name} (${validLines.length} dòng)`;
+            if (vsmovUploadIcon) {
+              vsmovUploadIcon.className = 'material-symbols-outlined text-xl text-emerald-400';
+              vsmovUploadIcon.textContent = 'check_circle';
+            }
+            if (invalidCount > 0) {
+              if (window.showGlobalToast) window.showGlobalToast(`Phát hiện ${invalidCount} dòng không hợp lệ đã bị bỏ qua!`, 'warning');
+              addLog(`⚠️ Đã tải file .txt nhưng phát hiện ${invalidCount} dòng không hợp lệ và bị bỏ qua.`, 'warning');
+            } else {
+              if (window.showGlobalToast) window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+              addLog(`✓ Đã tải thành công ${validLines.length} phim từ file .txt.`, 'success');
+            }
           }
-          if (window.showGlobalToast) window.showGlobalToast(`Đã tải thành công ${validLines.length} dòng!`, 'success');
+        };
+        reader.onerror = () => {
+          if (vsmovUploadText) vsmovUploadText.textContent = 'Lỗi khi đọc file!';
+          if (vsmovUploadIcon) {
+            vsmovUploadIcon.className = 'material-symbols-outlined text-xl text-red-400';
+            vsmovUploadIcon.textContent = 'error';
+          }
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi khi đọc file TXT!', 'error');
         };
         reader.readAsText(file);
       });
