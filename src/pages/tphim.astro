@@ -8,15 +8,16 @@ import { MovieService } from '@services/MovieService';
 import Txaicon from '@components/ui/txaicon.astro';
 import { getHomepageCategories } from '@data/categories';
 import { TxaMovieRanker } from '../backend/utils/txaMovieRanker';
+import { supabase } from '@lib/supabase';
 
 const homepageMappings = await getHomepageCategories();
 
 // Lấy tất cả các slugs được gán thủ công trên trang chủ
-const animeSlugs: string[] = [];
-const top10Slugs: string[] = [];
-const top10PhimBoSlugs: string[] = [];
+const animeSlugs: string[] = homepageMappings['top-anime-he'] || [];
+const top10Slugs: string[] = homepageMappings['top-10-phim-le'] || [];
+const top10PhimBoSlugs: string[] = homepageMappings['top-10-phim-bo'] || [];
 
-const assignedSlugs: string[] = [];
+const assignedSlugs: string[] = [...new Set([...animeSlugs, ...top10Slugs, ...top10PhimBoSlugs])];
 
 // Lấy phim theo các slugs được gán và 300 phim mới nhất để làm fallback/sidebar
 const [assignedMovies, latestMovies] = await Promise.all([
@@ -30,13 +31,41 @@ latestMovies.forEach((m: any) => movieMap.set(m.slug, m));
 assignedMovies.forEach((m: any) => movieMap.set(m.slug, m));
 const allMoviesForServer = Array.from(movieMap.values());
 
-// Top Anime
-const animeFiltered = allMoviesForServer.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
-const topAnimeList = TxaMovieRanker.sortMovies(animeFiltered).slice(0, 6);
+// Top Anime: Đọc từ cấu hình admin + lọc bù cho đủ 15 bộ bằng Anime chuẩn (loại bỏ hoạt hình như Gấu Boonie)
+const isAnimeMovie = (m: any) => {
+  if (!m) return false;
+  const title = (m.title || '').toLowerCase();
+  const desc = (m.description || '').toLowerCase();
+  const country = (m.country || '').toLowerCase();
+  const genres = Array.isArray(m.genres) ? m.genres.map((g: any) => g.toLowerCase()) : [];
+  
+  const isAnimation = m.type === 'hoathinh' || genres.includes('hoạt hình') || genres.includes('anime');
+  if (!isAnimation) return false;
+  
+  // Lọc chuẩn Anime: Phải có chữ 'anime', hoặc xuất xứ từ Nhật Bản, hoặc từ khóa trong tiêu đề/mô tả
+  const hasAnimeKeywords = genres.includes('anime') || 
+                           country.includes('nhật bản') || 
+                           country.includes('japan') || 
+                           title.includes('anime') || 
+                           desc.includes('anime');
+                           
+  return hasAnimeKeywords;
+};
 
-// Top 10 Phim Lẻ
-const phimLeFiltered = allMoviesForServer.filter((m: any) => m.type === 'movie');
-const top10PhimLeList = TxaMovieRanker.sortMovies(phimLeFiltered).slice(0, 10);
+const configuredAnime = animeSlugs
+  .map(slug => allMoviesForServer.find((m: any) => m.slug === slug))
+  .filter(Boolean);
+const otherAnime = allMoviesForServer.filter((m: any) => isAnimeMovie(m) && !animeSlugs.includes(m.slug));
+const sortedOtherAnime = TxaMovieRanker.sortMovies(otherAnime);
+const topAnimeList = [...configuredAnime, ...sortedOtherAnime].slice(0, 15);
+
+// Top 10 Phim Lẻ: Đọc từ admin + bù cho đủ 10 phim
+const configuredPhimLe = top10Slugs
+  .map(slug => allMoviesForServer.find((m: any) => m.slug === slug))
+  .filter(Boolean);
+const otherPhimLe = allMoviesForServer.filter((m: any) => m.type === 'movie' && !top10Slugs.includes(m.slug));
+const sortedOtherPhimLe = TxaMovieRanker.sortMovies(otherPhimLe);
+const top10PhimLeList = [...configuredPhimLe, ...sortedOtherPhimLe].slice(0, 10);
 
 // Filter Top Series for Rank slider (server-side)
 const topSeries = allMoviesForServer
@@ -44,9 +73,13 @@ const topSeries = allMoviesForServer
   .sort((a: any, b: any) => ((b.views || 0) + (b.commentCount || 0)) - ((a.views || 0) + (a.commentCount || 0)))
   .slice(0, 10);
 
-// Top 10 Phim Bộ
-const phimBoFiltered = allMoviesForServer.filter((m: any) => m.type === 'series');
-const top10PhimBoList = TxaMovieRanker.sortMovies(phimBoFiltered).slice(0, 10);
+// Top 10 Phim Bộ: Đọc từ admin + bù cho đủ 10 phim
+const configuredPhimBo = top10PhimBoSlugs
+  .map(slug => allMoviesForServer.find((m: any) => m.slug === slug))
+  .filter(Boolean);
+const otherPhimBo = allMoviesForServer.filter((m: any) => m.type === 'series' && !top10PhimBoSlugs.includes(m.slug));
+const sortedOtherPhimBo = TxaMovieRanker.sortMovies(otherPhimBo);
+const top10PhimBoList = [...configuredPhimBo, ...sortedOtherPhimBo].slice(0, 10);
 
 // Phim điện ảnh mới coóng - Tự động phân loại (Lọc phim lẻ, ưu tiên chiếu rạp, sắp xếp mới nhất)
 const phimDienAnhList = [...allMoviesForServer]
@@ -65,13 +98,36 @@ const phimDienAnhList = [...allMoviesForServer]
   .slice(0, 18);
 
 // Filter lists for Sidebar ranking (server-side)
-const soiNoiMovies = [...allMoviesForServer]
-  .sort((a: any, b: any) => (b.views || 0) - (a.views || 0))
-  .slice(0, 5);
+// Sôi nổi nhất: Sắp xếp theo công thức ranking TXA
+const soiNoiMovies = TxaMovieRanker.sortMovies(allMoviesForServer).slice(0, 5);
 
-const yeuThichMovies = [...allMoviesForServer]
-  .sort((a: any, b: any) => (b.imdbScore || 0) - (a.imdbScore || 0))
-  .slice(0, 5);
+// Yêu thích nhất: Lấy số lượt yêu thích từ database watch_lists (nếu có), fallback về ngẫu nhiên
+const { data: favoriteData } = await supabase
+  .from('watch_lists')
+  .select('movie_id')
+  .eq('type', 'favorite');
+
+const favoriteCounts: Record<string, number> = {};
+if (favoriteData) {
+  for (const fav of favoriteData) {
+    if (fav.movie_id) {
+      favoriteCounts[fav.movie_id] = (favoriteCounts[fav.movie_id] || 0) + 1;
+    }
+  }
+}
+
+// Phân loại phim có lượt yêu thích và không có lượt yêu thích
+const moviesWithFavs = allMoviesForServer.filter((m: any) => (favoriteCounts[m.id] || 0) > 0);
+const moviesWithoutFavs = allMoviesForServer.filter((m: any) => !(favoriteCounts[m.id] || 0));
+
+// Sắp xếp phim có lượt yêu thích theo số lượng giảm dần
+moviesWithFavs.sort((a: any, b: any) => (favoriteCounts[b.id] || 0) - (favoriteCounts[a.id] || 0));
+
+// Xáo trộn ngẫu nhiên các phim không có lượt yêu thích
+const shuffledWithoutFavs = [...moviesWithoutFavs].sort(() => Math.random() - 0.5);
+
+// Gộp chung: Ưu tiên phim có lượt yêu thích, sau đó bổ sung phim ngẫu nhiên cho đủ 5
+const yeuThichMovies = [...moviesWithFavs, ...shuffledWithoutFavs].slice(0, 5);
 
 // Get pinned or fallback latest movies for hero banner
 const pinnedMovies = allMoviesForServer.filter((m: any) => m.pinned === true || m.pinned === 'true');

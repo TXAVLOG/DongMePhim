@@ -18,16 +18,48 @@ if (category) {
   
   if (category.slug === 'top-anime-he') {
     const animeAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
-    const filtered = animeAll.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
-    movies = TxaMovieRanker.sortMovies(filtered).slice(0, 10);
+    const configuredMovies = assignedSlugs
+      .map(slug => animeAll.find((m: any) => m.slug === slug))
+      .filter(Boolean);
+      
+    const isAnimeMovie = (m: any) => {
+      if (!m) return false;
+      const title = (m.title || '').toLowerCase();
+      const desc = (m.description || '').toLowerCase();
+      const country = (m.country || '').toLowerCase();
+      const genres = Array.isArray(m.genres) ? m.genres.map((g: any) => g.toLowerCase()) : [];
+      
+      const isAnimation = m.type === 'hoathinh' || genres.includes('hoạt hình') || genres.includes('anime');
+      if (!isAnimation) return false;
+      
+      const hasAnimeKeywords = genres.includes('anime') || 
+                               country.includes('nhật bản') || 
+                               country.includes('japan') || 
+                               title.includes('anime') || 
+                               desc.includes('anime');
+                               
+      return hasAnimeKeywords;
+    };
+
+    const otherAnime = animeAll.filter((m: any) => isAnimeMovie(m) && !assignedSlugs.includes(m.slug));
+    const sortedOtherAnime = TxaMovieRanker.sortMovies(otherAnime);
+    movies = [...configuredMovies, ...sortedOtherAnime].slice(0, 15);
   } else if (category.slug === 'top-10-phim-le') {
     const leAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
-    const filtered = leAll.filter((m: any) => m.type === 'movie');
-    movies = TxaMovieRanker.sortMovies(filtered).slice(0, 10);
+    const configuredMovies = assignedSlugs
+      .map(slug => leAll.find((m: any) => m.slug === slug))
+      .filter(Boolean);
+    const otherMovies = leAll.filter((m: any) => m.type === 'movie' && !assignedSlugs.includes(m.slug));
+    const sortedOther = TxaMovieRanker.sortMovies(otherMovies);
+    movies = [...configuredMovies, ...sortedOther].slice(0, 10);
   } else if (category.slug === 'top-10-phim-bo') {
     const boAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
-    const filtered = boAll.filter((m: any) => m.type === 'series');
-    movies = TxaMovieRanker.sortMovies(filtered).slice(0, 10);
+    const configuredMovies = assignedSlugs
+      .map(slug => boAll.find((m: any) => m.slug === slug))
+      .filter(Boolean);
+    const otherMovies = boAll.filter((m: any) => m.type === 'series' && !assignedSlugs.includes(m.slug));
+    const sortedOther = TxaMovieRanker.sortMovies(otherMovies);
+    movies = [...configuredMovies, ...sortedOther].slice(0, 10);
   } else if (category.slug === 'phim-dien-anh-moi') {
     // Tự động phân loại phim điện ảnh mới nhất (lấy từ top 100 phim mới nhất để lọc)
     const latestMovies = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
