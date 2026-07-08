@@ -13,16 +13,14 @@ export const GET: APIRoute = async ({ request }) => {
     maintenance_message: maintenanceMessage,
     is_active: true,
     ios_active: true,
-    data: {
-      latest_version: (settings.app.app_version || '').trim(),
-      min_version: "4.0.0",
-      force_update: false,
-      download_url: (settings.app.app_android_download_url || settings.app.app_ios_download_url || '').trim(),
-      apk_url: (settings.app.app_android_download_url || '').trim(),
-      release_date: "2026-06-18T12:00:00Z",
-      size: parseInt(settings.app.app_apk_size) || 52428800,
-      sha256: (settings.app.app_apk_sha256 || "abcdef1234567890...").trim(),
-      changelog: settings.app.app_release_notes || "- Cập nhật trình phát video mượt hơn\n- Sửa lỗi đồng bộ lịch sử xem"
-    }
-  }, 'success', '', 200, request, true);
+    latest_version: (settings.app.app_version || '').trim(),
+    min_version: "4.0.0",
+    force_update: false,
+    download_url: (settings.app.app_android_download_url || settings.app.app_ios_download_url || '').trim(),
+    apk_url: (settings.app.app_android_download_url || '').trim(),
+    release_date: "2026-06-18T12:00:00Z",
+    size: parseInt(settings.app.app_apk_size) || 52428800,
+    sha256: (settings.app.app_apk_sha256 || "abcdef1234567890...").trim(),
+    changelog: settings.app.app_release_notes || "- Cập nhật trình phát video mượt hơn\n- Sửa lỗi đồng bộ lịch sử xem"
+  }, 'success', '', 200, request);
 };
