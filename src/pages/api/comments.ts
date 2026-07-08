@@ -12,6 +12,9 @@ export const GET: APIRoute = async ({ request }) => {
 
     if (slug) {
       query = query.eq('movie_slug', slug);
+    } else {
+      // Tối ưu hóa: Chỉ lấy tối đa 10 bình luận gần đây trên trang chủ để tránh vượt quá giới hạn tài nguyên của Worker
+      query = query.limit(10);
     }
 
     // Sắp xếp bình luận mới nhất lên đầu

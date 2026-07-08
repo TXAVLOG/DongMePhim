@@ -71,13 +71,20 @@ export class SupabaseMovieProvider implements IMovieProvider {
         }
       }
 
-      // Fetch comment counts from Supabase
-      const { data: commentsData } = await supabase.from('txa_comments').select('movie_slug');
+      // Fetch comment counts from Supabase (Only for the retrieved movies to optimize CPU and Memory)
+      const movieSlugs = rawMovies.map((m: any) => m.slug).filter(Boolean);
       const commentCounts: Record<string, number> = {};
-      if (commentsData) {
-        for (const c of commentsData) {
-          if (c.movie_slug) {
-            commentCounts[c.movie_slug] = (commentCounts[c.movie_slug] || 0) + 1;
+      if (movieSlugs.length > 0) {
+        const { data: commentsData } = await supabase
+          .from('txa_comments')
+          .select('movie_slug')
+          .in('movie_slug', movieSlugs);
+          
+        if (commentsData) {
+          for (const c of commentsData) {
+            if (c.movie_slug) {
+              commentCounts[c.movie_slug] = (commentCounts[c.movie_slug] || 0) + 1;
+            }
           }
         }
       }
