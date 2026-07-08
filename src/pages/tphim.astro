@@ -101,15 +101,14 @@ const phimDienAnhList = [...allMoviesForServer]
 // Sôi nổi nhất: Sắp xếp theo công thức ranking TXA
 const soiNoiMovies = TxaMovieRanker.sortMovies(allMoviesForServer).slice(0, 5);
 
-// Yêu thích nhất: Lấy số lượt yêu thích từ database watch_lists (nếu có), fallback về ngẫu nhiên
+// Yêu thích nhất: Lấy số lượt yêu thích từ database favorites (nếu có), fallback về ngẫu nhiên
 const movieIds = allMoviesForServer.map((m: any) => m.id).filter(Boolean);
 const favoriteCounts: Record<string, number> = {};
 
 if (movieIds.length > 0) {
   const { data: favoriteData } = await supabase
-    .from('watch_lists')
+    .from('favorites')
     .select('movie_id')
-    .eq('type', 'favorite')
     .in('movie_id', movieIds);
 
   if (favoriteData) {

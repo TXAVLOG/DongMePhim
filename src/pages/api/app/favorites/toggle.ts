@@ -49,9 +49,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse(null, 'error', 'Phim không tồn tại!', 404, request);
     }
 
-    // 2. Check check watch_lists
+    // 2. Check check favorites
     const { data: existing, error: checkError } = await supabase
-      .from('watch_lists')
+      .from('favorites')
       .select('id')
       .eq('user_id', user.id)
       .eq('movie_id', movie.id)
@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (existing) {
       // Remove from favorites
       const { error: deleteError } = await supabase
-        .from('watch_lists')
+        .from('favorites')
         .delete()
         .eq('id', existing.id);
       if (deleteError) throw deleteError;
@@ -73,11 +73,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     } else {
       // Add to favorites
       const { error: insertError } = await supabase
-        .from('watch_lists')
+        .from('favorites')
         .insert({
           user_id: user.id,
-          movie_id: movie.id,
-          type: 'watchlist'
+          movie_id: movie.id
         });
       if (insertError) throw insertError;
       isFavorite = true;

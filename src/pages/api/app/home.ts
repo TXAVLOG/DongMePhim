@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     const user = await verifyUserFromRequest(request, cookies);
     if (user) {
       const { data: favs } = await supabase
-        .from('watch_lists')
+        .from('favorites')
         .select('movie_id')
         .eq('user_id', user.id);
       

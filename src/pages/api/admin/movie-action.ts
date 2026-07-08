@@ -130,14 +130,14 @@ async function sendEpisodeUpdateEmails(movieId: string, movieSlug: string, movie
     const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
     if (!isSmtpConfigured) return;
 
-    // 1. Query watch_lists for this movie
+    // 1. Query favorites for this movie
     const { data: favoritedUsers, error: favError } = await supabase
-      .from('watch_lists')
+      .from('favorites')
       .select('user_id')
       .eq('movie_id', movieId);
 
     if (favError) {
-      console.error(`[SMTP] Error querying watch_lists for movie ${movieId}:`, favError);
+      console.error(`[SMTP] Error querying favorites for movie ${movieId}:`, favError);
       return;
     }
 

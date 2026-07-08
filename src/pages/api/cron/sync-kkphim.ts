@@ -259,7 +259,7 @@ export const GET: APIRoute = async ({ request }) => {
               // Find users who favorited this movie for notifications
               subrequestsCount++;
               const { data: watchlists } = await supabase
-                .from('watch_lists')
+                .from('favorites')
                 .select('user_id')
                 .eq('movie_id', movie.id);
 

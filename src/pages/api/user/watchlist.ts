@@ -22,11 +22,10 @@ export const GET: APIRoute = async ({ request, url }) => {
       return apiResponse({ favorites: [], playlist: [] }, 'success', '', 200, request);
     }
 
-    // 2. Lấy danh sách từ watch_lists
+    // 2. Lấy danh sách từ favorites
     const { data, error } = await supabase
-      .from('watch_lists')
+      .from('favorites')
       .select(`
-        type,
         movies (
           slug
         )
@@ -40,11 +39,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
     (data || []).forEach((item: any) => {
       if (item.movies && item.movies.slug) {
-        if (item.type === 'favorite') {
-          favorites.push(item.movies.slug);
-        } else {
-          playlist.push(item.movies.slug);
-        }
+        favorites.push(item.movies.slug);
       }
     });
 
@@ -97,19 +92,17 @@ export const POST: APIRoute = async ({ request }) => {
     const maxPlaylists = userPkg.permissions?.max_playlists ?? 10;
 
     const { data: existingItem } = await supabase
-      .from('watch_lists')
+      .from('favorites')
       .select('user_id')
       .eq('user_id', user.id)
       .eq('movie_id', movie.id)
-      .eq('type', type)
       .maybeSingle();
 
     if (!existingItem) {
       const { count, error: countError } = await supabase
-        .from('watch_lists')
+        .from('favorites')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('type', type);
+        .eq('user_id', user.id);
 
       if (countError) throw countError;
 
@@ -118,14 +111,13 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // 3. Chèn vào watch_lists
+    // 3. Chèn vào favorites
     const { error } = await supabase
-      .from('watch_lists')
+      .from('favorites')
       .upsert({
         user_id: user.id,
-        movie_id: movie.id,
-        type: type // 'favorite' or 'playlist'
-      }, { onConflict: 'user_id,movie_id,type' });
+        movie_id: movie.id
+      }, { onConflict: 'user_id,movie_id' });
 
     if (error) throw error;
 
@@ -170,11 +162,10 @@ export const DELETE: APIRoute = async ({ request, url }) => {
 
     // 3. Xóa
     const { error } = await supabase
-      .from('watch_lists')
+      .from('favorites')
       .delete()
       .eq('user_id', user.id)
-      .eq('movie_id', movie.id)
-      .eq('type', type);
+      .eq('movie_id', movie.id);
 
     if (error) throw error;
 

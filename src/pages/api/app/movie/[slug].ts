@@ -56,7 +56,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
         isAdmin = user.role === 'admin';
 
         const { data: fav } = await supabase
-          .from('watch_lists')
+          .from('favorites')
           .select('id')
           .eq('user_id', user.id)
           .eq('movie_id', movie.id)

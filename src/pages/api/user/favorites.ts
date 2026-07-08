@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   try {
     const { data, error } = await supabase
-      .from('watch_lists')
+      .from('favorites')
       .select('movie_id, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -36,14 +36,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (action === 'add') {
       const { error } = await supabase
-        .from('watch_lists')
-        .upsert({ user_id: userId, movie_id: movieId, type: 'favorite' });
+        .from('favorites')
+        .upsert({ user_id: userId, movie_id: movieId });
         
       if (error) throw error;
       return apiResponse(null, 'success', 'Đã thêm vào danh sách yêu thích', 200, request);
     } else if (action === 'remove') {
       const { error } = await supabase
-        .from('watch_lists')
+        .from('favorites')
         .delete()
         .eq('user_id', userId)
         .eq('movie_id', movieId);

@@ -15,7 +15,7 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
 
     // Fetch user watch list IDs
     const { data: favs, error } = await supabase
-      .from('watch_lists')
+      .from('favorites')
       .select('movie_id')
       .eq('user_id', user.id);
 

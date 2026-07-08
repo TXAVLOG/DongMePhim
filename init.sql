@@ -160,19 +160,19 @@ CREATE TABLE IF NOT EXISTS public.watch_history (
 
 ALTER TABLE public.watch_history ENABLE ROW LEVEL SECURITY;
 
--- Table: public.watch_lists
-CREATE TABLE IF NOT EXISTS public.watch_lists (
+-- Table: public.favorites
+CREATE TABLE IF NOT EXISTS public.favorites (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   movie_id uuid NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
-  type character varying DEFAULT 'playlist'::character varying,
   PRIMARY KEY (id),
-  CONSTRAINT watch_lists_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
-  CONSTRAINT watch_lists_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+  CONSTRAINT favorites_movie_id_fkey FOREIGN KEY (movie_id) REFERENCES public.movies(id),
+  CONSTRAINT favorites_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT favorites_user_id_movie_id_key UNIQUE (user_id, movie_id)
 );
 
-ALTER TABLE public.watch_lists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 
 -- Table: public.schedules
 CREATE TABLE IF NOT EXISTS public.schedules (
@@ -743,7 +743,7 @@ CREATE POLICY "insert_users" ON public.users FOR INSERT TO public WITH CHECK (tr
 CREATE POLICY "update_users" ON public.users FOR UPDATE TO public USING (((auth.uid() = id) OR is_admin()));
 CREATE POLICY "delete_users" ON public.users FOR DELETE TO public USING (((auth.uid() = id) OR is_admin()));
 CREATE POLICY "all_watch_history" ON public.watch_history FOR ALL TO public USING (((auth.uid() = user_id) OR is_admin()));
-CREATE POLICY "all_watch_lists" ON public.watch_lists FOR ALL TO public USING (((auth.uid() = user_id) OR is_admin()));
+CREATE POLICY "all_favorites" ON public.favorites FOR ALL TO public USING (((auth.uid() = user_id) OR is_admin()));
 CREATE POLICY "select_notifications" ON public.notifications FOR SELECT TO public USING (((user_id = auth.uid()) OR (user_id IS NULL) OR is_admin()));
 CREATE POLICY "select_hot_searches" ON public.hot_searches FOR SELECT TO public USING (true);
 CREATE POLICY "modify_hot_searches" ON public.hot_searches FOR ALL TO public USING (true);
