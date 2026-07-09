@@ -370,8 +370,8 @@ INSERT INTO public.settings (key, value) VALUES (
 INSERT INTO public.settings (key, value) VALUES (
   'app',
   '{
-    "app_version": "4.7.5",
-    "app_release_notes": "- 📺 [PLAYER] Khắc phục lỗi ẩn thanh controls ArtPlayer trên mobile\\n- 🔄 [AUTO-NEXT] Sửa lỗi tự động chuyển tập nhảy nhanh\\n- 🎬 [AD] Tự động bỏ qua quảng cáo pre-roll nếu lỗi kết nối\\n- 💎 [VIP] Chuẩn hóa đồng bộ logic gói cước Premium trên App\\n- ⚙️ [SYS] Nâng cấp phiên bản lên v4.7.5",
+    "app_version": "5.0.0",
+    "app_release_notes": "- 🎨 [BRAND] Đồng bộ thương hiệu mới DongMePhim trên mobile\\n- 🔄 [SYNC] Tự động đồng bộ lịch sử và tiến trình xem phim\\n- 💎 [VIP] Nâng cấp chuyển hướng cổng thanh toán SePay\\n- 📺 [TV] Tối ưu hóa cơ chế kết nối TV Pairing đồng thời\\n- 🛠️ [FIX] Khắc phục hoàn toàn lỗi crash quét mã QR trên Android",
     "app_android_download_enable": true,
     "app_android_download_url": "https://app.nrotxa.online/TPHIMX.apk",
     "app_apk_size": "66122454",
@@ -379,7 +379,7 @@ INSERT INTO public.settings (key, value) VALUES (
     "app_ios_direct_install_enable": false,
     "app_ios_download_url": "/ios-access",
     "app_ios_ipa_download_enable": true,
-    "app_ios_ipa_url": "https://github.com/TXAVLOG/tphimx-setup/releases/download/v4.7.5_475/TPHIMX-Premium-v4.7.5+475.ipa",
+    "app_ios_ipa_url": "https://github.com/TXAVLOG/tphimx-setup/releases/download/v5.0.0_500/TPHIMX-Premium-v5.0.0+500.ipa",
     "app_google_play_enable": false,
     "app_google_play_url": "",
     "app_app_store_enable": false,

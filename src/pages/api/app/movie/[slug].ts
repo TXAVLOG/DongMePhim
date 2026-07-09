@@ -66,6 +66,22 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
           isFavorite = true;
         }
 
+        // Fetch watch history from Supabase if logged in
+        const { data: historyRecord } = await supabase
+          .from('watch_history')
+          .select('episode_slug, current_time, server_index')
+          .eq('user_id', user.id)
+          .eq('movie_id', movie.id)
+          .maybeSingle();
+
+        if (historyRecord) {
+          historyData = {
+            episode_id: historyRecord.episode_slug,
+            current_time: parseFloat(historyRecord.current_time) || 0,
+            server_index: parseInt(historyRecord.server_index) || 0
+          };
+        }
+
         const packagesList = settings.packages || [];
         const userPkg = packagesList.find((p: any) => 
           (p.id || '').toLowerCase() === userPkgId.toLowerCase() || 
