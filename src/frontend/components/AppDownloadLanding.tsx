@@ -59,7 +59,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
   const showAndroidTab = androidEnabled && androidUrl;
   const showIosOtaTab = iosDirectEnabled && iosDirectUrl;
   const showIosIpaTab = iosIpaEnabled && iosIpaUrl;
-  const showSmartTvTab = smartTvEnabled && smartTvUrl;
+  const showSmartTvTab = false; // Disabled as Smart TVs auto-detect and redirect to /tv
 
   useEffect(() => {
     // Detect device
