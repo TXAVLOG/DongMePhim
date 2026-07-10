@@ -219,7 +219,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                     <div className="bg-black/40 border border-white/[0.03] rounded-2xl p-4 mb-6 font-mono text-[11px] text-zinc-400 space-y-1.5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <span className="text-[#64748b]">File:</span> <span className="text-white font-bold">TPHIMX.apk</span>
+                          <span className="text-[#64748b]">File:</span> <span className="text-white font-bold">DongMePhim-Mobile.apk</span>
                         </div>
                         {apkSize && (
                           <div>
@@ -330,7 +330,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                     <div className="bg-black/40 border border-white/[0.03] rounded-2xl p-4 mb-6 font-mono text-[11px] text-zinc-400 space-y-1.5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <span className="text-[#64748b]">File:</span> <span className="text-white font-bold">TPHIMX-TV.apk</span>
+                          <span className="text-[#64748b]">File:</span> <span className="text-white font-bold">DongMePhim-TV.apk</span>
                         </div>
                         {smartTvSize && (
                           <div>
@@ -486,7 +486,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                       </h3>
                       <div className="space-y-6">
                         {[
-                          { step: '01', title: 'Tải tệp cài đặt APK', desc: 'Nhấp chọn nút "Tải Xuống Tệp APK" ở trên. Trình duyệt sẽ tự động lưu tệp tin `TPHIMX.apk` về thư mục Tải xuống.' },
+                          { step: '01', title: 'Tải tệp cài đặt APK', desc: 'Nhấp chọn nút "Tải Xuống Tệp APK" ở trên. Trình duyệt sẽ tự động lưu tệp tin `DongMePhim-Mobile.apk` về thư mục Tải xuống.' },
                           { step: '02', title: 'Cài đặt ứng dụng', desc: 'Sau khi tải xong, mở tệp cài đặt. Nếu có thông báo hệ thống bảo mật, chọn Cài đặt -> Cho phép từ nguồn không xác định.' },
                           { step: '03', title: 'Xác nhận vượt Play Protect', desc: 'Bấm Cài đặt. Nếu Play Protect hiển thị cảnh báo chặn ứng dụng, nhấn chọn nút "Vẫn cài đặt" (Install Anyway) để tiếp tục.' },
                           { step: '04', title: 'Mở ứng dụng', desc: 'Quá trình hoàn tất sau 5 giây. Biểu tượng ứng dụng sẽ xuất hiện ở màn hình chính, mở ứng dụng, đăng nhập tài khoản và trải nghiệm!' }
@@ -574,7 +574,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                       </h3>
                       <div className="space-y-6">
                         {[
-                          { step: '01', title: 'Tải tệp cài đặt IPA', desc: 'Chọn nút "Tải IPA Sideload" phía trên để lưu trữ tệp tin `TPHIMX-Premium.ipa` gốc chưa ký vào bộ nhớ thiết bị.' },
+                          { step: '01', title: 'Tải tệp cài đặt IPA', desc: 'Chọn nút "Tải IPA Sideload" phía trên để lưu trữ tệp tin `DongMePhim-Premium.ipa` gốc chưa ký vào bộ nhớ thiết bị.' },
                           { step: '02', title: 'Tải công cụ Sideload', desc: 'Tải một trong các ứng dụng nạp chép chứng chỉ thông dụng trên máy tính hoặc điện thoại: Esign, AltStore, Sideloadly hoặc Scarlet.' },
                           { step: '03', title: 'Ký chứng chỉ cá nhân', desc: 'Nạp tệp IPA vào ứng dụng sideload. Điền tài khoản Apple ID cá nhân của bạn (qua cơ chế AltStore/Sideloadly) để tiến hành ký số tự động.' },
                           { step: '04', title: 'Nạp ứng dụng & Tin cậy', desc: 'Nhấn cài đặt chép app vào iPhone. Vào Cài đặt -> Cài đặt chung -> Quản lý VPN & Thiết bị, chọn nhà phát triển tương ứng nhấn "Tin cậy".' }
@@ -618,7 +618,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                       </h3>
                       <div className="space-y-6">
                         {[
-                          { step: '01', title: 'Tải tệp TV APK', desc: 'Nhấp chọn nút "Tải Xuống TV APK" ở trên và sao chép tệp tin `TPHIMX-TV.apk` vào thẻ nhớ USB.' },
+                          { step: '01', title: 'Tải tệp TV APK', desc: 'Nhấp chọn nút "Tải Xuống TV APK" ở trên và sao chép tệp tin `DongMePhim-TV.apk` vào thẻ nhớ USB.' },
                           { step: '02', title: 'Cắm USB vào TV', desc: 'Cắm thẻ nhớ USB chứa tệp cài đặt vào cổng kết nối USB của Smart TV hoặc Android TV Box của bạn.' },
                           { step: '03', title: 'Duyệt và cài đặt file', desc: 'Sử dụng ứng dụng Quản lý tệp (File Manager) trên TV để tìm đến USB và nhấn cài đặt tệp APK.' },
                           { step: '04', title: 'Cho phép nguồn không xác định', desc: 'Nếu có thông báo bảo mật chặn, đi đến Cài đặt của TV -> Bảo mật & Hạn chế -> Cho phép cài đặt ứng dụng từ nguồn không xác định cho trình quản lý tệp.' }
