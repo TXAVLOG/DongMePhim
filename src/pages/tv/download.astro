@@ -1,0 +1,8 @@
+---
+import { SettingService } from '@services/SettingService';
+
+const settings = await SettingService.getSettings();
+const tvApkUrl = settings.app.app_smart_tv_url || settings.app.app_android_download_url || 'https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-TV.apk';
+
+return Astro.redirect(tvApkUrl, 302);
+---

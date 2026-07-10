@@ -97,6 +97,7 @@ export const seedSettings: SiteSettings = {
     app_smart_tv_url: "",
     app_smart_tv_size: "",
     app_smart_tv_sha256: "",
+    app_smart_tv_code: "3779765",
   },
   user: {
     allow_registration: true,

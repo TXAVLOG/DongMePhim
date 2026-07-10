@@ -107,6 +107,7 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
               <div class="space-y-1 md:col-span-2"><label class="text-[10px] text-zinc-500 font-bold uppercase">Đường dẫn tệp Smart TV APK (app_smart_tv_url)</label><input type="text" id="app-smarttv-url" value={settings.app.app_smart_tv_url} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
               <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Kích thước TV APK (Bytes)</label><input type="text" id="app-smarttv-size" value={settings.app.app_smart_tv_size} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white" /></div>
               <div class="space-y-1"><label class="text-[10px] text-zinc-500 font-bold uppercase">Mã băm SHA-256 TV APK</label><input type="text" id="app-smarttv-sha" value={settings.app.app_smart_tv_sha256} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" /></div>
+              <div class="space-y-1 md:col-span-2"><label class="text-[10px] text-zinc-500 font-bold uppercase">Mã số tải nhanh Downloader (app_smart_tv_code)</label><input type="text" id="app-smarttv-code" value={settings.app.app_smart_tv_code} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-bold text-amber-400" placeholder="Ví dụ: 87910" /></div>
             </div>
           </div>
 
@@ -198,6 +199,7 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
         setVal('app-smarttv-url', s.app?.app_smart_tv_url);
         setVal('app-smarttv-size', s.app?.app_smart_tv_size);
         setVal('app-smarttv-sha', s.app?.app_smart_tv_sha256);
+        setVal('app-smarttv-code', s.app?.app_smart_tv_code);
         setChecked('app-maintenance-enable', s.app?.app_maintenance_enable);
         setVal('app-maintenance-message', s.app?.app_maintenance_message);
         if (Array.isArray(s.app?.app_changelogs)) changelogsState = [...s.app.app_changelogs];
@@ -383,6 +385,7 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
               app_smart_tv_url: (document.getElementById('app-smarttv-url')?.value || '').trim(),
               app_smart_tv_size: (document.getElementById('app-smarttv-size')?.value || '').trim(),
               app_smart_tv_sha256: (document.getElementById('app-smarttv-sha')?.value || '').trim(),
+              app_smart_tv_code: (document.getElementById('app-smarttv-code')?.value || '').trim(),
               app_maintenance_enable: document.getElementById('app-maintenance-enable')?.checked || false,
               app_maintenance_message: document.getElementById('app-maintenance-message')?.value || '',
             }

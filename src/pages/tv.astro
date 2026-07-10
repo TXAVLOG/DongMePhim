@@ -6,6 +6,7 @@ const settings = await SettingService.getSettings();
 const siteName = settings.general.site_name || 'DongMePhim';
 const apkUrl = settings.app.app_smart_tv_url || settings.app.app_android_download_url || 'https://app.nrotxa.online/TPHIMX.apk';
 const apkSize = settings.app.app_smart_tv_size || '66 MB';
+const tvDownloaderCode = settings.app.app_smart_tv_code || '87910';
 ---
 
 <MainLayout title={`Cài đặt Smart TV | ${siteName}`}>
@@ -36,7 +37,7 @@ const apkSize = settings.app.app_smart_tv_size || '66 MB';
           <div class="p-6 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-xl">
             <h3 class="text-sm font-black uppercase tracking-wider mb-4 text-white">Tải Xuống Trực Tiếp</h3>
             <p class="text-xs text-gray-400 leading-relaxed mb-6">
-              Bạn có thể tải trực tiếp file APK về USB để cắm vào TV hoặc tải ngay trên trình duyệt web của Smart TV.
+              Bạn có thể tải trực tiếp file APK về USB to cắm vào TV hoặc tải ngay trên trình duyệt web của Smart TV.
             </p>
             
             <a 
@@ -82,7 +83,7 @@ const apkSize = settings.app.app_smart_tv_size || '66 MB';
                   Mở ứng dụng Downloader lên, tại ô nhập địa chỉ URL, gõ chính xác mã số:
                 </p>
                 <div class="my-3 inline-flex items-center gap-4 px-5 py-2.5 bg-black/40 border border-white/5 rounded-2xl">
-                  <span class="text-2xl font-black text-amber-400 tracking-wider">87910</span>
+                  <span class="text-2xl font-black text-amber-400 tracking-wider">{tvDownloaderCode}</span>
                   <span class="text-[9px] text-gray-500 font-bold uppercase border-l border-white/10 pl-4 leading-none">MÃ DOWNLOADER<br/>DONGMEPHIM TV</span>
                 </div>
                 <p class="text-gray-400 leading-relaxed">
