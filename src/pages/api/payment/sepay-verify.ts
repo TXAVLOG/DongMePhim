@@ -57,18 +57,35 @@ export const POST: APIRoute = async ({ request }) => {
     // Sandbox và live dùng cùng endpoint, chỉ khác API key
     const sepayUrl = `https://my.sepay.vn/userapi/transactions/list?limit=50`;
 
-    const sepayRes = await fetch(sepayUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sepayApiKey}`
-      }
-    });
+    const sepayController = new AbortController();
+    const sepayTimeout = setTimeout(() => sepayController.abort(), 10000); // 10s timeout
+
+    let sepayRes: Response;
+    try {
+      sepayRes = await fetch(sepayUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sepayApiKey}`
+        },
+        signal: sepayController.signal,
+      });
+      clearTimeout(sepayTimeout);
+    } catch (fetchErr: any) {
+      clearTimeout(sepayTimeout);
+      const isTimeout = fetchErr?.name === 'AbortError';
+      console.error('SePay fetch error:', fetchErr?.message);
+      return apiResponse(null, 'error',
+        isTimeout
+          ? 'Kết nối đến SePay bị timeout (>10s). Vui lòng thử lại!'
+          : `Không thể kết nối đến SePay: ${fetchErr?.message || 'Network error'}`,
+        500, request);
+    }
 
     if (!sepayRes.ok) {
-      const errText = await sepayRes.text();
-      console.error(`SePay API Error [${isSandbox ? 'sandbox' : 'live'}]:`, errText);
-      return apiResponse(null, 'error', `Không thể kết nối đến cổng SePay${isSandbox ? ' (sandbox)' : ''}. Vui lòng thử lại!`, 500, request);
+      const errText = await sepayRes.text().catch(() => '');
+      console.error(`SePay API Error [${isSandbox ? 'sandbox' : 'live'}] HTTP ${sepayRes.status}:`, errText);
+      return apiResponse(null, 'error', `SePay trả về lỗi HTTP ${sepayRes.status}${isSandbox ? ' (sandbox)' : ''}. Vui lòng thử lại!`, 500, request);
     }
 
     const sepayData = await sepayRes.json() as any;

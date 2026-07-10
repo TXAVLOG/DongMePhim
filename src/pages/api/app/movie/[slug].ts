@@ -4,6 +4,7 @@ import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
+import { TxaSchedule } from '@lib/TxaSchedule';
 
 export const GET: APIRoute = async ({ params, cookies, request }) => {
   try {
@@ -151,29 +152,21 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       allowedServers = freePkg?.permissions?.allowed_servers || ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
     }
 
-  // Check and flag unreleased episodes
-  const nowTime = Date.now();
+  // Check and flag unreleased episodes using TxaSchedule helper
   const rawServers = movie.episodes || [];
   const filteredServers = rawServers.map((server: any) => {
     const srvData = server.serverData || server.server_data || [];
     return {
       serverName: server.serverName,
-      serverData: srvData.map((ep: any) => {
+      serverData: srvData.map((ep: any, epIdx: number) => {
         let isUnreleased = false;
-        if (movie.status === 'ongoing' && ep.airDate) {
-          let airDateTimeStr = `${ep.airDate}T00:00:00+07:00`;
-          if (ep.airTime) {
-            const parts = ep.airTime.split(':');
-            airDateTimeStr = parts.length === 2 ? `${ep.airDate}T${ep.airTime}:00+07:00` : `${ep.airDate}T${ep.airTime}+07:00`;
-          }
-          try {
-            const airDateObj = new Date(airDateTimeStr);
-            if (nowTime < airDateObj.getTime()) {
-              isUnreleased = true;
-            }
-          } catch (e) {
-            console.error('Error parsing air date:', e);
-          }
+        if (movie.status === 'ongoing') {
+          isUnreleased = TxaSchedule.isEpisodeUnreleased(
+            ep.name || '',
+            epIdx,
+            srvData,
+            movie.broadcastSchedule
+          );
         }
         return {
           ...ep,
@@ -210,7 +203,17 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       imdb_score: movie.imdbScore ? String(movie.imdbScore) : "",
       tmdb_score: (movie as any).tmdbScore ? String((movie as any).tmdbScore) : "",
       status: movie.status,
-      broadcast_at: movie.broadcastSchedule?.notice || "",
+      broadcast_at: TxaSchedule.generateNotice(
+        movie.broadcastSchedule?.nextDate,
+        movie.broadcastSchedule?.nextTime,
+        movie.broadcastSchedule?.nextEpisode,
+        movie.type
+      ),
+      broadcast_schedule: movie.broadcastSchedule ? {
+        next_date: movie.broadcastSchedule.nextDate,
+        next_time: movie.broadcastSchedule.nextTime,
+        next_episode: movie.broadcastSchedule.nextEpisode
+      } : null,
       is_favorite: isFavorite,
       require_login: movie.require_login || false,
       categories: movie.genres?.map((g: string) => ({ name: g })) || (movie.category ? [{ name: movie.category }] : []),
@@ -258,6 +261,10 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
               intro,
               outro
             },
+            timeIntroStart: ep.timeIntroStart ?? ep.time_intro_start ?? 0,
+            timeIntroEnd: ep.timeIntroEnd ?? ep.time_intro_end ?? 0,
+            timeOutroStart: ep.timeOutroStart ?? ep.time_outro_start ?? 0,
+            timeOutroEnd: ep.timeOutroEnd ?? ep.time_outro_end ?? 0,
             is_unreleased: ep.is_unreleased || false,
             air_date: ep.airDate || "",
             air_time: ep.airTime || ""

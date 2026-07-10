@@ -414,12 +414,56 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         }
       }
 
+      function rewriteWatchLinks() {
+        try {
+          const historyRaw = window.localStorage.getItem('thistory');
+          if (!historyRaw) return;
+          const history = JSON.parse(historyRaw);
+          if (!Array.isArray(history) || history.length === 0) return;
+
+          const historyMap = {};
+          history.forEach(item => {
+            if (item && item.slug) {
+              if (!historyMap[item.slug]) {
+                historyMap[item.slug] = item;
+              }
+            }
+          });
+
+          const anchors = document.querySelectorAll('a');
+          anchors.forEach(a => {
+            const href = a.getAttribute('href') || '';
+            const xemMatch = href.match(/^\/xem\/([^/?#]+)/);
+            if (xemMatch) {
+              const slug = xemMatch[1];
+              const hist = historyMap[slug];
+              if (hist) {
+                const epSlug = hist.epSlug || hist.episodeSlug || hist.ep || '';
+                const svIdx = hist.serverIndex !== undefined ? hist.serverIndex : (hist.sv !== undefined ? hist.sv : 0);
+                const ts = hist.timestamp !== undefined ? hist.timestamp : (hist.ts !== undefined ? hist.ts : 0);
+                
+                if (epSlug) {
+                  a.setAttribute('href', `/xem/${slug}?ep=${epSlug}&sv=${svIdx}&ts=${ts}`);
+                  if (a.textContent && a.textContent.trim().toLowerCase() === 'xem ngay') {
+                    const epName = hist.epName || hist.episodeName || '';
+                    a.innerHTML = `<span class="material-symbols-outlined text-lg">play_arrow</span> Xem tiếp ${epName ? epName : ''}`;
+                  }
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.error("Error in rewriteWatchLinks:", err);
+        }
+      }
+
       document.addEventListener('astro:after-swap', () => {
         applyTheme();
         hydrateSettings();
         checkMobileApp();
         syncTlogged();
         if (typeof updateAuthState === 'function') updateAuthState();
+        rewriteWatchLinks();
       });
       document.addEventListener('astro:page-load', () => {
         applyTheme();
@@ -427,6 +471,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         checkMobileApp();
         syncTlogged();
         if (typeof updateAuthState === 'function') updateAuthState();
+        rewriteWatchLinks();
       });
     </script>
     <meta charset="UTF-8" />

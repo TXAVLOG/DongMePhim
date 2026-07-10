@@ -9,7 +9,7 @@ export const GET: APIRoute = async ({ request }) => {
     const payments = settings.payments || {} as any;
 
     const paymentInfo = {
-      sepay_enable: payments.sepay_enable ?? true,
+      sepay_enable: !!payments.sepay_enable,
       manual_enable: payments.manual_enable ?? true,
       bank_name: payments.manual_bank_name || payments.sepay_bank_name || 'MBBank',
       account_no: payments.manual_account_no || payments.sepay_account_no || '0000000000',

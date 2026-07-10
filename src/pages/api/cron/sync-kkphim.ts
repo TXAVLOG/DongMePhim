@@ -109,7 +109,7 @@ export const GET: APIRoute = async ({ request }) => {
     while (true) {
       let query = supabase
         .from('movies')
-        .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source')
+        .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source, source_url')
         .eq('status', 'ongoing')
         .order('movie_id_seq', { ascending: true });
 
@@ -138,7 +138,7 @@ export const GET: APIRoute = async ({ request }) => {
           subrequestsCount++;
           const { data: wrapMovies, error: wrapErr } = await supabase
             .from('movies')
-            .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source')
+            .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source, source_url')
             .eq('status', 'ongoing')
             .order('movie_id_seq', { ascending: true })
             .limit(remainingLimit);
@@ -191,10 +191,23 @@ export const GET: APIRoute = async ({ request }) => {
           totalProcessedInSession++;
           try {
             const slug = movie.slug;
-            const isVsmov = movie.source === 'vsmov';
+            let crawlUrl = '';
+            if (movie.source_url) {
+              crawlUrl = movie.source_url;
+            } else {
+              const isVsmov = movie.source === 'vsmov';
+              crawlUrl = isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`;
+            }
+
+            let apiSource = movie.source || 'kkphim';
+            if (crawlUrl.includes('vsmov.com')) {
+              apiSource = 'vsmov';
+            } else if (crawlUrl.includes('phimapi.com') || crawlUrl.includes('kkphim')) {
+              apiSource = 'kkphim';
+            }
             
             subrequestsCount++;
-            const res = await fetch(isVsmov ? `https://vsmov.com/api/phim/${slug}` : `https://phimapi.com/phim/${slug}`);
+            const res = await fetch(crawlUrl);
             if (!res.ok) {
               detailsLog.push(`${slug}: HTTP ${res.status} (skip)`);
               return;
@@ -206,7 +219,7 @@ export const GET: APIRoute = async ({ request }) => {
               return;
             }
 
-            const detailedMovie = mapKKPhimToMovieDetail(data, movie.source || 'kkphim');
+            const detailedMovie = mapKKPhimToMovieDetail(data, apiSource);
             if (!detailedMovie || !detailedMovie.episodes) {
               detailsLog.push(`${slug}: No episodes parsed (skip)`);
               return;

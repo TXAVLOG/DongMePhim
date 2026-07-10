@@ -321,11 +321,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       let existingMovie: any = null;
       let existingViews = 0;
       let existingEpisodes: any[] = [];
+      let existingSource = 'manual';
       try {
         const { data: existing } = await supabase
           .from('movies')
-          .select('id, views, episode_current, title, episodes')
-          .eq('slug', slug)
+          .select('id, views, episode_current, title, episodes, source')
+          .eq('slug', movieSlug)
           .maybeSingle();
         if (existing) {
           existingMovie = existing;
@@ -335,8 +336,40 @@ export const POST: APIRoute = async ({ request, locals }) => {
           if (Array.isArray(existing.episodes)) {
             existingEpisodes = existing.episodes;
           }
+          if (existing.source) {
+            existingSource = existing.source;
+          }
         }
       } catch (_) {}
+
+      // Check if source matches or is allowed to overwrite based on episode count
+      const incomingSource = m.source || 'manual';
+      if (existingMovie && existingSource !== incomingSource) {
+        const apiSources = ['kkphim', 'vsmov', 'tmdb'];
+        if (apiSources.includes(existingSource) && apiSources.includes(incomingSource)) {
+          // Compare episode counts
+          const getEpCount = (eps: any[]) => {
+            let count = 0;
+            if (Array.isArray(eps)) {
+              eps.forEach((srv: any) => {
+                const dataList = srv.serverData || srv.server_data || [];
+                count += dataList.length;
+              });
+            }
+            return count;
+          };
+          const existingEpCount = getEpCount(existingEpisodes);
+          const incomingEpCount = getEpCount(episodes);
+
+          if (incomingEpCount > existingEpCount) {
+            console.log(`[Movie-Action] Ghi đè phim "${movieSlug}" từ nguồn "${existingSource}" (${existingEpCount} tập) sang nguồn "${incomingSource}" (${incomingEpCount} tập) do nguồn mới có nhiều tập hơn.`);
+          } else {
+            const msg = `Bỏ qua cào phim "${movieSlug}": Nguồn hiện tại "${existingSource}" (${existingEpCount} tập) có số tập nhiều hơn hoặc bằng nguồn mới "${incomingSource}" (${incomingEpCount} tập).`;
+            console.log(`[Movie-Action] ${msg}`);
+            return apiResponse(null, 'error', msg, 400, request);
+          }
+        }
+      }
 
       const mergedEpisodes = (movieData.overwriteEpisodes === true || m.overwriteEpisodes === true)
         ? episodes
@@ -400,6 +433,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         trailer_url: m.trailerUrl || m.trailer_url || '',
         broadcast_schedule: m.broadcastSchedule || null,
         source: m.source || 'manual',
+        source_url: m.sourceUrl || m.source_url || null,
         require_login: requireLoginVal,
         updated_at: new Date().toISOString()
       };

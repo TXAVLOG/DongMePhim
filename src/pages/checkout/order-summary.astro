@@ -569,7 +569,7 @@ const serverSettings = await SettingService.getSettings();
 
       const methods = [];
       if (payments.manual_enable ?? true) methods.push({ id: 'manual', label: 'Chuyển khoản VietQR (Thủ công)', icon: 'qr_code_scanner' });
-      if (payments.sepay_enable ?? true) methods.push({ id: 'sepay', label: 'Cổng SePay Tự Động', icon: 'bolt' });
+      if (payments.sepay_enable) methods.push({ id: 'sepay', label: 'Cổng SePay Tự Động', icon: 'bolt' });
       if (payments.payos_enable) methods.push({ id: 'payos', label: 'Cổng PayOS', icon: 'credit_card' });
       if (payments.vnpay_enable) methods.push({ id: 'vnpay', label: 'Cổng VNPAY', icon: 'account_balance_wallet' });
       if (payments.stripe_enable) methods.push({ id: 'stripe', label: 'Cổng Thẻ Quốc Tế Stripe', icon: 'credit_card' });

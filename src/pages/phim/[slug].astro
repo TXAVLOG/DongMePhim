@@ -5,6 +5,7 @@ import type { Movie } from '@apptypes/movie';
 import { Button } from '@components/ui/Button';
 import NotFound from '@components/ui/NotFound.astro';
 import { supabase } from '@lib/supabase';
+import { TxaSchedule } from '@lib/TxaSchedule';
 
 const { slug } = Astro.params;
 
@@ -43,28 +44,11 @@ if (movie && rawServers.length > 0) {
   
   // Hide unreleased episodes only if status is "ongoing"
   if (movie.status === 'ongoing') {
-    const nowTime = Date.now();
     for (let i = 0; i < allEps.length; i++) {
       const ep = allEps[i];
-      if (ep.airDate) {
-        let airDateTimeStr = `${ep.airDate}T00:00:00+07:00`;
-        if (ep.airTime) {
-          const parts = ep.airTime.split(':');
-          if (parts.length === 2) {
-            airDateTimeStr = `${ep.airDate}T${ep.airTime}:00+07:00`;
-          } else {
-            airDateTimeStr = `${ep.airDate}T${ep.airTime}+07:00`;
-          }
-        }
-        try {
-          const airDateObj = new Date(airDateTimeStr);
-          if (nowTime < airDateObj.getTime()) {
-            firstUnreleasedIdx = i;
-            break;
-          }
-        } catch (e) {
-          console.error('Error parsing air date:', e);
-        }
+      if (TxaSchedule.isEpisodeUnreleased(ep.name || '', i, allEps, movie.broadcastSchedule)) {
+        firstUnreleasedIdx = i;
+        break;
       }
     }
   }
@@ -87,43 +71,12 @@ if (movie && rawServers.length > 0) {
 
 // Check if broadcast schedule has passed
 let isScheduleActive = false;
-if (movie && movie.broadcastSchedule && movie.broadcastSchedule.nextDate) {
-  let targetDateTimeStr = `${movie.broadcastSchedule.nextDate}T00:00:00+07:00`;
-  if (movie.broadcastSchedule.nextTime) {
-    const parts = movie.broadcastSchedule.nextTime.split(':');
-    if (parts.length === 2) {
-      targetDateTimeStr = `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}:00+07:00`;
-    } else {
-      targetDateTimeStr = `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}+07:00`;
-    }
-  }
-  try {
-    const targetDate = new Date(targetDateTimeStr).getTime();
-    isScheduleActive = Date.now() < targetDate;
-  } catch (e) {
-    isScheduleActive = true;
-  }
+if (movie && movie.broadcastSchedule) {
+  isScheduleActive = TxaSchedule.isScheduleActive(movie.broadcastSchedule.nextDate, movie.broadcastSchedule.nextTime);
 }
 
-// Check if next airing episode has passed
+// Check if next airing episode has passed (deprecated, set to false since we only use general schedule)
 let isNextEpisodeActive = false;
-if (nextAiringEpisode && nextAiringEpisode.airDate) {
-  let targetDateTimeStr = `${nextAiringEpisode.airDate}T00:00:00+07:00`;
-  if (nextAiringEpisode.airTime) {
-    const parts = nextAiringEpisode.airTime.split(':');
-    if (parts.length === 2) {
-      targetDateTimeStr = `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}:00+07:00`;
-    } else {
-      targetDateTimeStr = `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}+07:00`;
-    }
-  }
-  try {
-    const targetDate = new Date(targetDateTimeStr).getTime();
-    isNextEpisodeActive = Date.now() < targetDate;
-  } catch (e) {
-    isNextEpisodeActive = true;
-  }
-}
 
 
 const totalEps = servers.length > 0 ? (servers[0].serverData.length) : 0;
@@ -409,63 +362,32 @@ if (movie && movie.actors && movie.actors.length > 0) {
     </div>
 
     <main class="max-w-container-max mx-auto px-gutter pt-24 md:pt-36 pb-16 relative z-10 space-y-8">
-      
-      <!-- Lịch phát sóng phim (nếu có) - Nổi bật ở đầu trang -->
-      {(nextAiringEpisode && isNextEpisodeActive) ? (
+       <!-- Lịch phát sóng phim (nếu có) - Nổi bật ở đầu trang -->
+      {movie.broadcastSchedule && isScheduleActive && movie.broadcastSchedule.nextDate && (
         <div class="p-4 bg-gradient-to-r from-primary-container/20 via-primary-container/10 to-transparent border border-primary/20 rounded-2xl text-xs text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg relative overflow-hidden" id="broadcastScheduleBadge">
           <div class="flex items-center gap-3 relative z-10">
             <div class="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center border border-primary/20 shrink-0">
               <span class="material-symbols-outlined text-xl text-primary">notifications</span>
             </div>
             <div>
-              <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-name={nextAiringEpisode.name} data-date={nextAiringEpisode.airDate} data-time={nextAiringEpisode.airTime}>
-                {nextAiringEpisode.name} sẽ phát sóng ngày {
-                  (() => {
-                    if (!nextAiringEpisode.airDate) return '';
-                    const parts = nextAiringEpisode.airDate.split('-');
-                    return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : nextAiringEpisode.airDate;
-                  })()
-                }. Hãy đón xem nhé!
+              <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-notice={TxaSchedule.generateNotice(movie.broadcastSchedule.nextDate, movie.broadcastSchedule.nextTime, movie.broadcastSchedule.nextEpisode, movie.type)} data-date={movie.broadcastSchedule.nextDate} data-time={movie.broadcastSchedule.nextTime}>
+                {TxaSchedule.generateNotice(
+                  movie.broadcastSchedule.nextDate,
+                  movie.broadcastSchedule.nextTime,
+                  movie.broadcastSchedule.nextEpisode,
+                  movie.type
+                )}
               </span>
             </div>
           </div>
           
-          {nextAiringEpisode.airTime && (
-            <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={nextAiringEpisode.airTime.split(':').length === 2 ? `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}:00+07:00` : `${nextAiringEpisode.airDate}T${nextAiringEpisode.airTime}+07:00`}>
+          {movie.broadcastSchedule.nextTime && movie.broadcastSchedule.nextDate && (
+            <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={movie.broadcastSchedule.nextTime.split(':').length === 2 ? `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}:00+07:00` : `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}+07:00`}>
               <span class="text-[9px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">Đếm ngược phát sóng</span>
               <span class="font-mono text-[13px] font-black text-primary" id="countdownTimer">--:--:--</span>
             </div>
           )}
         </div>
-      ) : (
-        movie.broadcastSchedule && isScheduleActive && (movie.broadcastSchedule.notice || movie.broadcastSchedule.nextDate) && (
-
-          <div class="p-4 bg-gradient-to-r from-primary-container/20 via-primary-container/10 to-transparent border border-primary/20 rounded-2xl text-xs text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg relative overflow-hidden" id="broadcastScheduleBadge">
-            <div class="flex items-center gap-3 relative z-10">
-              <div class="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center border border-primary/20 shrink-0">
-                <span class="material-symbols-outlined text-xl text-primary">notifications</span>
-              </div>
-              <div>
-                <span class="font-bold text-[13px] leading-tight block text-on-surface" id="broadcastScheduleNotice" data-notice={movie.broadcastSchedule.notice} data-date={movie.broadcastSchedule.nextDate} data-time={movie.broadcastSchedule.nextTime}>
-                  {movie.broadcastSchedule.notice || `Tập tiếp theo sẽ phát sóng ngày ${
-                    (() => {
-                      if (!movie.broadcastSchedule?.nextDate) return '';
-                      const parts = movie.broadcastSchedule.nextDate.split('-');
-                      return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : movie.broadcastSchedule.nextDate;
-                    })()
-                  }.`}
-                </span>
-              </div>
-            </div>
-            
-            {movie.broadcastSchedule.nextTime && movie.broadcastSchedule.nextDate && (
-              <div class="bg-zinc-900/60 backdrop-blur-md px-4 py-2 rounded-xl border border-glass-stroke shrink-0 relative z-10 flex flex-col items-start sm:items-end justify-center" id="broadcastCountdown" data-target={movie.broadcastSchedule.nextTime.split(':').length === 2 ? `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}:00+07:00` : `${movie.broadcastSchedule.nextDate}T${movie.broadcastSchedule.nextTime}+07:00`}>
-                <span class="text-[9px] text-on-surface-variant block uppercase font-bold tracking-wider mb-0.5">Đếm ngược phát sóng</span>
-                <span class="font-mono text-[13px] font-black text-primary" id="countdownTimer">--:--:--</span>
-              </div>
-            )}
-          </div>
-        )
       )}
 
       <!-- Lưới hai cột hiển thị chi tiết phim -->

@@ -6,6 +6,7 @@ import { SettingService } from '@services/SettingService';
 import NotFound from '@components/ui/NotFound.astro';
 import { supabase } from '@lib/supabase';
 import type { Movie } from '@apptypes/movie';
+import { TxaSchedule } from '@lib/TxaSchedule';
 
 const { slug } = Astro.params;
 
@@ -50,28 +51,11 @@ if (movie && movie.episodes && movie.episodes.length > 0) {
   
   // Hide unreleased episodes only if status is "ongoing"
   if (movie.status === 'ongoing') {
-    const nowTime = Date.now();
     for (let i = 0; i < allEps.length; i++) {
       const ep = allEps[i];
-      if (ep.airDate) {
-        let airDateTimeStr = `${ep.airDate}T00:00:00+07:00`;
-        if (ep.airTime) {
-          const parts = ep.airTime.split(':');
-          if (parts.length === 2) {
-            airDateTimeStr = `${ep.airDate}T${ep.airTime}:00+07:00`;
-          } else {
-            airDateTimeStr = `${ep.airDate}T${ep.airTime}+07:00`;
-          }
-        }
-        try {
-          const airDateObj = new Date(airDateTimeStr);
-          if (nowTime < airDateObj.getTime()) {
-            firstUnreleasedIdx = i;
-            break;
-          }
-        } catch (e) {
-          console.error('Error parsing air date:', e);
-        }
+      if (TxaSchedule.isEpisodeUnreleased(ep.name || '', i, allEps, movie.broadcastSchedule)) {
+        firstUnreleasedIdx = i;
+        break;
       }
     }
   }

@@ -87,6 +87,22 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             </div>
           </div>
 
+          <div class="grid grid-cols-2 gap-2 col-span-1 md:col-span-2">
+            <div>
+              <label class="block text-xs font-label-caps text-outline uppercase mb-2">Nguồn dữ liệu (Source)</label>
+              <select id="movieSource" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white">
+                <option value="manual">Thủ công (Manual)</option>
+                <option value="kkphim">KKPhim</option>
+                <option value="vsmov">VSMov</option>
+                <option value="tmdb">TMDB</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-label-caps text-outline uppercase mb-2">Source URL (API)</label>
+              <input type="text" id="movieSourceUrl" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-3 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: https://phimapi.com/phim/duong-den-khung-trung" />
+            </div>
+          </div>
+
           <div class="flex flex-wrap items-center gap-6 pt-2 col-span-1 md:col-span-2">
             <div class="flex items-center gap-2">
               <input type="checkbox" id="moviePinned" class="w-4 h-4 rounded border-glass-stroke bg-zinc-950 text-primary focus:ring-0 focus:outline-none cursor-pointer" />
@@ -150,8 +166,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
                 <input type="time" id="scheduleTime" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" />
               </div>
               <div>
-                <label class="block text-[11px] text-zinc-400 mb-1.5">Thông báo lịch chiếu</label>
-                <input type="text" id="scheduleNotice" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: Tập 13 chiếu vào 20:00 tối" />
+                <label class="block text-[11px] text-zinc-400 mb-1.5">Tập tiếp theo (Ví dụ: Tập 25, Tập cuối, Full)</label>
+                <input type="text" id="scheduleNextEpisode" class="w-full bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-primary text-sm text-white" placeholder="Ví dụ: Tập 25" />
               </div>
             </div>
           </div>
@@ -377,6 +393,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             director: m.directors || m.director || [],
             pinned: m.pinned || false,
             require_login: m.require_login || false,
+            source: m.source || "manual",
+            source_url: m.source_url || m.sourceUrl || "",
           };
 
           const rawEps = m.episodes || [];
@@ -407,6 +425,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           document.getElementById("movieSlug").value = movieData.movie.slug;
           document.getElementById("movieType").value = movieData.movie.type;
           document.getElementById("movieStatus").value = movieData.movie.status;
+          document.getElementById("movieSource").value = movieData.movie.source;
+          document.getElementById("movieSourceUrl").value = movieData.movie.source_url;
           document.getElementById("moviePosterUrl").value = movieData.movie.poster_url;
           document.getElementById("movieBannerUrl").value = movieData.movie.thumb_url;
           document.getElementById("movieTrailerUrl").value = movieData.movie.trailer_url;
@@ -431,7 +451,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           if (m.broadcastSchedule) {
             document.getElementById("scheduleDate").value = m.broadcastSchedule.nextDate || "";
             document.getElementById("scheduleTime").value = m.broadcastSchedule.nextTime || "";
-            document.getElementById("scheduleNotice").value = m.broadcastSchedule.notice || "";
+            document.getElementById("scheduleNextEpisode").value = m.broadcastSchedule.nextEpisode || m.broadcastSchedule.next_episode || "";
           }
 
           renderServers();
@@ -646,16 +666,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
                     <input type="number" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1.5 px-2.5 text-xs text-center text-white" value="${ep.time_outro_end}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="time_outro_end"/>
                   </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-glass-stroke/30">
-                  <div>
-                    <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Ngày chiếu tập này</label>
-                    <input type="date" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1 px-2.5 text-xs text-white" value="${ep.airDate || ep.air_date || ""}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="air_date"/>
-                  </div>
-                  <div>
-                    <label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Giờ chiếu tập này</label>
-                    <input type="time" class="w-full bg-zinc-950 border border-glass-stroke rounded-lg py-1 px-2.5 text-xs text-white" value="${ep.airTime || ep.air_time || ""}" data-server-idx="${serverIdx}" data-ep-idx="${epIdx}" data-field="air_time"/>
-                  </div>
-                </div>
+                <!-- Ngày/Giờ tập riêng lẻ đã bị xóa theo kế hoạch chỉ giữ lịch tổng -->
                 <div class="mt-2 space-y-2">
                   <span class="block text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Danh sách phụ đề tập</span>
                   <div class="space-y-1.5">${subsHtml} ${subsList.length === 0 ? '<p class="text-[10px] text-zinc-600 italic">Chưa có phụ đề.</p>' : ""}</div>
@@ -879,8 +890,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
 
           const scheduleDate = document.getElementById("scheduleDate").value;
           const scheduleTime = document.getElementById("scheduleTime").value;
-          const scheduleNotice = document.getElementById("scheduleNotice").value.trim();
-          const broadcastSchedule = (scheduleDate || scheduleTime || scheduleNotice) ? { nextDate: scheduleDate, nextTime: scheduleTime, notice: scheduleNotice } : null;
+          const scheduleNextEpisode = document.getElementById("scheduleNextEpisode").value.trim();
+          const broadcastSchedule = (scheduleDate || scheduleTime || scheduleNextEpisode) ? { nextDate: scheduleDate, nextTime: scheduleTime, nextEpisode: scheduleNextEpisode } : null;
 
           const moviePayload = {
             movie: {
@@ -909,6 +920,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               trailerUrl: document.getElementById("movieTrailerUrl").value.trim(),
               seasons: document.getElementById("movieType").value === "movie" ? "Bản Điện Ảnh" : "Phần 1",
               broadcastSchedule,
+              source: document.getElementById("movieSource").value,
+              sourceUrl: document.getElementById("movieSourceUrl").value.trim(),
             },
             episodes: movieData.episodes.map(server => ({
               serverName: server.server_name || "Server VIP",

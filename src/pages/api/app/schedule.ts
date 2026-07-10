@@ -121,7 +121,7 @@ export const GET: APIRoute = async ({ request }) => {
             thumb_url: m.bannerUrl || m.banner_url || m.posterUrl || m.poster_url || "",
             poster_url: m.posterUrl || m.poster_url || "",
             type: type,
-            next_episode_name: getNextEpisodeName(currentEp, type),
+            next_episode_name: sched.nextEpisode || sched.next_episode || getNextEpisodeName(currentEp, type),
             episode_current: currentEp,
             broadcast_time: sched.nextTime || "20:00",
             quality: m.quality || "FHD"
