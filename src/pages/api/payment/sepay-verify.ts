@@ -131,13 +131,37 @@ export const POST: APIRoute = async ({ request }) => {
                         allPkgs.find((p: any) => p.id && logTitle.toLowerCase().includes(p.id.toLowerCase()));
     const pkgId = resolvedPkg?.id || resolvedPkg?.title || logTitle || 'vip';
     const cycleDays = calculateCycleDays(log.cycle);
-    const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
+
+    // Determine actionType from payment log note or body
+    const effectiveAction = actionType || 'upgrade'; // 'renew' = extend, 'upgrade' = reset
+
+    // Fetch current user record to determine extend vs reset
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('package, expiry_date, join_date')
+      .eq('username', log.username)
+      .maybeSingle();
+
+    let expiryDate: string;
+    let joinDate: string;
+
+    if (effectiveAction === 'renew' && currentUser) {
+      // RENEW: extend from existing expiry_date (if still in future) or from now
+      const currentExpiry = currentUser.expiry_date ? new Date(currentUser.expiry_date).getTime() : 0;
+      const baseDate = currentExpiry > Date.now() ? currentExpiry : Date.now();
+      expiryDate = new Date(baseDate + 3600 * 1000 * 24 * cycleDays).toISOString();
+      joinDate = currentUser.join_date || new Date().toISOString(); // keep original join_date
+    } else {
+      // UPGRADE (different package or free->paid): reset from now
+      expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
+      joinDate = new Date().toISOString();
+    }
 
     const { error: updateUserErr } = await supabase
       .from('users')
       .update({
         package: pkgId,
-        join_date: new Date().toISOString(),
+        join_date: joinDate,
         expiry_date: expiryDate,
         status: 'active',
         updated_at: new Date().toISOString()
