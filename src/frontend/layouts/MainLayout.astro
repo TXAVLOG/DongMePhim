@@ -414,46 +414,187 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         }
       }
 
-      function rewriteWatchLinks() {
+      function getLocalHistoryDict() {
         try {
-          const historyRaw = window.localStorage.getItem('thistory');
-          if (!historyRaw) return;
-          const history = JSON.parse(historyRaw);
-          if (!Array.isArray(history) || history.length === 0) return;
+          const stored = window.localStorage.getItem('thistory');
+          if (!stored) return {};
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const dict = {};
+            parsed.forEach(item => {
+              if (item && item.slug) {
+                const epKey = item.episodeSlug || 'default';
+                dict[item.slug] = {
+                  title: item.title || '',
+                  posterUrl: item.posterUrl || '',
+                  updatedAt: item.updatedAt || new Date().toISOString(),
+                  episodes: {
+                    [epKey]: {
+                      episodeSlug: item.episodeSlug || '',
+                      episodeName: item.episodeName || '',
+                      currentTime: item.currentTime || 0,
+                      duration: item.duration || 0,
+                      serverIndex: item.serverIndex !== undefined ? item.serverIndex : 0,
+                      updatedAt: item.updatedAt || new Date().toISOString(),
+                      synced: item.synced || false
+                    }
+                  }
+                };
+              }
+            });
+            return dict;
+          }
+          return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch (e) {
+          return {};
+        }
+      }
 
-          const historyMap = {};
-          history.forEach(item => {
-            if (item && item.slug) {
-              if (!historyMap[item.slug]) {
-                historyMap[item.slug] = item;
+      function saveLocalHistoryDict(dict) {
+        try {
+          window.localStorage.setItem('thistory', JSON.stringify(dict));
+        } catch (e) {}
+      }
+
+      async function syncAndRewriteWatchLinks() {
+        try {
+          const user = window.APP_USER;
+          let localDict = getLocalHistoryDict();
+
+          // 1. Nếu đã đăng nhập, fetch và gộp lịch sử từ DB
+          if (user && user.username) {
+            const username = user.username;
+            try {
+              const res = await fetch(`/api/user/history?username=${encodeURIComponent(username)}`);
+              if (res.ok) {
+                const dbHistoryList = await res.json();
+                if (Array.isArray(dbHistoryList)) {
+                  dbHistoryList.forEach(item => {
+                    if (item && item.slug && item.episodeSlug) {
+                      const localMovie = localDict[item.slug];
+                      const localEp = localMovie?.episodes?.[item.episodeSlug];
+
+                      const dbTime = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+                      const localTime = localEp?.updatedAt ? new Date(localEp.updatedAt).getTime() : 0;
+
+                      if (localEp && !localEp.synced && localTime > dbTime) {
+                        // Local mới hơn và chưa được sync lên DB, giữ nguyên để sync lên ở bước sau
+                      } else {
+                        // DB mới hơn hoặc bằng, cập nhật đè vào local
+                        if (!localDict[item.slug]) {
+                          localDict[item.slug] = {
+                            title: item.title || '',
+                            posterUrl: item.posterUrl || '',
+                            updatedAt: item.updatedAt || new Date().toISOString(),
+                            episodes: {}
+                          };
+                        }
+                        localDict[item.slug].episodes[item.episodeSlug] = {
+                          episodeSlug: item.episodeSlug,
+                          episodeName: item.episodeName || '',
+                          currentTime: item.currentTime || 0,
+                          duration: item.duration || 0,
+                          serverIndex: item.serverIndex !== undefined ? item.serverIndex : 0,
+                          updatedAt: item.updatedAt || new Date().toISOString(),
+                          synced: true
+                        };
+
+                        const epTime = new Date(item.updatedAt || '').getTime();
+                        const parentTime = new Date(localDict[item.slug].updatedAt || '').getTime();
+                        if (epTime > parentTime) {
+                          localDict[item.slug].updatedAt = item.updatedAt;
+                        }
+                      }
+                    }
+                  });
+                  saveLocalHistoryDict(localDict);
+                }
+              }
+            } catch (e) {
+              console.warn('Failed to fetch online watch history:', e);
+            }
+
+            // 2. Sync ngược lại từ local lên DB cho các tập offline chưa được đồng bộ
+            if (typeof navigator !== 'undefined' && navigator.onLine) {
+              let dbUpdated = false;
+              for (const slug of Object.keys(localDict)) {
+                const movie = localDict[slug];
+                if (!movie || !movie.episodes) continue;
+                for (const epKey of Object.keys(movie.episodes)) {
+                  const ep = movie.episodes[epKey];
+                  if (ep && !ep.synced) {
+                    try {
+                      const res = await fetch('/api/user/history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          username,
+                          slug,
+                          episodeSlug: ep.episodeSlug,
+                          episodeName: ep.episodeName,
+                          currentTime: ep.currentTime,
+                          duration: ep.duration,
+                          serverIndex: ep.serverIndex,
+                          serverName: ep.serverName || 'Server VIP',
+                          updatedAt: ep.updatedAt
+                        })
+                      });
+                      if (res.ok) {
+                        ep.synced = true;
+                        dbUpdated = true;
+                      }
+                    } catch (e) {
+                      console.warn(`Failed to sync ep ${epKey} for slug ${slug}:`, e);
+                    }
+                  }
+                }
+              }
+              if (dbUpdated) {
+                saveLocalHistoryDict(localDict);
               }
             }
-          });
+          }
 
+          // 3. Viết lại các link xem phim (/xem/)
           const anchors = document.querySelectorAll('a');
           anchors.forEach(a => {
             const href = a.getAttribute('href') || '';
             const xemMatch = href.match(/^\/xem\/([^/?#]+)/);
             if (xemMatch) {
               const slug = xemMatch[1];
-              const hist = historyMap[slug];
-              if (hist) {
-                const epSlug = hist.epSlug || hist.episodeSlug || hist.ep || '';
-                const svIdx = hist.serverIndex !== undefined ? hist.serverIndex : (hist.sv !== undefined ? hist.sv : 0);
-                const ts = hist.timestamp !== undefined ? hist.timestamp : (hist.ts !== undefined ? hist.ts : 0);
-                
-                if (epSlug) {
-                  a.setAttribute('href', `/xem/${slug}?ep=${epSlug}&sv=${svIdx}&ts=${ts}`);
-                  if (a.textContent && a.textContent.trim().toLowerCase() === 'xem ngay') {
-                    const epName = hist.epName || hist.episodeName || '';
-                    a.innerHTML = `<span class="material-symbols-outlined text-lg">play_arrow</span> Xem tiếp ${epName ? epName : ''}`;
+              const movieObj = localDict[slug];
+              if (movieObj && movieObj.episodes) {
+                let latestEp = null;
+                let maxTime = 0;
+                Object.keys(movieObj.episodes).forEach(epKey => {
+                  const ep = movieObj.episodes[epKey];
+                  if (ep) {
+                    const t = ep.updatedAt ? new Date(ep.updatedAt).getTime() : 0;
+                    if (t >= maxTime) {
+                      maxTime = t;
+                      latestEp = ep;
+                    }
+                  }
+                });
+
+                if (latestEp) {
+                  const epSlug = latestEp.episodeSlug || '';
+                  const svIdx = latestEp.serverIndex !== undefined ? latestEp.serverIndex : 0;
+                  const ts = Math.floor(latestEp.currentTime || 0);
+
+                  if (epSlug) {
+                    a.setAttribute('href', `/xem/${slug}?ep=${epSlug}&sv=${svIdx}&ts=${ts}`);
+                    if (a.textContent && a.textContent.trim().toLowerCase() === 'xem ngay') {
+                      const epName = latestEp.episodeName || '';
+                      a.innerHTML = `<span class="material-symbols-outlined text-lg">play_arrow</span> Xem tiếp ${epName ? epName : ''}`;
+                    }
                   }
                 }
               }
             }
           });
         } catch (err) {
-          console.error("Error in rewriteWatchLinks:", err);
+          console.error("Error in syncAndRewriteWatchLinks:", err);
         }
       }
 
@@ -463,7 +604,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         checkMobileApp();
         syncTlogged();
         if (typeof updateAuthState === 'function') updateAuthState();
-        rewriteWatchLinks();
+        syncAndRewriteWatchLinks();
       });
       document.addEventListener('astro:page-load', () => {
         applyTheme();
@@ -471,7 +612,7 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         checkMobileApp();
         syncTlogged();
         if (typeof updateAuthState === 'function') updateAuthState();
-        rewriteWatchLinks();
+        syncAndRewriteWatchLinks();
       });
     </script>
     <meta charset="UTF-8" />
