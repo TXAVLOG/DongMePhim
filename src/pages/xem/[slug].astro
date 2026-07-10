@@ -30,6 +30,19 @@ const epSlug = Astro.url.searchParams.get('ep') || undefined;
 const svParam = Astro.url.searchParams.get('sv');
 const tsParam = Astro.url.searchParams.get('ts');
 
+// Resolve the name of the requested server from the original (unsorted) database list
+let requestedServerName: string | undefined = undefined;
+if (movie && movie.episodes) {
+  if (tsParam) {
+    requestedServerName = tsParam;
+  } else if (svParam) {
+    const parsed = parseInt(svParam);
+    if (!isNaN(parsed) && parsed >= 0 && parsed < movie.episodes.length) {
+      requestedServerName = movie.episodes[parsed].serverName;
+    }
+  }
+}
+
 // Filter episodes based on airing schedule
 let filteredMovie = movie;
 let nextAiringEpisode = null;
@@ -90,23 +103,20 @@ if (movie && movie.episodes && movie.episodes.length > 0) {
 
 let svIdx = 0;
 if (filteredMovie && filteredMovie.episodes) {
-  if (tsParam) {
+  if (requestedServerName) {
     const idx = filteredMovie.episodes.findIndex(
-      (s: any) => s.serverName.toLowerCase() === tsParam.toLowerCase() || 
-           s.serverName.toLowerCase().includes(tsParam.toLowerCase())
+      (s: any) => s.serverName.toLowerCase().trim() === requestedServerName.toLowerCase().trim() ||
+           s.serverName.toLowerCase().includes(requestedServerName.toLowerCase().trim()) ||
+           requestedServerName.toLowerCase().trim().includes(s.serverName.toLowerCase())
     );
     if (idx !== -1) {
       svIdx = idx;
     } else {
-      const parsed = parseInt(tsParam);
+      // Fallback if not found by name
+      const parsed = parseInt(requestedServerName);
       if (!isNaN(parsed) && parsed >= 0 && parsed < filteredMovie.episodes.length) {
         svIdx = parsed;
       }
-    }
-  } else if (svParam) {
-    const parsed = parseInt(svParam);
-    if (!isNaN(parsed) && parsed >= 0 && parsed < filteredMovie.episodes.length) {
-      svIdx = parsed;
     }
   } else {
     // Prioritize the server with the most episodes
