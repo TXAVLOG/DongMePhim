@@ -66,6 +66,10 @@ export interface AppSettings {
   app_smart_tv_size?: string;
   app_smart_tv_sha256?: string;
   app_smart_tv_code?: string;
+  app_windows_download_enable?: boolean;
+  app_windows_download_url?: string;
+  app_windows_size?: string;
+  app_windows_sha256?: string;
   app_maintenance_enable?: boolean;
   app_maintenance_message?: string;
 }

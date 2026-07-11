@@ -98,6 +98,10 @@ export const seedSettings: SiteSettings = {
     app_smart_tv_size: "",
     app_smart_tv_sha256: "",
     app_smart_tv_code: "3779765",
+    app_windows_download_enable: true,
+    app_windows_download_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.0.1_Setup.exe",
+    app_windows_size: "86700000",
+    app_windows_sha256: "",
   },
   user: {
     allow_registration: true,
