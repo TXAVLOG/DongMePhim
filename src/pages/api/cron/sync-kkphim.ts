@@ -2,8 +2,27 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { mapKKPhimToMovieDetail, mergeMovieEpisodes } from '@services/providers/LocalMovieProvider';
+import { SettingService } from '@services/SettingService';
+import { sendEpisodeUpdateEmails } from '@lib/api/notificationHelper';
 
-export const GET: APIRoute = async ({ request }) => {
+function normalizeNFC<T>(obj: T): T {
+  if (typeof obj === 'string') {
+    return obj.normalize('NFC') as any;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeNFC) as any;
+  }
+  if (obj !== null && typeof obj === 'object') {
+    const res: any = {};
+    for (const key of Object.keys(obj)) {
+      res[key] = normalizeNFC((obj as any)[key]);
+    }
+    return res;
+  }
+  return obj;
+}
+
+export const GET: APIRoute = async ({ request, locals }) => {
   const startTime = Date.now();
   let updatedCount = 0;
   let processedCount = 0;
@@ -255,8 +274,8 @@ export const GET: APIRoute = async ({ request }) => {
               const { error: updateErr } = await supabase
                 .from('movies')
                 .update({
-                  episodes: mergedEpisodes,
-                  episode_current: latestEpName,
+                  episodes: normalizeNFC(mergedEpisodes),
+                  episode_current: normalizeNFC(latestEpName),
                   updated_at: new Date().toISOString()
                 })
                 .eq('id', movie.id);
@@ -269,53 +288,35 @@ export const GET: APIRoute = async ({ request }) => {
               updatedCount++;
               detailsLog.push(`${slug}: ✅ ${oldCount}→${mergedCount} tập (${latestEpName})`);
 
-              // Find users who favorited this movie for notifications
-              subrequestsCount++;
-              const { data: watchlists } = await supabase
-                .from('favorites')
-                .select('user_id')
-                .eq('movie_id', movie.id);
-
-              if (watchlists && watchlists.length > 0) {
+              // Send email update notifications to movie subscribers
+              try {
+                const settings = await SettingService.getSettings();
+                const localsAny = locals as any;
+                const cfContext = localsAny?.cfContext || localsAny?.runtime?.ctx;
                 const mData = data.movie || {};
-                const isSingle = mData.type === 'single' || 
-                                 mData.type === 'movie' || 
-                                 mData.episode_total === '1';
+                
+                const mPayload = {
+                  title: movie.title,
+                  type: detailedMovie.type || 'series',
+                  episode_current: latestEpName,
+                  poster_url: movie.poster_url,
+                  quality: detailedMovie.quality || 'FHD',
+                  lang: detailedMovie.lang || 'Vietsub',
+                  status: detailedMovie.status || 'ongoing',
+                  episode_total: detailedMovie.episodeTotal || '1'
+                };
 
-                const epCurrentStr = latestEpName.toLowerCase();
-                const isLastEpisode = !isSingle && (
-                  mData.status === 'completed' || 
-                  epCurrentStr.includes('end') || 
-                  epCurrentStr.includes('cuối') || 
-                  epCurrentStr.includes('hoàn') || 
-                  epCurrentStr.includes('trọn bộ') ||
-                  (mData.episode_total && epCurrentStr.includes(mData.episode_total))
-                );
-
-                let notifTitle = `Tập mới: ${movie.title}`;
-                let notifBody = `${latestEpName} (${mData.quality || 'FHD'} - ${mData.lang || 'Vietsub'}) đã được cập nhật thành công. Xem ngay thôi!`;
-
-                if (isSingle) {
-                  notifTitle = `Bản chiếu mới: ${movie.title}`;
-                  notifBody = `Phim đã cập nhật bản chiếu ${mData.quality || 'FHD'} (${mData.lang || 'Vietsub'}). Xem ngay tại DongMePhim!`;
-                } else if (isLastEpisode) {
-                  notifTitle = `Tập cuối trọn bộ: ${movie.title}`;
-                  notifBody = `${latestEpName} đã chính thức cập nhật! Phim đã trọn bộ, xem ngay kẻo lỡ!`;
-                }
-
-                const uniqueUserIds = [...new Set(watchlists.map(w => w.user_id))];
-                uniqueUserIds.forEach(userId => {
-                  notificationsToInsert.push({
-                    user_id: userId,
-                    title: notifTitle,
-                    body: notifBody,
-                    image_url: movie.poster_url || "",
-                    is_read: false,
-                    created_at: new Date().toISOString(),
-                    movie_slug: movie.slug,
-                    episode_name: latestEpName
+                if (cfContext?.waitUntil) {
+                  cfContext.waitUntil(
+                    sendEpisodeUpdateEmails(movie.id, movie.slug, mPayload, settings)
+                  );
+                } else {
+                  sendEpisodeUpdateEmails(movie.id, movie.slug, mPayload, settings).catch(e => {
+                    console.error('Error sending updates in sync-kkphim background:', e);
                   });
-                });
+                }
+              } catch (notifErr: any) {
+                console.error(`[Cron Notification] Error triggering notifications for ${movie.slug}:`, notifErr);
               }
             } else {
               detailsLog.push(`${slug}: Không có tập mới (${oldCount} tập)`);
@@ -378,17 +379,7 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
-    // 3. Batch insert notifications
-    if (notificationsToInsert.length > 0) {
-      subrequestsCount++;
-      const { error: notifErr } = await supabase
-        .from('notifications')
-        .insert(notificationsToInsert);
-      
-      if (notifErr) {
-        console.error('Error inserting cron notifications:', notifErr);
-      }
-    }
+    // Shared helper handles database notifications internally now
 
     // 4. ★ CẬP NHẬT LOG CUỐI CÙNG → success hoặc partial
     const duration = Date.now() - startTime;
