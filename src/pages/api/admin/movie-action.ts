@@ -154,6 +154,35 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return apiResponse(null, 'error', 'Thiếu hành động (action)!', 400, request);
     }
 
+    // 0. Cào & Ghép phụ đề từ VSMOV
+    if (action === 'enrich_subtitles') {
+      const { vsmovUrl, episodes } = body;
+      if (!vsmovUrl) {
+        return apiResponse(null, 'error', 'Thiếu đường dẫn phim VSMOV!', 400, request);
+      }
+      if (!episodes || !Array.isArray(episodes)) {
+        return apiResponse(null, 'error', 'Thiếu danh sách tập phim hiện tại!', 400, request);
+      }
+
+      let vsmovSlug = vsmovUrl.trim();
+      if (vsmovSlug.includes('/phim/')) {
+        vsmovSlug = vsmovSlug.split('/phim/')[1]?.split('?')[0]?.split('#')[0] || '';
+      } else if (vsmovSlug.includes('/api/phim/')) {
+        vsmovSlug = vsmovSlug.split('/api/phim/')[1]?.split('?')[0]?.split('#')[0] || '';
+      }
+
+      if (!vsmovSlug) {
+        return apiResponse(null, 'error', 'Đường dẫn VSMOV không hợp lệ!', 400, request);
+      }
+
+      const { episodes: enrichedEps, subtitleLog } = await enrichVsmovEpisodesWithSubtitles(
+        episodes,
+        vsmovSlug
+      );
+
+      return apiResponse({ episodes: enrichedEps, log: subtitleLog }, 'success', 'Cào và ghép phụ đề thành công!', 200, request);
+    }
+
     // 1. Thao tác Lưu phim (Thêm mới / Cập nhật)
     if (action === 'save') {
       if (!movieData) {

@@ -191,6 +191,18 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           </button>
         </div>
 
+        <!-- Panel Cào phụ đề VSMOV -->
+        <div id="vsmovPanel" class="mb-6 p-4 bg-zinc-950/40 rounded-2xl border border-glass-stroke">
+          <label class="block text-xs font-bold text-zinc-300 mb-2 uppercase tracking-wide">Cào & Ghép phụ đề từ VSMOV</label>
+          <div class="flex gap-2">
+            <input type="text" id="vsmovUrlInput" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-secondary text-sm text-white" placeholder="Dán link phim VSMOV (Ví dụ: https://vsmov.com/phim/duong-den-khung-trung)" />
+            <button type="button" id="btnCrawlVsmovSubs" class="bg-secondary hover:brightness-110 text-slate-950 py-2.5 px-5 rounded-xl text-xs font-bold transition-all cursor-pointer">
+              Cập nhật phụ đề
+            </button>
+          </div>
+          <p class="text-[11px] text-zinc-500 mt-2">Hệ thống sẽ tải danh sách tập từ VSMOV, trích xuất tất cả các phụ đề và ghép vào các tập phim KKPhim hiện có khớp theo tên hoặc thứ tự tập phim.</p>
+        </div>
+
         <!-- Dynamic Servers List -->
         <div id="serversContainer" class="space-y-6"></div>
 
@@ -296,6 +308,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
       const addServerBtn = document.getElementById("addServerBtn");
       const apiSyncCard = document.getElementById("apiSyncCard");
       const btnApiSync = document.getElementById("btn-api-sync");
+      const btnCrawlVsmovSubs = document.getElementById("btnCrawlVsmovSubs");
+      const vsmovUrlInput = document.getElementById("vsmovUrlInput");
 
       function renderGenresCheckboxes(selectedGenres = []) {
         const sysGenres = genres.map(g => ({ name: g, slug: g.toLowerCase().replace(/[^a-z0-9]+/g, '-') }));
@@ -538,6 +552,50 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         } finally {
           btnApiSync.disabled = false;
           btnApiSync.innerHTML = '<span class="material-symbols-outlined text-sm">cached</span> Quét tập mới';
+        }
+      };
+
+      // Crawl and Merge VSMOV subtitles click handler
+      btnCrawlVsmovSubs.onclick = async () => {
+        const vsmovUrl = vsmovUrlInput.value.trim();
+        if (!vsmovUrl) {
+          if (window.showGlobalToast) window.showGlobalToast("Vui lòng dán link phim VSMOV!", "warning");
+          return;
+        }
+
+        btnCrawlVsmovSubs.disabled = true;
+        btnCrawlVsmovSubs.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">autorenew</span> Đang cào...';
+
+        try {
+          const res = await fetch("/api/admin/movie-action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "enrich_subtitles",
+              vsmovUrl: vsmovUrl,
+              episodes: movieData.episodes
+            })
+          });
+
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+
+          const responseData = await res.json();
+          if (responseData.status === "success" && responseData.data) {
+            movieData.episodes = responseData.data.episodes;
+            renderServers();
+            if (window.showGlobalToast) {
+              window.showGlobalToast(`Cập nhật thành công phụ đề từ VSMOV! (${responseData.data.log.length} tập)`, "success");
+            }
+          } else {
+            throw new Error(responseData.message || "Không thể cào phụ đề VSMOV");
+          }
+        } catch (e) {
+          if (window.showGlobalToast) window.showGlobalToast("Lỗi cào phụ đề: " + e.message, "error");
+        } finally {
+          btnCrawlVsmovSubs.disabled = false;
+          btnCrawlVsmovSubs.textContent = "Cập nhật phụ đề";
         }
       };
 

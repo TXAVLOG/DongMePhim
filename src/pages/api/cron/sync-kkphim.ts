@@ -245,6 +245,70 @@ export const GET: APIRoute = async ({ request, locals }) => {
             }
 
             const newEpisodes = detailedMovie.episodes;
+
+            // Fetch TMDB episode thumbnails if TMDB metadata is available
+            const tmdbId = data.movie?.tmdb?.id;
+            const tmdbType = data.movie?.tmdb?.type || 'movie';
+            if (tmdbId) {
+              try {
+                const settings = await SettingService.getSettings();
+                const apiKey = (settings.general as any).tmdb_api_key || '211be8d45c0d31404f644ecdcf9caad5';
+                
+                let backdropPath = '';
+                let posterPath = '';
+                const tmdbDetailRes = await fetch(`https://api.themoviedb.org/3/${tmdbType}/${tmdbId}?api_key=${apiKey}&language=vi-VN`);
+                if (tmdbDetailRes.ok) {
+                  const tmdbDetail = await tmdbDetailRes.json() as any;
+                  backdropPath = tmdbDetail.backdrop_path ? `https://image.tmdb.org/t/p/original${tmdbDetail.backdrop_path}` : '';
+                  posterPath = tmdbDetail.poster_path ? `https://image.tmdb.org/t/p/original${tmdbDetail.poster_path}` : '';
+                }
+                
+                const defaultThumb = backdropPath || posterPath || movie.poster_url || '';
+
+                if (tmdbType === 'tv') {
+                  let seasonNumber = 1;
+                  const seasonsName = data.movie?.seasons || '';
+                  const matchSeason = seasonsName.match(/\d+/);
+                  if (matchSeason) {
+                    seasonNumber = parseInt(matchSeason[0]) || 1;
+                  }
+                  
+                  subrequestsCount++;
+                  const seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?api_key=${apiKey}&language=vi-VN`);
+                  if (seasonRes.ok) {
+                    const seasonData = await seasonRes.json() as any;
+                    if (seasonData && Array.isArray(seasonData.episodes)) {
+                      const tmdbEps = seasonData.episodes;
+                      newEpisodes.forEach((server: any) => {
+                        const srvData = server.serverData || server.server_data || [];
+                        if (Array.isArray(srvData)) {
+                          srvData.forEach((ep: any, epIdx: number) => {
+                            const tmdbEp = tmdbEps[epIdx];
+                            if (tmdbEp && tmdbEp.still_path) {
+                              ep.thumbUrl = `https://image.tmdb.org/t/p/original${tmdbEp.still_path}`;
+                            } else {
+                              ep.thumbUrl = defaultThumb;
+                            }
+                          });
+                        }
+                      });
+                    }
+                  }
+                } else {
+                  newEpisodes.forEach((server: any) => {
+                    const srvData = server.serverData || server.server_data || [];
+                    if (Array.isArray(srvData)) {
+                      srvData.forEach((ep: any) => {
+                        ep.thumbUrl = defaultThumb;
+                      });
+                    }
+                  });
+                }
+              } catch (tmdbErr) {
+                console.error(`[Cron Sync] Error fetching TMDB still paths for ${slug}:`, tmdbErr);
+              }
+            }
+
             const oldEpisodes = movie.episodes || [];
 
             const getEpCount = (eps: any[]) => {
