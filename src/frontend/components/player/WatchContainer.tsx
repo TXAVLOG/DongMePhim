@@ -1687,6 +1687,10 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     );
     if (isAdmin) return;
 
+    // Bypass for mobile devices to avoid false positives (e.g. mobile Safari viewport / address bar height difference)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) return;
+
     let devtoolsOpen = false;
     const threshold = 160;
 
