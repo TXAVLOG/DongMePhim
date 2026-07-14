@@ -291,7 +291,10 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           if (res.ok) {
             const json = await res.json();
             const data = json.data || json;
-            if (Array.isArray(data) && data.length > 0) systemServers = data;
+            if (Array.isArray(data) && data.length > 0) {
+              // API trả về [{name, movieCount}] — chỉ lấy .name
+              systemServers = data.map(s => (typeof s === 'string' ? s : s.name)).filter(Boolean);
+            }
           }
         } catch (e) {
           console.warn("Lỗi tải danh sách server:", e);

@@ -806,7 +806,8 @@ const groupedPackages = packages.map((pkg: any) => {
           if (res.ok) {
             const data = await res.json();
             if (data && data.status === 'success') {
-              systemServers = data.data;
+              // API trả về [{name, movieCount}] — chỉ lấy .name
+              systemServers = (data.data || []).map(s => (typeof s === 'string' ? s : s.name)).filter(Boolean);
             }
           }
         } catch (e) {
@@ -1148,7 +1149,8 @@ const groupedPackages = packages.map((pkg: any) => {
           if (res.ok) {
             const data = await res.json();
             if (data && data.status === 'success') {
-              systemServers = data.data;
+              // API trả về [{name, movieCount}] — chỉ lấy .name
+              systemServers = (data.data || []).map(s => (typeof s === 'string' ? s : s.name)).filter(Boolean);
             }
           }
         } catch (e) {
