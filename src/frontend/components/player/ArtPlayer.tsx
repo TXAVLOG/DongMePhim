@@ -586,6 +586,7 @@ const CustomSubtitleSystem: React.FC<{
         { label: 'Outfit', value: 'Outfit' },
         { label: 'Inter', value: 'Inter' },
         { label: 'Roboto', value: 'Roboto' },
+        { label: 'PhimMoi', value: 'PhimMoi' },
         { label: 'Sans-Serif', value: 'Sans-Serif' }
       ],
       setter: (val: string) => {
@@ -716,6 +717,7 @@ const CustomSubtitleSystem: React.FC<{
         { label: 'Outfit', value: 'Outfit' },
         { label: 'Inter', value: 'Inter' },
         { label: 'Roboto', value: 'Roboto' },
+        { label: 'PhimMoi', value: 'PhimMoi' },
         { label: 'Sans-Serif', value: 'Sans-Serif' }
       ],
       setter: (val: string) => {

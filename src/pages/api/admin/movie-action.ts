@@ -4,7 +4,7 @@ import { supabase } from '@lib/supabase';
 import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 import { mergeMovieEpisodes } from '@services/providers/LocalMovieProvider';
-import { enrichVsmovEpisodesWithSubtitles } from '@lib/vsmov-subtitles';
+import { enrichVsmovEpisodesWithSubtitles, crawlSubtitlesListFromVsmov } from '@lib/vsmov-subtitles';
 import { sendEpisodeUpdateEmails } from '@lib/api/notificationHelper';
 
 function normalizeNFC<T>(obj: T): T {
@@ -154,9 +154,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return apiResponse(null, 'error', 'Thiếu hành động (action)!', 400, request);
     }
 
-    // 0. Cào & Ghép phụ đề + m3u8 từ VSMOV
+    // 0. Cào phụ đề từ VSMOV (Trả về danh sách để copy-paste thủ công)
     if (action === 'enrich_subtitles') {
-      const { vsmovUrl, episodes } = body;
+      const { vsmovUrl } = body;
       if (!vsmovUrl) {
         return apiResponse(null, 'error', 'Thiếu đường dẫn phim VSMOV!', 400, request);
       }
@@ -172,15 +172,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
         return apiResponse(null, 'error', 'Đường dẫn VSMOV không hợp lệ!', 400, request);
       }
 
-      // episodes có thể rỗng — library sẽ tự gọi VSMOV API và build từ đầu
-      const existingEpisodes = Array.isArray(episodes) ? episodes : [];
+      const { success, subtitles, log } = await crawlSubtitlesListFromVsmov(vsmovSlug);
 
-      const { episodes: enrichedEps, subtitleLog } = await enrichVsmovEpisodesWithSubtitles(
-        existingEpisodes,
-        vsmovSlug
-      );
+      if (!success) {
+        return apiResponse(null, 'error', log.join('\n') || 'Không thể cào phụ đề VSMOV', 400, request);
+      }
 
-      return apiResponse({ episodes: enrichedEps, log: subtitleLog }, 'success', 'Cào và ghép phụ đề thành công!', 200, request);
+      return apiResponse({ subtitles, log }, 'success', 'Cào phụ đề thành công!', 200, request);
     }
 
     // 1. Thao tác Lưu phim (Thêm mới / Cập nhật)
