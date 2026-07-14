@@ -605,21 +605,25 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             }
 
             // Build HTML table for the modal
-            const tableRows = subtitles.map(sub => `
+            const tableRows = subtitles.map(sub => {
+              const safeProxy = (sub.proxyUrl || '').replace(/"/g, '&quot;');
+              const safeOriginal = (sub.originalUrl || '').replace(/"/g, '&quot;');
+              return `
               <tr class="hover:bg-white/5 transition-colors border-b border-zinc-800 last:border-b-0">
                 <td class="p-3 font-semibold text-white text-xs">${sub.serverName}</td>
                 <td class="p-3 text-zinc-300 text-xs">${sub.episodeName}</td>
                 <td class="p-3 text-zinc-400 text-xs font-mono">${sub.label}</td>
                 <td class="p-3 text-right space-x-1.5 whitespace-nowrap">
-                  <button onclick="copyToClipboard('${sub.proxyUrl}')" class="px-2.5 py-1.5 rounded bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1">
+                  <button data-link="${safeProxy}" onclick="copyToClipboard(this.getAttribute('data-link'))" class="px-2.5 py-1.5 rounded bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1">
                     <span class="material-symbols-outlined text-[12px]">content_copy</span> Proxy Link
                   </button>
-                  <button onclick="copyToClipboard('${sub.originalUrl}')" class="px-2.5 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1">
+                  <button data-link="${safeOriginal}" onclick="copyToClipboard(this.getAttribute('data-link'))" class="px-2.5 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1">
                     <span class="material-symbols-outlined text-[12px]">link</span> Link gốc
                   </button>
                 </td>
               </tr>
-            `).join('');
+              `;
+            }).join('');
 
             const modalHtml = `
               <div class="space-y-4 text-left">
