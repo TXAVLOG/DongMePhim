@@ -25,6 +25,118 @@ const proxySubtitleUrl = (u: string) => {
   return `/api/proxy-subtitle?url=${encodeURIComponent(u)}`;
 };
 
+let lastCleanupTime = 0;
+function cleanupExpiredCache(cache: any) {
+  const now = Date.now();
+  if (now - lastCleanupTime < 60000) return;
+  lastCleanupTime = now;
+
+  const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+  cache.keys().then((requests: any[]) => {
+    requests.forEach((req: any) => {
+      cache.match(req).then((res: any) => {
+        if (res) {
+          const timeStr = res.headers.get('X-Cache-Time');
+          if (timeStr) {
+            const cacheTime = parseInt(timeStr, 10);
+            if (now - cacheTime > oneWeekMs) {
+              cache.delete(req);
+            }
+          }
+        }
+      });
+    });
+  }).catch(() => {});
+}
+
+function normalizeUrl(urlStr: string): string {
+  try {
+    const url = new URL(urlStr);
+    const dynamicParams = ['token', 'sign', 'sig', 'signature', 'expires', 'expire', 't', 'hash', 'key', 'hdntl', 'ttl', 'auth'];
+    dynamicParams.forEach(param => {
+      url.searchParams.delete(param);
+      for (const key of Array.from(url.searchParams.keys())) {
+        if (key.toLowerCase() === param) {
+          url.searchParams.delete(key);
+        }
+      }
+    });
+    return url.toString();
+  } catch (e) {
+    return urlStr;
+  }
+}
+
+function getCustomFragmentLoader(HlsClass: any) {
+  const LoaderBase = HlsClass?.DefaultConfig?.loader || (window as any).Hls?.DefaultConfig?.loader;
+  if (!LoaderBase) return null;
+
+  return class CustomFragmentLoader extends LoaderBase {
+    constructor(config: any) {
+      super(config);
+      const originalLoad = this.load.bind(this);
+
+      this.load = function (context: any, config: any, callbacks: any) {
+        const url = context.url;
+        const isSegment = url.includes('.ts') || url.includes('.m4s') || url.includes('.mp4') || url.includes('seg-') || url.includes('fragment');
+
+        if (!isSegment || typeof caches === 'undefined') {
+          originalLoad(context, config, callbacks);
+          return;
+        }
+
+        const self = this;
+        const cacheKey = normalizeUrl(url);
+        caches.open('txa-video-segments-cache').then(async (cache) => {
+          try {
+            const cachedResponse = await cache.match(cacheKey);
+            if (cachedResponse) {
+              const data = await cachedResponse.arrayBuffer();
+              const stats = {
+                trequest: performance.now(),
+                tfirst: performance.now(),
+                tload: performance.now(),
+                loaded: data.byteLength,
+                total: data.byteLength
+              };
+              callbacks.onSuccess({ data }, stats, context);
+
+              setTimeout(() => {
+                cleanupExpiredCache(cache);
+              }, 100);
+              return;
+            }
+          } catch (e) {
+            console.warn('[Cache-Load] failed:', e);
+          }
+
+          const originalOnSuccess = callbacks.onSuccess;
+          callbacks.onSuccess = function (response: any, stats: any, ctx: any) {
+            if (response && response.data) {
+              try {
+                const headers = new Headers();
+                headers.append('Content-Type', 'video/MP2T');
+                headers.append('X-Cache-Time', Date.now().toString());
+                const cachedRes = new Response(response.data, { headers });
+                cache.put(cacheKey, cachedRes).catch(() => {});
+              } catch (e) {
+                console.warn('[Cache-Save] failed:', e);
+              }
+            }
+            originalOnSuccess.call(self, response, stats, ctx);
+          };
+
+          originalLoad(context, config, callbacks);
+        }).catch((err) => {
+          console.warn('[Cache-Open] failed:', err);
+          originalLoad(context, config, callbacks);
+        });
+      };
+    }
+  };
+}
+
+
 export function parseSubtitles(text: string): SubtitleCue[] {
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   const cues: SubtitleCue[] = [];
@@ -1576,16 +1688,18 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
         customType: {
           m3u8: function (video: HTMLVideoElement, url: string) {
             if (HlsClass && HlsClass.isSupported()) {
+              const fLoaderClass = getCustomFragmentLoader(HlsClass);
               const hls = new HlsClass({
                 // Obfuscate network requests to make extensions harder to sniff
                 xhrSetup: (xhr: XMLHttpRequest, xhrUrl: string) => {
                   // Do not send custom headers to cross-origin CDN servers to prevent CORS preflight blocking
                 },
+                ...(fLoaderClass ? { fLoader: fLoaderClass as any } : {}),
                 // Enable worker for better performance and stability
                 enableWorker: true,
-                // Lower max buffer to reduce memory issues with large segments
-                maxBufferLength: 30,
-                maxMaxBufferLength: 60,
+                maxBufferLength: 300,
+                maxMaxBufferLength: 600,
+                maxBufferSize: 250 * 1024 * 1024,
                 // Enable progressive loading for faster start
                 progressive: true,
                 // Handle audio codec errors gracefully - if browser doesn't support
@@ -1621,9 +1735,11 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
                         hls.destroy();
                         // Recreate HLS with forced AAC audio codec preference
                         const hlsRetry = new HlsClass({
+                          ...(fLoaderClass ? { fLoader: fLoaderClass as any } : {}),
                           enableWorker: true,
-                          maxBufferLength: 30,
-                          maxMaxBufferLength: 60,
+                          maxBufferLength: 300,
+                          maxMaxBufferLength: 600,
+                          maxBufferSize: 250 * 1024 * 1024,
                           progressive: true,
                           backBufferLength: 30,
                           // Force AAC audio codec - skip incompatible EAC-3/AC-3
@@ -1676,8 +1792,9 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
                           hls.destroy();
                           const newHls = new HlsClass({
                             enableWorker: true,
-                            maxBufferLength: 30,
-                            maxMaxBufferLength: 60,
+                            maxBufferLength: 300,
+                            maxMaxBufferLength: 600,
+                            maxBufferSize: 250 * 1024 * 1024,
                           });
                           newHls.loadSource(url);
                           newHls.attachMedia(video);
