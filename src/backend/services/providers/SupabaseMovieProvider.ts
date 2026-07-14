@@ -421,14 +421,66 @@ export class SupabaseMovieProvider implements IMovieProvider {
     try {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(movieId);
       const selectFields = 'id, movie_id_seq, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, require_login';
+
+      // 1. Lấy thể loại và thông tin phim hiện tại
+      let targetMovie: any = null;
+      try {
+        if (isUuid) {
+          const { data } = await supabase.from('movies').select('id, title, genres').eq('id', movieId).maybeSingle();
+          targetMovie = data;
+        } else {
+          const { data } = await supabase.from('movies').select('id, title, genres').eq('movie_id_seq', parseInt(movieId, 10)).maybeSingle();
+          targetMovie = data;
+        }
+      } catch (err) {
+        console.warn('Lỗi lấy target movie details in getRelatedMovies:', err);
+      }
+
+      // 2. Query phim có cùng thể loại, ưu tiên views (xu hướng)
       let query = supabase.from('movies').select(selectFields);
-      if (isUuid) {
+      if (targetMovie) {
+        query = query.neq('id', targetMovie.id);
+        if (Array.isArray(targetMovie.genres) && targetMovie.genres.length > 0) {
+          const conditions = targetMovie.genres
+            .map((g: string) => g?.trim())
+            .filter(Boolean)
+            .map((g: string) => `genres.cs.["${g}"]`);
+          if (conditions.length > 0) {
+            query = query.or(conditions.join(','));
+          }
+        }
+      } else if (isUuid) {
         query = query.neq('id', movieId);
       }
 
-      const { data: dbMovies, error } = await query.limit(5);
-
+      query = query.order('views', { ascending: false, nullsFirst: false }).limit(12);
+      let { data: dbMovies, error } = await query;
       if (error) throw error;
+
+      // 3. Fallback: Nếu không đủ 8 phim cùng thể loại, bù đắp bằng các phim hot khác (views desc)
+      if (!dbMovies || dbMovies.length < 8) {
+        let fallbackQuery = supabase.from('movies')
+          .select(selectFields)
+          .order('views', { ascending: false, nullsFirst: false })
+          .limit(12);
+
+        if (targetMovie) {
+          fallbackQuery = fallbackQuery.neq('id', targetMovie.id);
+        } else if (isUuid) {
+          fallbackQuery = fallbackQuery.neq('id', movieId);
+        }
+
+        const { data: popularMovies } = await fallbackQuery;
+        if (popularMovies) {
+          dbMovies = dbMovies || [];
+          const existingIds = new Set(dbMovies.map((m: any) => m.id));
+          for (const m of popularMovies) {
+            if (!existingIds.has(m.id)) {
+              dbMovies.push(m);
+            }
+          }
+        }
+      }
 
       // Lấy danh sách phim hệ thống đã bị xóa từ database
       const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
@@ -466,7 +518,9 @@ export class SupabaseMovieProvider implements IMovieProvider {
           movie_id_seq: m.movie_id_seq
         }));
 
-        if (!isUuid) {
+        if (targetMovie) {
+          list = list.filter(m => m.id !== targetMovie.id);
+        } else if (!isUuid) {
           list = list.filter(m => m.id !== movieId);
         }
         list = list.filter(m => !deletedSlugs.has(m.slug));
@@ -477,7 +531,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
         ...list,
         ...seedMovies.filter(m => m.id !== movieId && !dbSlugs.has(m.slug) && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
       ];
-      return combined.slice(0, 4);
+      return combined.slice(0, 12);
 
     } catch (e) {
       console.warn('Lỗi khi lấy phim liên quan từ Supabase:', e);
@@ -486,9 +540,9 @@ export class SupabaseMovieProvider implements IMovieProvider {
     try {
       const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
       const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
-      return seedMovies.filter(m => m.id !== movieId && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true })).slice(0, 4);
+      return seedMovies.filter(m => m.id !== movieId && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true })).slice(0, 12);
     } catch (e) {
-      return seedMovies.filter(m => m.id !== movieId).map(m => ({ ...m, isStatic: true })).slice(0, 4);
+      return seedMovies.filter(m => m.id !== movieId).map(m => ({ ...m, isStatic: true })).slice(0, 12);
     }
   }
 

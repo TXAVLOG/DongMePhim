@@ -196,6 +196,41 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
     pre_roll_skip_seconds: settings.ads?.pre_roll_skip_seconds ?? 5,
   };
 
+  // Fetch actors metadata (avatar_url) from DB
+  let actorsList: any[] = [];
+  if (Array.isArray(movie.actors) && movie.actors.length > 0) {
+    try {
+      const { data: dbActors } = await supabase
+        .from('actors')
+        .select('name, avatar_url')
+        .in('name', movie.actors);
+      
+      const actorAvatarMap = new Map<string, string>();
+      if (dbActors) {
+        dbActors.forEach((a: any) => {
+          if (a.name && a.avatar_url) {
+            actorAvatarMap.set(a.name.trim().toLowerCase(), a.avatar_url);
+          }
+        });
+      }
+      
+      actorsList = movie.actors.map((a: string) => {
+        const cleanName = a.trim();
+        const avatarUrl = actorAvatarMap.get(cleanName.toLowerCase()) || "";
+        return {
+          name: cleanName,
+          avatar_url: avatarUrl,
+          thumb_url: avatarUrl,
+          image: avatarUrl,
+          role: ""
+        };
+      });
+    } catch (e) {
+      console.error("Error fetching actor avatars:", e);
+      actorsList = movie.actors.map((a: string) => ({ name: a, avatar_url: "", thumb_url: "", image: "", role: "" }));
+    }
+  }
+
   const responsePayload = {
     movie: {
       id: cleanId(movie.movie_id_seq || movie.id),
@@ -225,7 +260,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       is_favorite: isFavorite,
       require_login: movie.require_login || false,
       categories: movie.genres?.map((g: string) => ({ name: g })) || (movie.category ? [{ name: movie.category }] : []),
-      actors: movie.actors?.map((a: string) => ({ name: a, role: "" })) || [],
+      actors: actorsList,
       seasons: relatedParts
     },
     ads,
