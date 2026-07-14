@@ -154,14 +154,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return apiResponse(null, 'error', 'Thiếu hành động (action)!', 400, request);
     }
 
-    // 0. Cào & Ghép phụ đề từ VSMOV
+    // 0. Cào & Ghép phụ đề + m3u8 từ VSMOV
     if (action === 'enrich_subtitles') {
       const { vsmovUrl, episodes } = body;
       if (!vsmovUrl) {
         return apiResponse(null, 'error', 'Thiếu đường dẫn phim VSMOV!', 400, request);
-      }
-      if (!episodes || !Array.isArray(episodes)) {
-        return apiResponse(null, 'error', 'Thiếu danh sách tập phim hiện tại!', 400, request);
       }
 
       let vsmovSlug = vsmovUrl.trim();
@@ -175,8 +172,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         return apiResponse(null, 'error', 'Đường dẫn VSMOV không hợp lệ!', 400, request);
       }
 
+      // episodes có thể rỗng — library sẽ tự gọi VSMOV API và build từ đầu
+      const existingEpisodes = Array.isArray(episodes) ? episodes : [];
+
       const { episodes: enrichedEps, subtitleLog } = await enrichVsmovEpisodesWithSubtitles(
-        episodes,
+        existingEpisodes,
         vsmovSlug
       );
 

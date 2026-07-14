@@ -191,16 +191,15 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           </button>
         </div>
 
-        <!-- Panel Cào phụ đề VSMOV -->
         <div id="vsmovPanel" class="mb-6 p-4 bg-zinc-950/40 rounded-2xl border border-glass-stroke">
-          <label class="block text-xs font-bold text-zinc-300 mb-2 uppercase tracking-wide">Cào & Ghép phụ đề từ VSMOV</label>
+          <label class="block text-xs font-bold text-zinc-300 mb-2 uppercase tracking-wide">Cào & Ghép m3u8 + Phụ đề từ VSMOV</label>
           <div class="flex gap-2">
-            <input type="text" id="vsmovUrlInput" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-secondary text-sm text-white" placeholder="Dán link phim VSMOV (Ví dụ: https://vsmov.com/phim/duong-den-khung-trung)" />
+            <input type="text" id="vsmovUrlInput" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-secondary text-sm text-white" placeholder="Dán link phim VSMOV (Ví dụ: https://vsmov.com/phim/giac-mo-trao-em)" />
             <button type="button" id="btnCrawlVsmovSubs" class="bg-secondary hover:brightness-110 text-slate-950 py-2.5 px-5 rounded-xl text-xs font-bold transition-all cursor-pointer">
-              Cập nhật phụ đề
+              Cập nhật phụ đề & m3u8
             </button>
           </div>
-          <p class="text-[11px] text-zinc-500 mt-2">Hệ thống sẽ tải danh sách tập từ VSMOV, trích xuất tất cả các phụ đề và ghép vào các tập phim KKPhim hiện có khớp theo tên hoặc thứ tự tập phim.</p>
+          <p class="text-[11px] text-zinc-500 mt-2">Hệ thống sẽ gọi VSMOV API → lấy toàn bộ server/tập → trích xuất link m3u8 và phụ đề từ trang embed → ghép vào phim. Hoạt động cả khi phim chưa có tập nào.</p>
         </div>
 
         <!-- Dynamic Servers List -->
@@ -558,7 +557,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         }
       };
 
-      // Crawl and Merge VSMOV subtitles click handler
+      // Crawl and Merge VSMOV subtitles + m3u8 click handler
       btnCrawlVsmovSubs.onclick = async () => {
         const vsmovUrl = vsmovUrlInput.value.trim();
         if (!vsmovUrl) {
@@ -567,7 +566,7 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         }
 
         btnCrawlVsmovSubs.disabled = true;
-        btnCrawlVsmovSubs.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">autorenew</span> Đang cào...';
+        btnCrawlVsmovSubs.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">autorenew</span> Đang cào VSMOV...';
 
         try {
           const res = await fetch("/api/admin/movie-action", {
@@ -586,19 +585,42 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
 
           const responseData = await res.json();
           if (responseData.status === "success" && responseData.data) {
-            movieData.episodes = responseData.data.episodes;
+            const newEpisodes = responseData.data.episodes || [];
+            const log = responseData.data.log || [];
+
+            // Count stats
+            const totalEps = newEpisodes.reduce((s, srv) => s + (srv.server_data || srv.serverData || []).length, 0);
+            const subsFound = log.filter(l => l.includes('✅')).length;
+            const m3u8Found = newEpisodes.reduce((s, srv) => {
+              return s + (srv.server_data || srv.serverData || []).filter(ep => ep.link_m3u8 || ep.linkM3u8).length;
+            }, 0);
+
+            movieData.episodes = newEpisodes;
             renderServers();
-            if (window.showGlobalToast) {
-              window.showGlobalToast(`Cập nhật thành công phụ đề từ VSMOV! (${responseData.data.log.length} tập)`, "success");
+
+            // Show detailed log in modal
+            if (window.txamodal && log.length > 0) {
+              const logHtml = `<div class="text-xs font-mono space-y-1 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+                ${log.map(l => `<div class="${l.includes('✅') ? 'text-emerald-400' : l.includes('❌') ? 'text-red-400' : 'text-zinc-400'}">${l}</div>`).join('')}
+              </div>`;
+              window.txamodal.show({
+                title: `✅ Cào VSMOV hoàn tất`,
+                message: `<p class="text-sm text-zinc-300 mb-3">${totalEps} tập | ${m3u8Found} link m3u8 | ${subsFound} phụ đề tìm thấy</p>${logHtml}`,
+                confirmText: 'Đóng', cancelText: '', onConfirm: () => {}
+              });
+            } else {
+              if (window.showGlobalToast) {
+                window.showGlobalToast(`✅ Cào VSMOV xong! ${totalEps} tập · ${m3u8Found} m3u8 · ${subsFound} phụ đề`, "success");
+              }
             }
           } else {
-            throw new Error(responseData.message || "Không thể cào phụ đề VSMOV");
+            throw new Error(responseData.message || "Không thể cào VSMOV");
           }
         } catch (e) {
-          if (window.showGlobalToast) window.showGlobalToast("Lỗi cào phụ đề: " + e.message, "error");
+          if (window.showGlobalToast) window.showGlobalToast("Lỗi cào VSMOV: " + e.message, "error");
         } finally {
           btnCrawlVsmovSubs.disabled = false;
-          btnCrawlVsmovSubs.textContent = "Cập nhật phụ đề";
+          btnCrawlVsmovSubs.textContent = "Cập nhật phụ đề & m3u8";
         }
       };
 
