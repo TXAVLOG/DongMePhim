@@ -162,10 +162,14 @@ if (backdrops.length === 0 && movie) {
 let relatedParts: Movie[] = [];
 if (movie) {
   const getBaseTitle = (t: string) => {
-    return t
+    let cleaned = t
       .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
       .replace(/\s*-\s*$/, '')
       .trim();
+    if (/.*\D\s+\d+$/i.test(cleaned)) {
+      cleaned = cleaned.replace(/\s+\d+$/g, '').trim();
+    }
+    return cleaned;
   };
   const baseTitle = getBaseTitle(movie.title);
   
@@ -213,11 +217,15 @@ if (movie) {
   }
 
   const normalize = (t: string) => {
-    return t
+    let cleaned = t
       .toLowerCase()
       .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
       .replace(/\s*-\s*$/, '')
       .trim();
+    if (/.*\D\s+\d+$/i.test(cleaned)) {
+      cleaned = cleaned.replace(/\s+\d+$/g, '').trim();
+    }
+    return cleaned;
   };
   const targetBase = normalize(movie.title);
 

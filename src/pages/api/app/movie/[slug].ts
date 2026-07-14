@@ -107,10 +107,14 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
     let relatedParts: any[] = [];
     try {
       const getBaseTitle = (t: string) => {
-        return t
+        let cleaned = t
           .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
           .replace(/\s*-\s*$/, '')
           .trim();
+        if (/.*\D\s+\d+$/i.test(cleaned)) {
+          cleaned = cleaned.replace(/\s+\d+$/g, '').trim();
+        }
+        return cleaned;
       };
       const baseTitle = getBaseTitle(movie.title);
       
@@ -121,11 +125,15 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
         
       if (dbCandidates) {
         const normalize = (t: string) => {
-          return t
+          let cleaned = t
             .toLowerCase()
             .replace(/\s*(?:\(\s*)?(?:phần|ss|season|part|tập|phim|bộ)\s*\d+(?:\s*\))?/gi, '')
             .replace(/\s*-\s*$/, '')
             .trim();
+          if (/.*\D\s+\d+$/i.test(cleaned)) {
+            cleaned = cleaned.replace(/\s+\d+$/g, '').trim();
+          }
+          return cleaned;
         };
         const targetBase = normalize(movie.title);
 
@@ -267,7 +275,9 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
             timeOutroEnd: ep.timeOutroEnd ?? ep.time_outro_end ?? 0,
             is_unreleased: ep.is_unreleased || false,
             air_date: ep.airDate || "",
-            air_time: ep.airTime || ""
+            air_time: ep.airTime || "",
+            storyboardUrl: ep.storyboardUrl ?? null,
+            storyboard_url: ep.storyboardUrl ?? null
           };
         })
       };
