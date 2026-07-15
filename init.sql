@@ -370,27 +370,88 @@ INSERT INTO public.settings (key, value) VALUES (
 INSERT INTO public.settings (key, value) VALUES (
   'app',
   '{
-    "app_version": "5.0.0",
-    "app_release_notes": "- 🎨 [BRAND] Đồng bộ thương hiệu mới DongMePhim trên mobile\\n- 🔄 [SYNC] Tự động đồng bộ lịch sử và tiến trình xem phim\\n- 💎 [VIP] Nâng cấp chuyển hướng cổng thanh toán SePay\\n- 📺 [TV] Tối ưu hóa cơ chế kết nối TV Pairing đồng thời\\n- 🛠️ [FIX] Khắc phục hoàn toàn lỗi crash quét mã QR trên Android",
+    "app_version": "5.0.3",
+    "app_release_notes": "- 📺 [STORYBOARD] Tích hợp tính năng xem trước ảnh thu nhỏ storyboard khi tua (kéo thả hoặc nhấn phím remote)\\n- 🎛️ [REMOTE] Hỗ trợ hoàn toàn D-Pad remote Smart TV cho Panel Cài đặt cải tiến\\n- 🌍 [I18N] Việt hóa/Đa ngôn ngữ toàn bộ giao diện điều chỉnh tùy chọn kiểu dáng phụ đề\\n- 💎 [SUBTITLE] Cho phép tùy biến cỡ chữ, màu sắc, kiểu viền, độ mờ nền và vị trí của phụ đề song ngữ trực tiếp trong ngăn kéo Cài đặt\\n- ⚙️ [SYS] Đồng bộ và lưu cấu hình người dùng vào SharedPreferences tự động áp dụng khi đổi tập",
+    "app_changelogs": [
+      {
+        "version": "5.0.3",
+        "date": "2026-07-15",
+        "title": "🚀 v5.0.3 - Storyboard Scrubbing & Subtitle Styling",
+        "content": "- 📺 [STORYBOARD] Tích hợp tính năng xem trước ảnh thu nhỏ storyboard khi tua (kéo thả hoặc nhấn phím remote)\\n- 🎛️ [REMOTE] Hỗ trợ hoàn toàn D-Pad remote Smart TV cho Panel Cài đặt cải tiến\\n- 🌍 [I18N] Việt hóa/Đa ngôn ngữ toàn bộ giao diện điều chỉnh tùy chọn kiểu dáng phụ đề\\n- 💎 [SUBTITLE] Cho phép tùy biến cỡ chữ, màu sắc, kiểu viền, độ mờ nền và vị trí của phụ đề song ngữ trực tiếp trong ngăn kéo Cài đặt\\n- ⚙️ [SYS] Đồng bộ và lưu cấu hình người dùng vào SharedPreferences tự động áp dụng khi đổi tập"
+      },
+      {
+        "version": "5.0.2",
+        "date": "2026-07-12",
+        "title": "🚀 v5.0.2 - Smart TV Settings Panel & Subtitle Sync",
+        "content": "- ⚙️ [SYS] Thiết kế Sidebar Cài đặt trên Mobile & TV (Bỏ qua Intro, Tự chuyển tập, Ngôn ngữ phụ đề ưu tiên)\\n- 📺 [TV] Hỗ trợ hoàn hảo điều hướng D-Pad phím remote TV trên Panel Cài đặt\\n- 🔄 [SEAMLESS] Trải nghiệm chuyển tập liền mạch không gián đoạn trình phát\\n- 🛠️ [FIX] Giải quyết hoàn toàn lỗi khựng hình/feedback loop khi kéo thanh tua\\n- 🌍 [SUBTITLE] Bổ sung panel cào & ghép phụ đề từ VSMOV cho các tập phim KKPhim\\n- 🖼️ [TMDB] Tự động đồng bộ và lấy ảnh thu nhỏ (still_path) tập phim từ TMDB trong các tác vụ cron"
+      },
+      {
+        "version": "5.0.1",
+        "date": "2026-07-11",
+        "title": "🚀 v5.0.1 - R2 Fix, Font Decode & TV Pairing Stability",
+        "content": "- 📺 [R2] Bổ sung HTTP headers chuẩn khi tải luồng stream từ Cloudflare R2, sửa lỗi không phát được video\\n- 🔤 [FONT] Khắc phục triệt để lỗi hiển thị font tiếng Việt (diacritics) từ API bằng giải mã UTF-8\\n- 📱 [CONTROLS] Tối ưu hóa phản hồi chạm để ẩn/hiện thanh điều khiển trình phát video ngay lập tức\\n- 🔄 [HISTORY] Khắc phục lỗi lưu lịch sử xem phim và đồng bộ tiến độ thời gian thực giữa TV và điện thoại di động\\n- 📡 [TV-PAIR] Sửa lỗi polling khiến mất trạng thái kết nối TV khi QR code hết hạn, cải thiện độ ổn định ghép nối mã TV"
+      },
+      {
+        "version": "5.0.0",
+        "date": "2026-07-09",
+        "title": "🚀 v5.0.0 - Rebranding, Sync Progress & TV Pairing",
+        "content": "- 🎨 [BRAND] Đồng bộ thương hiệu mới DongMePhim trên ứng dụng di động\\n- 🔄 [SYNC] Tự động đồng bộ lịch sử và tiến trình xem phim thời gian thực giữa Web và Mobile App\\n- 💎 [VIP] Nâng cấp cơ chế mua gói và chuyển hướng SePay qua Data URI bảo mật\\n- 📺 [TV] Đồng bộ hiển thị và tối ưu hóa hàng đợi kết nối TV Pairing đồng thời qua QR/Code\\n- 🛠️ [FIX] Thiết lập cấu hình ProGuard và khắc phục hoàn toàn lỗi crash khi quét mã QR trên Android"
+      },
+      {
+        "version": "4.7.5",
+        "date": "2026-07-04",
+        "title": "🚀 v4.7.5 - Player Fixes, Ad Buffering & Upgrades Stability",
+        "content": "- 📺 [PLAYER] Khắc phục lỗi ẩn thanh controls trình phát ArtPlayer trên trình duyệt Safari/Chrome mobile\\n- 🔄 [AUTO-NEXT] Sửa lỗi tự động chuyển tập nhảy nhanh và rò rỉ trạng thái giữa các tập\\n- 🎬 [AD] Nâng cấp cơ chế buffering quảng cáo pre-roll, tự động bỏ qua nếu link quảng cáo lỗi giúp người dùng vào thẳng phim\\n- 💎 [VIP] Chuẩn hóa đồng bộ logic gói cước chữ thường để khắc phục lỗi không nhận diện gói Premium nâng cấp trên App\\n- ⚙️ [SYS] Nâng cấp phiên bản hệ thống lên v4.7.5 tương thích hoàn toàn"
+      },
+      {
+        "version": "4.7.0",
+        "date": "2026-06-28",
+        "title": "🚀 v4.7.0 - Mobile API Adapter & Subscriptions",
+        "content": "- 🚀 [v4.7.0] Chuẩn hóa toàn bộ các Mobile API Adapter cho di động\\n- 💎 [VIP] Phát triển tính năng chọn và đăng ký nâng cấp gói cước trực tiếp trên Flutter app tích hợp cổng SePay / VietQR\\n- 📺 [CAST] Tích hợp trang chiếu lên TV (/cast) độc lập tối ưu cho màn hình TV\\n- ⭐️ [RATING] Hệ thống đánh giá phim 1-10 sao đồng bộ giữa Web và Mobile App\\n- 🔄 [CRON] Cron Job tự động quét và cập nhật tập phim mới từ nguồn KKPhim, tự động thông báo tới người dùng có phim trong danh sách Yêu thích"
+      },
+      {
+        "version": "4.5.0",
+        "date": "2026-06-04",
+        "title": "🚀 v4.5.0 - API Structure Update & UI Improvements",
+        "content": "- 🔄 [API] Cập nhật API /home trả về các key mới: TXA_PB1, TXA_PL1, TXA_NEW1, TXA_HOT1, TXA_HH1, TXA_TV1, TXA_CR1, TXA_LIST1\\n- 🌍 [I18N] API trả về key bản dịch thay vì chuỗi tiếng Việt để hỗ trợ đa ngôn ngữ tốt hơn\\n- 📱 [APP] Cập nhật Flutter app dùng các key mới từ API /home\\n- 🎨 [UI] Fix responsive layout cho section \"Đường Đua Điện Ảnh Quốc Tế\" (mobile/desktop)\\n- 🎬 [WEB] Thêm 3 chủ đề curated vào trang chủ: Phim Mùa Hè Hấp Dẫn, Cổ Trang Đỉnh Cao, Hành Động Mạnh Mẽ\\n- ⚡ [PERF] Fix Flutter app UI update ngay khi đổi ngôn ngữ (không cần reload app)\\n- 🛠️ [FIX] Tối ưu hóa hiển thị section phim theo quốc gia trên mobile\\n"
+      },
+      {
+        "version": "4.4.0",
+        "date": "2026-05-30",
+        "title": "Auto Error Logging & Device Tracking - v4.4.0",
+        "content": "🚀 [v4.4.0 - Auto Error Logging & Device Tracking]\\n- 📊 [NEW] Tự động gửi error log lên server khi có lỗi xảy ra.\\n- 📱 [NEW] Thu thập thông tin thiết bị (loại, tên, model, phiên bản OS, UDID).\\n- 🌍 [NEW] Tự động phát hiện IP và vị trí địa lý của người dùng.\\n- 🔐 [NEW] Thêm error logging vào màn hình đăng nhập/đăng ký.\\n- 🛡️ [SYS] Tối ưu hóa hệ thống theo dõi lỗi để debug nhanh hơn."
+      },
+      {
+        "version": "4.3.0",
+        "date": "2026-05-27",
+        "title": "Cloudflare HLS Premium Streaming - v4.3.0",
+        "content": "🚀 [v4.3.0 - Cloudflare Premium CDN Streaming]\\n- ⚡ [NEW] Tích hợp bộ giải quyết luồng cao tốc Stream V6 trực tiếp qua Cloudflare Worker.\\n- 🚀 [PERF] Tải video và tải xuống mượt mà hơn gấp 5 lần thông qua hệ thống bộ nhớ đệm tự động R2 CDN.\\n- 🛡️ [SYS] Khắc phục hoàn toàn lỗi phân giải phân đoạn HLS và lỗi không tìm thấy tập phim trên máy chủ Vercel.\\n- 💎 [UI] Tối ưu hóa trình phát TxaPlayer thích ứng tốt hơn với kết nối mạng yếu."
+      }
+    ],
     "app_android_download_enable": true,
-    "app_android_download_url": "https://app.nrotxa.online/TPHIMX.apk",
-    "app_apk_size": "66122454",
-    "app_apk_sha256": "4f7df1b9932e36159f6c4ee76fb305d627b45e972864f15695a8aaca7baaa0ef",
+    "app_android_download_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-Mobile.apk",
+    "app_apk_size": "74159873",
+    "app_apk_sha256": "b8d50a7c30cf9b67b4232b9292bb1b558cbe4b47b013c61d3f6a8ad5d4d4b488",
     "app_ios_direct_install_enable": false,
     "app_ios_download_url": "/ios-access",
     "app_ios_ipa_download_enable": true,
-    "app_ios_ipa_url": "https://github.com/TXAVLOG/tphimx-setup/releases/download/v5.0.0_500/TPHIMX-Premium-v5.0.0+500.ipa",
+    "app_ios_ipa_url": "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.0.3_503/DongMePhim-Premium-v5.0.3+503.ipa",
     "app_google_play_enable": false,
     "app_google_play_url": "",
     "app_app_store_enable": false,
     "app_app_store_url": "",
-    "app_smart_tv_enable": false,
-    "app_smart_tv_url": "",
-    "app_smart_tv_size": "",
-    "app_smart_tv_sha256": "",
+    "app_smart_tv_enable": true,
+    "app_smart_tv_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-TV.apk",
+    "app_smart_tv_size": "74159873",
+    "app_smart_tv_sha256": "b8d50a7c30cf9b67b4232b9292bb1b558cbe4b47b013c61d3f6a8ad5d4d4b488",
+    "app_smart_tv_code": "3779765",
+    "app_windows_download_enable": true,
+    "app_windows_download_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.0.3_Setup.exe",
+    "app_windows_size": "26144959",
+    "app_windows_sha256": "90bf7e1e184f4cfa040f686f2bd4ec54904575ccffc09f5862b65b8be8d773fa",
     "app_maintenance_enable": false,
     "app_maintenance_message": "Ứng dụng đang được bảo trì định kỳ để nâng cao hiệu năng. Vui lòng quay lại sau ít phút!"
-  }'::jsonb
+  }\'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO public.settings (key, value) VALUES (

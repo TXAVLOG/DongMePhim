@@ -41,9 +41,27 @@ export const seedSettings: SiteSettings = {
     telegram_notify_luckydraw: true,
   },
   app: {
-    app_version: "5.0.0",
-    app_release_notes: "- 🎨 [BRAND] Đồng bộ thương hiệu mới DongMePhim trên mobile\n- 🔄 [SYNC] Tự động đồng bộ lịch sử và tiến trình xem phim\n- 💎 [VIP] Nâng cấp chuyển hướng cổng thanh toán SePay\n- 📺 [TV] Tối ưu hóa cơ chế kết nối TV Pairing đồng thời\n- 🛠️ [FIX] Khắc phục hoàn toàn lỗi crash quét mã QR trên Android",
+    app_version: "5.0.3",
+    app_release_notes: "- 📺 [STORYBOARD] Tích hợp tính năng xem trước ảnh thu nhỏ storyboard khi tua (kéo thả hoặc nhấn phím remote)\n- 🎛️ [REMOTE] Hỗ trợ hoàn toàn D-Pad remote Smart TV cho Panel Cài đặt cải tiến\n- 🌍 [I18N] Việt hóa/Đa ngôn ngữ toàn bộ giao diện điều chỉnh tùy chọn kiểu dáng phụ đề\n- 💎 [SUBTITLE] Cho phép tùy biến cỡ chữ, màu sắc, kiểu viền, độ mờ nền và vị trí của phụ đề song ngữ trực tiếp trong ngăn kéo Cài đặt\n- ⚙️ [SYS] Đồng bộ và lưu cấu hình người dùng vào SharedPreferences tự động áp dụng khi đổi tập",
     app_changelogs: [
+      {
+        version: "5.0.3",
+        date: "2026-07-15",
+        title: "🚀 v5.0.3 - Storyboard Scrubbing & Subtitle Styling",
+        content: "- 📺 [STORYBOARD] Tích hợp tính năng xem trước ảnh thu nhỏ storyboard khi tua (kéo thả hoặc nhấn phím remote)\n- 🎛️ [REMOTE] Hỗ trợ hoàn toàn D-Pad remote Smart TV cho Panel Cài đặt cải tiến\n- 🌍 [I18N] Việt hóa/Đa ngôn ngữ toàn bộ giao diện điều chỉnh tùy chọn kiểu dáng phụ đề\n- 💎 [SUBTITLE] Cho phép tùy biến cỡ chữ, màu sắc, kiểu viền, độ mờ nền và vị trí của phụ đề song ngữ trực tiếp trong ngăn kéo Cài đặt\n- ⚙️ [SYS] Đồng bộ và lưu cấu hình người dùng vào SharedPreferences tự động áp dụng khi đổi tập"
+      },
+      {
+        version: "5.0.2",
+        date: "2026-07-12",
+        title: "🚀 v5.0.2 - Smart TV Settings Panel & Subtitle Sync",
+        content: "- ⚙️ [SYS] Thiết kế Sidebar Cài đặt trên Mobile & TV (Bỏ qua Intro, Tự chuyển tập, Ngôn ngữ phụ đề ưu tiên)\n- 📺 [TV] Hỗ trợ hoàn hảo điều hướng D-Pad phím remote TV trên Panel Cài đặt\n- 🔄 [SEAMLESS] Trải nghiệm chuyển tập liền mạch không gián đoạn trình phát\n- 🛠️ [FIX] Giải quyết hoàn toàn lỗi khựng hình/feedback loop khi kéo thanh tua\n- 🌍 [SUBTITLE] Bổ sung panel cào & ghép phụ đề từ VSMOV cho các tập phim KKPhim\n- 🖼️ [TMDB] Tự động đồng bộ và lấy ảnh thu nhỏ (still_path) tập phim từ TMDB trong các tác vụ cron"
+      },
+      {
+        version: "5.0.1",
+        date: "2026-07-11",
+        title: "🚀 v5.0.1 - R2 Fix, Font Decode & TV Pairing Stability",
+        content: "- 📺 [R2] Bổ sung HTTP headers chuẩn khi tải luồng stream từ Cloudflare R2, sửa lỗi không phát được video\n- 🔤 [FONT] Khắc phục triệt để lỗi hiển thị font tiếng Việt (diacritics) từ API bằng giải mã UTF-8\n- 📱 [CONTROLS] Tối ưu hóa phản hồi chạm để ẩn/hiện thanh điều khiển trình phát video ngay lập tức\n- 🔄 [HISTORY] Khắc phục lỗi lưu lịch sử xem phim và đồng bộ tiến độ thời gian thực giữa TV và điện thoại di động\n- 📡 [TV-PAIR] Sửa lỗi polling khiến mất trạng thái kết nối TV khi QR code hết hạn, cải thiện độ ổn định ghép nối mã TV"
+      },
       {
         version: "5.0.0",
         date: "2026-07-09",
@@ -82,26 +100,26 @@ export const seedSettings: SiteSettings = {
       }
     ],
     app_android_download_enable: true,
-    app_android_download_url: "https://app.nrotxa.online/TPHIMX.apk",
-    app_apk_size: "66122454",
-    app_apk_sha256: "4f7df1b9932e36159f6c4ee76fb305d627b45e972864f15695a8aaca7baaa0ef",
+    app_android_download_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-Mobile.apk",
+    app_apk_size: "74159873",
+    app_apk_sha256: "b8d50a7c30cf9b67b4232b9292bb1b558cbe4b47b013c61d3f6a8ad5d4d4b488",
     app_ios_direct_install_enable: false,
     app_ios_download_url: "/ios-access",
     app_ios_ipa_download_enable: true,
-    app_ios_ipa_url: "https://github.com/TXAVLOG/tphimx-setup/releases/download/v5.0.0_500/TPHIMX-Premium-v5.0.0+500.ipa",
+    app_ios_ipa_url: "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.0.3_503/DongMePhim-Premium-v5.0.3+503.ipa",
     app_google_play_enable: false,
     app_google_play_url: "",
     app_app_store_enable: false,
     app_app_store_url: "",
     app_smart_tv_enable: true,
-    app_smart_tv_url: "",
-    app_smart_tv_size: "",
-    app_smart_tv_sha256: "",
+    app_smart_tv_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-TV.apk",
+    app_smart_tv_size: "74159873",
+    app_smart_tv_sha256: "b8d50a7c30cf9b67b4232b9292bb1b558cbe4b47b013c61d3f6a8ad5d4d4b488",
     app_smart_tv_code: "3779765",
     app_windows_download_enable: true,
-    app_windows_download_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.0.1_Setup.exe",
-    app_windows_size: "86700000",
-    app_windows_sha256: "",
+    app_windows_download_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.0.3_Setup.exe",
+    app_windows_size: "26144959",
+    app_windows_sha256: "90bf7e1e184f4cfa040f586f2bd4ec54904575ccffc09f5862b65b8be8d773fa",
   },
   user: {
     allow_registration: true,
