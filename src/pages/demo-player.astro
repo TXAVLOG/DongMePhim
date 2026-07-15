@@ -5,23 +5,23 @@ import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 
 const settings = await SettingService.getSettings();
-const movie = await MovieService.getMovieBySlug('minions-monsters');
+const movie = await MovieService.getMovieBySlug('ke-trom-mat-trang-2');
 
-// Media assets của phim Minions & Monsters
-const url = 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Minions.2026.1080p.CAM.x264-DKS/master.m3u8';
-const title = movie?.title || 'Minions & Monsters (2026)';
-const poster = movie?.bannerUrl || movie?.posterUrl || 'https://image.tmdb.org/t/p/original/uEBBHwJuDfBtVWd2WS7WBOc8kb6.jpg';
+// Media assets của phim Kẻ Trộm Mặt Trăng 2 (Despicable Me 2)
+const url = 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Despicable%20Me%202%202013%20UHD%201080p%2010bit%20HDR%20BluRay%20HEVC%20x265%20%5BHindi%20BD%20DTS%205.1%20768kbps%20+%20English%20DDP%207.1%5D%20ESub-JM-4kHdHub/master.m3u8';
+const title = movie?.title || 'Kẻ Trộm Mặt Trăng 2 (Despicable Me 2)';
+const poster = movie?.bannerUrl || movie?.posterUrl || 'https://image.tmdb.org/t/p/original/u0l8j5Rk2WfOQ99fV8q7NqP1101.jpg';
 
-// Cấu hình danh sách phụ đề song ngữ Anh - Việt thật của phim
+// Cấu hình danh sách phụ đề song ngữ Việt - Hàn thật của phim
 const subtitles = [
   {
     label: 'Tiếng Việt',
-    file: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Minions.2026.1080p.CAM.x264-DKS/Minions%20.%20Monsters.2026.CAM-Rip-OnlyFlix.1080p.English.vi.srt',
+    file: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Despicable%20Me%202%202013%20UHD%201080p%2010bit%20HDR%20BluRay%20HEVC%20x265%20%5BHindi%20BD%20DTS%205.1%20768kbps%20+%20English%20DDP%207.1%5D%20ESub-JM-4kHdHub/k%E1%BB%9Bi%20tr%E1%BB%99m%20m%E1%BA%B7t%20tr%C4%83ng%202.vi.srt',
     default: true
   },
   {
-    label: 'English',
-    file: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Minions.2026.1080p.CAM.x264-DKS/Minions%20.%20Monsters.2026.CAM-Rip-OnlyFlix.1080p.English.srt'
+    label: 'Korean',
+    file: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Despicable%20Me%202%202013%20UHD%201080p%2010bit%20HDR%20BluRay%20HEVC%20x265%20%5BHindi%20BD%20DTS%205.1%20768kbps%20+%20English%20DDP%207.1%5D%20ESub-JM-4kHdHub/k%E1%BB%9Bi%20tr%E1%BB%99m%20m%E1%BA%B7t%20tr%C4%83ng%202.kr.srt'
   }
 ];
 ---
@@ -46,20 +46,22 @@ const subtitles = [
         poster={poster || undefined}
         subtitles={subtitles}
         qualities={[
-          { html: 'Auto', url: url, default: true }
+          { html: '1080p', url: 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Despicable%20Me%202%202013%20UHD%201080p%2010bit%20HDR%20BluRay%20HEVC%20x265%20%5BHindi%20BD%20DTS%205.1%20768kbps%20+%20English%20DDP%207.1%5D%20ESub-JM-4kHdHub/1080p/index.m3u8', default: true },
+          { html: '720p', url: url },
+          { html: '480p', url: url }
         ]}
         onChangeQuality={(item) => {
           console.log('Chất lượng phát: ', item.html);
         }}
         siteName={settings.general.site_name || undefined}
         siteUrl={settings.general.site_url || undefined}
-        storyboardUrl="https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Minions.2026.1080p.CAM.x264-DKS/storyboard.vtt"
+        storyboardUrl="https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/Despicable%20Me%202%202013%20UHD%201080p%2010bit%20HDR%20BluRay%20HEVC%20x265%20%5BHindi%20BD%20DTS%205.1%20768kbps%20+%20English%20DDP%207.1%5D%20ESub-JM-4kHdHub/storyboard.vtt"
         timeIntroStart={15}
         timeIntroEnd={90}
         timeOutroStart={4700}
         timeOutroEnd={4850}
         adSettings={settings.ads}
-        movieSlug="minions-monsters"
+        movieSlug="ke-trom-mat-trang-2"
         episodeSlug="full"
       />
     </div>
@@ -67,16 +69,17 @@ const subtitles = [
     <div class="mt-8 backdrop-blur-md bg-white/5 border border-glass-stroke rounded-2xl p-6 shadow-xl max-w-3xl">
       <h2 class="text-white font-bold font-outfit text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
         <span class="material-symbols-outlined text-[#7c3aed] text-lg">info</span>
-        Hướng dẫn kiểm thử song ngữ
+        Hướng dẫn kiểm thử song ngữ & Storyboard
       </h2>
       <ul class="text-zinc-400 text-xs space-y-2.5 leading-relaxed font-sans list-disc list-inside">
-        <li>Trình phát được tải trực tiếp từ thư viện độc lập <strong class="text-white">@txa/txaplayer</strong>.</li>
-        <li>Bật/tắt chế độ <strong class="text-white">Tự động Skip</strong> bằng công tắc iOS ở góc trên bên phải trình phát.</li>
-        <li>Tua đến giây thứ <strong class="text-white">15</strong> để test Skip Intro (sẽ hiện nút nếu tắt tự động, hoặc tự tua qua giây 90 nếu bật tự động).</li>
-        <li><strong class="text-[#7c3aed]">Tính năng kéo tua chính xác kiểu YouTube</strong>: Nhấp giữ nút kéo trên thanh tiến trình và kéo tay hướng lên trên để mở dải 7 ảnh phân cảnh lân cận, rê chuột trái phải để tua chính xác.</li>
-        <li>Click chuột phải vào trình phát để kiểm tra <strong class="text-white">Context Menu tùy chỉnh</strong> bản quyền của trình phát.</li>
+        <li>Trình phát phát luồng HLS chất lượng cao Kẻ Trộm Mặt Trăng 2 (Despicable Me 2).</li>
+        <li>Bật/tắt phụ đề song ngữ bằng trình chọn CC (chọn Tiếng Việt hoặc Korean).</li>
+        <li>Di chuột lên thanh tua (seek bar) để kiểm tra <strong class="text-white">ảnh xem trước Storyboard</strong> chính xác (160x90px, lưới 10x10, mỗi 10 giây).</li>
+        <li>Đổi các độ phân giải (1080p, 720p, 480p) trong nút răng cưa để kiểm tra đổi chất lượng.</li>
+        <li>Tua đến giây thứ <strong class="text-white">15</strong> để test Skip Intro (hoặc bật tự động skip intro).</li>
         <li>Xem video một lát, sau đó tải lại trang để kiểm tra <strong class="text-white">Popup Modal phát tiếp (Resume)</strong>.</li>
       </ul>
     </div>
   </div>
 </MainLayout>
+

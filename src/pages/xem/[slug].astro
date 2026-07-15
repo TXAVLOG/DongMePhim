@@ -30,7 +30,17 @@ const epSlug = Astro.url.searchParams.get('ep') || undefined;
 const svParam = Astro.url.searchParams.get('sv');
 const tsParam = Astro.url.searchParams.get('ts');
 
-// Resolve the name of the requested server from the original (unsorted) database list
+// Sort servers in descending order of episode count so that the server with the most episodes is first,
+// matching the sorted indices generated on the details page.
+if (movie && movie.episodes && movie.episodes.length > 0) {
+  movie.episodes.sort((a: any, b: any) => {
+    const aLen = (a.serverData || a.server_data || []).length;
+    const bLen = (b.serverData || b.server_data || []).length;
+    return bLen - aLen;
+  });
+}
+
+// Resolve the name of the requested server from the sorted list
 let requestedServerName: string | undefined = undefined;
 if (movie && movie.episodes) {
   if (tsParam) {
@@ -50,12 +60,6 @@ let isUnreleased = false;
 let unreleasedEpisode = null;
 
 if (movie && movie.episodes && movie.episodes.length > 0) {
-  // Sort servers in descending order of episode count so that the server with the most episodes is first
-  movie.episodes.sort((a: any, b: any) => {
-    const aLen = (a.serverData || a.server_data || []).length;
-    const bLen = (b.serverData || b.server_data || []).length;
-    return bLen - aLen;
-  });
   const rawServers = movie.episodes;
   const firstServer = rawServers[0];
   const allEps = firstServer.serverData || [];
