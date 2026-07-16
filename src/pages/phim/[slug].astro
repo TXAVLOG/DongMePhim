@@ -361,7 +361,11 @@ if (movie && movie.actors && movie.actors.length > 0) {
 ---
 
 {movie ? (
-  <MainLayout title={`${movie.title}`}>
+  <MainLayout 
+    title={`${movie.title}`} 
+    description={movie.description ? movie.description.replace(/<[^>]*>/g, '').slice(0, 160) : undefined} 
+    image={movie.posterUrl || movie.bannerUrl}
+  >
     <!-- Background Hero Banner -->
     <div class="absolute top-0 left-0 w-full h-[35vh] md:h-[45vh] overflow-hidden z-0">
       <img id="movie-banner-img" src={movie.bannerUrl || movie.posterUrl} alt="Banner" class="w-full h-full object-cover opacity-20 blur-[1px]" />

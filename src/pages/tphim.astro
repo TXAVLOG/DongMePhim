@@ -16,13 +16,15 @@ const homepageMappings = await getHomepageCategories();
 const animeSlugs: string[] = homepageMappings['top-anime-he'] || [];
 const top10Slugs: string[] = homepageMappings['top-10-phim-le'] || [];
 const top10PhimBoSlugs: string[] = homepageMappings['top-10-phim-bo'] || [];
+const vietNamSlugs: string[] = homepageMappings['viet-nam'] || [];
 
-const assignedSlugs: string[] = [...new Set([...animeSlugs, ...top10Slugs, ...top10PhimBoSlugs])];
+const assignedSlugs: string[] = [...new Set([...animeSlugs, ...top10Slugs, ...top10PhimBoSlugs, ...vietNamSlugs])];
 
-// Lấy phim theo các slugs được gán và 300 phim mới nhất để làm fallback/sidebar
-const [assignedMovies, latestMovies] = await Promise.all([
+// Lấy phim theo các slugs được gán, 300 phim mới nhất và toàn bộ phim Việt Nam để làm fallback/sidebar
+const [assignedMovies, latestMovies, allVietNamMovies] = await Promise.all([
   assignedSlugs.length > 0 ? MovieService.getMovies({ slugs: assignedSlugs }) : Promise.resolve([]),
-  MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' })
+  MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' }),
+  MovieService.getMovies({ category: 'Việt Nam' })
 ]);
 
 // Gộp và loại bỏ trùng lặp
@@ -66,6 +68,14 @@ const configuredPhimLe = top10Slugs
 const otherPhimLe = allMoviesForServer.filter((m: any) => m.type === 'movie' && !top10Slugs.includes(m.slug));
 const sortedOtherPhimLe = TxaMovieRanker.sortMovies(otherPhimLe);
 const top10PhimLeList = [...configuredPhimLe, ...sortedOtherPhimLe].slice(0, 10);
+
+// Điện Ảnh Việt: Xem Là Cuốn!: Đọc từ cấu hình admin + bù cho đủ 20 phim Việt Nam chuẩn sắp xếp theo txaranking
+const configuredVietNam = vietNamSlugs
+  .map(slug => allMoviesForServer.find((m: any) => m.slug === slug) || allVietNamMovies.find((m: any) => m.slug === slug))
+  .filter(Boolean);
+const otherVietNam = allVietNamMovies.filter((m: any) => !vietNamSlugs.includes(m.slug));
+const sortedOtherVietNam = TxaMovieRanker.sortMovies(otherVietNam);
+const vietNamMoviesList = [...configuredVietNam, ...sortedOtherVietNam].slice(0, 20);
 
 // Filter Top Series for Rank slider (server-side)
 const topSeries = allMoviesForServer
@@ -590,6 +600,36 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         </div>
       </div>
     </section>
+
+    <!-- Điện Ảnh Việt: Xem Là Cuốn! -->
+    {vietNamMoviesList.length > 0 && (
+      <section class="space-y-6 fade-in-section opacity-0 invisible transition-all duration-700 min-h-[150px] relative">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+              Điện Ảnh Việt: Xem Là Cuốn!
+              <Txaicon name="vietnamese" class="w-6 h-6 animate-pulse" />
+            </h2>
+            <p class="text-on-surface-variant font-body-main mt-1 text-sm">Tuyển tập những tác phẩm điện ảnh và truyền hình Việt Nam tiêu biểu</p>
+          </div>
+          <a class="group/more inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-950/40 border border-zinc-800 hover:border-red-500/50 hover:w-auto hover:px-3.5 hover:py-1 hover:gap-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-300 shadow-md hover:shadow-[0_0_12px_rgba(239,68,68,0.35)] font-outfit" href="/c/viet-nam">
+            <span class="max-w-0 overflow-hidden group-hover/more:max-w-[120px] transition-all duration-300 ease-out whitespace-nowrap">Xem tất cả</span>
+            <span class="material-symbols-outlined text-[12px] font-bold">chevron_right</span>
+          </a>
+        </div>
+
+        <!-- Swiper Slider for Vietnam Movies -->
+        <div class="swiper top10-swiper">
+          <div class="swiper-wrapper">
+            {vietNamMoviesList.map((movie: any) => (
+              <div class="swiper-slide">
+                <Card movie={movie} title={movie.title} slug={movie.slug} poster={movie.posterUrl} year={movie.releaseYear} quality={movie.quality} status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
 
     <!-- Top 10 Phim Bộ Hay Nhất (Same Swiper skewed cards style) -->
     <section class="space-y-6 fade-in-section opacity-0 invisible transition-all duration-700 min-h-[150px]">

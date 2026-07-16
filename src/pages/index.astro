@@ -6,7 +6,7 @@ import { ClientRouter } from 'astro:transitions';
 import { SettingService } from '@services/SettingService';
 
 const userAgent = Astro.request.headers.get('user-agent') || '';
-const isBot = /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|facebot|facebookexternalhit|twitterbot|ia_archiver/i.test(userAgent);
+const isBot = /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|facebot|facebookexternalhit|twitterbot|telegram|discord|whatsapp|zalo|messenger|ia_archiver/i.test(userAgent);
 if (isBot) {
   return Astro.redirect('/tphim');
 }

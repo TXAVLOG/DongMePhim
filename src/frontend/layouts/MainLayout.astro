@@ -117,7 +117,7 @@ const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user
 const popularMovies = isStaticPolicyPage ? [] : await MovieService.getMovies({ limit: 12 });
 
 const userAgent = Astro.request.headers.get('user-agent') || '';
-const isBot = /googlebot|google-adwords|adsbot|bingbot|yandexbot|baiduspider|facebookexternalhit|twitterbot|rogerbot|linkedinbot|embedly|quora\slink\spreview|showyoubot|outbrain|pinterest\/0\.|pinterestbot|slackbot|vkShare|W3C_Validator/i.test(userAgent);
+const isBot = /googlebot|google-adwords|adsbot|bingbot|yandexbot|baiduspider|facebookexternalhit|twitterbot|telegram|discord|whatsapp|zalo|messenger|rogerbot|linkedinbot|embedly|quora\slink\spreview|showyoubot|outbrain|pinterest\/0\.|pinterestbot|slackbot|vkShare|W3C_Validator/i.test(userAgent);
 
 const rawDecoyEnable = settings.general?.decoy_enable ?? true;
 const rawZaloLockEnable = settings.general?.zalo_lock_enable ?? true;

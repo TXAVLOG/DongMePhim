@@ -59,3 +59,11 @@ const { name, class: className = "w-5 h-5" } = Astro.props;
     <path d="M597.333333 426.666667H85.333333v85.333333h512v-85.333333z m0-170.666667H85.333333v85.333333h512v-85.333333zM85.333333 682.666667h341.333334v-85.333334H85.333333v85.333334z m832-192l64 64-298.453333 298.666666L490.666667 661.333333l64-64 128.213333 128L917.333333 490.666667z" />
   </svg>
 )}
+
+{name === 'vietnamese' && (
+  <svg class={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <title>Việt Nam</title>
+    <rect width="24" height="24" rx="4" fill="#DA251D"/>
+    <path d="M12 6.5L13.57 11.33H18.65L14.54 14.31L16.11 19.14L12 16.16L7.89 19.14L9.46 14.31L5.35 11.33H10.43L12 6.5Z" fill="#FFFF00"/>
+  </svg>
+)}

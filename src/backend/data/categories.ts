@@ -18,6 +18,11 @@ export const HOMEPAGE_CATEGORIES: CategoryDefinition[] = [
     description: 'Bảng vàng những bộ phim lẻ xuất sắc nhất, xem một lần là nhớ mãi.'
   },
   {
+    slug: 'viet-nam',
+    title: 'Điện Ảnh Việt: Xem Là Cuốn!',
+    description: 'Tuyển tập những tác phẩm điện ảnh và truyền hình Việt Nam tiêu biểu, xuất sắc nhất.'
+  },
+  {
     slug: 'top-10-phim-bo',
     title: 'Top 10 Phim Bộ Hay Nhất',
     description: 'Những series đình đám đủ sức khiến bạn thức trắng chỉ để xem thêm một tập nữa.'
