@@ -20,10 +20,11 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
     const isBot = await verifyBotRequest(request);
     
     if (isBot) {
-      // 1. Luồng xử lý cho Bot Discord (Truy vấn theo discordId)
+      // 1. Luồng xử lý cho Bot Discord (Truy vấn theo discordId hoặc cấu hình chung)
       const discordId = url.searchParams.get('discordId');
       if (!discordId) {
-        return apiResponse(null, 'error', 'Thiếu tham số discordId', 400, request);
+        const settings = await SettingService.getSettings();
+        return apiResponse({ config: settings.discord || {} }, 'success', 'Lấy cấu hình thành công', 200, request);
       }
 
       const { data: connection, error: connError } = await supabase
