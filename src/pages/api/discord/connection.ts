@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
 
       const { data: connection, error: connError } = await supabase
         .from('txa_discord_connections')
-        .select('user_id, username')
+        .select('user_id, discord_username')
         .eq('discord_id', discordId)
         .maybeSingle();
 
@@ -75,7 +75,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
 
       const { data: connection, error: connError } = await supabase
         .from('txa_discord_connections')
-        .select('discord_id, username, created_at')
+        .select('discord_id, discord_username, created_at')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -89,7 +89,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
         connected: true,
         connection: {
           discordId: connection.discord_id,
-          username: connection.username,
+          username: connection.discord_username,
           createdAt: connection.created_at
         }
       }, 'success', 'Lấy thông tin kết nối thành công', 200, request);
