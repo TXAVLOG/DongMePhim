@@ -130,7 +130,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     while (true) {
       let query = supabase
         .from('movies')
-        .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source, source_url')
+        .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source, source_url, broadcast_schedule')
         .eq('status', 'ongoing')
         .order('movie_id_seq', { ascending: true });
 
@@ -159,7 +159,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
           subrequestsCount++;
           const { data: wrapMovies, error: wrapErr } = await supabase
             .from('movies')
-            .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source, source_url')
+            .select('id, movie_id_seq, title, slug, episodes, poster_url, episode_current, source, source_url, broadcast_schedule')
             .eq('status', 'ongoing')
             .order('movie_id_seq', { ascending: true })
             .limit(remainingLimit);
