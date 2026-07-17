@@ -136,10 +136,6 @@ export const POST: APIRoute = async ({ request }) => {
       ...(settings.discord.schedule || {}),
       ...(body.config.schedule || {})
     };
-    settings.discord.auto_mod = {
-      ...(settings.discord.auto_mod || {}),
-      ...(body.config.auto_mod || {})
-    };
     settings.discord.is_setup_completed = true;
 
     // Lưu lại lên CSDL Supabase
