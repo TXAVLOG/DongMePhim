@@ -4,6 +4,7 @@ import { supabase } from '@lib/supabase';
 import { mapKKPhimToMovieDetail, mergeMovieEpisodes } from '@services/providers/LocalMovieProvider';
 import { SettingService } from '@services/SettingService';
 import { sendEpisodeUpdateEmails } from '@lib/api/notificationHelper';
+import { TxaJsonDb } from '@services/TxaJsonDb';
 
 function normalizeNFC<T>(obj: T): T {
   if (typeof obj === 'string') {
@@ -28,6 +29,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
   let processedCount = 0;
   let totalMovies = 0;
   const notificationsToInsert: any[] = [];
+  const updatedMoviesList: any[] = [];
   const detailsLog: string[] = [];
   let cronLogId: string | null = null;
   let lastProcessedSeq: number | null = null;
@@ -352,6 +354,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
               updatedCount++;
               detailsLog.push(`${slug}: ✅ ${oldCount}→${mergedCount} tập (${latestEpName})`);
 
+              // Thu thập phim mới cập nhật để gửi Discord notification sau
+              updatedMoviesList.push({
+                title: movie.title,
+                slug: movie.slug,
+                poster_url: movie.poster_url,
+                episode_current: latestEpName,
+                broadcast_schedule: movie.broadcast_schedule || movie.broadcastSchedule
+              });
+
               // Send email update notifications to movie subscribers
               try {
                 const settings = await SettingService.getSettings();
@@ -440,6 +451,20 @@ export const GET: APIRoute = async ({ request, locals }) => {
       if (loopCount >= 15) {
         detailsLog.push(`[System]: Dừng sớm do chạm giới hạn lặp an toàn (15 loops).`);
         break;
+      }
+    }
+
+    // Gửi thông báo đến Discord nếu có phim mới cập nhật
+    if (updatedMoviesList.length > 0) {
+      try {
+        const settings = await SettingService.getSettings();
+        const discord = settings.discord;
+        if (discord && discord.bot_token) {
+          await sendDiscordNotification(updatedMoviesList, discord);
+        }
+      } catch (err: any) {
+        console.error('[sync-kkphim] Error sending Discord notifications:', err);
+        detailsLog.push(`[System]: Lỗi gửi thông báo Discord: ${err.message}`);
       }
     }
 
@@ -540,3 +565,63 @@ export const GET: APIRoute = async ({ request, locals }) => {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
+
+async function sendDiscordNotification(updatedMovies: any[], discordConfig: any) {
+  if (!discordConfig || !discordConfig.bot_token) return;
+  
+  const localConfig = TxaJsonDb.getDiscordConfig();
+  const channelId = localConfig?.channels?.moi_cap_nhat;
+  if (!channelId) {
+    console.error('[Discord Notification] moi_cap_nhat channel ID not configured in config.json');
+    return;
+  }
+  
+  const fields = updatedMovies.map(movie => {
+    const sched = movie.broadcast_schedule || {};
+    let schedText = '';
+    if (sched && sched.nextTime) {
+      schedText = `\n• Lịch chiếu tập kế: **${sched.nextTime}** ngày **${sched.nextDate || ''}** (Tập: **${sched.nextEpisode || 'tiếp theo'}**)`;
+    } else {
+      schedText = `\n• Trạng thái: Đang phát sóng bộ`;
+    }
+    return {
+      name: `🎬 ${movie.title}`,
+      value: `🍿 Tập vừa ra mắt: **${movie.episode_current}**\n🔗 [Xem Phim Ngay](https://dongmephim.online/phim/${movie.slug})${schedText}`,
+      inline: false
+    };
+  });
+  
+  const date_str = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const embed = {
+    title: '📢 DANH SÁCH PHIM MỚI CẬP NHẬT HÔM NAY',
+    description: `Chào các Cinephile! Hệ thống vừa cập nhật các tập phim mới nhất lên Động Phim:\n`,
+    color: 3447003, // Blue
+    fields: fields.slice(0, 10), // Giới hạn 10 phim tránh tràn size của Discord embed
+    thumbnail: {
+      url: updatedMovies[0]?.poster_url || 'https://dongmephim.online/public/icon-maskable-192x192.png'
+    },
+    footer: {
+      text: `Bot by TXA | Date: ${date_str}`
+    }
+  };
+  
+  try {
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${discordConfig.bot_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ embeds: [embed] })
+    });
+    
+    if (!res.ok) {
+      const errTxt = await res.text();
+      console.error('[Discord Notification] Failed to send Discord message:', errTxt);
+    } else {
+      console.log('[Discord Notification] Successfully sent updates to Discord channel!');
+    }
+  } catch (err) {
+    console.error('[Discord Notification] Connection error:', err);
+  }
+}
