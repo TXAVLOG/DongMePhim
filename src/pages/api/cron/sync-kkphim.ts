@@ -569,7 +569,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
 async function sendDiscordNotification(updatedMovies: any[], discordConfig: any) {
   if (!discordConfig || !discordConfig.bot_token) return;
   
-  const localConfig = TxaJsonDb.getDiscordConfig();
+  const localConfig = await TxaJsonDb.getDiscordConfig();
   const channelId = localConfig?.channels?.moi_cap_nhat;
   if (!channelId) {
     console.error('[Discord Notification] moi_cap_nhat channel ID not configured in config.json');
