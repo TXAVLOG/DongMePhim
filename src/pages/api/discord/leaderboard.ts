@@ -32,13 +32,13 @@ export const GET: APIRoute = async ({ request }) => {
     // 2. Lấy danh sách liên kết Discord trực tiếp từ database Supabase
     const { data: connList, error: connError } = await supabase
       .from('txa_discord_connections')
-      .select('user_id, discord_id, username');
+      .select('user_id, discord_id, discord_username');
 
     if (connError) throw connError;
 
     const connMap = new Map<string, { discord_id: string; username: string }>();
     (connList || []).forEach(c => {
-      connMap.set(c.user_id, { discord_id: c.discord_id, username: c.username });
+      connMap.set(c.user_id, { discord_id: c.discord_id, username: c.discord_username });
     });
 
     // 3. Tính điểm và lọc những người đã liên kết Discord
