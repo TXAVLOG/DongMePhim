@@ -184,6 +184,23 @@ export const POST: APIRoute = async ({ request }) => {
 
       if (updateErr) throw updateErr;
 
+      // Cộng điểm bình luận cho người trả lời
+      try {
+        const authorName = (replyAuthor || 'Ẩn danh').trim();
+        const escapedAuthor = `"${authorName.replace(/"/g, '\\"')}"`;
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .or(`name.eq.${escapedAuthor},username.eq.${escapedAuthor}`)
+          .maybeSingle();
+        if (userData?.id) {
+          const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
+          await TxaActivityCalculator.incrementComments(userData.id);
+        }
+      } catch (e) {
+        console.error('Lỗi tích lũy điểm trả lời bình luận:', e);
+      }
+
       return apiResponse(newReply, 'success', 'Đã trả lời bình luận!', 200, request);
     }
 
@@ -242,7 +259,7 @@ export const POST: APIRoute = async ({ request }) => {
     const escapedAuthor = `"${authorName.replace(/"/g, '\\"')}"`;
     const { data: userData } = await supabase
       .from('users')
-      .select('avatar, gender, package, role')
+      .select('id, avatar, gender, package, role')
       .or(`name.eq.${escapedAuthor},username.eq.${escapedAuthor}`)
       .maybeSingle();
 
@@ -264,6 +281,16 @@ export const POST: APIRoute = async ({ request }) => {
       .single();
 
     if (insertErr) throw insertErr;
+
+    // Cộng điểm bình luận cho người đăng
+    try {
+      if (userData?.id) {
+        const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
+        await TxaActivityCalculator.incrementComments(userData.id);
+      }
+    } catch (e) {
+      console.error('Lỗi tích lũy điểm đăng bình luận:', e);
+    }
 
     return apiResponse({
       id: insertedData.id,

@@ -211,6 +211,60 @@ export interface AdSettings {
   ad_provider?: 'none' | 'google_ads' | 'offerwall' | 'both';
 }
 
+export interface DiscordSettings {
+  bot_token?: string;
+  client_id?: string;
+  client_secret?: string;
+  guild_id?: string;
+  admin_ids?: string; // Dấu phẩy ngăn cách
+  api_key?: string;
+  is_setup_completed?: boolean;
+  
+  // Ánh xạ vai trò mặc định & vinh danh
+  role_unverified?: string;
+  role_member?: string;
+  role_booster?: string;
+  
+  // Ánh xạ vai trò cấp độ hoạt động
+  role_level_mam_non?: string;
+  role_level_mot_phim?: string;
+  role_level_cuong_phim?: string;
+  role_level_truong_lao?: string;
+  
+  // Ánh xạ vai trò đặc quyền vinh danh Top 1
+  role_top_1_month?: string;
+  role_top_1_consecutive?: string;
+  
+  // Ánh xạ vai trò gói dịch vụ
+  role_package_vip?: string;
+  role_package_standard?: string;
+  role_package_bypass_zalo?: string;
+  
+  // Các kênh hệ thống (IDs của kênh Discord)
+  channel_rules?: string;
+  channel_xac_minh?: string;
+  channel_yeu_cau_phim?: string;
+  channel_boost?: string;
+  channel_mod_log?: string;
+  channel_report?: string;
+  channel_chung?: string;
+  channel_moi_cap_nhat?: string;
+  channel_lich_chieu?: string;
+  channel_bxh?: string;
+  channel_give_away?: string;
+  channel_dang_xem?: string;
+  
+  // Khung giờ cố định gửi BXH
+  leaderboard_daily_time?: string;
+  leaderboard_monthly_time?: string;
+  
+  // Mốc cấu hình cảnh cáo & vi phạm tự động
+  auto_mute_warn_count?: number;
+  auto_kick_warn_count?: number;
+  auto_ban_warn_count?: number;
+  auto_mute_duration_minutes?: number;
+}
+
 export interface SiteSettings {
   general: GeneralSettings;
   smtp: SMTPSettings;
@@ -223,6 +277,7 @@ export interface SiteSettings {
   payments: PaymentSettings;
   packages: SubscriptionPlan[];
   ads: AdSettings;
+  discord?: DiscordSettings;
 }
 
 export interface ISettingProvider {

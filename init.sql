@@ -659,6 +659,7 @@ CREATE TABLE IF NOT EXISTS public.txa_error_reports (
   reason text NOT NULL,
   user_username character varying NOT NULL DEFAULT 'Ẩn danh'::character varying,
   status character varying NOT NULL DEFAULT 'pending'::character varying,
+  source character varying,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   PRIMARY KEY (id)
 );
@@ -901,6 +902,7 @@ CREATE TABLE IF NOT EXISTS public.movie_requests (
   author character varying,
   status character varying DEFAULT 'pending'::character varying,
   reject_reason text,
+  source character varying,
   created_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (id),
   CONSTRAINT movie_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
@@ -958,3 +960,29 @@ ALTER TABLE public.txa_tv_pairing_sessions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_txa_tv_devices" ON public.txa_tv_devices FOR ALL TO public USING (true) WITH CHECK (true);
 CREATE POLICY "all_txa_tv_pairing_sessions" ON public.txa_tv_pairing_sessions FOR ALL TO public USING (true) WITH CHECK (true);
 
+-- Table: public.txa_discord_connections
+CREATE TABLE IF NOT EXISTS public.txa_discord_connections (
+  discord_id character varying NOT NULL,
+  user_id uuid NOT NULL,
+  username character varying NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (discord_id),
+  CONSTRAINT txa_discord_connections_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+ALTER TABLE public.txa_discord_connections ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_txa_discord_connections" ON public.txa_discord_connections FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- Table: public.txa_user_activity_stats
+CREATE TABLE IF NOT EXISTS public.txa_user_activity_stats (
+  user_id uuid NOT NULL UNIQUE,
+  total_watch_seconds integer DEFAULT 0,
+  total_ratings integer DEFAULT 0,
+  total_comments integer DEFAULT 0,
+  discord_message_count integer DEFAULT 0,
+  level character varying DEFAULT 'Mầm Non',
+  updated_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (user_id),
+  CONSTRAINT txa_user_activity_stats_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+ALTER TABLE public.txa_user_activity_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_txa_user_activity_stats" ON public.txa_user_activity_stats FOR ALL TO public USING (true) WITH CHECK (true);

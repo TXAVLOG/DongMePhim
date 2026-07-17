@@ -53,13 +53,22 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // 3. Check if watch history record already exists
     const { data: existing, error: checkError } = await supabase
       .from('watch_history')
-      .select('id')
+      .select('id, current_time')
       .eq('user_id', user.id)
       .eq('movie_id', movie.id)
       .maybeSingle();
 
     if (checkError) {
       throw checkError;
+    }
+
+    const oldTime = existing?.current_time || 0;
+    const newTime = parseFloat(current_time) || 0;
+    const timeWatched = newTime - oldTime;
+
+    if (timeWatched > 0 && timeWatched < 60) {
+      const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
+      await TxaActivityCalculator.incrementWatchTime(user.id, Math.round(timeWatched));
     }
 
     const nowStr = new Date().toISOString();
@@ -70,7 +79,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         .update({
           episode_name: episodeName,
           episode_slug: episode_id,
-          current_time: parseFloat(current_time) || 0,
+          current_time: newTime,
           duration: parseFloat(duration) || 0,
           server_index: parseInt(server_index, 10) || 0,
           updated_at: nowStr
@@ -87,7 +96,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           movie_id: movie.id,
           episode_name: episodeName,
           episode_slug: episode_id,
-          current_time: parseFloat(current_time) || 0,
+          current_time: newTime,
           duration: parseFloat(duration) || 0,
           server_index: parseInt(server_index, 10) || 0,
           updated_at: nowStr

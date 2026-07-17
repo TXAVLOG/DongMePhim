@@ -1,16 +1,25 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
-import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
 import { getEmailTemplate } from '@templates/emails/emailReader';
 import { SmtpClient } from '@lib/api/smtpClient';
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+async function verifyBotRequest(request: Request): Promise<boolean> {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return false;
+  }
+  const token = authHeader.substring(7);
+  const settings = await SettingService.getSettings();
+  const configuredApiKey = settings.discord?.api_key || 'txa-discord-secure-key-2026';
+  return token === configuredApiKey;
+}
+
+export const POST: APIRoute = async ({ request }) => {
   try {
-    const user = await verifyUserFromRequest(request, cookies);
-    if (!user) {
-      return apiResponse(null, 'error', 'Vui lòng đăng nhập để thực hiện chức năng này!', 401, request);
+    if (!(await verifyBotRequest(request))) {
+      return apiResponse(null, 'error', 'Unauthorized', 401, request);
     }
 
     let body: any = {};
@@ -18,34 +27,45 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { name, origin_name, publish_year, link, author, source: bodySource } = body;
-    if (!name) {
-      return apiResponse(null, 'error', 'Tên phim không được để trống!', 400, request);
+    const { discordId, name, origin_name, publish_year, link, author } = body;
+    if (!discordId || !name) {
+      return apiResponse(null, 'error', 'Thiếu tham số discordId hoặc name', 400, request);
     }
 
-    const source = bodySource || (request.headers.get('user-agent')?.toLowerCase().includes('dart') ? 'app' : 'web');
+    // 1. Tìm thông tin liên kết tài khoản từ Supabase DB
+    const { data: connection, error: connError } = await supabase
+      .from('txa_discord_connections')
+      .select('user_id, username')
+      .eq('discord_id', discordId)
+      .maybeSingle();
 
-    // Insert request into database
-    const { data: insertedData, error } = await supabase
+    if (connError || !connection) {
+      return apiResponse(null, 'error', 'Tài khoản chưa liên kết website', 404, request);
+    }
+
+    const userId = connection.user_id;
+
+    // 2. Ghi nhận yêu cầu phim vào database Supabase (movie_requests)
+    const { data: insertedData, error: insertError } = await supabase
       .from('movie_requests')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         name,
         origin_name: origin_name || null,
         publish_year: parseInt(publish_year) || null,
         link: link || null,
         author: author || null,
         status: 'pending',
-        source
+        source: 'discord'
       })
       .select()
       .single();
 
-    if (error) {
-      throw error;
+    if (insertError) {
+      throw insertError;
     }
 
-    // Try sending email to admin
+    // 3. Gửi email thông báo cho Admin (nếu được cấu hình)
     try {
       const settings = await SettingService.getSettings();
       const isSmtpConfigured = !!(settings.smtp?.smtp_host && settings.smtp?.smtp_user && settings.smtp?.smtp_pass);
@@ -59,7 +79,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
         const rawTemplate = getEmailTemplate('movie-request-admin.html');
         const compiledHtml = rawTemplate
-          .replace(/{username}/g, user.username || user.name || 'Thành viên')
+          .replace(/{username}/g, `Discord: ${connection.username}`)
           .replace(/{movie_name}/g, name)
           .replace(/{origin_name}/g, origin_name || 'Chưa cập nhật')
           .replace(/{publish_year}/g, publish_year || 'Chưa cập nhật')
@@ -77,7 +97,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           .replace(/{site_url}/g, siteUrl.replace(/\/$/, ''))
           .replace(/{year}/g, year);
 
-        const sendResult = await SmtpClient.sendMail({
+        await SmtpClient.sendMail({
           host: settings.smtp.smtp_host,
           port: settings.smtp.smtp_port,
           secure: settings.smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
@@ -87,34 +107,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           fromName: siteName
         }, {
           to: adminEmail,
-          subject: `[${siteName}] Yêu cầu phim mới: ${name}`,
+          subject: `[${siteName}] Yêu cầu phim mới (từ Discord): ${name}`,
           html: emailLogHtml
         });
-
-        // Log the email in db
-        try {
-          await supabase.from('txa_email_logs').insert({
-            recipient: adminEmail,
-            sender: settings.smtp.smtp_user,
-            subject: `[${siteName}] Yêu cầu phim mới: ${name}`,
-            category: 'movie-request-admin',
-            status: 'success',
-            response_code: sendResult.responseCode || '250 OK',
-            smtp_config: {
-              host: settings.smtp.smtp_host,
-              port: settings.smtp.smtp_port,
-              secure: settings.smtp.smtp_secure,
-              user: settings.smtp.smtp_user
-            },
-            html: emailLogHtml
-          });
-        } catch (dbLogErr) {}
       }
     } catch (emailErr) {
       console.error('Lỗi khi gửi email thông báo yêu cầu phim tới admin:', emailErr);
     }
 
-    return apiResponse(insertedData, 'success', 'Gửi yêu cầu thành công!', 200, request);
+    return apiResponse(insertedData, 'success', 'Gửi yêu cầu phim thành công!', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }

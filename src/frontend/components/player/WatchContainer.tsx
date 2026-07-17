@@ -1257,7 +1257,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           server_name: currentServer?.serverName || 'Server VIP',
           reason: reasonSelected,
           user_username: loggedInUser,
-          status: 'pending'
+          status: 'pending',
+          source: 'web'
         });
 
       if (error) {
@@ -1623,6 +1624,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [isHacked, setIsHacked] = useState<boolean>(false);
   const playerGetTimeRef = useRef<(() => number) | null>(null);
   const adVideoRef = useRef<HTMLVideoElement | null>(null);
+  const lastDiscordUpdateRef = useRef<number>(0);
 
   const [dynamicSubtitles, setDynamicSubtitles] = useState<any[]>([]);
 
@@ -2180,6 +2182,23 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     const durationRounded = Math.round(duration);
     const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
     const isoNow = new Date().toISOString();
+
+    // Gửi trạng thái đang xem lên Discord (live watch feed) mỗi 30 giây
+    const nowMs = Date.now();
+    if (username && nowMs - lastDiscordUpdateRef.current > 30000) {
+      lastDiscordUpdateRef.current = nowMs;
+      fetch('/api/discord/watch-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          movieTitle: movie.title,
+          movieSlug: movie.slug,
+          episodeName: currentEpisode.name,
+          episodeSlug: currentEpisode.slug
+        })
+      }).catch(err => console.warn('Lỗi gửi cập nhật trạng thái xem lên Discord:', err));
+    }
 
     // Luôn cập nhật thistory local dưới dạng dict
     const dict = getLocalHistoryDict();

@@ -91,6 +91,27 @@ const settings = await SettingService.getSettings();
               </div>
             </div>
 
+            <!-- Discord Connection Panel -->
+            <div id="discord-card" class="p-6 bg-white/[0.01] border border-white/5 rounded-2xl space-y-4">
+              <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-3">
+                <span class="material-symbols-outlined text-[#5865F2] text-sm">smart_toy</span> Liên kết Discord Server
+              </h3>
+              <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="space-y-1 text-left">
+                  <p id="discord-status-text" class="text-xs font-semibold text-zinc-400">Trạng thái: Đang tải...</p>
+                  <p id="discord-info-sub" class="text-[10px] text-zinc-500 font-medium">Kết nối tài khoản Discord để tự động đồng bộ vai trò, nhận gói VIP, theo dõi lịch chiếu và tham gia sự kiện trên máy chủ.</p>
+                </div>
+                <div class="shrink-0 flex gap-3">
+                  <a href="/connect-discord" id="btn-discord-connect" class="hidden px-5 py-2 bg-[#5865F2] hover:bg-[#4d5bdf] text-white rounded-xl text-xs font-bold transition-all items-center gap-1.5 border-none decoration-none no-underline cursor-pointer">
+                    <span class="material-symbols-outlined text-sm">link</span> Liên kết ngay
+                  </a>
+                  <button type="button" id="btn-discord-disconnect" class="hidden px-5 py-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 active:scale-95 transition-all items-center gap-1.5 cursor-pointer border-none">
+                    <span class="material-symbols-outlined text-sm">link_off</span> Hủy liên kết
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Centered Logout Button -->
             <div class="flex justify-center pt-6">
               <button 
@@ -283,6 +304,73 @@ const settings = await SettingService.getSettings();
         if (remainingContainer) {
           remainingContainer.classList.add('hidden');
         }
+      }
+
+      // Kiểm tra trạng thái liên kết Discord
+      const statusText = document.getElementById('discord-status-text');
+      const connectBtn = document.getElementById('btn-discord-connect');
+      const disconnectBtn = document.getElementById('btn-discord-disconnect');
+
+      // Hiển thị toast thông báo kết quả callback nếu có
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('discord_success') && !window.discordToastShown) {
+        window.discordToastShown = true;
+        if (window.showGlobalToast) window.showGlobalToast('Liên kết tài khoản Discord thành công!', 'success');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      if (urlParams.has('discord_error') && !window.discordToastShown) {
+        window.discordToastShown = true;
+        const err = urlParams.get('discord_error');
+        let errMsg = 'Liên kết Discord thất bại!';
+        if (err === 'discord_already_linked') errMsg = 'Tài khoản Discord này đã liên kết với tài khoản web khác!';
+        else if (err === 'user_already_linked') errMsg = 'Tài khoản website của bạn đã liên kết với tài khoản Discord khác!';
+        else if (err === 'not_configured') errMsg = 'Chưa cấu hình thông số kết nối Discord trên hệ thống!';
+        if (window.showGlobalToast) window.showGlobalToast(errMsg, 'error');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      if (statusText && connectBtn && disconnectBtn) {
+        fetch('/api/discord/connection')
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data && data.status === 'success' && data.data?.connected) {
+              const conn = data.data.connection;
+              statusText.innerHTML = `Trạng thái: <span class="text-emerald-400 font-bold">Đã liên kết</span> (<span class="font-mono text-zinc-300 font-bold">${conn.username}</span> - <span class="text-zinc-500 font-mono text-[10px]">${conn.discordId}</span>)`;
+              connectBtn.classList.add('hidden');
+              disconnectBtn.classList.remove('hidden');
+            } else {
+              statusText.innerHTML = `Trạng thái: <span class="text-amber-500 font-bold">Chưa liên kết</span>`;
+              connectBtn.classList.remove('hidden');
+              disconnectBtn.classList.add('hidden');
+            }
+          })
+          .catch(() => {
+            statusText.innerHTML = `Trạng thái: <span class="text-red-500 font-bold">Lỗi kiểm tra trạng thái</span>`;
+            connectBtn.classList.add('hidden');
+            disconnectBtn.classList.add('hidden');
+          });
+
+        disconnectBtn.onclick = async () => {
+          if (!confirm('Bạn có chắc chắn muốn hủy liên kết tài khoản Discord không? Mọi quyền lợi vai trò VIP/Cấp độ trên Server sẽ bị thu hồi.')) return;
+          try {
+            const res = await fetch('/api/discord/unlink', { method: 'POST' });
+            if (res.ok) {
+              const result = await res.json();
+              if (result.status === 'success') {
+                if (window.showGlobalToast) window.showGlobalToast('Đã hủy liên kết Discord thành công!', 'success');
+                statusText.innerHTML = `Trạng thái: <span class="text-amber-500 font-bold">Chưa liên kết</span>`;
+                connectBtn.classList.remove('hidden');
+                disconnectBtn.classList.add('hidden');
+              } else {
+                throw new Error(result.message || 'Lỗi server');
+              }
+            } else {
+              throw new Error('Lỗi mạng');
+            }
+          } catch (e) {
+            if (window.showGlobalToast) window.showGlobalToast(`Lỗi hủy liên kết: ${e.message}`, 'error');
+          }
+        };
       }
 
       loading.classList.add('hidden');

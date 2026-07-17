@@ -1,0 +1,49 @@
+---
+import MainLayout from '@layouts/MainLayout.astro';
+import { SettingService } from '@services/SettingService';
+import { verifyUserFromRequest } from '@lib/auth';
+
+const settings = await SettingService.getSettings();
+const discord = settings.discord;
+const user = await verifyUserFromRequest(Astro.request, Astro.cookies);
+
+// 1. Nếu chưa đăng nhập, chuyển hướng hoặc thông báo đăng nhập
+if (!user) {
+  return Astro.redirect('/?login=true');
+}
+
+// 2. Kiểm tra cấu hình Discord Client ID
+let errorMessage = '';
+let oauthUrl = '';
+
+if (!discord || !discord.client_id) {
+  errorMessage = 'Hệ thống chưa cấu hình Discord Client ID. Vui lòng liên hệ Admin!';
+} else {
+  const siteUrl = (settings.general?.site_url || 'http://localhost:4321').replace(/\/$/, '');
+  const redirectUri = `${siteUrl}/api/auth/discord-callback`;
+  
+  oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${discord.client_id}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify`;
+  
+  // Chuyển hướng trực tiếp nếu cấu hình hợp lệ
+  return Astro.redirect(oauthUrl);
+}
+---
+
+<MainLayout title={`Kết nối Discord | ${settings.general.site_name}`}>
+  <main class="max-w-md mx-auto px-6 py-32 text-center">
+    <div class="glass-panel p-8 rounded-3xl border border-glass-stroke space-y-6">
+      <div class="bg-red-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-red-500/30">
+        <span class="material-symbols-outlined text-red-400 text-3xl">error</span>
+      </div>
+      <h2 class="text-xl font-bold text-white uppercase tracking-wider">Lỗi kết nối Discord</h2>
+      <p class="text-xs text-zinc-400 leading-relaxed font-body-main">
+        {errorMessage}
+      </p>
+      <div class="pt-4">
+        <a href="/thong-tin" class="px-6 py-2.5 bg-white/5 border border-glass-stroke hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all decoration-none no-underline inline-block">
+          Quay lại Trang cá nhân
+        </a>
+      </div>
+    </div>
+  </main>
+</MainLayout>

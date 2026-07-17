@@ -130,6 +130,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     if (ratingInsertError) throw ratingInsertError;
 
+    // Cộng điểm đánh giá phim
+    try {
+      const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
+      await TxaActivityCalculator.incrementRatings(user.id);
+    } catch (e) {
+      console.error('Lỗi tích lũy điểm đánh giá phim:', e);
+    }
+
     // 5. Tính toán lại điểm số
     let oldAvg = movie.rating_score != null ? parseFloat(String(movie.rating_score)) : 0;
     let oldCount = movie.rating_count != null ? parseInt(String(movie.rating_count), 10) : 0;

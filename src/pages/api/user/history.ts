@@ -96,6 +96,22 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // 3. Upsert vào bảng watch_history
+    const { data: oldHistory } = await supabase
+      .from('watch_history')
+      .select('current_time')
+      .eq('user_id', user.id)
+      .eq('movie_id', movie.id)
+      .maybeSingle();
+
+    const oldTime = oldHistory?.current_time || 0;
+    const newTime = parseFloat(currentTime) || 0;
+    const timeWatched = newTime - oldTime;
+
+    if (timeWatched > 0 && timeWatched < 60) {
+      const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
+      await TxaActivityCalculator.incrementWatchTime(user.id, Math.round(timeWatched));
+    }
+
     const { error: upsertError } = await supabase
       .from('watch_history')
       .upsert({
@@ -103,7 +119,7 @@ export const POST: APIRoute = async ({ request }) => {
         movie_id: movie.id,
         episode_name: episodeName || '',
         episode_slug: episodeSlug,
-        current_time: parseFloat(currentTime) || 0,
+        current_time: newTime,
         duration: parseFloat(duration) || 0,
         server_index: parseInt(serverIndex) || 0,
         updated_at: updatedAt || new Date().toISOString()

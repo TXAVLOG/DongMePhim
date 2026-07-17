@@ -92,6 +92,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     if (error) throw error;
 
+    // Cộng điểm đánh giá phim
+    try {
+      const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
+      await TxaActivityCalculator.incrementRatings(user.id);
+    } catch (e) {
+      console.error('Lỗi tích lũy điểm đánh giá phim:', e);
+    }
+
     // Fetch the movie's current rating details from 'movies' table
     const { data: movie } = await supabase
       .from('movies')

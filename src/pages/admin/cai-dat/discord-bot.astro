@@ -1,0 +1,443 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
+
+const settings = await SettingService.getSettings();
+---
+
+<AdminLayout title="Cài đặt hệ thống - Discord Bot">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý toàn bộ tham số cấu hình của ứng dụng.</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu thay đổi
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <SettingsSidebar activeTab="discord-bot" />
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 glass-panel rounded-3xl p-8 space-y-6">
+      <div id="tab-discord" class="space-y-6">
+        <div class="flex items-center justify-between border-b border-glass-stroke pb-4 mb-6">
+          <h3 class="text-title-md text-xl font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">smart_toy</span>
+            Cấu hình Discord Bot & Tích hợp Server
+          </h3>
+          <!-- Setup Status Badge -->
+          <div id="discord-setup-badge" class={`items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold shadow-inner ${settings.discord?.is_setup_completed ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex' : 'bg-amber-500/10 border border-amber-500/20 text-amber-400 flex'}`}>
+            <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">
+              {settings.discord?.is_setup_completed ? 'check_circle' : 'pending'}
+            </span>
+            <span>{settings.discord?.is_setup_completed ? 'Đã Setup (/start)' : 'Chờ Setup (/start)'}</span>
+          </div>
+        </div>
+
+        <!-- SECTION 1: THÔNG TIN KẾT NỐI -->
+        <div class="space-y-4">
+          <h4 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/30 pb-2">
+            <span class="material-symbols-outlined text-primary text-base">vpn_key</span>
+            Thông tin kết nối & Xác thực
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-xs font-label-caps text-text-dim">Bot Token (Lấy từ Discord Developer Portal)</label>
+              <input type="password" id="discord-bot-token" value={settings.discord?.bot_token || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Client ID (Application ID)</label>
+              <input type="text" id="discord-client-id" value={settings.discord?.client_id || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" placeholder="Ví dụ: 123456789012345678" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Client Secret (OAuth2 Secret)</label>
+              <input type="password" id="discord-client-secret" value={settings.discord?.client_secret || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Guild ID (Server ID)</label>
+              <input type="text" id="discord-guild-id" value={settings.discord?.guild_id || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" placeholder="Ví dụ: 987654321098765432" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">API Key Bảo mật (Dùng xác thực Bot ↔ Website)</label>
+              <input type="text" id="discord-api-key" value={settings.discord?.api_key || 'txa-discord-secure-key-2026'} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+            </div>
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-xs font-label-caps text-text-dim">Danh sách ID Admin Discord (Cách nhau bằng dấu phẩy)</label>
+              <input type="text" id="discord-admin-ids" value={settings.discord?.admin_ids || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary focus:outline-none text-white" placeholder="Ví dụ: 3012345678901234,4012345678901234" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="glass-panel p-4 rounded-xl border border-glass-stroke flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="discord-is-setup-completed" checked={settings.discord?.is_setup_completed} class="w-5 h-5 accent-primary bg-surface-container border-glass-stroke" />
+                <span class="text-xs font-semibold">Đã hoàn thành cài đặt (/start) - Tích chọn để khóa lệnh setup an toàn</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: CẤU HÌNH KÊNH HỆ THỐNG -->
+        <div class="space-y-4 pt-4">
+          <h4 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/30 pb-2">
+            <span class="material-symbols-outlined text-primary text-base">tag</span>
+            Cấu hình Kênh hệ thống (Discord Channel IDs)
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Nội quy (#rules)</label>
+              <input type="text" id="channel-rules" value={settings.discord?.channel_rules || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Xác minh (#xac-minh)</label>
+              <input type="text" id="channel-xac-minh" value={settings.discord?.channel_xac_minh || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Yêu cầu Phim (#yeu-cau-phim)</label>
+              <input type="text" id="channel-yeu-cau-phim" value={settings.discord?.channel_yeu_cau_phim || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Vinh danh Boost (#boost)</label>
+              <input type="text" id="channel-boost" value={settings.discord?.channel_boost || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Nhật ký Mod (#mod-log)</label>
+              <input type="text" id="channel-mod-log" value={settings.discord?.channel_mod_log || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Báo lỗi Hệ thống (#report)</label>
+              <input type="text" id="channel-report" value={settings.discord?.channel_report || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Chat chung (#chung)</label>
+              <input type="text" id="channel-chung" value={settings.discord?.channel_chung || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Phim mới cập nhật (#moi-cap-nhat)</label>
+              <input type="text" id="channel-moi-cap-nhat" value={settings.discord?.channel_moi_cap_nhat || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Lịch chiếu (#lich-chieu)</label>
+              <input type="text" id="channel-lich-chieu" value={settings.discord?.channel_lich_chieu || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Bảng xếp hạng (#bxh)</label>
+              <input type="text" id="channel-bxh" value={settings.discord?.channel_bxh || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Kênh Sự kiện (#give-away)</label>
+              <input type="text" id="channel-give-away" value={settings.discord?.channel_give_away || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-label-caps text-text-dim">Feed Hoạt động (#dang-xem)</label>
+              <input type="text" id="channel-dang-xem" value={settings.discord?.channel_dang_xem || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID kênh" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: ÁNH XẠ VAI TRÒ -->
+        <div class="space-y-4 pt-4">
+          <h4 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/30 pb-2">
+            <span class="material-symbols-outlined text-primary text-base">badge</span>
+            Ánh xạ Vai trò (Discord Role IDs)
+          </h4>
+          <div class="space-y-4">
+            <!-- Mặc định & Vinh danh -->
+            <div class="space-y-2">
+              <h5 class="text-xs font-bold text-text-dim uppercase tracking-wider">Vai trò Mặc định & Máy chủ</h5>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Chưa xác minh (Unverified)</label>
+                  <input type="text" id="role-unverified" value={settings.discord?.role_unverified || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Thành viên (Member)</label>
+                  <input type="text" id="role-member" value={settings.discord?.role_member || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Vinh danh Booster</label>
+                  <input type="text" id="role-booster" value={settings.discord?.role_booster || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Cấp độ hoạt động -->
+            <div class="space-y-2 pt-2">
+              <h5 class="text-xs font-bold text-text-dim uppercase tracking-wider">Vai trò Cấp độ Hoạt động (Level Roles)</h5>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Cấp 1: Mầm Non</label>
+                  <input type="text" id="role-level-mam-non" value={settings.discord?.role_level_mam_non || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Cấp 2: Mọt Phim</label>
+                  <input type="text" id="role-level-mot-phim" value={settings.discord?.role_level_mot_phim || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Cấp 3: Cuồng Phim</label>
+                  <input type="text" id="role-level-cuong-phim" value={settings.discord?.role_level_cuong_phim || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Cấp 4: Trưởng Lão Cinephile</label>
+                  <input type="text" id="role-level-truong-lao" value={settings.discord?.role_level_truong_lao || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Đặc quyền BXH -->
+            <div class="space-y-2 pt-2">
+              <h5 class="text-xs font-bold text-text-dim uppercase tracking-wider">Đặc quyền Vinh danh BXH (Top Champion)</h5>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Top 1 tháng (👑 Cinephile Vô Địch)</label>
+                  <input type="text" id="role-top-1-month" value={settings.discord?.role_top_1_month || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Giữ Top 1 ≥ 3 tháng liên tục (🔥 Cinephile Huyền Thoại)</label>
+                  <input type="text" id="role-top-1-consecutive" value={settings.discord?.role_top_1_consecutive || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Vai trò VIP / Gói -->
+            <div class="space-y-2 pt-2">
+              <h5 class="text-xs font-bold text-text-dim uppercase tracking-wider">Vai trò theo Gói Dịch vụ (Package Roles)</h5>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Gói VIP</label>
+                  <input type="text" id="role-package-vip" value={settings.discord?.role_package_vip || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Gói Standard (Tiêu chuẩn)</label>
+                  <input type="text" id="role-package-standard" value={settings.discord?.role_package_standard || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Gói Bypass Zalo</label>
+                  <input type="text" id="role-package-bypass-zalo" value={settings.discord?.role_package_bypass_zalo || ''} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-1.5 focus:outline-none text-white text-xs font-mono" placeholder="ID Role" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: HẸN GIỜ & AUTO-MODERATION -->
+        <div class="space-y-4 pt-4">
+          <h4 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/30 pb-2">
+            <span class="material-symbols-outlined text-primary text-base">schedule</span>
+            Hẹn giờ BXH & Cấu hình phạt tự động (Auto-Mod)
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Hẹn giờ gửi BXH -->
+            <div class="space-y-4">
+              <h5 class="text-xs font-bold text-text-dim uppercase tracking-wider">Khung giờ gửi Bảng xếp hạng</h5>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">BXH Ngày (Mặc định 23:00)</label>
+                  <input type="text" id="leaderboard-daily-time" value={settings.discord?.leaderboard_daily_time || '23:00'} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-2 focus:outline-none text-white text-xs font-mono text-center" placeholder="HH:MM" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">BXH Tháng (Mặc định 23:30)</label>
+                  <input type="text" id="leaderboard-monthly-time" value={settings.discord?.leaderboard_monthly_time || '23:30'} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-2 focus:outline-none text-white text-xs font-mono text-center" placeholder="HH:MM" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Cấu hình phạt Auto-Mod -->
+            <div class="space-y-4">
+              <h5 class="text-xs font-bold text-text-dim uppercase tracking-wider">Mốc hình phạt cảnh cáo tự động</h5>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Mốc Auto-Mute (Lần vi phạm)</label>
+                  <input type="number" id="auto-mute-warn-count" value={settings.discord?.auto_mute_warn_count ?? 5} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-2 focus:outline-none text-white text-xs text-center" min="1" max="100" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Thời gian Mute (Phút)</label>
+                  <input type="number" id="auto-mute-duration-minutes" value={settings.discord?.auto_mute_duration_minutes ?? 40} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-2 focus:outline-none text-white text-xs text-center" min="1" max="1440" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Mốc Auto-Kick (Lần vi phạm)</label>
+                  <input type="number" id="auto-kick-warn-count" value={settings.discord?.auto_kick_warn_count ?? 10} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-2 focus:outline-none text-white text-xs text-center" min="1" max="100" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-label-caps text-text-dim">Mốc Auto-Ban (Lần vi phạm)</label>
+                  <input type="number" id="auto-ban-warn-count" value={settings.discord?.auto_ban_warn_count ?? 15} class="w-full bg-surface-container border border-glass-stroke rounded-lg px-3 py-2 focus:outline-none text-white text-xs text-center" min="1" max="100" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function() {
+      function hydrateFromLocalStorage() {
+        const s = serverSettings;
+        if (!s) return;
+
+        setVal('discord-bot-token', s.discord?.bot_token);
+        setVal('discord-client-id', s.discord?.client_id);
+        setVal('discord-client-secret', s.discord?.client_secret);
+        setVal('discord-guild-id', s.discord?.guild_id);
+        setVal('discord-api-key', s.discord?.api_key);
+        setVal('discord-admin-ids', s.discord?.admin_ids);
+        setChecked('discord-is-setup-completed', s.discord?.is_setup_completed);
+
+        setVal('channel-rules', s.discord?.channel_rules);
+        setVal('channel-xac-minh', s.discord?.channel_xac_minh);
+        setVal('channel-yeu-cau-phim', s.discord?.channel_yeu_cau_phim);
+        setVal('channel-boost', s.discord?.channel_boost);
+        setVal('channel-mod-log', s.discord?.channel_mod_log);
+        setVal('channel-report', s.discord?.channel_report);
+        setVal('channel-chung', s.discord?.channel_chung);
+        setVal('channel-moi-cap-nhat', s.discord?.channel_moi_cap_nhat);
+        setVal('channel-lich-chieu', s.discord?.channel_lich_chieu);
+        setVal('channel-bxh', s.discord?.channel_bxh);
+        setVal('channel-give-away', s.discord?.channel_give_away);
+        setVal('channel-dang-xem', s.discord?.channel_dang_xem);
+
+        setVal('role-unverified', s.discord?.role_unverified);
+        setVal('role-member', s.discord?.role_member);
+        setVal('role-booster', s.discord?.role_booster);
+
+        setVal('role-level-mam-non', s.discord?.role_level_mam_non);
+        setVal('role-level-mot-phim', s.discord?.role_level_mot_phim);
+        setVal('role-level-cuong-phim', s.discord?.role_level_cuong_phim);
+        setVal('role-level-truong-lao', s.discord?.role_level_truong_lao);
+
+        setVal('role-top-1-month', s.discord?.role_top_1_month);
+        setVal('role-top-1-consecutive', s.discord?.role_top_1_consecutive);
+
+        setVal('role-package-vip', s.discord?.role_package_vip);
+        setVal('role-package-standard', s.discord?.role_package_standard);
+        setVal('role-package-bypass-zalo', s.discord?.role_package_bypass_zalo);
+
+        setVal('leaderboard-daily-time', s.discord?.leaderboard_daily_time);
+        setVal('leaderboard-monthly-time', s.discord?.leaderboard_monthly_time);
+
+        setVal('auto-mute-warn-count', s.discord?.auto_mute_warn_count);
+        setVal('auto-mute-duration-minutes', s.discord?.auto_mute_duration_minutes);
+        setVal('auto-kick-warn-count', s.discord?.auto_kick_warn_count);
+        setVal('auto-ban-warn-count', s.discord?.auto_ban_warn_count);
+      }
+
+      function setVal(id, val) {
+        const el = document.getElementById(id);
+        if (el && val !== undefined && val !== null) el.value = val;
+      }
+      function setChecked(id, val) {
+        const el = document.getElementById(id);
+        if (el && val !== undefined) el.checked = !!val;
+      }
+
+      // Save handler
+      document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('save-settings-btn');
+        if (!btn) return;
+        const originalText = btn.innerHTML;
+
+        try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+
+          const updatedSettings = {
+            ...current,
+            discord: {
+              bot_token: document.getElementById('discord-bot-token')?.value || '',
+              client_id: document.getElementById('discord-client-id')?.value || '',
+              client_secret: document.getElementById('discord-client-secret')?.value || '',
+              guild_id: document.getElementById('discord-guild-id')?.value || '',
+              api_key: document.getElementById('discord-api-key')?.value || '',
+              admin_ids: document.getElementById('discord-admin-ids')?.value || '',
+              is_setup_completed: document.getElementById('discord-is-setup-completed')?.checked ?? false,
+
+              channel_rules: document.getElementById('channel-rules')?.value || '',
+              channel_xac_minh: document.getElementById('channel-xac-minh')?.value || '',
+              channel_yeu_cau_phim: document.getElementById('channel-yeu-cau-phim')?.value || '',
+              channel_boost: document.getElementById('channel-boost')?.value || '',
+              channel_mod_log: document.getElementById('channel-mod-log')?.value || '',
+              channel_report: document.getElementById('channel-report')?.value || '',
+              channel_chung: document.getElementById('channel-chung')?.value || '',
+              channel_moi_cap_nhat: document.getElementById('channel-moi-cap-nhat')?.value || '',
+              channel_lich_chieu: document.getElementById('channel-lich-chieu')?.value || '',
+              channel_bxh: document.getElementById('channel-bxh')?.value || '',
+              channel_give_away: document.getElementById('channel-give-away')?.value || '',
+              channel_dang_xem: document.getElementById('channel-dang-xem')?.value || '',
+
+              role_unverified: document.getElementById('role-unverified')?.value || '',
+              role_member: document.getElementById('role-member')?.value || '',
+              role_booster: document.getElementById('role-booster')?.value || '',
+
+              role_level_mam_non: document.getElementById('role-level-mam-non')?.value || '',
+              role_level_mot_phim: document.getElementById('role-level-mot-phim')?.value || '',
+              role_level_cuong_phim: document.getElementById('role-level-cuong-phim')?.value || '',
+              role_level_truong_lao: document.getElementById('role-level-truong-lao')?.value || '',
+
+              role_top_1_month: document.getElementById('role-top-1-month')?.value || '',
+              role_top_1_consecutive: document.getElementById('role-top-1-consecutive')?.value || '',
+
+              role_package_vip: document.getElementById('role-package-vip')?.value || '',
+              role_package_standard: document.getElementById('role-package-standard')?.value || '',
+              role_package_bypass_zalo: document.getElementById('role-package-bypass-zalo')?.value || '',
+
+              leaderboard_daily_time: document.getElementById('leaderboard-daily-time')?.value || '23:00',
+              leaderboard_monthly_time: document.getElementById('leaderboard-monthly-time')?.value || '23:30',
+
+              auto_mute_warn_count: parseInt(document.getElementById('auto-mute-warn-count')?.value || '5', 10),
+              auto_mute_duration_minutes: parseInt(document.getElementById('auto-mute-duration-minutes')?.value || '40', 10),
+              auto_kick_warn_count: parseInt(document.getElementById('auto-kick-warn-count')?.value || '10', 10),
+              auto_ban_warn_count: parseInt(document.getElementById('auto-ban-warn-count')?.value || '15', 10),
+            }
+          };
+
+          const res = await fetch('/api/admin/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedSettings)
+          });
+          if (!res.ok) throw new Error('API request failed');
+
+          // Cập nhật lại badge trạng thái setup trực quan
+          const setupBadge = document.getElementById('discord-setup-badge');
+          if (setupBadge) {
+            const isSetup = updatedSettings.discord.is_setup_completed;
+            setupBadge.className = `items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold shadow-inner ${isSetup ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex' : 'bg-amber-500/10 border border-amber-500/20 text-amber-400 flex'}`;
+            setupBadge.innerHTML = `
+              <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">
+                ${isSetup ? 'check_circle' : 'pending'}
+              </span>
+              <span>${isSetup ? 'Đã Setup (/start)' : 'Chờ Setup (/start)'}</span>
+            `;
+          }
+
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Lưu cấu hình Discord Bot thành công!', 'success');
+          } else {
+            alert('Lưu cấu hình Discord Bot thành công!');
+          }
+        } catch (e) {
+          console.error(e);
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Lỗi lưu cấu hình Discord Bot!', 'error');
+          } else {
+            alert('Lỗi lưu cấu hình Discord Bot!');
+          }
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      });
+
+      // Init
+      hydrateFromLocalStorage();
+      document.addEventListener('astro:page-load', hydrateFromLocalStorage);
+    })();
+  </script>
+</AdminLayout>

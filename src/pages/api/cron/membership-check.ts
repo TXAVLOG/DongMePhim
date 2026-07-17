@@ -58,6 +58,14 @@ export const GET: APIRoute = async ({ request }) => {
           continue;
         }
 
+        // Đồng bộ hạ cấp gói cước trên Discord
+        try {
+          const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
+          await TxaActivityCalculator.syncMemberPackageRoles(user.id, 'free');
+        } catch (discordSyncErr) {
+          console.error(`Lỗi đồng bộ hạ cấp Discord cho ${user.username}:`, discordSyncErr);
+        }
+
         expiredProcessed++;
 
         // Gửi email thông báo hết hạn

@@ -223,6 +223,45 @@ export const seedSettings: SiteSettings = {
     offerwall_enable: false,
     offerwall_script: "",
     ad_provider: "none"
+  },
+  discord: {
+    bot_token: "",
+    client_id: "",
+    client_secret: "",
+    guild_id: "",
+    admin_ids: "",
+    api_key: "txa-discord-secure-key-2026",
+    is_setup_completed: false,
+    role_unverified: "",
+    role_member: "",
+    role_booster: "",
+    role_level_mam_non: "",
+    role_level_mot_phim: "",
+    role_level_cuong_phim: "",
+    role_level_truong_lao: "",
+    role_top_1_month: "",
+    role_top_1_consecutive: "",
+    role_package_vip: "",
+    role_package_standard: "",
+    role_package_bypass_zalo: "",
+    channel_rules: "",
+    channel_xac_minh: "",
+    channel_yeu_cau_phim: "",
+    channel_boost: "",
+    channel_mod_log: "",
+    channel_report: "",
+    channel_chung: "",
+    channel_moi_cap_nhat: "",
+    channel_lich_chieu: "",
+    channel_bxh: "",
+    channel_give_away: "",
+    channel_dang_xem: "",
+    leaderboard_daily_time: "23:00",
+    leaderboard_monthly_time: "23:30",
+    auto_mute_warn_count: 5,
+    auto_kick_warn_count: 10,
+    auto_ban_warn_count: 15,
+    auto_mute_duration_minutes: 40
   }
 };
 
@@ -342,6 +381,10 @@ export class LocalSettingProvider implements ISettingProvider {
               parsed.social.social_discord_url = seedSettings.social.social_discord_url;
               changed = true;
             }
+          }
+          if (parsed.discord === undefined) {
+            parsed.discord = { ...seedSettings.discord };
+            changed = true;
           }
           if (changed) {
             localStorage.setItem('txa_site_settings', JSON.stringify(parsed));
