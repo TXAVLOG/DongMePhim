@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse({ sent: false, reason: 'Chưa cấu hình Bot Token' }, 'success', '', 200, request);
     }
 
-    const localConfig = TxaJsonDb.getDiscordConfig();
+    const localConfig = await TxaJsonDb.getDiscordConfig();
     const channelDangXem = localConfig.channels.dang_xem;
 
     if (!channelDangXem) {

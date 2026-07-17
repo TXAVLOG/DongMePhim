@@ -97,3 +97,55 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
+
+export const POST: APIRoute = async ({ request }) => {
+  try {
+    const isBot = await verifyBotRequest(request);
+    if (!isBot) {
+      return apiResponse(null, 'error', 'Unauthorized', 401, request);
+    }
+
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch (e) {
+      return apiResponse(null, 'error', 'Invalid JSON body', 400, request);
+    }
+
+    if (!body || !body.config) {
+      return apiResponse(null, 'error', 'Thiếu tham số config trong body', 400, request);
+    }
+
+    // Lấy cài đặt settings hiện tại
+    const settings = await SettingService.getSettings();
+    if (!settings.discord) {
+      settings.discord = {};
+    }
+
+    // Gộp thông tin cấu hình từ Bot vào settings.discord
+    settings.discord.channels = {
+      ...(settings.discord.channels || {}),
+      ...(body.config.channels || {})
+    };
+    settings.discord.roles = {
+      ...(settings.discord.roles || {}),
+      ...(body.config.roles || {})
+    };
+    settings.discord.schedule = {
+      ...(settings.discord.schedule || {}),
+      ...(body.config.schedule || {})
+    };
+    settings.discord.auto_mod = {
+      ...(settings.discord.auto_mod || {}),
+      ...(body.config.auto_mod || {})
+    };
+    settings.discord.is_setup_completed = true;
+
+    // Lưu lại lên CSDL Supabase
+    await SettingService.updateSettings(settings);
+
+    return apiResponse({ success: true }, 'success', 'Đồng bộ cấu hình bot lên website thành công!', 200, request);
+  } catch (err: any) {
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
+  }
+};

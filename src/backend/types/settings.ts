@@ -219,6 +219,10 @@ export interface DiscordSettings {
   admin_ids?: string; // Dấu phẩy ngăn cách
   api_key?: string;
   is_setup_completed?: boolean;
+  channels?: Record<string, string>;
+  roles?: Record<string, string>;
+  schedule?: Record<string, string>;
+  auto_mod?: Record<string, any>;
 }
 
 export interface SiteSettings {

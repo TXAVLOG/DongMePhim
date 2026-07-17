@@ -185,7 +185,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
         'Content-Type': 'application/json'
       };
 
-      const localConfig = TxaJsonDb.getDiscordConfig();
+      const localConfig = await TxaJsonDb.getDiscordConfig();
       const roles = localConfig.roles;
       
       debugInfo.syncRoles = {

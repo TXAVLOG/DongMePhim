@@ -1,18 +1,40 @@
-import fs from 'fs';
-import path from 'path';
+import { SettingService } from './SettingService';
 
-// Đường dẫn tuyệt đối tới thư mục anh4-bot/data
-const DATA_DIR = path.resolve(process.cwd(), '../anh4-bot/data');
+function getFsAndPath() {
+  if (typeof process !== 'undefined' && process.cwd) {
+    try {
+      // Use eval('require') to prevent Cloudflare/Vite/Esbuild bundlers from attempting to resolve/bundle Node.js fs/path modules statically.
+      const req = eval('require');
+      return {
+        fs: req('fs'),
+        path: req('path')
+      };
+    } catch (e) {
+      // Fallback
+    }
+  }
+  return { fs: null, path: null };
+}
 
-function ensureDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+function getDataDir(pathModule: any) {
+  if (!pathModule) return '';
+  return pathModule.resolve(process.cwd(), '../anh4-bot/data');
+}
+
+function ensureDir(fsModule: any, dataDir: string) {
+  if (fsModule && dataDir && !fsModule.existsSync(dataDir)) {
+    fsModule.mkdirSync(dataDir, { recursive: true });
   }
 }
 
 export function loadJson<T>(filename: string, defaultValue: T): T {
-  ensureDir();
-  const filePath = path.join(DATA_DIR, filename);
+  const { fs, path } = getFsAndPath();
+  if (!fs || !path) return defaultValue;
+
+  const dataDir = getDataDir(path);
+  ensureDir(fs, dataDir);
+  const filePath = path.join(dataDir, filename);
+
   if (!fs.existsSync(filePath)) {
     fs.writeFileSync(filePath, JSON.stringify(defaultValue, null, 2), 'utf-8');
     return defaultValue;
@@ -27,8 +49,13 @@ export function loadJson<T>(filename: string, defaultValue: T): T {
 }
 
 export function saveJson<T>(filename: string, data: T) {
-  ensureDir();
-  const filePath = path.join(DATA_DIR, filename);
+  const { fs, path } = getFsAndPath();
+  if (!fs || !path) return;
+
+  const dataDir = getDataDir(path);
+  ensureDir(fs, dataDir);
+  const filePath = path.join(dataDir, filename);
+
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
   } catch (e) {
@@ -44,7 +71,7 @@ export interface GiveawayItem {
   channel_id: string;
   message_id: string;
   status: string; // 'active', 'ended'
-  participants: string[]; // Danh sách user_id đã liên kết
+  participants: string[];
   created_at: string;
 }
 
@@ -97,7 +124,7 @@ export interface DiscordLocalConfig {
 }
 
 export const TxaJsonDb = {
-  // --- VIOLATIONS (Lưu trữ vi phạm cục bộ) ---
+  // --- VIOLATIONS (Lưu trữ vi phạm cục bộ - fallback trên VPS) ---
   getViolations(): Record<string, number> {
     return loadJson<Record<string, number>>('violations.json', {});
   },
@@ -213,8 +240,8 @@ export const TxaJsonDb = {
     return newItem;
   },
 
-  // --- DISCORD LOCAL CONFIG ---
-  getDiscordConfig(): DiscordLocalConfig {
+  // --- DISCORD LOCAL CONFIG (Lấy CSDL hoặc đọc file fallback) ---
+  async getDiscordConfig(): Promise<DiscordLocalConfig> {
     const defaultConfig: DiscordLocalConfig = {
       channels: {
         rules: '',
@@ -255,6 +282,42 @@ export const TxaJsonDb = {
         auto_ban_warn_count: 15
       }
     };
-    return loadJson<DiscordLocalConfig>('config.json', defaultConfig);
+
+    try {
+      const settings = await SettingService.getSettings();
+      const discord = settings.discord;
+      if (discord) {
+        return {
+          channels: {
+            ...defaultConfig.channels,
+            ...(discord.channels || {})
+          },
+          roles: {
+            ...defaultConfig.roles,
+            ...(discord.roles || {})
+          },
+          schedule: {
+            ...defaultConfig.schedule,
+            ...(discord.schedule || {})
+          },
+          auto_mod: {
+            ...defaultConfig.auto_mod,
+            ...(discord.auto_mod || {})
+          }
+        };
+      }
+    } catch (e) {
+      console.error('Lỗi khi tải cấu hình Discord từ CSDL settings:', e);
+    }
+
+    // Fallback: local offline development
+    try {
+      const configFromFile = loadJson<DiscordLocalConfig>('config.json', defaultConfig);
+      if (configFromFile) {
+        return configFromFile;
+      }
+    } catch (e) {}
+
+    return defaultConfig;
   }
 };

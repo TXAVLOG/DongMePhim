@@ -87,7 +87,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       };
 
       // Đọc các vai trò từ cấu hình local JSON
-      const localConfig = TxaJsonDb.getDiscordConfig();
+      const localConfig = await TxaJsonDb.getDiscordConfig();
       const roles = localConfig.roles;
 
       const rolesToRemove = [

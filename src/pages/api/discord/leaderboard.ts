@@ -129,7 +129,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
 
     // Đọc vai trò vinh danh từ cấu hình local JSON
-    const localConfig = TxaJsonDb.getDiscordConfig();
+    const localConfig = await TxaJsonDb.getDiscordConfig();
     const roles = localConfig.roles;
 
     if (isConsecutive && roles.top_1_consecutive) {

@@ -360,7 +360,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
                 slug: movie.slug,
                 poster_url: movie.poster_url,
                 episode_current: latestEpName,
-                broadcast_schedule: movie.broadcast_schedule || movie.broadcastSchedule
+                broadcast_schedule: movie.broadcast_schedule
               });
 
               // Send email update notifications to movie subscribers

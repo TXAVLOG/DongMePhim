@@ -196,7 +196,7 @@ export const TxaActivityCalculator = {
       }
 
       // Đọc vai trò từ cấu hình local JSON
-      const localConfig = TxaJsonDb.getDiscordConfig();
+      const localConfig = await TxaJsonDb.getDiscordConfig();
       const roles = localConfig.roles;
 
       const roleMap: Record<string, string | undefined> = {
@@ -262,7 +262,7 @@ export const TxaActivityCalculator = {
       }
 
       // Đọc vai trò từ cấu hình local JSON
-      const localConfig = TxaJsonDb.getDiscordConfig();
+      const localConfig = await TxaJsonDb.getDiscordConfig();
       const roles = localConfig.roles;
 
       const packageRoles: Record<string, string | undefined> = {
