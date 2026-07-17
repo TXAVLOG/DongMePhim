@@ -963,7 +963,7 @@ CREATE POLICY "all_txa_tv_pairing_sessions" ON public.txa_tv_pairing_sessions FO
 -- Table: public.txa_discord_connections
 CREATE TABLE IF NOT EXISTS public.txa_discord_connections (
   discord_id character varying NOT NULL,
-  user_id uuid NOT NULL,
+  user_id uuid NOT NULL UNIQUE,
   username character varying NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (discord_id),
