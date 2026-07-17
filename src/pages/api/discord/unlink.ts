@@ -3,6 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
+import { TxaJsonDb } from '@services/TxaJsonDb';
 
 async function verifyBotRequest(request: Request): Promise<boolean> {
   const authHeader = request.headers.get('Authorization');
@@ -85,17 +86,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         'Content-Type': 'application/json'
       };
 
+      // Đọc các vai trò từ cấu hình local JSON
+      const localConfig = TxaJsonDb.getDiscordConfig();
+      const roles = localConfig.roles;
+
       const rolesToRemove = [
-        discord.role_member,
-        discord.role_level_mam_non,
-        discord.role_level_mot_phim,
-        discord.role_level_cuong_phim,
-        discord.role_level_truong_lao,
-        discord.role_top_1_month,
-        discord.role_top_1_consecutive,
-        discord.role_package_vip,
-        discord.role_package_standard,
-        discord.role_package_bypass_zalo
+        roles.member,
+        roles.level_mam_non,
+        roles.level_mot_phim,
+        roles.level_cuong_phim,
+        roles.level_truong_lao,
+        roles.top_1_month,
+        roles.top_1_consecutive,
+        roles.role_package_vip,
+        roles.role_package_standard,
+        roles.role_package_bypass_zalo
       ].filter(Boolean) as string[];
 
       // Gỡ vai trò
@@ -109,9 +114,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
 
       // Gán lại vai trò Unverified
-      if (discord.role_unverified) {
+      if (roles.unverified) {
         try {
-          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${discord.role_unverified}`, {
+          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roles.unverified}`, {
             method: 'PUT',
             headers
           });

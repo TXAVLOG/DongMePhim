@@ -1,5 +1,6 @@
 import { supabase } from '@lib/supabase';
 import { SettingService } from '@services/SettingService';
+import { TxaJsonDb } from '@services/TxaJsonDb';
 
 export interface UserStats {
   user_id: string;
@@ -174,7 +175,7 @@ export const TxaActivityCalculator = {
     return newLevel;
   },
 
-  // 同步 Discord 等级组 (Đồng bộ vai trò Cấp độ hoạt động lên Discord)
+  // Đồng bộ vai trò Cấp độ hoạt động lên Discord
   async syncDiscordLevelRoles(userId: string, newLevel: string, oldLevel: string): Promise<void> {
     try {
       // Tìm kết nối Discord ID từ database Supabase
@@ -194,11 +195,15 @@ export const TxaActivityCalculator = {
         return;
       }
 
+      // Đọc vai trò từ cấu hình local JSON
+      const localConfig = TxaJsonDb.getDiscordConfig();
+      const roles = localConfig.roles;
+
       const roleMap: Record<string, string | undefined> = {
-        'Mầm Non': discord.role_level_mam_non,
-        'Mọt Phim': discord.role_level_mot_phim,
-        'Cuồng Phim': discord.role_level_cuong_phim,
-        'Trưởng Lão Cinephile': discord.role_level_truong_lao
+        'Mầm Non': roles.level_mam_non,
+        'Mọt Phim': roles.level_mot_phim,
+        'Cuồng Phim': roles.level_cuong_phim,
+        'Trưởng Lão Cinephile': roles.level_truong_lao
       };
 
       const roleToAdd = roleMap[newLevel];
@@ -236,7 +241,7 @@ export const TxaActivityCalculator = {
     }
   },
 
-  // 同步 Premium 会员组 (Đồng bộ vai trò Gói dịch vụ thành viên lên Discord)
+  // Đồng bộ vai trò Gói dịch vụ thành viên lên Discord
   async syncMemberPackageRoles(userId: string, packageName: string): Promise<void> {
     try {
       // Tìm kết nối Discord ID từ database Supabase
@@ -256,10 +261,14 @@ export const TxaActivityCalculator = {
         return;
       }
 
+      // Đọc vai trò từ cấu hình local JSON
+      const localConfig = TxaJsonDb.getDiscordConfig();
+      const roles = localConfig.roles;
+
       const packageRoles: Record<string, string | undefined> = {
-        'vip': discord.role_package_vip,
-        'standard': discord.role_package_standard,
-        'bypass_zalo': discord.role_package_bypass_zalo
+        'vip': roles.role_package_vip,
+        'standard': roles.role_package_standard,
+        'bypass_zalo': roles.role_package_bypass_zalo
       };
 
       const normalizedPackage = (packageName || 'free').toLowerCase();

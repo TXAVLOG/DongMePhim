@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
+import { TxaJsonDb } from '@services/TxaJsonDb';
 import { TxaActivityCalculator } from '@services/TxaActivityCalculator';
 
 export const GET: APIRoute = async ({ request, url, cookies }) => {
@@ -118,10 +119,14 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
         'Content-Type': 'application/json'
       };
 
+      // Đọc vai trò từ cấu hình local JSON
+      const localConfig = TxaJsonDb.getDiscordConfig();
+      const roles = localConfig.roles;
+
       // Gỡ bỏ role Unverified (nếu có)
-      if (discord.role_unverified) {
+      if (roles.unverified) {
         try {
-          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${discord.role_unverified}`, {
+          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roles.unverified}`, {
             method: 'DELETE',
             headers
           });
@@ -129,9 +134,9 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
       }
 
       // Gán role Member
-      if (discord.role_member) {
+      if (roles.member) {
         try {
-          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${discord.role_member}`, {
+          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roles.member}`, {
             method: 'PUT',
             headers
           });

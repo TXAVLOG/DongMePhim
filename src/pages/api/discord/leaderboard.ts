@@ -128,25 +128,29 @@ export const POST: APIRoute = async ({ request }) => {
       'Content-Type': 'application/json'
     };
 
-    if (isConsecutive && discord.role_top_1_consecutive) {
+    // Đọc vai trò vinh danh từ cấu hình local JSON
+    const localConfig = TxaJsonDb.getDiscordConfig();
+    const roles = localConfig.roles;
+
+    if (isConsecutive && roles.top_1_consecutive) {
       try {
-        await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${discord.role_top_1_consecutive}`, {
+        await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roles.top_1_consecutive}`, {
           method: 'PUT',
           headers
         });
       } catch (e) {}
 
-      if (discord.role_top_1_month) {
+      if (roles.top_1_month) {
         try {
-          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${discord.role_top_1_month}`, {
+          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roles.top_1_month}`, {
             method: 'DELETE',
             headers
           });
         } catch (e) {}
       }
-    } else if (discord.role_top_1_month) {
+    } else if (roles.top_1_month) {
       try {
-        await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${discord.role_top_1_month}`, {
+        await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roles.top_1_month}`, {
           method: 'PUT',
           headers
         });

@@ -55,6 +55,47 @@ export interface LeaderboardWinnerItem {
   created_at: string;
 }
 
+export interface DiscordLocalConfig {
+  channels: {
+    rules: string;
+    xac_minh: string;
+    yeu_cau_phim: string;
+    boost: string;
+    mod_log: string;
+    report: string;
+    chung: string;
+    moi_cap_nhat: string;
+    lich_chieu: string;
+    bxh: string;
+    give_away: string;
+    dang_xem: string;
+  };
+  roles: {
+    unverified: string;
+    member: string;
+    booster: string;
+    level_mam_non: string;
+    level_mot_phim: string;
+    level_cuong_phim: string;
+    level_truong_lao: string;
+    top_1_month: string;
+    top_1_consecutive: string;
+    role_package_vip: string;
+    role_package_standard: string;
+    role_package_bypass_zalo: string;
+  };
+  schedule: {
+    leaderboard_daily_time: string;
+    leaderboard_monthly_time: string;
+  };
+  auto_mod: {
+    auto_mute_warn_count: number;
+    auto_mute_duration_minutes: number;
+    auto_kick_warn_count: number;
+    auto_ban_warn_count: number;
+  };
+}
+
 export const TxaJsonDb = {
   // --- VIOLATIONS (Lưu trữ vi phạm cục bộ) ---
   getViolations(): Record<string, number> {
@@ -170,5 +211,50 @@ export const TxaJsonDb = {
     filtered.push(newItem);
     this.saveLeaderboardWinners(filtered);
     return newItem;
+  },
+
+  // --- DISCORD LOCAL CONFIG ---
+  getDiscordConfig(): DiscordLocalConfig {
+    const defaultConfig: DiscordLocalConfig = {
+      channels: {
+        rules: '',
+        xac_minh: '',
+        yeu_cau_phim: '',
+        boost: '',
+        mod_log: '',
+        report: '',
+        chung: '',
+        moi_cap_nhat: '',
+        lich_chieu: '',
+        bxh: '',
+        give_away: '',
+        dang_xem: ''
+      },
+      roles: {
+        unverified: '',
+        member: '',
+        booster: '',
+        level_mam_non: '',
+        level_mot_phim: '',
+        level_cuong_phim: '',
+        level_truong_lao: '',
+        top_1_month: '',
+        top_1_consecutive: '',
+        role_package_vip: '',
+        role_package_standard: '',
+        role_package_bypass_zalo: ''
+      },
+      schedule: {
+        leaderboard_daily_time: '23:00',
+        leaderboard_monthly_time: '23:30'
+      },
+      auto_mod: {
+        auto_mute_warn_count: 5,
+        auto_mute_duration_minutes: 40,
+        auto_kick_warn_count: 10,
+        auto_ban_warn_count: 15
+      }
+    };
+    return loadJson<DiscordLocalConfig>('config.json', defaultConfig);
   }
 };

@@ -3,6 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
+import { TxaJsonDb } from '@services/TxaJsonDb';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -32,12 +33,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse({ sent: false, reason: 'Chưa liên kết Discord' }, 'success', '', 200, request);
     }
 
-    // 2. Lấy cấu hình Discord Bot
+    // 2. Lấy cấu hình credentials từ database và kênh hệ thống từ config.json local
     const settings = await SettingService.getSettings();
     const discord = settings.discord;
 
-    if (!discord || !discord.bot_token || !discord.channel_dang_xem) {
-      return apiResponse({ sent: false, reason: 'Chưa cấu hình kênh đang xem' }, 'success', '', 200, request);
+    if (!discord || !discord.bot_token) {
+      return apiResponse({ sent: false, reason: 'Chưa cấu hình Bot Token' }, 'success', '', 200, request);
+    }
+
+    const localConfig = TxaJsonDb.getDiscordConfig();
+    const channelDangXem = localConfig.channels.dang_xem;
+
+    if (!channelDangXem) {
+      return apiResponse({ sent: false, reason: 'Chưa cấu hình kênh đang xem (#dang-xem)' }, 'success', '', 200, request);
     }
 
     // 3. Gửi tin nhắn trạng thái lên Discord
@@ -47,7 +55,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const content = `🍿 <@${discordId}> đang xem tập **${episodeName}** phim **[${movieTitle}](${watchUrl})**`;
 
-    const res = await fetch(`https://discord.com/api/v10/channels/${discord.channel_dang_xem}/messages`, {
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelDangXem}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bot ${discord.bot_token}`,
