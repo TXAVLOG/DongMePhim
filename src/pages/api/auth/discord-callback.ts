@@ -166,7 +166,11 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
       .upsert({
         user_id: user.id,
         discord_id: discordId,
-        username: discordUsername,
+        discord_username: discordUsername,
+        discord_avatar: discordUser.avatar || null,
+        access_token: accessToken || null,
+        refresh_token: tokenData.refresh_token || null,
+        expires_at: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : null,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });
 

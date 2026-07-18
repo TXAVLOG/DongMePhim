@@ -964,8 +964,13 @@ CREATE POLICY "all_txa_tv_pairing_sessions" ON public.txa_tv_pairing_sessions FO
 CREATE TABLE IF NOT EXISTS public.txa_discord_connections (
   discord_id character varying NOT NULL,
   user_id uuid NOT NULL UNIQUE,
-  username character varying NOT NULL,
+  discord_username character varying NOT NULL,
+  discord_avatar character varying,
+  access_token character varying,
+  refresh_token character varying,
+  expires_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (discord_id),
   CONSTRAINT txa_discord_connections_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
