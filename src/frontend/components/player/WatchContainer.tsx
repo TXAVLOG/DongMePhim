@@ -1595,6 +1595,16 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             });
             if (found) {
               const detailedMovie: MovieDetail = found;
+              
+              // Sort detailedMovie episodes by count to match server-side sorting
+              if (detailedMovie.episodes && detailedMovie.episodes.length > 0) {
+                detailedMovie.episodes.sort((a: any, b: any) => {
+                  const aLen = (a.serverData || a.server_data || []).length;
+                  const bLen = (b.serverData || b.server_data || []).length;
+                  return bLen - aLen;
+                });
+              }
+              
               setMovie(detailedMovie);
 
               const newServers = detailedMovie.episodes || [];

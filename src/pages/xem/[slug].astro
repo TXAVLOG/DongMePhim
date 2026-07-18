@@ -216,6 +216,46 @@ if (movie) {
     return a.releaseYear - b.releaseYear || a.title.localeCompare(b.title);
   });
 }
+
+const getPartSeasonLabel = (part: any, index: number, allParts: any[]) => {
+  if (part.type === 'movie' || part.type === 'single') {
+    return 'Bản Điện Ảnh';
+  }
+  
+  const title = part.title || '';
+  const match = title.match(/(?:phần|season|ss|part|bộ)\s*(\d+)/i);
+  if (match) {
+    return `Phần ${match[1]}`;
+  }
+  
+  const matchEndNum = title.match(/\s+(\d+)$/);
+  if (matchEndNum) {
+    return `Phần ${matchEndNum[1]}`;
+  }
+
+  if (part.seasons && part.seasons !== 'Phần 1' && part.seasons !== 'Bản Điện Ảnh') {
+    return part.seasons;
+  }
+  
+  const seriesParts = allParts.filter(p => p.type !== 'movie' && p.type !== 'single');
+  const seriesIndex = seriesParts.findIndex(p => p.id === part.id);
+  if (seriesIndex !== -1) {
+    return `Phần ${seriesIndex + 1}`;
+  }
+  
+  return part.seasons || 'Phần 1';
+};
+
+if (movie && relatedParts.length > 0) {
+  const currentPartIndex = relatedParts.findIndex((p: any) => p.slug === movie.slug);
+  if (currentPartIndex !== -1) {
+    const correctSeason = getPartSeasonLabel(movie, currentPartIndex, relatedParts);
+    movie.seasons = correctSeason;
+    if (filteredMovie) {
+      filteredMovie.seasons = correctSeason;
+    }
+  }
+}
 ---
 
 {movie ? (
@@ -246,9 +286,9 @@ if (movie) {
             </div>
             <div class="relative min-w-[200px]">
               <select id="seasons-redirect-select" class="w-full bg-zinc-900 border border-glass-stroke rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary cursor-pointer appearance-none">
-                {relatedParts.map(part => (
+                {relatedParts.map((part, idx) => (
                   <option value={`/xem/${part.slug}`} selected={part.slug === movie.slug}>
-                    {part.title} ({part.seasons || `${part.releaseYear}`})
+                    {part.title} ({getPartSeasonLabel(part, idx, relatedParts)})
                   </option>
                 ))}
               </select>

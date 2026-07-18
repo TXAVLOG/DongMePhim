@@ -125,7 +125,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       
       const { data: dbCandidates } = await supabase
         .from('movies')
-        .select('title, slug, release_year, seasons')
+        .select('title, slug, release_year, seasons, type')
         .ilike('title', `%${baseTitle}%`);
         
       if (dbCandidates) {
@@ -149,10 +149,39 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
           return (a.release_year || 0) - (b.release_year || 0) || a.title.localeCompare(b.title);
         });
 
-        relatedParts = filtered.map((part: any) => ({
+        const getPartSeasonLabel = (part: any, index: number, allParts: any[]) => {
+          if (part.type === 'movie' || part.type === 'single') {
+            return 'Bản Điện Ảnh';
+          }
+          
+          const title = part.title || '';
+          const match = title.match(/(?:phần|season|ss|part|bộ)\s*(\d+)/i);
+          if (match) {
+            return `Phần ${match[1]}`;
+          }
+          
+          const matchEndNum = title.match(/\s+(\d+)$/);
+          if (matchEndNum) {
+            return `Phần ${matchEndNum[1]}`;
+          }
+
+          if (part.seasons && part.seasons !== 'Phần 1' && part.seasons !== 'Bản Điện Ảnh') {
+            return part.seasons;
+          }
+          
+          const seriesParts = allParts.filter(p => p.type !== 'movie' && p.type !== 'single');
+          const seriesIndex = seriesParts.findIndex(p => p.slug === part.slug);
+          if (seriesIndex !== -1) {
+            return `Phần ${seriesIndex + 1}`;
+          }
+          
+          return part.seasons || 'Phần 1';
+        };
+
+        relatedParts = filtered.map((part: any, idx: number) => ({
           name: part.title,
           slug: part.slug,
-          season_name: part.seasons || `Phần ${part.release_year || ''}`
+          season_name: getPartSeasonLabel(part, idx, filtered)
         }));
       }
     } catch (e) {
