@@ -1375,7 +1375,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         setIsAdmin(userIsAdmin);
 
         let mergedAllowed: string[] = [];
-        if (userPkg) {
+        if (settings.general?.package_system_enable === false && !!username) {
+          mergedAllowed = (movie.episodes || []).map((ep: any) => ep.serverName).filter(Boolean);
+        } else if (userPkg) {
           mergedAllowed = [...(userPkg.permissions?.allowed_servers || [])];
           const userPrice = userPkg.price || 0;
           packages.forEach((p: any) => {
@@ -2526,29 +2528,33 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               </div>
             </div>
           ) : !isAdmin && currentServer && !allowedServers.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) ? (
-            <div className="w-full h-full aspect-video bg-[#0d0e14] border border-glass-stroke rounded-2xl flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-2xl">
-              <div className="absolute inset-0 bg-primary/5 blur-[50px] pointer-events-none"></div>
-              <div className="relative z-10 space-y-4 max-w-md">
-                <div className="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_30px_rgba(124,58,237,0.25)] animate-pulse">
-                  <span className="material-symbols-outlined text-3xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-                </div>
-                <h3 className="font-display-hero text-xl font-black text-white tracking-wide uppercase">Nguồn phát VIP giới hạn</h3>
-                <p className="text-xs text-zinc-400 leading-relaxed font-body-main">
-                  Server <span className="text-primary font-bold">{currentServer?.serverName}</span> chỉ dành cho tài khoản sử dụng các gói cước nâng cao. Vui lòng nâng cấp gói để mở khóa.
-                </p>
-                <div className="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl inline-block">
-                  <p className="text-[10px] text-zinc-400 font-body-main">
-                     Gói hiện tại của bạn: <em className="not-italic font-bold text-zinc-200">{currentUserPackageTitle}</em>
+            ((typeof window !== 'undefined' ? (window as any).TXA_SITE_SETTINGS : null)?.general?.package_system_enable === false) && !isLoggedIn ? (
+              <LoginRequiredPlayerPlaceholder />
+            ) : (
+              <div className="w-full h-full aspect-video bg-[#0d0e14] border border-glass-stroke rounded-2xl flex flex-col items-center justify-center p-8 text-center relative overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 bg-primary/5 blur-[50px] pointer-events-none"></div>
+                <div className="relative z-10 space-y-4 max-w-md">
+                  <div className="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-primary/20 shadow-[0_0_30px_rgba(124,58,237,0.25)] animate-pulse">
+                    <span className="material-symbols-outlined text-3xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+                  </div>
+                  <h3 className="font-display-hero text-xl font-black text-white tracking-wide uppercase">Nguồn phát VIP giới hạn</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed font-body-main">
+                    Server <span className="text-primary font-bold">{currentServer?.serverName}</span> chỉ dành cho tài khoản sử dụng các gói cước nâng cao. Vui lòng nâng cấp gói để mở khóa.
                   </p>
-                </div>
-                <div className="pt-2">
-                  <a href="/nang-cap" className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#d2bbff] to-[#00daf3] text-slate-950 font-black rounded-xl text-[10px] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 border-none uppercase tracking-wider decoration-none no-underline">
-                    <span className="material-symbols-outlined text-xs font-black">workspace_premium</span>
-                    Nâng cấp gói ngay
-                  </a>
+                  <div className="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl inline-block">
+                    <p className="text-[10px] text-zinc-400 font-body-main">
+                       Gói hiện tại của bạn: <em className="not-italic font-bold text-zinc-200">{currentUserPackageTitle}</em>
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <a href="/nang-cap" className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#d2bbff] to-[#00daf3] text-slate-950 font-black rounded-xl text-[10px] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 border-none uppercase tracking-wider decoration-none no-underline">
+                      <span className="material-symbols-outlined text-xs font-black">workspace_premium</span>
+                      Nâng cấp gói ngay
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
+            )
           ) : (
             <>
               {selectedPlayer === 'txaplayer' ? (

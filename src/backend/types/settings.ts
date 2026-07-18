@@ -21,6 +21,7 @@ export interface GeneralSettings {
   bing_verification?: string;
   schema_logo_url?: string;
   schema_business_name?: string;
+  package_system_enable?: boolean;
 }
 
 export interface SMTPSettings {

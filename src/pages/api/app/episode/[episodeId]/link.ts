@@ -60,29 +60,34 @@ export const GET: APIRoute = async ({ params, request }) => {
       }
     } as any;
 
+    let user = null;
     try {
-      const user = await verifyUserFromRequest(request, cookies);
+      user = await verifyUserFromRequest(request, cookies);
       if (user) {
         userPkgId = user.package || 'free';
         isAdmin = user.role === 'admin';
 
-        const packagesList = settings.packages || [];
-        const userPkg = packagesList.find((p: any) => 
-          (p.id || '').toLowerCase() === userPkgId.toLowerCase() || 
-          (p.title || '').toLowerCase() === userPkgId.toLowerCase()
-        ) || packagesList.find((p: any) => (p.id || '').toLowerCase() === 'free');
-        
-        const userPrice = userPkg?.price || 0;
-        allowedServers = userPkg?.permissions?.allowed_servers || [];
-        packagesList.forEach((p: any) => {
-          if (p.price <= userPrice && p.permissions?.allowed_servers) {
-            p.permissions.allowed_servers.forEach((srv: string) => {
-              if (!allowedServers.includes(srv)) {
-                allowedServers.push(srv);
-              }
-            });
-          }
-        });
+        if (settings.general?.package_system_enable === false) {
+          allowedServers = [matchedServerName];
+        } else {
+          const packagesList = settings.packages || [];
+          const userPkg = packagesList.find((p: any) => 
+            (p.id || '').toLowerCase() === userPkgId.toLowerCase() || 
+            (p.title || '').toLowerCase() === userPkgId.toLowerCase()
+          ) || packagesList.find((p: any) => (p.id || '').toLowerCase() === 'free');
+          
+          const userPrice = userPkg?.price || 0;
+          allowedServers = userPkg?.permissions?.allowed_servers || [];
+          packagesList.forEach((p: any) => {
+            if (p.price <= userPrice && p.permissions?.allowed_servers) {
+              p.permissions.allowed_servers.forEach((srv: string) => {
+                if (!allowedServers.includes(srv)) {
+                  allowedServers.push(srv);
+                }
+              });
+            }
+          });
+        }
       }
     } catch (_) {}
 
@@ -94,6 +99,9 @@ export const GET: APIRoute = async ({ params, request }) => {
 
     const isServerLocked = !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === matchedServerName.toLowerCase());
     if (isServerLocked) {
+      if (settings.general?.package_system_enable === false && !user) {
+        return apiResponse(null, 'error', 'Vui lòng đăng nhập tài khoản để xem nguồn phát này.', 403, request);
+      }
       return apiResponse(null, 'error', 'Nguồn phát VIP giới hạn. Vui lòng nâng cấp gói để xem!', 403, request);
     }
 

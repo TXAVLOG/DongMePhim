@@ -83,23 +83,28 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
           };
         }
 
-        const packagesList = settings.packages || [];
-        const userPkg = packagesList.find((p: any) => 
-          (p.id || '').toLowerCase() === userPkgId.toLowerCase() || 
-          (p.title || '').toLowerCase() === userPkgId.toLowerCase()
-        ) || packagesList.find((p: any) => (p.id || '').toLowerCase() === 'free');
-        
-        const userPrice = userPkg?.price || 0;
-        allowedServers = userPkg?.permissions?.allowed_servers || [];
-        packagesList.forEach((p: any) => {
-          if (p.price <= userPrice && p.permissions?.allowed_servers) {
-            p.permissions.allowed_servers.forEach((srv: string) => {
-              if (!allowedServers.includes(srv)) {
-                allowedServers.push(srv);
-              }
-            });
-          }
-        });
+        if (settings.general?.package_system_enable === false) {
+          const rawServers = movie.episodes || [];
+          allowedServers = rawServers.map((s: any) => s.serverName);
+        } else {
+          const packagesList = settings.packages || [];
+          const userPkg = packagesList.find((p: any) => 
+            (p.id || '').toLowerCase() === userPkgId.toLowerCase() || 
+            (p.title || '').toLowerCase() === userPkgId.toLowerCase()
+          ) || packagesList.find((p: any) => (p.id || '').toLowerCase() === 'free');
+          
+          const userPrice = userPkg?.price || 0;
+          allowedServers = userPkg?.permissions?.allowed_servers || [];
+          packagesList.forEach((p: any) => {
+            if (p.price <= userPrice && p.permissions?.allowed_servers) {
+              p.permissions.allowed_servers.forEach((srv: string) => {
+                if (!allowedServers.includes(srv)) {
+                  allowedServers.push(srv);
+                }
+              });
+            }
+          });
+        }
       }
     } catch (_) {}
 
@@ -264,6 +269,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
       seasons: relatedParts
     },
     ads,
+    package_system_enable: settings.general?.package_system_enable !== false,
     history: historyData,
     servers: filteredServers.map((srv: any) => {
       const isServerLocked = !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === srv.serverName.toLowerCase());

@@ -31,6 +31,31 @@ const groupedPackages = packages.map((pkg: any) => {
       </button>
     </header>
 
+    <!-- Package Checking Status Toggle (Admin Bypass Options) -->
+    <div class="glass-panel p-6 rounded-2xl border border-glass-stroke mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div class="flex items-start gap-4">
+        <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20">
+          <span class="material-symbols-outlined text-2xl">admin_panel_settings</span>
+        </div>
+        <div>
+          <h2 class="font-bold text-white text-base">Cơ chế Kiểm tra Gói Đăng Ký</h2>
+          <p class="text-xs text-zinc-400 mt-1 max-w-xl leading-relaxed">
+            Nếu <strong>BẬT</strong>: Thành viên phải có gói cước tương ứng để xem các Server VIP (Mặc định). <br/>
+            Nếu <strong>TẮT</strong>: Bỏ qua kiểm tra gói cước. Mọi tài khoản đã đăng nhập đều xem được tất cả các Server phim. Khách chưa đăng nhập sẽ được yêu cầu đăng nhập.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <span class="text-xs font-semibold text-zinc-400" id="package-toggle-status-text">
+          {settings.general?.package_system_enable !== false ? 'Đang hoạt động' : 'Tạm tắt (Bypass)'}
+        </span>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="package-system-toggle" class="sr-only peer" checked={settings.general?.package_system_enable !== false} />
+          <div class="w-14 h-8 bg-zinc-800 rounded-full peer peer-focus:ring-2 peer-focus:ring-purple-500/20 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-zinc-400 after:border-zinc-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+        </label>
+      </div>
+    </div>
+
     <!-- Payment Gate validation warning -->
     <div id="payment-gate-warning" class="hidden flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl border border-glass-stroke max-w-2xl mx-auto my-12">
       <span class="material-symbols-outlined text-yellow-500 text-6xl mb-4 animate-pulse">warning</span>
@@ -43,7 +68,23 @@ const groupedPackages = packages.map((pkg: any) => {
       </a>
     </div>
 
-    <div id="subscription-plans-content" class="space-y-12">
+    <div id="subscription-plans-content" class="space-y-12 relative">
+      <!-- Translucent Lock Overlay for disabled package system -->
+      <div id="package-system-lock-overlay" class={`absolute inset-0 bg-[#0d0e14]/75 backdrop-blur-[4px] rounded-3xl z-40 flex flex-col items-center justify-center p-8 text-center gap-4 border border-purple-500/20 transition-all duration-300 pointer-events-auto ${settings.general?.package_system_enable !== false ? 'hidden' : ''}`}>
+        <div class="w-20 h-20 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_35px_rgba(245,158,11,0.15)] animate-pulse">
+          <span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1">lock_open</span>
+        </div>
+        <h3 class="text-xl font-bold text-white tracking-wide uppercase">Hệ Thống Gói Đăng Ký Đang Tạm Tắt</h3>
+        <p class="text-xs text-zinc-400 max-w-md leading-relaxed">
+          Cơ chế kiểm tra gói cước hiện đang được tạm tắt trên toàn hệ thống (mọi tài khoản đã đăng nhập đều xem được phim).
+        </p>
+        <div class="px-4 py-2 bg-white/5 border border-glass-stroke/50 rounded-xl inline-block cursor-help" id="lock-overlay-tooltip-trigger" data-txatooltip="Cơ chế kiểm tra gói cước đang tắt. Hãy bật lại công tắc ở trên nếu bạn muốn kích hoạt giới hạn VIP.">
+          <p class="text-[11px] text-zinc-300 font-medium flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-amber-500">info</span>
+            Di chuột vào đây để xem hướng dẫn
+          </p>
+        </div>
+      </div>
       <!-- Subscription Tiers (Bento Grid Style) -->
       <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {groupedPackages.map((pkg) => {
@@ -1513,6 +1554,75 @@ const groupedPackages = packages.map((pkg: any) => {
         // Bind Search Input
         const searchInput = document.getElementById('activeSubsSearch');
         searchInput?.addEventListener('input', renderActiveSubscriptions);
+
+        // Bind Package Bypass Toggle Switch
+        const toggle = document.getElementById('package-system-toggle');
+        if (toggle) {
+          // Clone and replace to prevent duplicate events on navigation
+          const newToggle = toggle.cloneNode(true);
+          toggle.parentNode.replaceChild(newToggle, toggle);
+          
+          newToggle.addEventListener('change', async function() {
+            const newStatus = this.checked;
+            const statusText = document.getElementById('package-toggle-status-text');
+            const overlay = document.getElementById('package-system-lock-overlay');
+            
+            if (statusText) {
+              statusText.textContent = newStatus ? 'Đang hoạt động' : 'Tạm tắt (Bypass)';
+            }
+            if (overlay) {
+              if (newStatus) {
+                overlay.classList.add('hidden');
+              } else {
+                overlay.classList.remove('hidden');
+              }
+            }
+            
+            try {
+              if (!loadedSettings || typeof loadedSettings !== 'object') {
+                loadedSettings = {};
+              }
+              if (!loadedSettings.general) {
+                await loadSettings();
+              }
+              if (!loadedSettings.general) {
+                loadedSettings.general = {};
+              }
+              loadedSettings.general.package_system_enable = newStatus;
+              
+              const saveRes = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(loadedSettings)
+              });
+              
+              if (saveRes.ok) {
+                if (window.showGlobalToast) {
+                  window.showGlobalToast(`Đã ${newStatus ? 'BẬT' : 'TẮT'} cơ chế kiểm tra gói đăng ký!`, 'success');
+                }
+              } else {
+                throw new Error('Save failed');
+              }
+            } catch (e) {
+              console.error('Failed to update package checking toggle:', e);
+              if (window.showGlobalToast) {
+                window.showGlobalToast('Cập nhật thất bại, đang khôi phục trạng thái...', 'error');
+              }
+              // Revert state
+              this.checked = !newStatus;
+              if (statusText) {
+                statusText.textContent = (!newStatus) ? 'Đang hoạt động' : 'Tạm tắt (Bypass)';
+              }
+              if (overlay) {
+                if (!newStatus) {
+                  overlay.classList.add('hidden');
+                } else {
+                  overlay.classList.remove('hidden');
+                }
+              }
+            }
+          });
+        }
       }
 
       // Initial running
