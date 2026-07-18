@@ -1481,6 +1481,15 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
     const checkAndFetch = () => {
       const user = window.APP_USER;
+      const hasCookie = typeof document !== 'undefined' && document.cookie.includes('txa_gate_passed');
+      
+      if (!hasCookie) {
+        // Guest user — load immediately
+        fetchUserAndAds('');
+        if (intervalId) clearInterval(intervalId);
+        return true;
+      }
+
       if (user) {
         fetchUserAndAds(user.username || '');
         if (intervalId) clearInterval(intervalId);
@@ -2537,7 +2546,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 <span className="text-xs font-bold text-zinc-400">Đang chuẩn bị nguồn phát...</span>
               </div>
             </div>
-          ) : !isAdmin && currentServer && !allowedServers.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) ? (
+          ) : !isAdmin && currentServer && !allowedServers.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) && !(((typeof window !== 'undefined' ? (window as any).TXA_SITE_SETTINGS : null)?.general?.package_system_enable === false) && isLoggedIn) ? (
             ((typeof window !== 'undefined' ? (window as any).TXA_SITE_SETTINGS : null)?.general?.package_system_enable === false) && !isLoggedIn ? (
               <LoginRequiredPlayerPlaceholder />
             ) : (
