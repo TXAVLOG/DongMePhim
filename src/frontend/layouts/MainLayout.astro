@@ -1900,6 +1900,9 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
                     <a id="social-link-zalo" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-zalo ${(settings.social?.social_zalo_group_enable && settings.social?.social_zalo_group_url) ? '' : 'hidden'}`} href={settings.social?.social_zalo_group_url || "#"} target="_blank" rel="noopener noreferrer" data-txatooltip="Zalo Group">
                         <Txaicon name="zalo" class="w-5 h-5 fill-current" />
                     </a>
+                    <a id="social-link-discord" class={`w-10 h-10 rounded-full bg-white/5 border border-glass-stroke flex items-center justify-center text-on-surface backdrop-blur-md social-btn social-discord ${(settings.social?.social_discord_enable && settings.social?.social_discord_url) ? '' : 'hidden'}`} href={settings.social?.social_discord_url || "#"} target="_blank" rel="noopener noreferrer" data-txatooltip="Discord">
+                        <Txaicon name="discord" class="w-5 h-5 fill-current" />
+                    </a>
                 </div>
             </div>
             <div class="space-y-4">
@@ -1969,6 +1972,12 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
         background-color: rgba(0, 104, 255, 0.15) !important;
         color: #0068FF !important;
         border-color: rgba(0, 104, 255, 0.4) !important;
+      }
+      
+      .social-discord:hover {
+        background-color: rgba(88, 101, 242, 0.15) !important;
+        color: #5865F2 !important;
+        border-color: rgba(88, 101, 242, 0.4) !important;
       }
     </style>
 
