@@ -3,7 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
-import { TxaJsonDb } from '@services/TxaJsonDb';
+
 
 async function verifyBotRequest(request: Request): Promise<boolean> {
   const authHeader = request.headers.get('Authorization');
@@ -86,9 +86,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         'Content-Type': 'application/json'
       };
 
-      // Đọc các vai trò từ cấu hình local JSON
-      const localConfig = await TxaJsonDb.getDiscordConfig();
-      const roles = localConfig.roles;
+      const roles = discord?.roles || {};
 
       const rolesToRemove = [
         roles.member,

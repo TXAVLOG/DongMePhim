@@ -3,7 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
-import { TxaJsonDb } from '@services/TxaJsonDb';
+
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -41,8 +41,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse({ sent: false, reason: 'Chưa cấu hình Bot Token' }, 'success', '', 200, request);
     }
 
-    const localConfig = await TxaJsonDb.getDiscordConfig();
-    const channelDangXem = localConfig.channels.dang_xem;
+    const channelDangXem = discord.channels?.dang_xem;
 
     if (!channelDangXem) {
       return apiResponse({ sent: false, reason: 'Chưa cấu hình kênh đang xem (#dang-xem)' }, 'success', '', 200, request);
