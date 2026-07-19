@@ -213,8 +213,15 @@ const settings = await SettingService.getSettings();
         <p class="text-[10px] text-zinc-400 text-center">Kéo để di chuyển, cuộn chuột hoặc dùng 2 ngón để phóng to/thu nhỏ ảnh.</p>
         
         <div class="relative w-full aspect-square bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex items-center justify-center cursor-move" id="crop-area">
-          <canvas id="crop-canvas" class="absolute pointer-events-none"></canvas>
-          <div class="absolute w-56 h-56 rounded-full border-2 border-dashed border-primary/80 pointer-events-none shadow-[0_0_0_9999px_rgba(9,9,11,0.7)]"></div>
+          <canvas id="crop-canvas" class="absolute"></canvas>
+        </div>
+        
+        <div class="flex flex-col gap-1.5 pt-2">
+          <div class="flex justify-between items-center text-[10px] text-zinc-400 font-bold uppercase">
+            <span>Thu phóng ảnh</span>
+            <span id="zoom-percentage">100%</span>
+          </div>
+          <input type="range" id="crop-zoom-slider" min="10" max="400" value="100" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-primary" />
         </div>
         
         <div class="flex gap-3 justify-end pt-2">
@@ -539,17 +546,23 @@ const settings = await SettingService.getSettings();
     const cropCanvas = document.getElementById('crop-canvas');
     const btnCancel = document.getElementById('btn-cancel-crop');
     const btnConfirm = document.getElementById('btn-confirm-crop');
+    const zoomSlider = document.getElementById('crop-zoom-slider');
+    const zoomText = document.getElementById('zoom-percentage');
     
-    if (avatarContainer && avatarInput && cropModal && cropArea && cropCanvas && btnCancel && btnConfirm) {
+    if (avatarContainer && avatarInput && cropModal && cropArea && cropCanvas && btnCancel && btnConfirm && zoomSlider && zoomText) {
       let originalImg = null;
       let scale = 1.0;
+      let baseScale = 1.0; // The scale where the image fits the crop view
       let posX = 0;
       let posY = 0;
       let isDragging = false;
       let startX = 0;
       let startY = 0;
+      let initialTouchDist = 0;
+      let initialTouchScale = 1.0;
       const ctx = cropCanvas.getContext('2d');
       const viewSize = 320; // 320x320 area
+      const circleRadius = 112; // Radius 112 (Diameter 224)
       
       cropCanvas.width = viewSize;
       cropCanvas.height = viewSize;
@@ -566,30 +579,17 @@ const settings = await SettingService.getSettings();
         reader.onload = (event) => {
           const img = new Image();
           img.onload = () => {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-            const needsCrop = isMobile && (img.width > 512 || img.height > 512);
-
-            if (needsCrop) {
-              originalImg = img;
-              scale = Math.max(viewSize / img.width, viewSize / img.height);
-              posX = 0;
-              posY = 0;
-              cropModal.classList.remove('hidden');
-              cropModal.classList.add('flex');
-              drawCrop();
-            } else {
-              // Direct resize
-              const canvas = document.createElement('canvas');
-              canvas.width = 256;
-              canvas.height = 256;
-              const tempCtx = canvas.getContext('2d');
-              const minDim = Math.min(img.width, img.height);
-              const startX = (img.width - minDim) / 2;
-              const startY = (img.height - minDim) / 2;
-              tempCtx.drawImage(img, startX, startY, minDim, minDim, 0, 0, 256, 256);
-              const base64Data = canvas.toDataURL('image/jpeg', 0.85);
-              uploadAvatar(base64Data);
-            }
+            // Always show cropping modal for better UX
+            originalImg = img;
+            baseScale = Math.max(viewSize / img.width, viewSize / img.height);
+            scale = baseScale;
+            posX = 0;
+            posY = 0;
+            zoomSlider.value = 100;
+            zoomText.textContent = '100%';
+            cropModal.classList.remove('hidden');
+            cropModal.classList.add('flex');
+            drawCrop();
           };
           img.src = event.target.result;
         };
@@ -599,14 +599,51 @@ const settings = await SettingService.getSettings();
       const drawCrop = () => {
         if (!originalImg) return;
         ctx.clearRect(0, 0, viewSize, viewSize);
+        
+        // 1. Draw image
         const w = originalImg.width * scale;
         const h = originalImg.height * scale;
         const drawX = (viewSize - w) / 2 + posX;
         const drawY = (viewSize - h) / 2 + posY;
         ctx.drawImage(originalImg, drawX, drawY, w, h);
+        
+        // 2. Draw Dark Overlay with Circular Cutout
+        ctx.save();
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.7)';
+        ctx.beginPath();
+        ctx.rect(0, 0, viewSize, viewSize);
+        ctx.arc(viewSize / 2, viewSize / 2, circleRadius, 0, Math.PI * 2, true);
+        ctx.fill();
+        ctx.restore();
+        
+        // 3. Draw Dashed Circular Border Guide
+        ctx.save();
+        ctx.strokeStyle = '#a855f7'; // purple-500
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(viewSize / 2, viewSize / 2, circleRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
       };
 
-      // Drag events
+      const updateZoom = (newScale) => {
+        scale = Math.max(baseScale * 0.1, Math.min(baseScale * 8.0, newScale));
+        const percent = Math.round((scale / baseScale) * 100);
+        zoomSlider.value = percent;
+        zoomText.textContent = `${percent}%`;
+        drawCrop();
+      };
+
+      // Zoom via Slider
+      zoomSlider.oninput = (e) => {
+        const percent = parseInt(e.target.value);
+        scale = baseScale * (percent / 100);
+        zoomText.textContent = `${percent}%`;
+        drawCrop();
+      };
+
+      // Drag events (Mouse)
       cropArea.onmousedown = (e) => {
         if (!originalImg) return;
         isDragging = true;
@@ -625,39 +662,58 @@ const settings = await SettingService.getSettings();
         drawCrop();
       };
 
-      // Touch events
+      // Touch events (Mobile support - Single touch drag, Multi-touch pinch zoom)
       cropArea.ontouchstart = (e) => {
-        if (!originalImg || e.touches.length === 0) return;
+        if (!originalImg) return;
         isDragging = true;
-        const touch = e.touches[0];
-        startX = touch.clientX - posX;
-        startY = touch.clientY - posY;
+        
+        if (e.touches.length === 1) {
+          const touch = e.touches[0];
+          startX = touch.clientX - posX;
+          startY = touch.clientY - posY;
+        } else if (e.touches.length === 2) {
+          // Setup pinch zoom
+          initialTouchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          initialTouchScale = scale;
+        }
       };
 
       cropArea.ontouchmove = (e) => {
-        if (!isDragging || !originalImg || e.touches.length === 0) return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        posX = touch.clientX - startX;
-        posY = touch.clientY - startY;
-        drawCrop();
+        if (!originalImg) return;
+        
+        if (e.touches.length === 1 && isDragging) {
+          const touch = e.touches[0];
+          posX = touch.clientX - startX;
+          posY = touch.clientY - startY;
+          drawCrop();
+        } else if (e.touches.length === 2) {
+          e.preventDefault();
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          const factor = dist / initialTouchDist;
+          updateZoom(initialTouchScale * factor);
+        }
       };
 
       cropArea.ontouchend = () => {
         isDragging = false;
       };
 
-      // Zoom via Wheel
+      // Zoom via Mouse Wheel
       cropArea.onwheel = (e) => {
         if (!originalImg) return;
         e.preventDefault();
         const zoomFactor = 0.05;
         if (e.deltaY < 0) {
-          scale += zoomFactor;
+          updateZoom(scale + baseScale * zoomFactor);
         } else {
-          scale = Math.max(0.1, scale - zoomFactor);
+          updateZoom(scale - baseScale * zoomFactor);
         }
-        drawCrop();
       };
 
       btnCancel.onclick = () => {
@@ -668,14 +724,41 @@ const settings = await SettingService.getSettings();
 
       btnConfirm.onclick = () => {
         if (!originalImg) return;
-        // Center crop guide has radius 112px (diameter 224px) centered in 320x320 view
-        // Centered region: start at x = (320 - 224)/2 = 48, y = 48, width = 224, height = 224
+        
+        // Exact high-quality crop from originalImg using mathematical calculation
         const exportCanvas = document.createElement('canvas');
         exportCanvas.width = 256;
         exportCanvas.height = 256;
         const exportCtx = exportCanvas.getContext('2d');
         
-        exportCtx.drawImage(cropCanvas, 48, 48, 224, 224, 0, 0, 256, 256);
+        // View center in view coordinates
+        const viewCenter = viewSize / 2;
+        
+        // Offset of image relative to circle center (which is at viewCenter)
+        // Image center is at (viewCenter + posX, viewCenter + posY)
+        // Crop circle bounds: [viewCenter - circleRadius, viewCenter - circleRadius, circleRadius*2, circleRadius*2]
+        
+        // Position of image top-left relative to crop view
+        const imgLeft = viewCenter + posX - (originalImg.width * scale) / 2;
+        const imgTop = viewCenter + posY - (originalImg.height * scale) / 2;
+        
+        // Boundaries of crop circle
+        const cropLeft = viewCenter - circleRadius;
+        const cropTop = viewCenter - circleRadius;
+        
+        // Source coordinates in the original image coordinate space
+        const srcScale = 1.0 / scale;
+        const srcX = (cropLeft - imgLeft) * srcScale;
+        const srcY = (cropTop - imgTop) * srcScale;
+        const srcW = (circleRadius * 2) * srcScale;
+        const srcH = (circleRadius * 2) * srcScale;
+        
+        exportCtx.drawImage(
+          originalImg,
+          srcX, srcY, srcW, srcH,
+          0, 0, 256, 256
+        );
+        
         const base64Data = exportCanvas.toDataURL('image/jpeg', 0.85);
         
         cropModal.classList.remove('flex');

@@ -1,13 +1,13 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
-import { verifySession } from '@lib/auth';
+import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    // 1. Verify user session
-    const currentUser = await verifySession(request, cookies);
+    // 1. Verify user session — supports both Bearer token (mobile app) and cookie (web)
+    const currentUser = await verifyUserFromRequest(request, cookies);
     if (!currentUser) {
       return apiResponse(null, 'error', 'Bạn chưa đăng nhập!', 401, request);
     }
