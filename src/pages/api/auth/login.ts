@@ -3,6 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { SettingService } from '@services/SettingService';
 import { supabase } from '@lib/supabase';
 import { createSession } from '@lib/auth';
+import { isEncrypted, decryptPassword, encryptPassword } from '@lib/passwordCrypto';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -62,8 +63,36 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse({ errorType: 'identity', error_code: 'USER_NOT_FOUND' }, 'error', 'Tài khoản không tồn tại!', 400, request);
     }
 
-    if (user.password !== password) {
+    const secretKey = settings.encryption?.secret_key || '';
+    let isPasswordCorrect = false;
+    let shouldMigrate = false;
+
+    if (isEncrypted(user.password)) {
+      if (secretKey) {
+        const decrypted = await decryptPassword(user.password, secretKey);
+        isPasswordCorrect = (decrypted === password);
+      } else {
+        isPasswordCorrect = false;
+      }
+    } else {
+      isPasswordCorrect = (user.password === password);
+      shouldMigrate = isPasswordCorrect && !!secretKey;
+    }
+
+    if (!isPasswordCorrect) {
       return apiResponse({ errorType: 'password', error_code: 'INVALID_PASSWORD' }, 'error', 'Mật khẩu không chính xác!', 400, request);
+    }
+
+    if (shouldMigrate) {
+      try {
+        const encrypted = await encryptPassword(password, secretKey);
+        await supabase
+          .from('users')
+          .update({ password: encrypted })
+          .eq('id', user.id);
+      } catch (migrationErr) {
+        console.error('Failed to auto-migrate user password to encrypted during login:', migrationErr);
+      }
     }
 
     if (settings.user?.require_email_verification && !user.email_verified) {

@@ -26,9 +26,13 @@ const settings = await SettingService.getSettings();
           <!-- Logged in state -->
           <div id="info-profile" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row items-center gap-6 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-              <div class="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary shadow-lg shadow-primary/20">
-                <img id="info-avatar" src="/logo-decoy.png" class="w-full h-full object-cover" onerror="this.src='/logo-decoy.png';" />
+              <div class="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary shadow-lg shadow-primary/20 cursor-pointer group/avatar" id="avatar-container" title="Thay đổi ảnh đại diện">
+                <img id="info-avatar" src="/logo-decoy.png" class="w-full h-full object-cover group-hover/avatar:scale-105 transition-transform" onerror="this.src='/logo-decoy.png';" />
+                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity">
+                  <span class="material-symbols-outlined text-white text-lg">photo_camera</span>
+                </div>
               </div>
+              <input type="file" id="avatar-file-input" accept="image/*" class="hidden" />
               <div class="text-center sm:text-left space-y-2">
                 <h2 id="info-name" class="text-xl font-bold text-white"></h2>
                 <p id="info-email" class="text-xs text-zinc-400 font-mono"></p>
@@ -200,6 +204,23 @@ const settings = await SettingService.getSettings();
               <span class="material-symbols-outlined text-sm">login</span> Đăng nhập ngay
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- Crop Modal Markup -->
+    <div id="crop-modal" class="fixed inset-0 z-[10000] hidden items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+      <div class="relative max-w-sm w-full bg-zinc-950 border border-glass-stroke rounded-3xl p-6 shadow-2xl space-y-4">
+        <h3 class="text-base font-bold text-white text-center">Cắt ảnh đại diện</h3>
+        <p class="text-[10px] text-zinc-400 text-center">Kéo để di chuyển, cuộn chuột hoặc dùng 2 ngón để phóng to/thu nhỏ ảnh.</p>
+        
+        <div class="relative w-full aspect-square bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex items-center justify-center cursor-move" id="crop-area">
+          <canvas id="crop-canvas" class="absolute pointer-events-none"></canvas>
+          <div class="absolute w-56 h-56 rounded-full border-2 border-dashed border-primary/80 pointer-events-none shadow-[0_0_0_9999px_rgba(9,9,11,0.7)]"></div>
+        </div>
+        
+        <div class="flex gap-3 justify-end pt-2">
+          <button type="button" id="btn-cancel-crop" class="px-4 py-2 bg-white/5 border border-glass-stroke text-zinc-400 font-bold rounded-xl text-xs hover:bg-white/10 transition-all cursor-pointer">Hủy</button>
+          <button type="button" id="btn-confirm-crop" class="px-5 py-2 bg-primary text-slate-950 font-black rounded-xl text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none shadow-lg shadow-primary/20">Cắt & Lưu</button>
         </div>
       </div>
     </div>
@@ -510,5 +531,191 @@ const settings = await SettingService.getSettings();
     
     // Listen for auth change
     window.addEventListener('auth-changed', checkAuthAndRender);
+
+    // === AVATAR CROP AND UPLOAD FUNCTIONALITY ===
+    const avatarContainer = document.getElementById('avatar-container');
+    const avatarInput = document.getElementById('avatar-file-input');
+    const cropModal = document.getElementById('crop-modal');
+    const cropArea = document.getElementById('crop-area');
+    const cropCanvas = document.getElementById('crop-canvas');
+    const btnCancel = document.getElementById('btn-cancel-crop');
+    const btnConfirm = document.getElementById('btn-confirm-crop');
+    
+    if (avatarContainer && avatarInput && cropModal && cropArea && cropCanvas && btnCancel && btnConfirm) {
+      let originalImg = null;
+      let scale = 1.0;
+      let posX = 0;
+      let posY = 0;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      const ctx = cropCanvas.getContext('2d');
+      const viewSize = 320; // 320x320 area
+      
+      cropCanvas.width = viewSize;
+      cropCanvas.height = viewSize;
+
+      avatarContainer.onclick = () => {
+        avatarInput.click();
+      };
+
+      avatarInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+            const needsCrop = isMobile && (img.width > 512 || img.height > 512);
+
+            if (needsCrop) {
+              originalImg = img;
+              scale = Math.max(viewSize / img.width, viewSize / img.height);
+              posX = 0;
+              posY = 0;
+              cropModal.classList.remove('hidden');
+              cropModal.classList.add('flex');
+              drawCrop();
+            } else {
+              // Direct resize
+              const canvas = document.createElement('canvas');
+              canvas.width = 256;
+              canvas.height = 256;
+              const tempCtx = canvas.getContext('2d');
+              const minDim = Math.min(img.width, img.height);
+              const startX = (img.width - minDim) / 2;
+              const startY = (img.height - minDim) / 2;
+              tempCtx.drawImage(img, startX, startY, minDim, minDim, 0, 0, 256, 256);
+              const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+              uploadAvatar(base64Data);
+            }
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const drawCrop = () => {
+        if (!originalImg) return;
+        ctx.clearRect(0, 0, viewSize, viewSize);
+        const w = originalImg.width * scale;
+        const h = originalImg.height * scale;
+        const drawX = (viewSize - w) / 2 + posX;
+        const drawY = (viewSize - h) / 2 + posY;
+        ctx.drawImage(originalImg, drawX, drawY, w, h);
+      };
+
+      // Drag events
+      cropArea.onmousedown = (e) => {
+        if (!originalImg) return;
+        isDragging = true;
+        startX = e.clientX - posX;
+        startY = e.clientY - posY;
+      };
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      cropArea.onmousemove = (e) => {
+        if (!isDragging || !originalImg) return;
+        posX = e.clientX - startX;
+        posY = e.clientY - startY;
+        drawCrop();
+      };
+
+      // Touch events
+      cropArea.ontouchstart = (e) => {
+        if (!originalImg || e.touches.length === 0) return;
+        isDragging = true;
+        const touch = e.touches[0];
+        startX = touch.clientX - posX;
+        startY = touch.clientY - posY;
+      };
+
+      cropArea.ontouchmove = (e) => {
+        if (!isDragging || !originalImg || e.touches.length === 0) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        posX = touch.clientX - startX;
+        posY = touch.clientY - startY;
+        drawCrop();
+      };
+
+      cropArea.ontouchend = () => {
+        isDragging = false;
+      };
+
+      // Zoom via Wheel
+      cropArea.onwheel = (e) => {
+        if (!originalImg) return;
+        e.preventDefault();
+        const zoomFactor = 0.05;
+        if (e.deltaY < 0) {
+          scale += zoomFactor;
+        } else {
+          scale = Math.max(0.1, scale - zoomFactor);
+        }
+        drawCrop();
+      };
+
+      btnCancel.onclick = () => {
+        cropModal.classList.remove('flex');
+        cropModal.classList.add('hidden');
+        avatarInput.value = '';
+      };
+
+      btnConfirm.onclick = () => {
+        if (!originalImg) return;
+        // Center crop guide has radius 112px (diameter 224px) centered in 320x320 view
+        // Centered region: start at x = (320 - 224)/2 = 48, y = 48, width = 224, height = 224
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = 256;
+        exportCanvas.height = 256;
+        const exportCtx = exportCanvas.getContext('2d');
+        
+        exportCtx.drawImage(cropCanvas, 48, 48, 224, 224, 0, 0, 256, 256);
+        const base64Data = exportCanvas.toDataURL('image/jpeg', 0.85);
+        
+        cropModal.classList.remove('flex');
+        cropModal.classList.add('hidden');
+        uploadAvatar(base64Data);
+      };
+
+      async function uploadAvatar(base64Data) {
+        try {
+          if (window.showGlobalToast) window.showGlobalToast('Đang tải ảnh lên...', 'info');
+          
+          const res = await fetch('/api/user/update-avatar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ avatar: base64Data })
+          });
+          
+          const data = await res.json();
+          if (res.ok && data?.status === 'success') {
+            if (window.showGlobalToast) window.showGlobalToast('Cập nhật ảnh đại diện thành công!', 'success');
+            document.getElementById('info-avatar').src = base64Data;
+            
+            // Sync with current user state
+            if (window.APP_USER) {
+              window.APP_USER.avatar_url = base64Data;
+            }
+          } else {
+            const errMsg = data?.message || 'Không thể cập nhật ảnh đại diện!';
+            if (window.showGlobalToast) {
+              window.showGlobalToast(errMsg, 'error', 4000);
+            } else {
+              alert(errMsg);
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          if (window.showGlobalToast) window.showGlobalToast('Lỗi kết nối mạng!', 'error');
+        }
+      }
+    }
   });
 </script>

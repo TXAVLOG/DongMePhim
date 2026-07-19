@@ -178,6 +178,7 @@ export interface PlanPermission {
   vip_badge: boolean;
   bypass_ads: boolean;
   ads_only_in_player?: boolean;
+  max_avatar_changes_per_month?: number;
 }
 
 export interface SubscriptionPlan {
@@ -226,6 +227,13 @@ export interface DiscordSettings {
   auto_mod?: Record<string, any>;
 }
 
+export interface EncryptionSettings {
+  enable_password_encryption: boolean;
+  secret_key?: string;
+  aes_key?: string;
+  aes_iv?: string;
+}
+
 export interface SiteSettings {
   general: GeneralSettings;
   smtp: SMTPSettings;
@@ -239,6 +247,7 @@ export interface SiteSettings {
   packages: SubscriptionPlan[];
   ads: AdSettings;
   discord?: DiscordSettings;
+  encryption?: EncryptionSettings;
 }
 
 export interface ISettingProvider {

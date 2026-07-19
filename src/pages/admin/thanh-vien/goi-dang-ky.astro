@@ -951,6 +951,10 @@ const groupedPackages = packages.map((pkg: any) => {
                   <label class="text-[10px] text-zinc-400 font-bold uppercase">Giới hạn Playlist phim</label>
                   <input type="number" name="max_playlists" value="100" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
                 </div>
+                <div class="space-y-1 col-span-2">
+                  <label class="text-[10px] text-zinc-400 font-bold uppercase">Giới hạn đổi avatar / tháng (-1 là không giới hạn)</label>
+                  <input type="number" name="max_avatar_changes_per_month" value="-1" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" required />
+                </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3 pt-2">
@@ -1109,6 +1113,7 @@ const groupedPackages = packages.map((pkg: any) => {
                 permissions: {
                   max_resolution: formData.get('max_resolution'),
                   max_playlists: parseInt(formData.get('max_playlists') || '100'),
+                  max_avatar_changes_per_month: parseInt(formData.get('max_avatar_changes_per_month') || '-1'),
                   watch_together: form.querySelector('input[name="watch_together"]').checked,
                   hide_watermark: form.querySelector('input[name="hide_watermark"]').checked,
                   vip_badge: form.querySelector('input[name="vip_badge"]').checked,
@@ -1310,6 +1315,11 @@ const groupedPackages = packages.map((pkg: any) => {
                   <input type="number" name="max_playlists" value="${pkg.permissions?.max_playlists || 10}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} required />
                   ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
                 </div>
+                <div class="space-y-1 relative group/lock col-span-2">
+                  <label class="text-[10px] text-zinc-400 font-bold uppercase">Giới hạn đổi avatar / tháng (-1 là không giới hạn)</label>
+                  <input type="number" name="max_avatar_changes_per_month" value="${pkg.permissions?.max_avatar_changes_per_month !== undefined ? pkg.permissions.max_avatar_changes_per_month : -1}" class="w-full bg-zinc-900 border border-glass-stroke rounded-lg px-3 py-2 text-xs text-white" ${isFree ? 'disabled' : ''} required />
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free (Hạn mức mặc định là 3)</span>' : ''}
+                </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3 pt-2">
@@ -1471,6 +1481,7 @@ const groupedPackages = packages.map((pkg: any) => {
                   targetPkg.permissions = {
                     max_resolution: targetPkg.permissions?.max_resolution || 'SD',
                     max_playlists: targetPkg.permissions?.max_playlists || 10,
+                    max_avatar_changes_per_month: targetPkg.permissions?.max_avatar_changes_per_month ?? 3,
                     watch_together: targetPkg.permissions?.watch_together || false,
                     hide_watermark: targetPkg.permissions?.hide_watermark || false,
                     vip_badge: targetPkg.permissions?.vip_badge || false,
@@ -1481,6 +1492,7 @@ const groupedPackages = packages.map((pkg: any) => {
                   targetPkg.permissions = {
                     max_resolution: formData.get('max_resolution'),
                     max_playlists: parseInt(formData.get('max_playlists') || '10'),
+                    max_avatar_changes_per_month: parseInt(formData.get('max_avatar_changes_per_month') || '-1'),
                     watch_together: form.querySelector('input[name="watch_together"]').checked,
                     hide_watermark: form.querySelector('input[name="hide_watermark"]').checked,
                     vip_badge: form.querySelector('input[name="vip_badge"]').checked,

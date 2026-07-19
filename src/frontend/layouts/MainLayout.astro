@@ -198,6 +198,7 @@ const isActive = (path: string) => {
 const currentUser = await verifySession(Astro.request, Astro.cookies);
 const userObj = currentUser as any;
 const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin');
+const isImpersonating = userObj && !!userObj.adminId;
 ---
 
 <!DOCTYPE html>
@@ -1266,6 +1267,68 @@ const isAdmin = userObj && (userObj.role === 'admin' || userObj.roles === 'admin
 
     <!-- Mở thẻ bọc chính -->
     <div id="main-app-container">
+    {isImpersonating && (
+      <div id="impersonation-banner" class="fixed left-0 right-0 z-[9999] bg-amber-500 text-slate-900 flex items-center justify-between px-6 py-2 font-bold text-xs shadow-lg md:top-0 md:bottom-auto md:border-b border-amber-400 bottom-0 top-auto border-t">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+          <span>Bạn đang đăng nhập dưới danh nghĩa tài khoản: <strong class="underline">{currentUser.name || currentUser.username}</strong></span>
+        </div>
+        <button id="revert-admin-btn" class="px-3.5 py-1.5 bg-slate-900 text-amber-400 font-black rounded-lg hover:brightness-110 active:scale-95 transition-all text-[10px] uppercase border-none cursor-pointer">
+          Quay lại Admin
+        </button>
+      </div>
+      
+      <script is:inline>
+        (function() {
+          const adjustLayout = () => {
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) {
+              document.body.style.paddingTop = '0px';
+              document.body.style.paddingBottom = '36px';
+              const mobNav = document.getElementById('mobile-top-nav');
+              if (mobNav) mobNav.style.top = '0px';
+            } else {
+              document.body.style.paddingTop = '32px';
+              document.body.style.paddingBottom = '0px';
+              const mainNav = document.getElementById('main-nav');
+              if (mainNav) mainNav.style.top = '32px';
+            }
+          };
+          
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', adjustLayout);
+          } else {
+            adjustLayout();
+          }
+          window.addEventListener('resize', adjustLayout);
+          document.addEventListener('astro:page-load', adjustLayout);
+
+          document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('#revert-admin-btn');
+            if (btn) {
+              const originalText = btn.textContent;
+              try {
+                btn.textContent = 'Đang quay lại...';
+                btn.disabled = true;
+                const res = await fetch('/api/admin/deimpersonate', { method: 'POST' });
+                if (res.ok) {
+                  window.location.href = '/admin/thanh-vien';
+                } else {
+                  alert('Lỗi khi khôi phục quyền Admin!');
+                  btn.textContent = originalText;
+                  btn.disabled = false;
+                }
+              } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối mạng!');
+                btn.textContent = originalText;
+                btn.disabled = false;
+              }
+            }
+          });
+        })();
+      </script>
+    )}
     {isHome && (
       <div id="splash-screen" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0A0A0B] transition-all duration-500 ease-out">
         <div class="flex flex-col items-center gap-6">

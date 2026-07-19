@@ -4,6 +4,7 @@ import { SettingService } from '@services/SettingService';
 import { supabase } from '@lib/supabase';
 import { getEmailTemplate } from '@templates/emails/emailReader';
 import { SmtpClient } from '@lib/api/smtpClient';
+import { encryptPassword } from '@lib/passwordCrypto';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -93,12 +94,15 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Insert user
+    const secretKey = settings.encryption?.secret_key || '';
+    const securePassword = secretKey ? await encryptPassword(password, secretKey) : password;
+
     const { error: insertError } = await supabase
       .from('users')
       .insert({
         username,
         email,
-        password, // stored plain text to match original system
+        password: securePassword,
         role: 'user',
         name: username,
         avatar_url: `https://www.gravatar.com/avatar/${emailHash}?d=identicon`,

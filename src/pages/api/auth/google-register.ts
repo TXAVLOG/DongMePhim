@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { createSession } from '@lib/auth';
+import { SettingService } from '@services/SettingService';
+import { encryptPassword } from '@lib/passwordCrypto';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -92,12 +94,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     // Insert user into Supabase
+    const settings = await SettingService.getSettings();
+    const secretKey = settings.encryption?.secret_key || '';
+    const randomPassword = Math.random().toString(36).substring(2, 10);
+    const securePassword = secretKey ? await encryptPassword(randomPassword, secretKey) : randomPassword;
+
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert({
         username: email,
         email: email,
-        password: Math.random().toString(36).substring(2, 10), // random password for OAuth user
+        password: securePassword,
         role: 'user',
         name: name,
         avatar_url: picture,

@@ -296,6 +296,31 @@ const packages = settings.packages || [];
           }
         };
 
+        window.impersonateUser = async function(userId) {
+          const isConfirm = confirm('Bạn có chắc chắn muốn giả lập đăng nhập dưới danh nghĩa tài khoản này không?');
+          if (!isConfirm) return;
+
+          try {
+            const res = await fetch('/api/admin/impersonate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ targetUserId: userId })
+            });
+
+            const data = await res.json();
+            if (res.ok && data?.status === 'success') {
+              window.showGlobalToast('Đang chuyển hướng...', 'success');
+              setTimeout(() => {
+                window.location.href = '/tphim';
+              }, 1000);
+            } else {
+              window.showGlobalToast(data?.message || 'Giả lập thất bại!', 'error');
+            }
+          } catch (e) {
+            window.showGlobalToast('Lỗi kết nối mạng!', 'error');
+          }
+        };
+
         window.deleteUser = function(username) {
           const performDelete = async () => {
             try {
@@ -560,6 +585,9 @@ const packages = settings.packages || [];
                 </td>
                 <td class="px-8 py-4 text-right">
                   <div class="flex gap-2 justify-end">
+                    <button onclick="impersonateUser('${u.id}')" class="txatooltip w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-txatooltip="Đăng nhập nhanh vào tài khoản này">
+                      <span class="material-symbols-outlined text-sm">login</span>
+                    </button>
                     <button onclick="showEditMemberModal('${u.username}')" class="w-8 h-8 rounded-lg glass-panel flex items-center justify-center hover:text-primary transition-colors cursor-pointer" data-txatooltip="Chỉnh sửa chi tiết">
                       <span class="material-symbols-outlined text-sm">edit</span>
                     </button>

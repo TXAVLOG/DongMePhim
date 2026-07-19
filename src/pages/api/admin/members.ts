@@ -4,10 +4,15 @@ import { supabase } from '@lib/supabase';
 import { SettingService } from '@services/SettingService';
 import { getEmailTemplate } from '@templates/emails/emailReader';
 import { SmtpClient } from '@lib/api/smtpClient';
+import { verifySession } from '@lib/auth';
+import { encryptPassword, decryptPassword, isEncrypted } from '@lib/passwordCrypto';
 
 // GET: Lấy danh sách thành viên từ Supabase
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, cookies }) => {
   try {
+    const currentUser = await verifySession(request, cookies);
+    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.roles === 'admin');
+
     const { data: users, error } = await supabase
       .from('users')
       .select('*')
@@ -15,25 +20,38 @@ export const GET: APIRoute = async ({ request }) => {
 
     if (error) throw error;
 
+    const settings = await SettingService.getSettings();
+    const secretKey = settings.encryption?.secret_key || '';
+
     // Ánh xạ các trường từ database sang định dạng frontend mong muốn
-    const mappedUsers = users.map((u: any) => ({
-      username: u.username,
-      email: u.email,
-      password: u.password,
-      name: u.name || 'Người dùng',
-      role: u.role || 'user',
-      roles: u.role === 'user' ? 'users' : (u.role || 'users'), // Hỗ trợ cả 2 định dạng
-      avatar: u.avatar_url || '',
-      gender: u.gender || '',
-      province: u.province || '',
-      ward: u.ward || '',
-      createdAt: u.created_at,
-      status: u.status || 'active',
-      package: u.package || 'free',
-      emailVerified: u.email_verified !== false,
-      expiryDate: u.expiry_date || '',
-      joinDate: u.join_date || ''
-    }));
+    const mappedUsers = [];
+    for (const u of users) {
+      let displayPass = u.password;
+      if (isAdmin && isEncrypted(u.password) && secretKey) {
+        const decrypted = await decryptPassword(u.password, secretKey);
+        if (decrypted !== null) displayPass = decrypted;
+      }
+
+      mappedUsers.push({
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        password: displayPass,
+        name: u.name || 'Người dùng',
+        role: u.role || 'user',
+        roles: u.role === 'user' ? 'users' : (u.role || 'users'), // Hỗ trợ cả 2 định dạng
+        avatar: u.avatar_url || '',
+        gender: u.gender || '',
+        province: u.province || '',
+        ward: u.ward || '',
+        createdAt: u.created_at,
+        status: u.status || 'active',
+        package: u.package || 'free',
+        emailVerified: u.email_verified !== false,
+        expiryDate: u.expiry_date || '',
+        joinDate: u.join_date || ''
+      });
+    }
 
     return apiResponse(mappedUsers, 'success', '', 200, request);
   } catch (err: any) {
@@ -74,13 +92,18 @@ export const POST: APIRoute = async ({ request }) => {
         return apiResponse(null, 'error', 'Địa chỉ email đã được đăng ký!', 400, request);
       }
 
+      const settings = await SettingService.getSettings();
+      const secretKey = settings.encryption?.secret_key || '';
+      const plainPassword = password || '123456';
+      const securePassword = secretKey ? await encryptPassword(plainPassword, secretKey) : plainPassword;
+
       const emailHash = Math.random().toString(36).substring(2, 10); // Simple fallback/mock gravatar hash
       const { error } = await supabase
         .from('users')
         .insert({
           username,
           email,
-          password: password || '123456', // default pass if empty
+          password: securePassword,
           role: (role === 'users' || roles === 'users') ? 'user' : (role || roles || 'user'),
           name: username,
           avatar_url: `https://www.gravatar.com/avatar/${emailHash}?d=identicon`,
@@ -113,7 +136,11 @@ export const POST: APIRoute = async ({ request }) => {
 
       const updates: any = {};
       if (email !== undefined) updates.email = email;
-      if (password !== undefined) updates.password = password;
+      if (password !== undefined) {
+        const settings = await SettingService.getSettings();
+        const secretKey = settings.encryption?.secret_key || '';
+        updates.password = secretKey ? await encryptPassword(password, secretKey) : password;
+      }
       if (role !== undefined || roles !== undefined) {
         const finalRole = role || roles;
         updates.role = finalRole === 'users' ? 'user' : finalRole;

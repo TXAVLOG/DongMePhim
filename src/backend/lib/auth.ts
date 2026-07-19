@@ -58,7 +58,7 @@ export async function verifyUserFromRequest(request: Request, cookies?: AstroCoo
 
   const { data: session, error } = await supabase
     .from('txa_user_sessions')
-    .select('expires_at, users(*)')
+    .select('expires_at, admin_id, users(*)')
     .eq('session_token', sessionToken)
     .maybeSingle();
 
@@ -76,6 +76,9 @@ export async function verifyUserFromRequest(request: Request, cookies?: AstroCoo
   }
 
   const user = Array.isArray(session.users) ? session.users[0] : session.users;
+  if (user && session.admin_id) {
+    user.adminId = session.admin_id;
+  }
   return user as any;
 }
 
@@ -90,7 +93,7 @@ export async function verifySession(request: Request, cookies: AstroCookies): Pr
 
   const { data: session, error } = await supabase
     .from('txa_user_sessions')
-    .select('user_agent, expires_at, users(*)')
+    .select('user_agent, expires_at, admin_id, users(*)')
     .eq('session_token', sessionToken)
     .maybeSingle();
 
@@ -124,6 +127,9 @@ export async function verifySession(request: Request, cookies: AstroCookies): Pr
 
   // Return the user object
   const user = Array.isArray(session.users) ? session.users[0] : session.users;
+  if (user && session.admin_id) {
+    user.adminId = session.admin_id;
+  }
   return user as any;
 }
 

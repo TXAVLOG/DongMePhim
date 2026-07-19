@@ -108,6 +108,38 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
                 <label class="txa-switch"><input type="checkbox" id="login-standard-enable" checked={settings.login?.login_standard_enable} /><span class="txa-slider"></span></label>
               </div>
 
+              <!-- Mã hóa bảo mật mật khẩu -->
+              <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
+                <div class="space-y-1">
+                  <span class="text-sm font-bold text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary" style="font-size:16px">security</span> 
+                    Mã hóa bảo mật mật khẩu (Symmetric AES-256-CBC)
+                  </span>
+                  <p class="text-[11px] text-zinc-400">Mật khẩu người dùng sẽ được mã hóa đối xứng trước khi lưu vào database. Khóa bí mật được tự sinh 32-bytes qua hàm băm SHA-256.</p>
+                </div>
+                <div class="grid grid-cols-1 gap-4 pl-2 border-l-2 border-primary/20 ml-2">
+                  <div class="space-y-1">
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase">Secret Key mã hóa & giải mã</label>
+                    <input type="password" id="security-encryption-key" value={settings.encryption?.secret_key || ''} class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono" />
+                  </div>
+                  <!-- Migration & Rotation Options -->
+                  <div class="pt-2 flex flex-col gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
+                      <button type="button" id="migrate-passwords-btn" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer border-none shadow-lg shadow-purple-600/20">
+                        <span class="material-symbols-outlined text-sm">construction</span>
+                        <span>Đồng bộ & Mã hóa mật khẩu cũ trong DB</span>
+                      </button>
+                      <span id="migration-status-label" class="text-[10px] text-zinc-400 italic">Mã hóa toàn bộ mật khẩu plaintext hiện tại hoặc xoay vòng khóa.</span>
+                    </div>
+                    <!-- Old key input for key rotation (optional) -->
+                    <div class="space-y-1 w-full max-w-sm hidden" id="old-key-rotation-wrapper">
+                      <label class="text-[9px] text-yellow-500 font-bold uppercase">Secret Key cũ (Chỉ nhập khi bạn muốn xoay vòng khóa cũ sang khóa mới)</label>
+                      <input type="password" id="security-encryption-old-key" placeholder="Nhập Secret Key cũ..." class="w-full bg-surface-container border border-yellow-500/30 rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-yellow-500 focus:outline-none text-white font-mono" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Google -->
               <div class="glass-panel p-5 rounded-2xl border border-glass-stroke space-y-4 hover:border-primary/20 transition-colors">
                 <div class="flex items-center justify-between">
@@ -384,6 +416,7 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
         setVal('user-verification-expiry', s.user?.verification_token_expiry !== undefined ? s.user.verification_token_expiry : 1800);
 
         setChecked('login-standard-enable', s.login?.login_standard_enable);
+        setVal('security-encryption-key', s.encryption?.secret_key);
         setChecked('login-google-enable', s.login?.login_google_enable);
         setVal('login-google-client-id', s.login?.login_google_client_id);
         setVal('login-google-client-secret', s.login?.login_google_client_secret);
@@ -757,6 +790,10 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
               login_x_enable: document.getElementById('login-x-enable')?.checked || false,
               login_x_client_id: document.getElementById('login-x-client-id')?.value || '',
               login_x_client_secret: document.getElementById('login-x-client-secret')?.value || '',
+            },
+            encryption: {
+              ...current.encryption,
+              secret_key: document.getElementById('security-encryption-key')?.value || '',
             }
           };
 
@@ -798,6 +835,73 @@ import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
           if (cb && cb.checked) {
             window.initGoogleGSIAndButton();
           }
+        }
+      });
+
+      // Password Encryption Key Rotation visibility toggle
+      document.addEventListener('input', (e) => {
+        if (e.target && e.target.id === 'security-encryption-key') {
+          const currentVal = e.target.value;
+          const originalVal = serverSettings.encryption?.secret_key || '';
+          const wrapper = document.getElementById('old-key-rotation-wrapper');
+          if (wrapper) {
+            if (originalVal && currentVal !== originalVal) {
+              wrapper.classList.remove('hidden');
+            } else {
+              wrapper.classList.add('hidden');
+            }
+          }
+        }
+      });
+
+      // Password Migration/Rotation trigger
+      document.getElementById('migrate-passwords-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('migrate-passwords-btn');
+        if (!btn) return;
+        
+        const originalText = btn.innerHTML;
+        const newKey = document.getElementById('security-encryption-key')?.value || '';
+        const oldKey = document.getElementById('security-encryption-old-key')?.value || '';
+
+        if (!newKey) {
+          if (window.showGlobalToast) window.showGlobalToast('Vui lòng điền Secret Key mới!', 'error');
+          return;
+        }
+
+        const isConfirm = confirm('Bạn có chắc chắn muốn quét và đồng bộ mã hóa lại toàn bộ mật khẩu người dùng trong cơ sở dữ liệu không?');
+        if (!isConfirm) return;
+
+        try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[14px]">progress_activity</span> Đang chạy...';
+          btn.disabled = true;
+
+          const res = await fetch('/api/admin/migrate-passwords', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ oldKey, newKey })
+          });
+
+          const data = await res.json();
+          if (res.ok && data?.status === 'success') {
+            const msg = data?.message || 'Đồng bộ thành công!';
+            if (window.showGlobalToast) {
+              window.showGlobalToast(msg, 'success', 5000);
+            } else {
+              alert(msg);
+            }
+          } else {
+            throw new Error(data?.message || 'Lỗi không xác định');
+          }
+        } catch (err) {
+          console.error(err);
+          if (window.showGlobalToast) {
+            window.showGlobalToast(`Đồng bộ thất bại: ${err.message}`, 'error');
+          } else {
+            alert(`Đồng bộ thất bại: ${err.message}`);
+          }
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
         }
       });
 
