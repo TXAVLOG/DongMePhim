@@ -9,7 +9,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // 1. Verify user session — supports both Bearer token (mobile app) and cookie (web)
     const currentUser = await verifyUserFromRequest(request, cookies);
     if (!currentUser) {
-      return apiResponse(null, 'error', 'Bạn chưa đăng nhập!', 401, request);
+      return apiResponse({ error_code: 'UNAUTHORIZED' }, 'error', 'Bạn chưa đăng nhập!', 401, request);
     }
 
     // 2. Parse request body
@@ -20,12 +20,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const { avatar } = body;
     if (!avatar) {
-      return apiResponse(null, 'error', 'Thiếu dữ liệu ảnh đại diện!', 400, request);
+      return apiResponse({ error_code: 'MISSING_DATA' }, 'error', 'Thiếu dữ liệu ảnh đại diện!', 400, request);
     }
 
     // Must be a valid base64 data URL or hex/plain base64
     if (!avatar.startsWith('data:image/') && !avatar.startsWith('http')) {
-      return apiResponse(null, 'error', 'Định dạng ảnh không hợp lệ! Phải là Base64 Data URL.', 400, request);
+      return apiResponse({ error_code: 'INVALID_FORMAT' }, 'error', 'Định dạng ảnh không hợp lệ! Phải là Base64 Data URL.', 400, request);
     }
 
     // 3. Fetch user's package limit from settings
@@ -54,7 +54,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     if (limit !== -1 && currentCount >= limit) {
       return apiResponse(
-        { limit, currentCount }, 
+        { limit, currentCount, error_code: 'LIMIT_REACHED' }, 
         'error', 
         `Bạn đã đạt giới hạn đổi ảnh đại diện trong tháng này (Tối đa ${limit} lần với gói ${userPackage?.title || userPackageName})!`, 
         400, 
