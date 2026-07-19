@@ -437,44 +437,11 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
       if (!targetMovie) return [];
 
-      // 2. Query phim có cùng thể loại từ view trending
+      // 2. Query phim có cùng thể loại từ bảng movies
       let query = supabase
-        .from('mv_movie_trending_stats')
-        .select(`
-          unique_viewers_24h,
-          views_24h,
-          total_watch_time_24h,
-          favorites_24h,
-          comments_24h,
-          growth_velocity,
-          age_hours,
-          movies!inner (
-            id,
-            movie_id_seq,
-            title,
-            original_title,
-            slug,
-            description,
-            poster_url,
-            banner_url,
-            release_year,
-            duration_minutes,
-            type,
-            status,
-            episode_current,
-            episode_total,
-            quality,
-            lang,
-            imdb_score,
-            tmdb_score,
-            views,
-            country,
-            genres,
-            updated_at,
-            require_login
-          )
-        `)
-        .neq('movie_id', targetMovie.id);
+        .from('movies')
+        .select('id, movie_id_seq, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, tmdb_score, views, country, genres, updated_at, require_login')
+        .neq('id', targetMovie.id);
 
       if (Array.isArray(targetMovie.genres) && targetMovie.genres.length > 0) {
         const conditions = targetMovie.genres
@@ -482,24 +449,37 @@ export class SupabaseMovieProvider implements IMovieProvider {
           .filter(Boolean)
           .map((g: string) => `genres.cs.["${g}"]`);
         if (conditions.length > 0) {
-          query = query.or(conditions.join(','), { foreignTable: 'movies' });
+          query = query.or(conditions.join(','));
         }
       }
 
-      const { data: dbData, error } = await query.limit(30);
+      const { data: dbMovies, error } = await query.limit(30);
       if (error) throw error;
 
       let list: Movie[] = [];
-      if (dbData && dbData.length > 0) {
-        list = dbData.map((item: any) => {
-          const m = item.movies;
-          const uv = Number(item.unique_viewers_24h) || 0;
-          const views = Number(item.views_24h) || 0;
-          const watchTime = Number(item.total_watch_time_24h) || 0;
-          const favs = Number(item.favorites_24h) || 0;
-          const comments = Number(item.comments_24h) || 0;
-          const velocity = Number(item.growth_velocity) || 1.0;
-          const age = Number(item.age_hours) || 0;
+      if (dbMovies && dbMovies.length > 0) {
+        const movieIds = dbMovies.map(m => m.id);
+        const { data: stats } = await supabase
+          .from('mv_movie_trending_stats')
+          .select('movie_id, unique_viewers_24h, views_24h, total_watch_time_24h, favorites_24h, comments_24h, growth_velocity, age_hours')
+          .in('movie_id', movieIds);
+
+        const statsMap = new Map<string, any>();
+        if (stats) {
+          stats.forEach((s: any) => {
+            statsMap.set(s.movie_id, s);
+          });
+        }
+
+        list = dbMovies.map((m: any) => {
+          const item = statsMap.get(m.id);
+          const uv = Number(item?.unique_viewers_24h) || 0;
+          const views = Number(item?.views_24h) || 0;
+          const watchTime = Number(item?.total_watch_time_24h) || 0;
+          const favs = Number(item?.favorites_24h) || 0;
+          const comments = Number(item?.comments_24h) || 0;
+          const velocity = Number(item?.growth_velocity) || 1.0;
+          const age = Number(item?.age_hours) || 0;
           
           let score = 0;
           if (uv === 0 && views === 0) {

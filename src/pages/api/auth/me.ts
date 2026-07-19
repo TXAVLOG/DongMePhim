@@ -35,6 +35,7 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
       role: user.role || 'user',
       roles: user.role || 'users',
       avatar: user.avatar_url || '',
+      avatar_url: user.avatar_url || '',
       gender: user.gender || '',
       province: user.province || '',
       ward: user.ward || '',

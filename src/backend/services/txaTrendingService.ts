@@ -4,48 +4,18 @@ import type { Movie } from '@apptypes/movie';
 export const TxaTrendingService = {
   getTopTrending: async (type: 'movie' | 'series', limit: number = 10): Promise<Movie[]> => {
     try {
-      const { data, error } = await supabase
+      // 1. Fetch all trending stats from the materialized view
+      const { data: stats, error: statsError } = await supabase
         .from('mv_movie_trending_stats')
-        .select(`
-          unique_viewers_24h,
-          views_24h,
-          total_watch_time_24h,
-          favorites_24h,
-          comments_24h,
-          growth_velocity,
-          age_hours,
-          movies!inner (
-            id,
-            title,
-            original_title,
-            slug,
-            description,
-            poster_url,
-            banner_url,
-            release_year,
-            duration_minutes,
-            type,
-            status,
-            episode_current,
-            episode_total,
-            quality,
-            lang,
-            imdb_score,
-            tmdb_score,
-            views,
-            country,
-            genres,
-            updated_at
-          )
-        `)
+        .select('movie_id, unique_viewers_24h, views_24h, total_watch_time_24h, favorites_24h, comments_24h, growth_velocity, age_hours, imdb_score, tmdb_score')
         .eq('type', type);
 
-      if (error) throw error;
+      if (statsError) throw statsError;
 
-      if (!data || data.length === 0) return [];
+      if (!stats || stats.length === 0) return [];
 
-      const mapped = data.map((item: any) => {
-        const m = item.movies;
+      // 2. Score stats in memory
+      const scoredStats = stats.map((item: any) => {
         const uv = Number(item.unique_viewers_24h) || 0;
         const views = Number(item.views_24h) || 0;
         const watchTime = Number(item.total_watch_time_24h) || 0;
@@ -56,10 +26,36 @@ export const TxaTrendingService = {
         
         let score = 0;
         if (uv === 0 && views === 0) {
-          score = (Number(m.imdb_score) || Number(m.tmdb_score) || 8.0) * 10;
+          score = (Number(item.imdb_score) || Number(item.tmdb_score) || 8.0) * 10;
         } else {
           score = ((4 * uv + 0.0017 * watchTime + 15 * favs + 8 * comments) * velocity) / Math.pow((age / 24 + 2), 1.5);
         }
+
+        return {
+          movieId: item.movie_id,
+          trendingScore: Math.round(score * 10) / 10
+        };
+      });
+
+      // 3. Sort by trendingScore and limit
+      scoredStats.sort((a, b) => b.trendingScore - a.trendingScore);
+      const topStats = scoredStats.slice(0, limit);
+      const topIds = topStats.map(s => s.movieId);
+
+      if (topIds.length === 0) return [];
+
+      // 4. Fetch full movie details for the top IDs
+      const { data: movies, error: moviesError } = await supabase
+        .from('movies')
+        .select('id, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, tmdb_score, views, country, genres, updated_at')
+        .in('id', topIds);
+
+      if (moviesError) throw moviesError;
+
+      // 5. Map back in the correct order
+      const mapped = topStats.map(stat => {
+        const m = movies.find((x: any) => x.id === stat.movieId);
+        if (!m) return null;
 
         return {
           id: m.id,
@@ -86,12 +82,11 @@ export const TxaTrendingService = {
           genres: Array.isArray(m.genres) ? m.genres : [],
           updatedAt: m.updated_at || new Date().toISOString(),
           isStatic: false,
-          trendingScore: Math.round(score * 10) / 10
+          trendingScore: stat.trendingScore
         };
-      });
+      }).filter(Boolean) as Movie[];
 
-      mapped.sort((a, b) => b.trendingScore - a.trendingScore);
-      return mapped.slice(0, limit);
+      return mapped;
     } catch (err) {
       console.error('Lỗi khi lấy phim xu hướng:', err);
       return [];

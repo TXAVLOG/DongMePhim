@@ -1162,56 +1162,15 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     if (needsUpdate) {
       const triggerUpdate = async () => {
         try {
-          let tmdbId = null;
-          let seasonNumber = 1;
-          
-          const phimApiRes = await fetch(`https://phimapi.com/phim/${movie.slug}`);
-          if (phimApiRes.ok) {
-            const phimApiData = (await phimApiRes.json()) as any;
-            if (phimApiData && phimApiData.movie && phimApiData.movie.tmdb) {
-              tmdbId = phimApiData.movie.tmdb.id;
-              seasonNumber = phimApiData.movie.tmdb.season || 1;
-            }
-          }
-          
-          if (!tmdbId) return;
-          
-          const TMDB_API_KEY = '211be8d45c0d31404f644ecdcf9caad5';
-          const tmdbRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=vi-VN`);
-          if (!tmdbRes.ok) return;
-          
-          const tmdbData = (await tmdbRes.json()) as any;
-          if (tmdbData && Array.isArray(tmdbData.episodes)) {
-            const tmdbEps = tmdbData.episodes;
-            let updated = false;
-            
-            const updatedEpisodes = movie.episodes.map(server => {
-              const srvData = server.serverData || [];
-              const updatedSrvData = srvData.map((ep: any, epIdx: number) => {
-                const tmdbEp = tmdbEps[epIdx];
-                if (tmdbEp && tmdbEp.still_path) {
-                  const newThumb = `https://image.tmdb.org/t/p/original${tmdbEp.still_path}`;
-                  if (ep.thumbUrl !== newThumb) {
-                    updated = true;
-                    return { ...ep, thumbUrl: newThumb };
-                  }
-                } else if (!ep.thumbUrl) {
-                  updated = true;
-                  return { ...ep, thumbUrl: movie.bannerUrl || movie.posterUrl || '' };
-                }
-                return ep;
-              });
-              return { ...server, serverData: updatedSrvData };
-            });
-            
-            if (updated) {
-              const updatedMovie = { ...movie, episodes: updatedEpisodes };
-              setMovie(updatedMovie);
-              
-              await supabase
-                .from('movies')
-                .update({ episodes: updatedEpisodes })
-                .eq('slug', movie.slug);
+          const res = await fetch('/api/app/movie/update-stills', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: movie.slug })
+          });
+          if (res.ok) {
+            const result = (await res.json()) as any;
+            if (result && result.status === 'success' && result.data?.episodes) {
+              setMovie(prev => ({ ...prev, episodes: result.data.episodes }));
             }
           }
         } catch (e) {
@@ -1754,24 +1713,39 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const [isInPlaylist, setIsInPlaylist] = useState<boolean>(false);
   const [isCinemaMode, setIsCinemaMode] = useState<boolean>(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<'txaplayer' | 'artplayer'>(() => {
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('selected_player');
-      if (saved === 'artplayer') return 'artplayer';
+  const [selectedPlayer, setSelectedPlayer] = useState<'txaplayer' | 'artplayer'>('txaplayer');
+  const [isCompact, setIsCompact] = useState<boolean>(true);
+  const [autoNext, setAutoNext] = useState<boolean>(true);
+  const [autoSkip, setAutoSkip] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+    
+    // Load player selection
+    const savedPlayer = localStorage.getItem('selected_player');
+    if (savedPlayer === 'artplayer') {
+      setSelectedPlayer('artplayer');
     }
-    return 'txaplayer';
-  });
-  const [isCompact, setIsCompact] = useState<boolean>(() => {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
+
+    // Load other settings
     try {
       const stored = localStorage.getItem('tsettings');
       if (stored) {
         const parsed = JSON.parse(stored);
-        return parsed.isCompact !== false;
+        if (parsed.isCompact !== undefined) {
+          setIsCompact(parsed.isCompact !== false);
+        }
+        if (parsed.autoNext !== undefined) {
+          setAutoNext(parsed.autoNext !== false);
+        }
+        if (parsed.autoSkip !== undefined) {
+          setAutoSkip(!!parsed.autoSkip);
+        }
       }
-    } catch (e) {}
-    return true;
-  });
+    } catch (e) {
+      console.error('Error loading settings from localStorage:', e);
+    }
+  }, []);
 
   const toggleCompact = () => {
     const nextState = !isCompact;
@@ -1785,30 +1759,6 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
       } catch (e) {}
     }
   };
-
-  const [autoNext, setAutoNext] = useState<boolean>(() => {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return true;
-    try {
-      const stored = localStorage.getItem('tsettings');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed.autoNext !== false;
-      }
-    } catch (e) {}
-    return true;
-  });
-
-  const [autoSkip, setAutoSkip] = useState<boolean>(() => {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
-    try {
-      const stored = localStorage.getItem('tsettings');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return !!parsed.autoSkip;
-      }
-    } catch (e) {}
-    return false;
-  });
 
   useEffect(() => {
     const handleAutoSkipChanged = (e: any) => {

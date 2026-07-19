@@ -139,6 +139,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         name: newUser.name,
         role: newUser.role,
         avatar_url: newUser.avatar_url,
+        avatar: newUser.avatar_url || '',
         gender: newUser.gender,
         province: newUser.province,
         ward: newUser.ward
