@@ -47,6 +47,7 @@ export interface Movie {
   rating_count?: number;
   tmdbScore?: number;
   movie_id_seq?: number;
+  trendingScore?: number;
 }
 
 export interface Episode {

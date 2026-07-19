@@ -420,9 +420,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
   async getRelatedMovies(movieId: string): Promise<Movie[]> {
     try {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(movieId);
-      const selectFields = 'id, movie_id_seq, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, require_login';
 
-      // 1. Lấy thể loại và thông tin phim hiện tại
+      // 1. Lấy thông tin phim hiện tại
       let targetMovie: any = null;
       try {
         if (isUuid) {
@@ -436,95 +435,118 @@ export class SupabaseMovieProvider implements IMovieProvider {
         console.warn('Lỗi lấy target movie details in getRelatedMovies:', err);
       }
 
-      // 2. Query phim có cùng thể loại, ưu tiên views (xu hướng)
-      let query = supabase.from('movies').select(selectFields);
-      if (targetMovie) {
-        query = query.neq('id', targetMovie.id);
-        if (Array.isArray(targetMovie.genres) && targetMovie.genres.length > 0) {
-          const conditions = targetMovie.genres
-            .map((g: string) => g?.trim())
-            .filter(Boolean)
-            .map((g: string) => `genres.cs.["${g}"]`);
-          if (conditions.length > 0) {
-            query = query.or(conditions.join(','));
-          }
+      if (!targetMovie) return [];
+
+      // 2. Query phim có cùng thể loại từ view trending
+      let query = supabase
+        .from('mv_movie_trending_stats')
+        .select(`
+          unique_viewers_24h,
+          views_24h,
+          total_watch_time_24h,
+          favorites_24h,
+          comments_24h,
+          growth_velocity,
+          age_hours,
+          movies!inner (
+            id,
+            movie_id_seq,
+            title,
+            original_title,
+            slug,
+            description,
+            poster_url,
+            banner_url,
+            release_year,
+            duration_minutes,
+            type,
+            status,
+            episode_current,
+            episode_total,
+            quality,
+            lang,
+            imdb_score,
+            tmdb_score,
+            views,
+            country,
+            genres,
+            updated_at,
+            require_login
+          )
+        `)
+        .neq('movie_id', targetMovie.id);
+
+      if (Array.isArray(targetMovie.genres) && targetMovie.genres.length > 0) {
+        const conditions = targetMovie.genres
+          .map((g: string) => g?.trim())
+          .filter(Boolean)
+          .map((g: string) => `genres.cs.["${g}"]`);
+        if (conditions.length > 0) {
+          query = query.or(conditions.join(','), { foreignTable: 'movies' });
         }
-      } else if (isUuid) {
-        query = query.neq('id', movieId);
       }
 
-      query = query.order('views', { ascending: false, nullsFirst: false }).limit(12);
-      let { data: dbMovies, error } = await query;
+      const { data: dbData, error } = await query.limit(30);
       if (error) throw error;
 
-      // 3. Fallback: Nếu không đủ 8 phim cùng thể loại, bù đắp bằng các phim hot khác (views desc)
-      if (!dbMovies || dbMovies.length < 8) {
-        let fallbackQuery = supabase.from('movies')
-          .select(selectFields)
-          .order('views', { ascending: false, nullsFirst: false })
-          .limit(12);
-
-        if (targetMovie) {
-          fallbackQuery = fallbackQuery.neq('id', targetMovie.id);
-        } else if (isUuid) {
-          fallbackQuery = fallbackQuery.neq('id', movieId);
-        }
-
-        const { data: popularMovies } = await fallbackQuery;
-        if (popularMovies) {
-          dbMovies = dbMovies || [];
-          const existingIds = new Set(dbMovies.map((m: any) => m.id));
-          for (const m of popularMovies) {
-            if (!existingIds.has(m.id)) {
-              dbMovies.push(m);
-            }
+      let list: Movie[] = [];
+      if (dbData && dbData.length > 0) {
+        list = dbData.map((item: any) => {
+          const m = item.movies;
+          const uv = Number(item.unique_viewers_24h) || 0;
+          const views = Number(item.views_24h) || 0;
+          const watchTime = Number(item.total_watch_time_24h) || 0;
+          const favs = Number(item.favorites_24h) || 0;
+          const comments = Number(item.comments_24h) || 0;
+          const velocity = Number(item.growth_velocity) || 1.0;
+          const age = Number(item.age_hours) || 0;
+          
+          let score = 0;
+          if (uv === 0 && views === 0) {
+            score = (Number(m.imdb_score) || Number(m.tmdb_score) || 8.0) * 10;
+          } else {
+            score = ((4 * uv + 0.0017 * watchTime + 15 * favs + 8 * comments) * velocity) / Math.pow((age / 24 + 2), 1.5);
           }
-        }
+
+          return {
+            id: m.id,
+            title: m.title,
+            originalTitle: m.original_title,
+            slug: m.slug,
+            description: m.description || '',
+            posterUrl: m.poster_url || '',
+            bannerUrl: m.banner_url || m.poster_url || '',
+            releaseYear: m.release_year || 2024,
+            durationMinutes: m.duration_minutes || '',
+            type: m.type,
+            status: m.status,
+            episodeCurrent: m.episode_current || '1',
+            episodeTotal: m.episode_total || '1',
+            quality: m.quality || 'FHD',
+            lang: m.lang || 'Vietsub',
+            imdbScore: Number(m.imdb_score) || 8.0,
+            tmdbScore: m.tmdb_score != null ? Number(m.tmdb_score) : undefined,
+            views: Number(m.views) || 0,
+            commentCount: 0,
+            category: Array.isArray(m.genres) && m.genres.length > 0 ? m.genres[0] : 'Khác',
+            country: m.country || 'Khác',
+            genres: Array.isArray(m.genres) ? m.genres : [],
+            updatedAt: m.updated_at || new Date().toISOString(),
+            isStatic: false,
+            require_login: m.require_login || false,
+            movie_id_seq: m.movie_id_seq,
+            trendingScore: Math.round(score * 10) / 10
+          };
+        });
+
+        // Sắp xếp theo trendingScore giảm dần
+        list.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
       }
 
       // Lấy danh sách phim hệ thống đã bị xóa từ database
       const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
       const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
-
-      let list: Movie[] = [];
-      if (dbMovies && dbMovies.length > 0) {
-        list = dbMovies.map((m: any) => ({
-          id: m.id,
-          title: m.title,
-          originalTitle: m.original_title,
-          slug: m.slug,
-          description: m.description || '',
-          posterUrl: m.poster_url || '',
-          bannerUrl: m.banner_url || m.poster_url || '',
-          releaseYear: m.release_year || 2024,
-          durationMinutes: m.duration_minutes || '45 phút/tập',
-          type: m.type as 'movie' | 'series' | 'hoathinh' | 'tvshows',
-          status: m.status as 'completed' | 'ongoing',
-          episodeCurrent: m.episode_current || '1',
-          episodeTotal: m.episode_total || '1',
-          quality: m.quality || 'FHD',
-          lang: m.lang || 'Vietsub',
-          imdbScore: Number(m.imdb_score) || 8.0,
-          views: Number(m.views) || 0,
-          commentCount: 0,
-          category: m.country || 'Khác',
-          genres: Array.isArray(m.genres) ? m.genres : [],
-          updatedAt: m.updated_at || new Date().toISOString(),
-          isStatic: false,
-          broadcastSchedule: m.broadcast_schedule || undefined,
-          actors: Array.isArray(m.actors) ? m.actors : [],
-          directors: Array.isArray(m.directors) ? m.directors : [],
-          require_login: m.require_login || false,
-          movie_id_seq: m.movie_id_seq
-        }));
-
-        if (targetMovie) {
-          list = list.filter(m => m.id !== targetMovie.id);
-        } else if (!isUuid) {
-          list = list.filter(m => m.id !== movieId);
-        }
-        list = list.filter(m => !deletedSlugs.has(m.slug));
-      }
+      list = list.filter(m => !deletedSlugs.has(m.slug));
 
       const dbSlugs = new Set(list.map(m => m.slug));
       const combined = [
@@ -532,16 +554,8 @@ export class SupabaseMovieProvider implements IMovieProvider {
         ...seedMovies.filter(m => m.id !== movieId && !dbSlugs.has(m.slug) && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
       ];
       return combined.slice(0, 12);
-
     } catch (e) {
       console.warn('Lỗi khi lấy phim liên quan từ Supabase:', e);
-    }
-
-    try {
-      const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
-      const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
-      return seedMovies.filter(m => m.id !== movieId && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true })).slice(0, 12);
-    } catch (e) {
       return seedMovies.filter(m => m.id !== movieId).map(m => ({ ...m, isStatic: true })).slice(0, 12);
     }
   }

@@ -50,9 +50,19 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
 
       const { data: stats } = await supabase
         .from('txa_user_activity_stats')
-        .select('level')
+        .select('level, total_watch_seconds, total_ratings, total_comments, discord_message_count')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      const { count: favoritesCount } = await supabase
+        .from('favorites')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      const settings = await SettingService.getSettings();
+      const packagesList = settings.packages || [];
+      const userPkg = packagesList.find((p: any) => p.id?.toLowerCase() === (user.package || 'free').toLowerCase() || p.title?.toLowerCase() === (user.package || 'free').toLowerCase());
+      const packageTitle = userPkg ? userPkg.title : (user.package ? (user.package.charAt(0).toUpperCase() + user.package.slice(1)) : 'Gói Free');
 
       return apiResponse({
         connected: true,
@@ -62,8 +72,14 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
           email: user.email,
           name: user.name,
           package: user.package || 'free',
+          packageTitle: packageTitle,
           expiryDate: user.expiry_date,
-          level: stats?.level || 'Mầm Non'
+          level: stats?.level || 'Mầm Non',
+          watchTime: stats?.total_watch_seconds || 0,
+          ratingsCount: stats?.total_ratings || 0,
+          commentsCount: stats?.total_comments || 0,
+          discordMessageCount: stats?.discord_message_count || 0,
+          favoritesCount: favoritesCount || 0
         }
       }, 'success', 'Lấy thông tin thành công', 200, request);
     } else {
@@ -75,7 +91,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
 
       const { data: connection, error: connError } = await supabase
         .from('txa_discord_connections')
-        .select('discord_id, discord_username, created_at')
+        .select('discord_id, discord_username, discord_avatar, created_at')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -85,12 +101,30 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
         return apiResponse({ connected: false, connection: null }, 'success', 'Chưa liên kết Discord', 200, request);
       }
 
+      const { data: stats } = await supabase
+        .from('txa_user_activity_stats')
+        .select('level, total_watch_seconds, total_ratings, total_comments, discord_message_count')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const { count: favoritesCount } = await supabase
+        .from('favorites')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
       return apiResponse({
         connected: true,
         connection: {
           discordId: connection.discord_id,
           username: connection.discord_username,
-          createdAt: connection.created_at
+          avatar: connection.discord_avatar,
+          createdAt: connection.created_at,
+          level: stats?.level || 'Mầm Non',
+          watchTime: stats?.total_watch_seconds || 0,
+          ratingsCount: stats?.total_ratings || 0,
+          commentsCount: stats?.total_comments || 0,
+          discordMessageCount: stats?.discord_message_count || 0,
+          favoritesCount: favoritesCount || 0
         }
       }, 'success', 'Lấy thông tin kết nối thành công', 200, request);
     }

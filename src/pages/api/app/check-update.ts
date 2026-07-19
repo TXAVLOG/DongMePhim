@@ -32,6 +32,8 @@ export const GET: APIRoute = async ({ request }) => {
     release_date: "2026-06-18T12:00:00Z",
     size: parseInt(settings.app.app_apk_size) || 52428800,
     sha256: (settings.app.app_apk_sha256 || "abcdef1234567890...").trim(),
-    changelog: settings.app.app_release_notes || "- Cập nhật trình phát video mượt hơn\n- Sửa lỗi đồng bộ lịch sử xem"
+    changelog: settings.app.app_release_notes || "- Cập nhật trình phát video mượt hơn\n- Sửa lỗi đồng bộ lịch sử xem",
+    discord_server_url: (settings.social?.social_discord_url || '').trim(),
+    discord_server_enable: settings.social?.social_discord_enable ?? false
   }, 'success', '', 200, request);
 };

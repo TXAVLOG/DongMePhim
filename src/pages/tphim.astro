@@ -8,6 +8,7 @@ import { MovieService } from '@services/MovieService';
 import Txaicon from '@components/ui/txaicon.astro';
 import { getHomepageCategories } from '@data/categories';
 import { TxaMovieRanker } from '../backend/utils/txaMovieRanker';
+import { TxaTrendingService } from '../backend/services/txaTrendingService';
 import { supabase } from '@lib/supabase';
 
 const homepageMappings = await getHomepageCategories();
@@ -61,13 +62,12 @@ const otherAnime = allMoviesForServer.filter((m: any) => isAnimeMovie(m) && !ani
 const sortedOtherAnime = TxaMovieRanker.sortMovies(otherAnime);
 const topAnimeList = [...configuredAnime, ...sortedOtherAnime].slice(0, 15);
 
-// Top 10 Phim Lẻ: Đọc từ admin + bù cho đủ 10 phim
-const configuredPhimLe = top10Slugs
-  .map(slug => allMoviesForServer.find((m: any) => m.slug === slug))
-  .filter(Boolean);
-const otherPhimLe = allMoviesForServer.filter((m: any) => m.type === 'movie' && !top10Slugs.includes(m.slug));
-const sortedOtherPhimLe = TxaMovieRanker.sortMovies(otherPhimLe);
-const top10PhimLeList = [...configuredPhimLe, ...sortedOtherPhimLe].slice(0, 10);
+// Phim xu hướng và gợi ý động từ TxaTrendingService
+const [top10PhimLeList, top10PhimBoList, pRecommendations] = await Promise.all([
+  TxaTrendingService.getTopTrending('movie', 10),
+  TxaTrendingService.getTopTrending('series', 10),
+  TxaTrendingService.getPersonalizedRecommendations(null, 10)
+]);
 
 // Điện Ảnh Việt: Xem Là Cuốn!: Đọc từ cấu hình admin + bù cho đủ 20 phim Việt Nam chuẩn sắp xếp theo txaranking
 const configuredVietNam = vietNamSlugs
@@ -82,14 +82,6 @@ const topSeries = allMoviesForServer
   .filter((m: any) => m.type === 'series')
   .sort((a: any, b: any) => ((b.views || 0) + (b.commentCount || 0)) - ((a.views || 0) + (a.commentCount || 0)))
   .slice(0, 10);
-
-// Top 10 Phim Bộ: Đọc từ admin + bù cho đủ 10 phim
-const configuredPhimBo = top10PhimBoSlugs
-  .map(slug => allMoviesForServer.find((m: any) => m.slug === slug))
-  .filter(Boolean);
-const otherPhimBo = allMoviesForServer.filter((m: any) => m.type === 'series' && !top10PhimBoSlugs.includes(m.slug));
-const sortedOtherPhimBo = TxaMovieRanker.sortMovies(otherPhimBo);
-const top10PhimBoList = [...configuredPhimBo, ...sortedOtherPhimBo].slice(0, 10);
 
 // Phim điện ảnh mới coóng - Tự động phân loại (Lọc phim lẻ, ưu tiên chiếu rạp, sắp xếp mới nhất)
 const phimDienAnhList = [...allMoviesForServer]
@@ -349,6 +341,35 @@ const getMovieProgressBadgesSSR = (movie: any) => {
     <!-- Swiper CDN assets -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.css" />
     <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
+
+    <!-- Gợi Ý Cho Bạn (Personalized Recommendations) -->
+    {pRecommendations.length > 0 && (
+      <section class="space-y-6 relative py-4">
+        <!-- Ambient Glow -->
+        <div class="absolute -top-10 left-10 w-96 h-96 bg-purple-600/5 rounded-full blur-[120px] pointer-events-none"></div>
+        
+        <div class="flex items-center justify-between relative z-10">
+          <div>
+            <h2 class="font-display-hero text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
+              Gợi Ý Cho Bạn
+              <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">stars</span>
+            </h2>
+            <p class="text-on-surface-variant font-body-main mt-1 text-sm">Được đề xuất dựa trên sở thích và lịch sử xem của bạn</p>
+          </div>
+        </div>
+
+        <!-- Swiper Slider for Recommendations -->
+        <div class="swiper top10-swiper recommendations-swiper relative z-10">
+          <div class="swiper-wrapper" id="recommendations-container">
+            {pRecommendations.map((movie: any) => (
+              <div class="swiper-slide">
+                <Card movie={movie} title={movie.title} slug={movie.slug} poster={movie.posterUrl} year={movie.releaseYear} quality={movie.quality} status={movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
 
     <!-- Top Anime Đáng Xem Mùa Hè Này (Cyber-Anime Spotlight Deck) -->
     {topAnimeList.length > 0 && (
@@ -1479,6 +1500,15 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             </div>
           ` : ''}
           
+          ${movie.trendingScore ? `
+            <div class="absolute top-2 left-2 z-20">
+              <span class="bg-red-600/90 text-white border border-red-500/30 text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm tracking-wider font-outfit flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-[9px] animate-pulse" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+                ${movie.trendingScore} pts
+              </span>
+            </div>
+          ` : ''}
+          
           <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
               <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
@@ -1533,6 +1563,12 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             </div>
             <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
               <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb ${(Number(movie.imdbScore) || 8.0).toFixed(1)}</span>
+              ${movie.trendingScore ? `
+                <span class="border border-red-500 text-red-400 px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-0.5">
+                  <span class="material-symbols-outlined text-[9px] fill-current" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+                  ${movie.trendingScore} pts
+                </span>
+              ` : ''}
               <span>${year || 2024}</span>
               <span>${status}</span>
             </div>
@@ -1634,6 +1670,43 @@ const getMovieProgressBadgesSSR = (movie: any) => {
 
   // Bind all initialization to 'astro:page-load'
   document.addEventListener('astro:page-load', async () => {
+    // Dynamic Personalized Recommendations Loader
+    async function loadPersonalizedRecommendations() {
+      const currentUser = window.APP_USER;
+      if (!currentUser || !currentUser.username) return;
+      
+      try {
+        const res = await fetch(`/api/user/recommendations?username=${encodeURIComponent(currentUser.username)}`);
+        if (!res.ok) return;
+        const result = await res.json();
+        const movies = result?.data || [];
+        
+        if (movies.length > 0) {
+          const container = document.getElementById('recommendations-container');
+          if (container) {
+            let html = '';
+            movies.forEach(m => {
+              html += `
+                <div class="swiper-slide">
+                  \${createMovieCardHTML(m)}
+                </div>
+              `;
+            });
+            container.innerHTML = html;
+            
+            const recSwiperEl = document.querySelector('.recommendations-swiper');
+            if (recSwiperEl && recSwiperEl.swiper) {
+              recSwiperEl.swiper.update();
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải gợi ý phim cá nhân hóa:', err);
+      }
+    }
+    
+    loadPersonalizedRecommendations();
+
     // Initialize Swipers
     function initSwipers() {
       if (typeof Swiper === 'undefined') {

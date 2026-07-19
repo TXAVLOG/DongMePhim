@@ -13,19 +13,9 @@ export const HOMEPAGE_CATEGORIES: CategoryDefinition[] = [
     description: 'Loạt anime gây sốt với đồ họa mãn nhãn, cốt truyện bùng nổ và dàn nhân vật khiến fan phát cuồng.'
   },
   {
-    slug: 'top-10-phim-le',
-    title: 'Top 10 Phim Lẻ Hay Nhức Nách',
-    description: 'Bảng vàng những bộ phim lẻ xuất sắc nhất, xem một lần là nhớ mãi.'
-  },
-  {
     slug: 'viet-nam',
     title: 'Điện Ảnh Việt: Xem Là Cuốn!',
     description: 'Tuyển tập những tác phẩm điện ảnh và truyền hình Việt Nam tiêu biểu, xuất sắc nhất.'
-  },
-  {
-    slug: 'top-10-phim-bo',
-    title: 'Top 10 Phim Bộ Hay Nhất',
-    description: 'Những series đình đám đủ sức khiến bạn thức trắng chỉ để xem thêm một tập nữa.'
   },
   {
     slug: 'phim-dien-anh-moi',

@@ -4,6 +4,7 @@ import { MovieService } from '@services/MovieService';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { TxaMovieRanker } from '../../../backend/utils/txaMovieRanker';
+import { TxaTrendingService } from '../../../backend/services/txaTrendingService';
 
 export const GET: APIRoute = async ({ request, cookies }) => {
   try {
@@ -71,26 +72,32 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       { name: "Hoạt Hình", slug: "hoat-hinh", count: 110 }
     ];
 
-    // Mới cập nhật (Latest)
-    const latestList = [...allMovies].slice(0, 15).map(mapMovie);
+    // Tải các danh sách phim thịnh hành động từ TxaTrendingService
+    const [trendingMovies, trendingSeries] = await Promise.all([
+      TxaTrendingService.getTopTrending('movie', 40),
+      TxaTrendingService.getTopTrending('series', 40)
+    ]);
 
-    // Phim Hot (Sorted by views)
-    const hotList = [...allMovies].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 15).map(mapMovie);
+    // Mới cập nhật (Latest)
+    const latestList = [...allMovies].slice(0, 40).map(mapMovie);
+
+    // Phim Hot (Kết hợp và sắp xếp theo trendingScore)
+    const combinedTrending = [...trendingMovies, ...trendingSeries];
+    combinedTrending.sort((a: any, b: any) => (b.trendingScore || 0) - (a.trendingScore || 0));
+    const hotList = combinedTrending.slice(0, 40).map(mapMovie);
 
     // Anime (type hoathinh or genre Hoạt Hình)
     const animeFiltered = allMovies.filter((m: any) => m.type === 'hoathinh' || (m.genres && m.genres.some((g: string) => g.toLowerCase().includes('hoạt hình'))));
-    const animeList = TxaMovieRanker.sortMovies(animeFiltered).slice(0, 15).map(mapMovie);
+    const animeList = TxaMovieRanker.sortMovies(animeFiltered).slice(0, 40).map(mapMovie);
 
     // Phim Bộ (type series)
-    const seriesFiltered = allMovies.filter((m: any) => m.type === 'series');
-    const seriesList = TxaMovieRanker.sortMovies(seriesFiltered).slice(0, 15).map(mapMovie);
+    const seriesList = trendingSeries.slice(0, 40).map(mapMovie);
 
     // Phim Lẻ (type movie)
-    const singleFiltered = allMovies.filter((m: any) => m.type === 'movie');
-    const singleList = TxaMovieRanker.sortMovies(singleFiltered).slice(0, 15).map(mapMovie);
+    const singleList = trendingMovies.slice(0, 40).map(mapMovie);
 
     // TV Shows (type tvshows)
-    const tvshowsList = allMovies.filter((m: any) => m.type === 'tvshows').slice(0, 15).map(mapMovie);
+    const tvshowsList = allMovies.filter((m: any) => m.type === 'tvshows').slice(0, 40).map(mapMovie);
 
     // Phim Chiếu Rạp (genres contains 'Chiếu Rạp', fallback to hot movies if empty)
     let theaterFiltered = allMovies.filter((m: any) => m.genres && m.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp')));
@@ -98,7 +105,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       theaterFiltered = allMovies.filter((m: any) => m.type === 'movie' || m.type === 'hoathinh')
         .sort((a: any, b: any) => (b.views || 0) - (a.views || 0));
     }
-    const theaterList = theaterFiltered.slice(0, 15).map(mapMovie);
+    const theaterList = theaterFiltered.slice(0, 40).map(mapMovie);
 
     return apiResponse({
       favorite_ids: favoriteIds,

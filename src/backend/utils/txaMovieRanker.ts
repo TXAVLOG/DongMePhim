@@ -2,17 +2,14 @@ import type { Movie } from '../types/movie';
 
 export class TxaMovieRanker {
   /**
-   * Tính điểm xếp hạng cho phim theo công thức:
-   * Score = (số đánh giá + điểm đánh giá + lượt view) / (số bình luận + 1) * 100
+   * Tính điểm xếp hạng xu hướng cho phim
    */
   static calculateScore(movie: Movie): number {
-    const ratingsCount = movie.rating_count || 0; // số lượt đánh giá
-    const ratingScore = movie.rating_score || movie.imdbScore || 8.0; // điểm đánh giá (có thập phân)
-    const views = movie.views || 0; // lượt view
-    const comments = movie.commentCount || 0; // số bình luận
-
-    const score = ((ratingsCount + ratingScore + views) / (comments + 1)) * 100;
-    return score;
+    if (movie.trendingScore !== undefined) {
+      return movie.trendingScore;
+    }
+    // Fallback Cold Start: sử dụng điểm đánh giá IMDb hoặc TMDB
+    return (movie.imdbScore || movie.tmdbScore || 8.0) * 10;
   }
 
   /**

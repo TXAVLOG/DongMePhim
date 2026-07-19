@@ -120,6 +120,16 @@ const progress = getEpisodeProgress() as any;
       </div>
     )}
 
+    <!-- Top Left Trending Score Badge -->
+    {movie?.trendingScore !== undefined && movie.trendingScore > 0 && (
+      <div class="absolute top-2 left-2 z-20">
+        <span class="bg-red-600/90 text-white border border-red-500/30 text-[10px] font-black px-2 py-0.5 rounded shadow-sm backdrop-blur-sm whitespace-nowrap font-outfit uppercase tracking-wide flex items-center gap-0.5">
+          <span class="material-symbols-outlined text-[10px] animate-pulse" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+          {movie.trendingScore} pts
+        </span>
+      </div>
+    )}
+
     <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 bg-black/20">
       <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/95 text-on-primary backdrop-blur-md transform scale-50 transition-transform duration-300 group-hover:scale-100 shadow-xl shadow-primary/20">
         <span class="material-symbols-outlined ml-0.5 text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
@@ -234,7 +244,13 @@ const progress = getEpisodeProgress() as any;
         <!-- Tags & Details Row -->
         <div class="flex flex-wrap items-center gap-2 text-[10px] text-zinc-300 font-semibold font-outfit pt-1">
           {movie?.imdbScore && (
-            <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold">IMDb {movie.imdbScore.toFixed(1)}</span>
+            <span class="border border-primary text-primary px-1.5 py-0.5 rounded text-[9px] font-bold font-outfit">IMDb {movie.imdbScore.toFixed(1)}</span>
+          )}
+          {movie?.trendingScore && (
+            <span class="border border-red-500 text-red-400 px-1.5 py-0.5 rounded text-[9px] font-bold font-outfit flex items-center gap-0.5">
+              <span class="material-symbols-outlined text-[10px] fill-current" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+              {movie.trendingScore} pts
+            </span>
           )}
           {movie?.ageRating && (
             <span class="border border-zinc-500 text-zinc-300 px-1.5 py-0.5 rounded text-[9px] font-bold">{movie.ageRating}</span>

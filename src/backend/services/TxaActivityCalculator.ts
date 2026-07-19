@@ -265,18 +265,46 @@ export const TxaActivityCalculator = {
       const localConfig = await TxaJsonDb.getDiscordConfig();
       const roles = localConfig.roles;
 
+      const normalizedPackage = (packageName || 'free').toLowerCase();
+      let targetRoleKey: 'role_package_vip' | 'role_package_standard' | 'role_package_bypass_zalo' | null = null;
+      
+      if (normalizedPackage !== 'free') {
+        const packagesList = settings.packages || [];
+        const userPkg = packagesList.find((p: any) => 
+          p.id?.toLowerCase() === normalizedPackage || 
+          p.title?.toLowerCase() === normalizedPackage
+        );
+        
+        if (userPkg) {
+          if (userPkg.id?.toLowerCase() === 'bypass_zalo') {
+            targetRoleKey = 'role_package_bypass_zalo';
+          } else if (userPkg.permissions?.vip_badge) {
+            targetRoleKey = 'role_package_vip';
+          } else {
+            targetRoleKey = 'role_package_standard';
+          }
+        } else {
+          // Fallback to basic string matching
+          if (normalizedPackage.includes('vip') || normalizedPackage.includes('s')) {
+            targetRoleKey = 'role_package_vip';
+          } else if (normalizedPackage.includes('standard') || normalizedPackage.includes('tiêu chuẩn') || normalizedPackage.includes('chuẩn')) {
+            targetRoleKey = 'role_package_standard';
+          } else if (normalizedPackage.includes('zalo')) {
+            targetRoleKey = 'role_package_bypass_zalo';
+          }
+        }
+      }
+
+      const roleToAdd = targetRoleKey ? roles[targetRoleKey] : undefined;
+
       const packageRoles: Record<string, string | undefined> = {
         'vip': roles.role_package_vip,
         'standard': roles.role_package_standard,
         'bypass_zalo': roles.role_package_bypass_zalo
       };
 
-      const normalizedPackage = (packageName || 'free').toLowerCase();
-      const roleToAdd = packageRoles[normalizedPackage];
-      const rolesToRemove = Object.keys(packageRoles)
-        .filter(pkg => pkg !== normalizedPackage)
-        .map(pkg => packageRoles[pkg])
-        .filter(Boolean) as string[];
+      const rolesToRemove = Object.values(packageRoles)
+        .filter(rId => rId && rId !== roleToAdd) as string[];
 
       const headers = {
         'Authorization': `Bot ${discord.bot_token}`,

@@ -54,6 +54,11 @@ export const GET: APIRoute = async ({ request, url }) => {
     const stats = await TxaActivityCalculator.getOrCreateStats(userId);
     const points = TxaActivityCalculator.calculatePoints(stats);
 
+    const { count: favoritesCount } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
     // Tính toán hạn gói cước
     let expiryText = 'Vô hạn';
     let remainingDays = -1;
@@ -96,6 +101,7 @@ export const GET: APIRoute = async ({ request, url }) => {
         totalRatings: stats.total_ratings,
         totalComments: stats.total_comments,
         discordMessageCount: stats.discord_message_count,
+        totalFavorites: favoritesCount || 0,
         level: stats.level,
         points: points,
         violationCount: violationCount
