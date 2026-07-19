@@ -5,6 +5,7 @@ import { supabase } from '@lib/supabase';
 import { getEmailTemplate } from '@templates/emails/emailReader';
 import { SmtpClient } from '@lib/api/smtpClient';
 import { encryptPassword } from '@lib/passwordCrypto';
+import { getGravatarUrl } from '@lib/gravatar';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -65,16 +66,8 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Địa chỉ email đã được đăng ký!', 400, request);
     }
 
-    // MD5 implementation or simple random hash for Gravatar avatar
-    const emailClean = email.trim().toLowerCase();
-    let emailHash = '';
-    // A simple hash function to generate MD5-like string
-    let h = 0;
-    for (let i = 0; i < emailClean.length; i++) {
-      h = 31 * h + emailClean.charCodeAt(i);
-      h = h & h; // Convert to 32bit integer
-    }
-    emailHash = Math.abs(h).toString(16).padStart(8, '0');
+    // Generate real Gravatar URL using SHA-256 (Web Crypto API, Gravatar supports this since 2024)
+    const avatarUrl = await getGravatarUrl(email, 'identicon', 256);
 
     // Email verification config
     const requireVerification = settings.user?.require_email_verification ?? false;
@@ -105,7 +98,7 @@ export const POST: APIRoute = async ({ request }) => {
         password: securePassword,
         role: 'user',
         name: username,
-        avatar_url: `https://www.gravatar.com/avatar/${emailHash}?d=identicon`,
+        avatar_url: avatarUrl,
         gender: gender || 'other',
         package: 'free',
         status: 'active',

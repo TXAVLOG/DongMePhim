@@ -4,6 +4,7 @@ import { supabase } from '@lib/supabase';
 import { createSession } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
 import { encryptPassword } from '@lib/passwordCrypto';
+import { getGravatarUrl } from '@lib/gravatar';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -99,6 +100,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const randomPassword = Math.random().toString(36).substring(2, 10);
     const securePassword = secretKey ? await encryptPassword(randomPassword, secretKey) : randomPassword;
 
+    // If Google doesn't provide a profile picture, fall back to Gravatar
+    const avatarUrl = picture || await getGravatarUrl(email, 'identicon', 256);
+
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert({
@@ -107,7 +111,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         password: securePassword,
         role: 'user',
         name: name,
-        avatar_url: picture,
+        avatar_url: avatarUrl,
         gender: gender,
         province: province,
         ward: ward,
