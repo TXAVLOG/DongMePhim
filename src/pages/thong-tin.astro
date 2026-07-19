@@ -38,7 +38,6 @@ const settings = await SettingService.getSettings();
                 <p id="info-email" class="text-xs text-zinc-400 font-mono"></p>
                 <div class="flex flex-wrap gap-2 justify-center sm:justify-start pt-1">
                   <span id="info-package-badge" class="bg-primary/20 text-primary border border-primary/30 rounded-full px-3 py-1 text-[10px] font-bold uppercase"></span>
-                  <a href="/goi-dich-vu" id="info-status-badge" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-full px-3 py-1 text-[10px] font-bold uppercase active:scale-95 transition-all cursor-pointer no-underline flex items-center justify-center">Kích hoạt</a>
                 </div>
               </div>
             </div>
@@ -702,6 +701,9 @@ const settings = await SettingService.getSettings();
             // Sync with current user state
             if (window.APP_USER) {
               window.APP_USER.avatar_url = base64Data;
+            }
+            if (window.updateHeaderAvatar) {
+              window.updateHeaderAvatar(base64Data);
             }
           } else {
             const errMsg = data?.message || 'Không thể cập nhật ảnh đại diện!';

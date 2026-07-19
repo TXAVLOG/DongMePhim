@@ -392,7 +392,9 @@ const groupedPackages = packages.map((pkg: any) => {
             <tr class="hover:bg-surface-container-high/30 transition-colors">
               <td class="px-8 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">${initials}</div>
+                  <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs overflow-hidden flex-shrink-0">
+                    ${u.avatar ? `<img src="${u.avatar}" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';" /><span style="display:none" class="w-full h-full items-center justify-center text-primary font-bold text-xs">${initials}</span>` : `<span>${initials}</span>`}
+                  </div>
                   <div>
                     <p class="font-bold text-[14px] text-white">${displayName}${usernameText ? `<span class="text-xs text-zinc-400 font-normal font-mono">${usernameText}</span>` : ''}</p>
                     <p class="text-[12px] text-zinc-400">${u.email || ''}</p>

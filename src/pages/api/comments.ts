@@ -41,14 +41,14 @@ export const GET: APIRoute = async ({ request }) => {
       try {
         const { data: usersData } = await supabase
           .from('users')
-          .select('username, name, gender, package, role, avatar')
+          .select('username, name, gender, package, role, avatar_url')
           .or(`name.in.(${authorNames.map(n => `"${n.replace(/"/g, '\\"')}"`).join(',')}),username.in.(${authorNames.map(n => `"${n.replace(/"/g, '\\"')}"`).join(',')})`);
         
         if (usersData) {
           usersData.forEach((u: any) => {
             const pkg = u.package || 'Free';
             const role = u.role || 'user';
-            const avatar = u.avatar || '';
+            const avatar = u.avatar_url || '';
             if (u.name) {
               const key = u.name.toLowerCase().trim();
               userGenderMap.set(key, u.gender || 'other');

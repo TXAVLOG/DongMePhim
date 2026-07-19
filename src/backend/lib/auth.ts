@@ -58,7 +58,7 @@ export async function verifyUserFromRequest(request: Request, cookies?: AstroCoo
 
   const { data: session, error } = await supabase
     .from('txa_user_sessions')
-    .select('expires_at, admin_id, users(*)')
+    .select('expires_at, admin_id, users!txa_user_sessions_user_id_fkey(*)')
     .eq('session_token', sessionToken)
     .maybeSingle();
 
@@ -93,7 +93,7 @@ export async function verifySession(request: Request, cookies: AstroCookies): Pr
 
   const { data: session, error } = await supabase
     .from('txa_user_sessions')
-    .select('user_agent, expires_at, admin_id, users(*)')
+    .select('user_agent, expires_at, admin_id, users!txa_user_sessions_user_id_fkey(*)')
     .eq('session_token', sessionToken)
     .maybeSingle();
 
