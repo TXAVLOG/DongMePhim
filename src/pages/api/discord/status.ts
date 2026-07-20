@@ -79,12 +79,10 @@ export const GET: APIRoute = async ({ request, url }) => {
       }
     }
 
-    // Lấy tên gói cước đẹp mắt
-    const effectivePkgId = isExpired ? 'free' : rawPkg;
+    // Lấy tên gói cước động 100% từ CSDL Website
     const settings = await SettingService.getSettings();
-    const packages = settings.packages || [];
-    const userPkg = packages.find((p: any) => p.id.toLowerCase() === effectivePkgId);
-    const packageTitle = userPkg?.title || (effectivePkgId === 'free' ? 'Gói Free' : effectivePkgId);
+    const packagesList = settings.packages || [];
+    const packageTitle = getDynamicPackageTitle(user.package, packagesList, isExpired);
 
     // 4. Lấy số cảnh cáo vi phạm từ local JSON
     const violationsData = loadViolationsData();
@@ -128,4 +126,45 @@ function loadViolationsData(): Record<string, number> {
   } catch (e) {
     return {};
   }
+}
+
+// Helper lấy tiêu đề gói cước động 100% từ CSDL Website
+function getDynamicPackageTitle(userPackage: string | null | undefined, packagesList: any[], isExpired: boolean = false): string {
+  if (isExpired) {
+    const freePkg = packagesList.find((p: any) => (p.id || '').trim().toLowerCase() === 'free');
+    return freePkg?.title || 'Gói Free';
+  }
+
+  const rawPkg = (userPackage || 'free').trim();
+  if (!rawPkg || rawPkg.toLowerCase() === 'free') {
+    const freePkg = packagesList.find((p: any) => (p.id || '').trim().toLowerCase() === 'free');
+    return freePkg?.title || 'Gói Free';
+  }
+
+  const rawPkgLower = rawPkg.toLowerCase();
+
+  // 1. Tìm khớp chính xác ID hoặc Title trong CSDL Settings
+  const exactMatch = packagesList.find((p: any) => {
+    const pId = (p.id || '').trim().toLowerCase();
+    const pTitle = (p.title || '').trim().toLowerCase();
+    return pId === rawPkgLower || pTitle === rawPkgLower;
+  });
+
+  if (exactMatch?.title) {
+    return exactMatch.title;
+  }
+
+  // 2. Tìm khớp tương đối nếu user.package là chuỗi chứa id hoặc title
+  const partialMatch = packagesList.find((p: any) => {
+    const pId = (p.id || '').trim().toLowerCase();
+    const pTitle = (p.title || '').trim().toLowerCase();
+    return (pId && rawPkgLower.includes(pId)) || (pTitle && rawPkgLower.includes(pTitle));
+  });
+
+  if (partialMatch?.title) {
+    return partialMatch.title;
+  }
+
+  // 3. Nếu không tìm thấy trong settings, trả về nguyên bản chuỗi user.package (Không hardcode)
+  return rawPkg;
 }
