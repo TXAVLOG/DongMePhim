@@ -72,8 +72,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body: JSON.stringify({ content, embeds: [embed] })
     });
 
-    // 4. Gửi nhật ký theo dõi riêng tới kênh #mod-log (nếu có cấu hình)
-    const channelModLog = discord.channels?.mod_log;
+    // 4. Gửi nhật ký theo dõi riêng tới kênh #mod-log (Tự động nhận diện ID từ CSDL hoặc Discord API)
+    let channelModLog = discord.channels?.mod_log || discord.channels?.modlog;
+    if (!channelModLog && discord.guild_id) {
+      try {
+        const chRes = await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/channels`, {
+          headers: { 'Authorization': `Bot ${discord.bot_token}` }
+        });
+        if (chRes.ok) {
+          const list: any[] = await chRes.json();
+          const found = list.find((c: any) => c.type === 0 && (c.name === 'mod-log' || c.name === 'mod_log'));
+          if (found) channelModLog = found.id;
+        }
+      } catch (e) {}
+    }
+
     if (channelModLog) {
       try {
         const modLogEmbed = {
