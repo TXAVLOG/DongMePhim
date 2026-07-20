@@ -1988,8 +1988,27 @@ const isImpersonating = userObj && !!userObj.adminId;
                 </ul>
             </div>
         </div>
-        <div class="mt-section-gap pt-8 border-t border-glass-stroke text-center px-gutter pb-24 md:pb-8">
-            <p class="text-xs text-on-surface-variant dyn-copyright">© {new Date().getFullYear()} {settings.general.site_name}. Trải nghiệm điện ảnh đỉnh cao. Bản quyền thuộc về {settings.general.site_name} Group.</p>
+        <div class="mt-section-gap pt-8 border-t border-glass-stroke text-center px-gutter pb-24 md:pb-8 space-y-4">
+            <!-- Real-time Visitor & Online Stats Widget -->
+            <div class="flex flex-wrap items-center justify-center gap-3 md:gap-5 text-xs text-on-surface-variant font-medium select-none" id="footer-stats-container">
+                <div class="flex items-center gap-2 bg-white/5 border border-glass-stroke px-3.5 py-1.5 rounded-full backdrop-blur-md hover:border-primary/40 transition-colors">
+                    <span class="material-symbols-outlined text-sm text-sky-400">today</span>
+                    <span>Hôm nay: <strong id="footer-today-visits" class="text-white font-bold font-mono">...</strong></span>
+                </div>
+                <div class="flex items-center gap-2 bg-white/5 border border-glass-stroke px-3.5 py-1.5 rounded-full backdrop-blur-md hover:border-primary/40 transition-colors">
+                    <span class="material-symbols-outlined text-sm text-purple-400">bar_chart</span>
+                    <span>Tổng truy cập: <strong id="footer-total-visits" class="text-white font-bold font-mono">...</strong></span>
+                </div>
+                <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1.5 rounded-full backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span>Đang online: <strong id="footer-online-users" class="text-emerald-400 font-extrabold font-mono">...</strong></span>
+                </div>
+            </div>
+
+            <p class="text-xs text-on-surface-variant dyn-copyright pt-2">© {new Date().getFullYear()} {settings.general.site_name}. Trải nghiệm điện ảnh đỉnh cao. Bản quyền thuộc về {settings.general.site_name} Group.</p>
         </div>
     </footer>
 
@@ -5325,6 +5344,80 @@ const isImpersonating = userObj && !!userObj.adminId;
           } else {
             stopTitleBlink();
           }
+        });
+      })();
+    </script>
+    <script is:inline>
+      (function initFooterStats() {
+        function getOrCreateSessionId() {
+          let sid = sessionStorage.getItem('txa_sid');
+          let isNew = false;
+          if (!sid) {
+            sid = 's_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+            sessionStorage.setItem('txa_sid', sid);
+            isNew = true;
+          }
+          return { sid, isNew };
+        }
+
+        function txaFormatNumber(num) {
+          if (num === null || num === undefined || isNaN(num)) return '0';
+          const n = Number(num);
+          if (n >= 1000000000) {
+            return (n / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+          }
+          if (n >= 1000000) {
+            return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+          }
+          if (n >= 10000) {
+            return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+          }
+          return n.toLocaleString('vi-VN');
+        }
+
+        async function pingStats(isInitial) {
+          try {
+            const { sid, isNew } = getOrCreateSessionId();
+            const queryNew = (isInitial && isNew) ? '&new=1' : '';
+            const res = await fetch('/api/stats/online?sid=' + encodeURIComponent(sid) + queryNew);
+            if (res.ok) {
+              const json = await res.json();
+              if (json && json.status === 'success' && json.data) {
+                const todayEl = document.getElementById('footer-today-visits');
+                const totalEl = document.getElementById('footer-total-visits');
+                const onlineEl = document.getElementById('footer-online-users');
+
+                if (todayEl) {
+                  todayEl.textContent = txaFormatNumber(json.data.todayVisits);
+                  todayEl.title = (json.data.todayVisits || 0).toLocaleString('vi-VN');
+                }
+                if (totalEl) {
+                  totalEl.textContent = txaFormatNumber(json.data.totalVisits);
+                  totalEl.title = (json.data.totalVisits || 0).toLocaleString('vi-VN');
+                }
+                if (onlineEl) {
+                  onlineEl.textContent = txaFormatNumber(json.data.onlineUsers);
+                  onlineEl.title = (json.data.onlineUsers || 0).toLocaleString('vi-VN');
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Lỗi đồng bộ stats footer:', e);
+          }
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          pingStats(true);
+        } else {
+          document.addEventListener('DOMContentLoaded', function() { pingStats(true); });
+        }
+
+        setInterval(function() {
+          pingStats(false);
+        }, 10000);
+
+        document.addEventListener('astro:page-load', function() {
+          pingStats(false);
         });
       })();
     </script>

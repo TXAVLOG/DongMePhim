@@ -132,6 +132,30 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           });
         } catch (e) {}
       }
+
+      // Gửi tin nhắn DM riêng trên Discord báo hủy liên kết và mở lại kênh #xac-minh
+      try {
+        const dmRes = await fetch(`https://discord.com/api/v10/users/@me/channels`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ recipient_id: discordId })
+        });
+        if (dmRes.ok) {
+          const dmChannel: any = await dmRes.json();
+          await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              embeds: [{
+                title: '❌ ĐÃ HỦY LIÊN KẾT TÀI KHOẢN',
+                description: 'Tài khoản Discord của bạn đã được **Hủy liên kết** thành công với Động Mê Phim.\n\n👉 Kênh **#xac-minh** trên Server đã được **mở lại** cho bạn. Bạn có thể quay lại kênh #xac-minh và nhấn nút để liên kết lại bất kỳ lúc nào!',
+                color: 0xef4444,
+                footer: { text: 'Bot by TXA | Động Mê Phim' }
+              }]
+            })
+          });
+        }
+      } catch (dmErr) {}
     }
 
     return apiResponse({ unlinked: true }, 'success', 'Đã hủy liên kết tài khoản Discord thành công!', 200, request);
