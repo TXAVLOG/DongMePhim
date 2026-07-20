@@ -47,12 +47,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse({ sent: false, reason: 'Chưa cấu hình kênh đang xem (#dang-xem)' }, 'success', '', 200, request);
     }
 
-    // 3. Gửi tin nhắn trạng thái lên Discord
+    // 3. Gửi tin nhắn trạng thái lên Discord với Embed chuẩn hyperlink
     const discordId = connection.discord_id;
-    const siteUrl = (settings.general?.site_url || 'http://localhost:4321').replace(/\/$/, '');
+    const siteUrl = (settings.general?.site_url || 'https://dongmephim.online').replace(/\/$/, '');
     const watchUrl = `${siteUrl}/xem/${movieSlug}`;
 
-    const content = `🍿 <@${discordId}> đang xem tập **${episodeName}** phim **[${movieTitle}](${watchUrl})**`;
+    const content = `🍿 <@${discordId}> đang xem tập **${episodeName}** phim **${movieTitle}**`;
+    const embed = {
+      title: `🎬 ${movieTitle} - Tập ${episodeName}`,
+      url: watchUrl,
+      description: `▶️ **Người xem:** <@${discordId}>\n👉 [**Bấm vào đây để mở phim xem cùng**](${watchUrl})`,
+      color: 16744192,
+      footer: {
+        text: "Hệ Thống Động Mê Phim"
+      }
+    };
 
     const res = await fetch(`https://discord.com/api/v10/channels/${channelDangXem}/messages`, {
       method: 'POST',
@@ -60,7 +69,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         'Authorization': `Bot ${discord.bot_token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ content })
+      body: JSON.stringify({ content, embeds: [embed] })
     });
 
     if (!res.ok) {
