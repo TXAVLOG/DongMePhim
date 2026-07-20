@@ -576,34 +576,46 @@ async function sendDiscordNotification(updatedMovies: any[], discordConfig: any)
     return;
   }
   
-  const fields = updatedMovies.map(movie => {
+  const date_str = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+  // Mỗi phim sẽ có 1 embed riêng với thumbnail ảnh poster của chính nó
+  const movieEmbeds = updatedMovies.slice(0, 10).map((movie, idx) => {
     const sched = movie.broadcast_schedule || {};
     let schedText = '';
     if (sched && sched.nextTime) {
-      schedText = `\n• Lịch chiếu tập kế: **${sched.nextTime}** ngày **${sched.nextDate || ''}** (Tập: **${sched.nextEpisode || 'tiếp theo'}**)`;
-    } else {
-      schedText = `\n• Trạng thái: Đang phát sóng bộ`;
+      schedText = `\n📅 **Lịch chiếu tiếp**: **${sched.nextTime}** - ngày **${sched.nextDate || '???'}** (Tập **${sched.nextEpisode || 'tiếp theo'}**)`;
     }
+
     return {
-      name: `🎬 ${movie.title}`,
-      value: `🍿 Tập vừa ra mắt: **${movie.episode_current}**\n🔗 [Xem Phim Ngay](https://dongmephim.online/phim/${movie.slug})${schedText}`,
-      inline: false
+      title: `🎬 ${movie.title}`,
+      description: (
+        `🍿 **Tập vừa ra mắt**: **${movie.episode_current}**${schedText}\n` +
+        `🔗 [▶ Xem Phim Ngay tại Động Mê Phim](https://dongmephim.online/phim/${movie.slug})`
+      ),
+      color: idx === 0 ? 0x1DB954 : 0x3498DB, // Xanh lá cho phim đầu, xanh dương cho các phim còn lại
+      thumbnail: {
+        url: movie.poster_url || 'https://dongmephim.online/public/icon-maskable-192x192.png'
+      },
+      ...(idx === updatedMovies.slice(0, 10).length - 1 ? {
+        footer: { text: `🤖 Bot Anh 4 | Cập nhật lúc: ${date_str}` }
+      } : {})
     };
   });
-  
-  const date_str = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-  const embed = {
-    title: '📢 DANH SÁCH PHIM MỚI CẬP NHẬT HÔM NAY',
-    description: `Chào các Cinephile! Hệ thống vừa cập nhật các tập phim mới nhất lên Động Phim:\n`,
-    color: 3447003, // Blue
-    fields: fields.slice(0, 10), // Giới hạn 10 phim tránh tràn size của Discord embed
+
+  // Embed tiêu đề chung (embed đầu tiên không có thumbnail phim - dùng banner server)
+  const headerEmbed = {
+    title: '🎥 PHIM MỚI CẬP NHẬT — ĐỘNG MÊ PHIM',
+    description: (
+      `📣 Xin chào các **Cinephile**! Hệ thống **Động Mê Phim** vừa cập nhật **${updatedMovies.length} bộ phim** với các tập mới nhất.\n\n` +
+      `👇 Danh sách phim mới bên dưới — click vào từng bộ để xem ngay!`
+    ),
+    color: 0xFF6B35, // Màu cam đặc trưng
     thumbnail: {
-      url: updatedMovies[0]?.poster_url || 'https://dongmephim.online/public/icon-maskable-192x192.png'
-    },
-    footer: {
-      text: `Bot by TXA | Date: ${date_str}`
+      url: 'https://dongmephim.online/public/icon-maskable-192x192.png'
     }
   };
+
+  const allEmbeds = [headerEmbed, ...movieEmbeds];
   
   try {
     const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
@@ -612,7 +624,7 @@ async function sendDiscordNotification(updatedMovies: any[], discordConfig: any)
         'Authorization': `Bot ${discordConfig.bot_token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ embeds: [embed] })
+      body: JSON.stringify({ embeds: allEmbeds })
     });
     
     if (!res.ok) {
@@ -625,3 +637,4 @@ async function sendDiscordNotification(updatedMovies: any[], discordConfig: any)
     console.error('[Discord Notification] Connection error:', err);
   }
 }
+
