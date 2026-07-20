@@ -14,9 +14,24 @@ export const POST: APIRoute = async ({ request }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { username, email, password, gender, turnstileToken } = body;
-    if (!username || !email || !password) {
-      return apiResponse(null, 'error', 'Vui lòng điền đầy đủ thông tin bắt buộc!', 400, request);
+    const { username, email, password, gender, phone, turnstileToken } = body;
+    if (!username || !email || !password || !phone) {
+      return apiResponse(null, 'error', 'Vui lòng điền đầy đủ thông tin bắt buộc (bao gồm Số điện thoại)!', 400, request);
+    }
+
+    // Format & Validate Phone Number (+84 prefix, strip leading 0, 9 digits starting with 3,5,7,8,9)
+    let rawDigits = String(phone).replace(/[^0-9]/g, '');
+    if (rawDigits.startsWith('84')) {
+      rawDigits = rawDigits.slice(2);
+    }
+    if (rawDigits.startsWith('0')) {
+      rawDigits = rawDigits.replace(/^0+/, '');
+    }
+    const formattedPhone = `+84${rawDigits}`;
+    const phoneRegex = /^\+84[35789]\d{8}$/;
+
+    if (!phoneRegex.test(formattedPhone)) {
+      return apiResponse(null, 'error', 'Số điện thoại không hợp lệ! Vui lòng nhập đúng 9 chữ số thuộc các đầu số nhà mạng (+84)', 400, request);
     }
 
     // Detect mobile client
@@ -48,11 +63,11 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Check if user already exists
+    // Check if user already exists (username, email, or phone)
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
-      .select('username, email')
-      .or(`username.eq.${username},email.eq.${email}`)
+      .select('username, email, phone')
+      .or(`username.eq.${username},email.eq.${email},phone.eq.${formattedPhone}`)
       .maybeSingle();
 
     if (checkError) {
@@ -63,7 +78,12 @@ export const POST: APIRoute = async ({ request }) => {
       if (existingUser.username?.toLowerCase() === username.toLowerCase()) {
         return apiResponse(null, 'error', 'Tên tài khoản đã tồn tại!', 400, request);
       }
-      return apiResponse(null, 'error', 'Địa chỉ email đã được đăng ký!', 400, request);
+      if (existingUser.email?.toLowerCase() === email.toLowerCase()) {
+        return apiResponse(null, 'error', 'Địa chỉ email đã được đăng ký!', 400, request);
+      }
+      if (existingUser.phone === formattedPhone) {
+        return apiResponse(null, 'error', 'Số điện thoại này đã được sử dụng cho tài khoản khác!', 400, request);
+      }
     }
 
     // Generate real Gravatar URL using SHA-256 (Web Crypto API, Gravatar supports this since 2024)
@@ -95,6 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
       .insert({
         username,
         email,
+        phone: formattedPhone,
         password: securePassword,
         role: 'user',
         name: username,

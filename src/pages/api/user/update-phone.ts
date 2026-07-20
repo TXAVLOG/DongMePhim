@@ -1,0 +1,72 @@
+import type { APIRoute } from 'astro';
+import { apiResponse } from '@lib/api/response';
+import { supabase } from '@lib/supabase';
+import { verifyUserFromRequest } from '@lib/auth';
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  try {
+    const authUser = await verifyUserFromRequest(request, cookies);
+    if (!authUser) {
+      return apiResponse(null, 'error', 'Vui lòng đăng nhập để thực hiện thao tác!', 401, request);
+    }
+
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch (e) {}
+
+    const { phone } = body;
+    if (!phone) {
+      return apiResponse(null, 'error', 'Vui lòng nhập số điện thoại!', 400, request);
+    }
+
+    // Format & Validate Phone (+84 prefix, strip leading 0, 9 digits starting with 3,5,7,8,9)
+    let rawDigits = String(phone).replace(/[^0-9]/g, '');
+    if (rawDigits.startsWith('84')) {
+      rawDigits = rawDigits.slice(2);
+    }
+    if (rawDigits.startsWith('0')) {
+      rawDigits = rawDigits.replace(/^0+/, '');
+    }
+
+    const formattedPhone = `+84${rawDigits}`;
+    const phoneRegex = /^\+84[35789]\d{8}$/;
+
+    if (!phoneRegex.test(formattedPhone)) {
+      return apiResponse(null, 'error', 'Số điện thoại không hợp lệ! Vui lòng nhập đúng 9 chữ số thuộc các đầu số nhà mạng (+84)', 400, request);
+    }
+
+    // Check if phone number is already registered by another user
+    const { data: existingUser, error: checkErr } = await supabase
+      .from('users')
+      .select('id, phone')
+      .eq('phone', formattedPhone)
+      .neq('id', authUser.id)
+      .maybeSingle();
+
+    if (checkErr) {
+      throw checkErr;
+    }
+
+    if (existingUser) {
+      return apiResponse(null, 'error', 'Số điện thoại này đã được tài khoản khác sử dụng!', 400, request);
+    }
+
+    // Update phone in database
+    const { error: updateErr } = await supabase
+      .from('users')
+      .update({
+        phone: formattedPhone,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', authUser.id);
+
+    if (updateErr) {
+      throw updateErr;
+    }
+
+    return apiResponse({ phone: formattedPhone }, 'success', 'Cập nhật số điện thoại thành công!', 200, request);
+  } catch (err: any) {
+    return apiResponse(null, 'error', err.message || 'Lỗi hệ thống!', 500, request);
+  }
+};
