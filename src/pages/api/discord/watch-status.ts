@@ -72,6 +72,38 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body: JSON.stringify({ content, embeds: [embed] })
     });
 
+    // 4. Gửi nhật ký theo dõi riêng tới kênh #mod-log (nếu có cấu hình)
+    const channelModLog = discord.channels?.mod_log;
+    if (channelModLog) {
+      try {
+        const modLogEmbed = {
+          title: '📺 NHẬT KÝ XEM PHIM (WATCH LOG)',
+          description: `Thành viên <@${discordId}> (\`${user.username || user.name}\`) đang xem phim.`,
+          fields: [
+            { name: 'Tên phim', value: movieTitle, inline: true },
+            { name: 'Tập phim', value: String(episodeName), inline: true },
+            { name: 'Đường dẫn', value: `[Xem Phim](${watchUrl})`, inline: true }
+          ],
+          color: 3447003,
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: 'Hệ Thống Kiểm Duyệt Anh 4'
+          }
+        };
+
+        await fetch(`https://discord.com/api/v10/channels/${channelModLog}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bot ${discord.bot_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ embeds: [modLogEmbed] })
+        });
+      } catch (logErr) {
+        console.warn('Lỗi khi gửi nhật ký xem phim tới kênh #mod-log:', logErr);
+      }
+    }
+
     if (!res.ok) {
       const errTxt = await res.text();
       console.warn(`Lỗi khi gửi watch-status lên Discord: ${res.status} - ${errTxt}`);
