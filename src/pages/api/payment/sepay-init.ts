@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { SettingService } from '@services/SettingService';
+import { IdempotencyService } from '../../../backend/lib/IdempotencyService';
 
 async function generateSepaySignature(fields: Record<string, any>, secretKey: string): Promise<string> {
   try {
@@ -68,6 +69,14 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Thiếu thông tin đơn hàng.', 400, request);
     }
 
+    const idempotencyKey = IdempotencyService.extractKey(request, body);
+    if (idempotencyKey) {
+      const existing = await IdempotencyService.check(idempotencyKey);
+      if (existing && existing.isProcessed) {
+        return apiResponse(existing.responseData, 'success', 'Khởi tạo cổng thanh toán (Cache từ Idempotency Key)', existing.statusCode || 200, request);
+      }
+    }
+
     const settings = await SettingService.getSettings();
     const payments = settings.payments || {};
     const isSandbox = payments.sepay_sandbox_mode && payments.sepay_sandbox_merchant_id;
@@ -117,7 +126,12 @@ export const POST: APIRoute = async ({ request }) => {
     const userAgent = request.headers.get('user-agent') || '';
     const isMobileClient = appHeader === 'TPhimX-App' || appKeyHeader === 'tphimx-mobile-2026-secure' || userAgent.startsWith('TPhimX-App');
 
-    return apiResponse({ checkoutUrl, fields }, 'success', 'Khởi tạo cổng thanh toán SePay thành công', 200, request, isMobileClient);
+    const resultData = { checkoutUrl, fields };
+    if (idempotencyKey) {
+      await IdempotencyService.save(idempotencyKey, resultData, 200);
+    }
+
+    return apiResponse(resultData, 'success', 'Khởi tạo cổng thanh toán SePay thành công', 200, request, isMobileClient);
   } catch (err: any) {
     console.error('Error initiating SePay PG:', err);
     return apiResponse(null, 'error', err.message || 'Lỗi khởi tạo cổng thanh toán SePay', 500, request);

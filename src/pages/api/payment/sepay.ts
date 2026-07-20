@@ -2,6 +2,9 @@ import type { APIRoute } from 'astro';
 import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { SettingService } from '@services/SettingService';
+import { PubSubService } from '../../../backend/lib/PubSubService';
+import { IdempotencyService } from '../../../backend/lib/IdempotencyService';
+import { TxaActivityCalculator } from '@services/TxaActivityCalculator';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -38,6 +41,14 @@ export const POST: APIRoute = async ({ request }) => {
     // Hỗ trợ kiểm thử webhook từ Admin panel
     if (body && body.isTest) {
       return apiResponse({ success: true, isTest: true, message: 'Kết nối Webhook/IPN thành công! Secret Key và cấu hình hợp lệ.' }, 'success', 'Webhook test passed successfully!', 200, request);
+    }
+
+    const idempotencyKey = IdempotencyService.extractKey(request, body);
+    if (idempotencyKey) {
+      const existing = await IdempotencyService.check(idempotencyKey);
+      if (existing && existing.isProcessed) {
+        return apiResponse(existing.responseData, 'success', 'Webhook transaction already processed (Idempotent)', existing.statusCode || 200, request);
+      }
     }
 
     const content = body.content || body.order_description || body.order_invoice_number || '';
@@ -95,7 +106,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Nếu giao dịch đã được phê duyệt từ trước, trả về 200 luôn để tránh xử lý trùng lặp (Idempotent)
     if (log.status === 'approved') {
-      return apiResponse({ success: true, message: 'Transaction already processed' }, 'success', '', 200, request);
+      const resData = { success: true, message: 'Transaction already processed' };
+      if (idempotencyKey) await IdempotencyService.save(idempotencyKey, resData, 200);
+      return apiResponse(resData, 'success', '', 200, request);
     }
 
     // 5. Cập nhật trạng thái giao dịch sang approved
@@ -145,7 +158,30 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (updateUserErr) throw updateUserErr;
 
-    return apiResponse({ success: true, message: 'Updated user package successfully' }, 'success', '', 200, request);
+    // 7. Publish PAYMENT_APPROVED event to PubSubService
+    PubSubService.publish('PAYMENT_APPROVED', {
+      txid,
+      username: log.username,
+      package: pkgId,
+      expiryDate
+    });
+
+    // Trigger async sync for user package roles
+    try {
+      const { data: userRec } = await supabase.from('users').select('id').eq('username', log.username).maybeSingle();
+      if (userRec?.id) {
+        await TxaActivityCalculator.syncMemberPackageRoles(userRec.id, pkgId);
+      }
+    } catch (syncErr) {
+      console.warn('Async sync package role warning:', syncErr);
+    }
+
+    const successResponse = { success: true, message: 'Updated user package successfully' };
+    if (idempotencyKey) {
+      await IdempotencyService.save(idempotencyKey, successResponse, 200);
+    }
+
+    return apiResponse(successResponse, 'success', '', 200, request);
 
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);

@@ -241,7 +241,7 @@ export const TxaActivityCalculator = {
     }
   },
 
-  // Đồng bộ vai trò Gói dịch vụ thành viên lên Discord
+  // Đồng bộ vai trò Gói dịch vụ thành viên lên Discord theo tên gói động từ Website (Bỏ qua bypass_zalo)
   async syncMemberPackageRoles(userId: string, packageName: string): Promise<void> {
     try {
       // Tìm kết nối Discord ID từ database Supabase
@@ -261,75 +261,121 @@ export const TxaActivityCalculator = {
         return;
       }
 
-      // Đọc vai trò từ cấu hình local JSON
-      const localConfig = await TxaJsonDb.getDiscordConfig();
-      const roles = localConfig.roles;
-
-      const normalizedPackage = (packageName || 'free').toLowerCase();
-      let targetRoleKey: 'role_package_vip' | 'role_package_standard' | 'role_package_bypass_zalo' | null = null;
-      
-      if (normalizedPackage !== 'free') {
-        const packagesList = settings.packages || [];
-        const userPkg = packagesList.find((p: any) => 
-          p.id?.toLowerCase() === normalizedPackage || 
-          p.title?.toLowerCase() === normalizedPackage
-        );
-        
-        if (userPkg) {
-          if (userPkg.id?.toLowerCase() === 'bypass_zalo') {
-            targetRoleKey = 'role_package_bypass_zalo';
-          } else if (userPkg.permissions?.vip_badge) {
-            targetRoleKey = 'role_package_vip';
-          } else {
-            targetRoleKey = 'role_package_standard';
-          }
-        } else {
-          // Fallback to basic string matching
-          if (normalizedPackage.includes('vip') || normalizedPackage.includes('s')) {
-            targetRoleKey = 'role_package_vip';
-          } else if (normalizedPackage.includes('standard') || normalizedPackage.includes('tiêu chuẩn') || normalizedPackage.includes('chuẩn')) {
-            targetRoleKey = 'role_package_standard';
-          } else if (normalizedPackage.includes('zalo')) {
-            targetRoleKey = 'role_package_bypass_zalo';
-          }
-        }
-      }
-
-      const roleToAdd = targetRoleKey ? roles[targetRoleKey] : undefined;
-
-      const packageRoles: Record<string, string | undefined> = {
-        'vip': roles.role_package_vip,
-        'standard': roles.role_package_standard,
-        'bypass_zalo': roles.role_package_bypass_zalo
-      };
-
-      const rolesToRemove = Object.values(packageRoles)
-        .filter(rId => rId && rId !== roleToAdd) as string[];
-
       const headers = {
         'Authorization': `Bot ${discord.bot_token}`,
         'Content-Type': 'application/json'
       };
 
-      // Xóa vai trò gói khác
-      for (const roleId of rolesToRemove) {
-        try {
-          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roleId}`, {
-            method: 'DELETE',
-            headers
-          });
-        } catch (e) {}
+      // 1. Lấy danh sách gói cước từ website settings, lọc bỏ gói bypass_zalo và free
+      const packagesList: any[] = (settings.packages || []).filter((p: any) => {
+        const id = (p.id || '').toLowerCase();
+        const title = (p.title || '').toLowerCase();
+        return !id.includes('bypass') && !id.includes('zalo') && !title.includes('bypass') && !title.includes('zalo');
+      });
+
+      // 2. Lấy danh sách các vai trò hiện có trên Discord Guild
+      let guildRoles: any[] = [];
+      try {
+        const rolesRes = await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/roles`, { headers });
+        if (rolesRes.ok) {
+          guildRoles = await rolesRes.json() as any[];
+        }
+      } catch (e) {
+        console.warn('Could not fetch guild roles from Discord:', e);
       }
 
-      // Thêm vai trò gói hiện tại
-      if (roleToAdd) {
+      // 3. Tìm thông tin gói cước hiện tại của User
+      const normalizedPkgParam = (packageName || 'free').toLowerCase();
+      let targetUserPkg: any = null;
+      if (normalizedPkgParam !== 'free') {
+        targetUserPkg = packagesList.find((p: any) =>
+          (p.id || '').toLowerCase() === normalizedPkgParam ||
+          (p.title || '').toLowerCase() === normalizedPkgParam
+        );
+      }
+
+      // Map các role ID tương ứng với từng gói cước
+      const packageRoleMap = new Map<string, string>(); // packageTitle -> roleId
+
+      for (const pkg of packagesList) {
+        const pkgTitle = pkg.title || pkg.id;
+        let matchedRole = guildRoles.find((r: any) => r.name?.toLowerCase() === pkgTitle.toLowerCase());
+        
+        // Nếu vai trò chưa có trên Discord server, tự động tạo mới
+        if (!matchedRole && guildRoles.length > 0) {
+          try {
+            const isVip = (pkg.permissions?.vip_badge) || pkgTitle.toLowerCase().includes('vip') || pkgTitle.toLowerCase().includes('s');
+            const colorRgb = isVip ? 15844367 : 3066993; // Gold for VIP, Emerald for Standard
+            
+            const createRes = await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/roles`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                name: pkgTitle,
+                color: colorRgb,
+                hoist: true,
+                mentionable: false
+              })
+            });
+            if (createRes.ok) {
+              matchedRole = await createRes.json() as any;
+              guildRoles.push(matchedRole);
+            }
+          } catch (e) {
+            console.warn(`Could not create Discord role for package ${pkgTitle}:`, e);
+          }
+        }
+
+        if (matchedRole) {
+          packageRoleMap.set(pkgTitle, matchedRole.id);
+        }
+      }
+
+      // Also support legacy fixed roles from settings.discord.roles if available
+      const localConfig = await TxaJsonDb.getDiscordConfig();
+      const legacyRoles = localConfig.roles || {};
+      const allKnownPackageRoleIds = new Set<string>();
+
+      for (const roleId of packageRoleMap.values()) {
+        allKnownPackageRoleIds.add(roleId);
+      }
+      if (legacyRoles.role_package_vip) allKnownPackageRoleIds.add(legacyRoles.role_package_vip);
+      if (legacyRoles.role_package_standard) allKnownPackageRoleIds.add(legacyRoles.role_package_standard);
+
+      // 4. Xác định role ID nào cần gán cho người dùng hiện tại
+      let targetRoleId: string | null = null;
+      if (targetUserPkg) {
+        const targetTitle = targetUserPkg.title || targetUserPkg.id;
+        targetRoleId = packageRoleMap.get(targetTitle) || null;
+        if (!targetRoleId && targetUserPkg.permissions?.vip_badge) {
+          targetRoleId = legacyRoles.role_package_vip || null;
+        } else if (!targetRoleId) {
+          targetRoleId = legacyRoles.role_package_standard || null;
+        }
+      }
+
+      // 5. Gỡ bỏ tất cả các role gói cước khác khỏi user
+      for (const roleId of allKnownPackageRoleIds) {
+        if (roleId && roleId !== targetRoleId) {
+          try {
+            await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roleId}`, {
+              method: 'DELETE',
+              headers
+            });
+          } catch (e) {}
+        }
+      }
+
+      // 6. Gán role gói cước mới cho user (nếu có)
+      if (targetRoleId) {
         try {
-          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${roleToAdd}`, {
+          await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/members/${discordId}/roles/${targetRoleId}`, {
             method: 'PUT',
             headers
           });
         } catch (e) {}
       }
+
     } catch (e) {
       console.error('Lỗi khi syncMemberPackageRoles:', e);
     }

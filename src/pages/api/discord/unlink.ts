@@ -36,11 +36,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
 
       // Lấy user_id tương ứng từ database
-      const { data: connection } = await supabase
+      const cleanDiscordId = String(discordId).trim();
+      let { data: connection } = await supabase
         .from('txa_discord_connections')
         .select('user_id')
-        .eq('discord_id', discordId)
+        .eq('discord_id', cleanDiscordId)
         .maybeSingle();
+
+      if (!connection) {
+        const { data: fallbackConn } = await supabase
+          .from('txa_discord_connections')
+          .select('user_id')
+          .or(`discord_id.eq.${cleanDiscordId},user_id.eq.${cleanDiscordId}`)
+          .maybeSingle();
+        if (fallbackConn) {
+          connection = fallbackConn;
+        }
+      }
 
       if (!connection) {
         return apiResponse(null, 'error', 'Không tìm thấy liên kết của tài khoản Discord này!', 404, request);

@@ -2,9 +2,12 @@ import { supabase } from '@lib/supabase';
 import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
 import { seedMovies, mapKKPhimToMovieDetail, mapKKPhimSearchItemToMovie } from './LocalMovieProvider';
 import { slugify, getNameBySlug } from '../../utils/categoryHelper';
+import { CacheService } from '../../lib/CacheService';
 
 export class SupabaseMovieProvider implements IMovieProvider {
   async getMovies(params?: { type?: 'movie' | 'series' | 'hoathinh' | 'tvshows', category?: string, limit?: number, sortBy?: string, slugs?: string[] }): Promise<Movie[]> {
+    const cacheKey = `db_movies_${JSON.stringify(params || {})}`;
+    return CacheService.getOrSet(cacheKey, async () => {
     try {
       const selectFields = 'id, movie_id_seq, title, original_title, slug, description, poster_url, banner_url, release_year, duration_minutes, type, status, episode_current, episode_total, quality, lang, imdb_score, tmdb_score, views, country, genres, updated_at, broadcast_schedule, actors, directors, seasons, trailer_url, source, require_login, rating_score, rating_count';
       
@@ -220,6 +223,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
       console.error('Lỗi khi lấy danh sách phim từ Supabase:', e);
       return seedMovies;
     }
+    }, 2 * 60 * 1000);
   }
 
   async getMovieBySlug(slug: string): Promise<MovieDetail | null> {

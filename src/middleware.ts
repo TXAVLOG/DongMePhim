@@ -1,10 +1,42 @@
 import { defineMiddleware } from 'astro:middleware';
 import { verifySession } from '@lib/auth';
+import { RateLimiter } from './backend/lib/RateLimiter';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const pathname = context.url.pathname;
   const host = context.url.hostname || '';
   const isApiSubdomain = host.startsWith('api.');
+
+  // Rate Limiting Anti-DDoS Protection for /api/ routes
+  if (pathname.startsWith('/api/')) {
+    const ip = RateLimiter.getClientIp(context.request);
+    let routeType: 'payment' | 'auth' | 'general' = 'general';
+    if (pathname.startsWith('/api/payment/')) {
+      routeType = 'payment';
+    } else if (pathname.startsWith('/api/auth/')) {
+      routeType = 'auth';
+    }
+
+    const { allowed, limit, remaining, retryAfterSeconds } = RateLimiter.check(ip, routeType);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({
+          status: 'error',
+          message: 'Bạn đã truy cập quá nhanh! Vui lòng thử lại sau giây lát.',
+          code: 429
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': String(retryAfterSeconds),
+            'X-RateLimit-Limit': String(limit),
+            'X-RateLimit-Remaining': String(remaining)
+          }
+        }
+      );
+    }
+  }
 
   if (isApiSubdomain && pathname === '/') {
     return new Response(

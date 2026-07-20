@@ -33,13 +33,26 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // 1. Tìm thông tin liên kết tài khoản từ Supabase DB
-    const { data: connection, error: connError } = await supabase
+    const cleanDiscordId = String(discordId).trim();
+    let { data: connection, error: connError } = await supabase
       .from('txa_discord_connections')
-      .select('user_id, username')
-      .eq('discord_id', discordId)
+      .select('user_id, discord_username')
+      .eq('discord_id', cleanDiscordId)
       .maybeSingle();
 
-    if (connError || !connection) {
+    if (!connection) {
+      // Fallback try numeric or text lookup
+      const { data: fallbackConn } = await supabase
+        .from('txa_discord_connections')
+        .select('user_id, discord_username')
+        .or(`discord_id.eq.${cleanDiscordId},user_id.eq.${cleanDiscordId}`)
+        .maybeSingle();
+      if (fallbackConn) {
+        connection = fallbackConn;
+      }
+    }
+
+    if (!connection) {
       return apiResponse(null, 'error', 'Tài khoản chưa liên kết website', 404, request);
     }
 
@@ -79,7 +92,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         const rawTemplate = getEmailTemplate('movie-request-admin.html');
         const compiledHtml = rawTemplate
-          .replace(/{username}/g, `Discord: ${connection.username}`)
+          .replace(/{username}/g, `Discord: ${connection.discord_username || 'Member'}`)
           .replace(/{movie_name}/g, name)
           .replace(/{origin_name}/g, origin_name || 'Chưa cập nhật')
           .replace(/{publish_year}/g, publish_year || 'Chưa cập nhật')
