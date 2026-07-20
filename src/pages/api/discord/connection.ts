@@ -3,6 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
+import { TxaActivityCalculator } from '../../../backend/services/TxaActivityCalculator';
 
 async function verifyBotRequest(request: Request): Promise<boolean> {
   const authHeader = request.headers.get('Authorization');
@@ -48,11 +49,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
         return apiResponse({ connected: false, user: null }, 'success', 'Không tìm thấy user liên kết', 200, request);
       }
 
-      const { data: stats } = await supabase
-        .from('txa_user_activity_stats')
-        .select('level, total_watch_seconds, total_ratings, total_comments, discord_message_count')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const stats = await TxaActivityCalculator.getOrCreateStats(user.id);
 
       const { count: favoritesCount } = await supabase
         .from('favorites')
@@ -101,11 +98,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
         return apiResponse({ connected: false, connection: null }, 'success', 'Chưa liên kết Discord', 200, request);
       }
 
-      const { data: stats } = await supabase
-        .from('txa_user_activity_stats')
-        .select('level, total_watch_seconds, total_ratings, total_comments, discord_message_count')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const stats = await TxaActivityCalculator.getOrCreateStats(user.id);
 
       const { count: favoritesCount } = await supabase
         .from('favorites')

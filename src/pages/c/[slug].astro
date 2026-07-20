@@ -3,137 +3,163 @@ import MainLayout from '@layouts/MainLayout.astro';
 import Card from '@components/ui/Card.astro';
 import { MovieService } from '@services/MovieService';
 import { HOMEPAGE_CATEGORIES, getHomepageCategories } from '@data/categories';
+import { topics } from '@data/topics';
 import NotFound from '@components/ui/NotFound.astro';
 import { TxaMovieRanker } from '../../backend/utils/txaMovieRanker';
 
 const { slug } = Astro.params;
 
-// Find the category definition
-const category = HOMEPAGE_CATEGORIES.find(c => c.slug === slug);
+// Find the category or topic definition
+let category: any = HOMEPAGE_CATEGORIES.find(c => c.slug === slug);
+let topicObj: any = null;
+
+if (!category && slug) {
+  topicObj = topics.find(t => t.slug === slug);
+  if (topicObj) {
+    category = {
+      slug: topicObj.slug,
+      title: topicObj.name,
+      description: topicObj.description
+    };
+  }
+}
 
 let movies: any[] = [];
 if (category) {
-  const homepageMappings = await getHomepageCategories();
-  const assignedSlugs = homepageMappings[category.slug] || [];
-  
-  if (category.slug === 'top-anime-he') {
-    const animeAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
-    const configuredMovies = assignedSlugs
-      .map(slug => animeAll.find((m: any) => m.slug === slug))
-      .filter(Boolean);
-      
-    const isAnimeMovie = (m: any) => {
-      if (!m) return false;
-      const title = (m.title || '').toLowerCase();
-      const desc = (m.description || '').toLowerCase();
-      const country = (m.country || '').toLowerCase();
-      const genres = Array.isArray(m.genres) ? m.genres.map((g: any) => g.toLowerCase()) : [];
-      
-      const isAnimation = m.type === 'hoathinh' || genres.includes('hoạt hình') || genres.includes('anime');
-      if (!isAnimation) return false;
-      
-      const hasAnimeKeywords = genres.includes('anime') || 
-                               country.includes('nhật bản') || 
-                               country.includes('japan') || 
-                               title.includes('anime') || 
-                               desc.includes('anime');
-                               
-      return hasAnimeKeywords;
-    };
-
-    const otherAnime = animeAll.filter((m: any) => isAnimeMovie(m) && !assignedSlugs.includes(m.slug));
-    const sortedOtherAnime = TxaMovieRanker.sortMovies(otherAnime);
-    movies = [...configuredMovies, ...sortedOtherAnime].slice(0, 15);
-  } else if (category.slug === 'top-10-phim-le') {
-    const leAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
-    const configuredMovies = assignedSlugs
-      .map(slug => leAll.find((m: any) => m.slug === slug))
-      .filter(Boolean);
-    const otherMovies = leAll.filter((m: any) => m.type === 'movie' && !assignedSlugs.includes(m.slug));
-    const sortedOther = TxaMovieRanker.sortMovies(otherMovies);
-    movies = [...configuredMovies, ...sortedOther].slice(0, 10);
-  } else if (category.slug === 'top-10-phim-bo') {
-    const boAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
-    const configuredMovies = assignedSlugs
-      .map(slug => boAll.find((m: any) => m.slug === slug))
-      .filter(Boolean);
-    const otherMovies = boAll.filter((m: any) => m.type === 'series' && !assignedSlugs.includes(m.slug));
-    const sortedOther = TxaMovieRanker.sortMovies(otherMovies);
-    movies = [...configuredMovies, ...sortedOther].slice(0, 10);
-  } else if (category.slug === 'phim-dien-anh-moi') {
-    // Tự động phân loại phim điện ảnh mới nhất (lấy từ top 100 phim mới nhất để lọc)
-    const latestMovies = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
-    movies = latestMovies
-      .filter((m: any) => m.type === 'movie')
-      .sort((a: any, b: any) => {
-        const aIsChieuRap = a.genres && a.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'));
-        const bIsChieuRap = b.genres && b.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'));
-        if (aIsChieuRap && !bIsChieuRap) return -1;
-        if (!aIsChieuRap && bIsChieuRap) return 1;
-        
-        const yearDiff = (b.releaseYear || 0) - (a.releaseYear || 0);
-        if (yearDiff !== 0) return yearDiff;
-        
-        return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
-      });
-  } else if (category.slug === 'dahk-o-cho-nay-nay') {
-    const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
-    movies = allMovies.filter((m: any) => 
-      m.type === 'movie' && 
-      (m.category === 'Hồng Kông' || m.category === 'TVB' || (Array.isArray(m.genres) && (m.genres.includes('Hồng Kông') || m.genres.includes('TVB'))))
-    );
-  } else if (category.slug === 'toi-so-con-nguoi-em-roi-do') {
-    const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
-    movies = allMovies.filter((m: any) => 
-      Array.isArray(m.genres) && m.genres.some((g: string) => {
-        const lower = (g || '').toLowerCase();
-        return lower.includes('kinh dị') || lower.includes('ma') || lower.includes('thriller') || lower.includes('horror');
-      })
-    );
-  } else if (category.slug === 'phim-thai-new') {
-    const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
-    movies = allMovies.filter((m: any) => 
-      m.category === 'Thái Lan' || (Array.isArray(m.genres) && m.genres.some((g: string) => (g || '').toLowerCase().includes('thái')))
-    );
-  } else if (category.slug === 'chau-tinh-tri-xem-la-cuoi') {
-    const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
-    movies = allMovies.filter((m: any) => 
-      Array.isArray(m.actors) && m.actors.some((a: any) => {
-        const lower = (typeof a === 'string' ? a : (a && a.name ? a.name : '')).toLowerCase();
-        return lower.includes('châu tinh trì') || lower.includes('stephen chow');
-      })
-    );
-  } else if (category.slug === 'viet-nam') {
-    const allVietNam = await MovieService.getMovies({ category: 'Việt Nam' });
-    const configuredMovies = assignedSlugs
-      .map(slug => allVietNam.find((m: any) => m.slug === slug))
-      .filter(Boolean);
-    const otherMovies = allVietNam.filter((m: any) => !assignedSlugs.includes(m.slug));
-    const sortedOther = TxaMovieRanker.sortMovies(otherMovies);
-    movies = [...configuredMovies, ...sortedOther];
+  if (topicObj) {
+    if (topicObj.slug === 'top-imdb') {
+      movies = await MovieService.getMovies({ limit: 100, sortBy: 'imdb_score' });
+    } else if (topicObj.slug === 'thuyet-minh' || topicObj.slug === 'phim-long-tieng') {
+      movies = await MovieService.getMovies({ category: 'Lồng Tiếng', limit: 100 });
+    } else if (topicObj.slug === 'phim-4k') {
+      const allM = await MovieService.getMovies({ limit: 200 });
+      movies = allM.filter((m: any) => m.quality === '4K');
+    } else {
+      movies = await MovieService.getMovies({ category: topicObj.filterValue || topicObj.name, limit: 100 });
+    }
   } else {
-    // Chỉ truy vấn các slugs được chỉ định
-    const assignedMovies = assignedSlugs.length > 0 ? await MovieService.getMovies({ slugs: assignedSlugs }) : [];
-    movies = [...assignedMovies].sort((a, b) => assignedSlugs.indexOf(a.slug) - assignedSlugs.indexOf(b.slug));
+    const homepageMappings = await getHomepageCategories();
+    const assignedSlugs = homepageMappings[category.slug] || [];
+    
+    if (category.slug === 'top-anime-he') {
+      const animeAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
+      const configuredMovies = assignedSlugs
+        .map(slug => animeAll.find((m: any) => m.slug === slug))
+        .filter(Boolean);
+        
+      const isAnimeMovie = (m: any) => {
+        if (!m) return false;
+        const title = (m.title || '').toLowerCase();
+        const desc = (m.description || '').toLowerCase();
+        const country = (m.country || '').toLowerCase();
+        const genres = Array.isArray(m.genres) ? m.genres.map((g: any) => g.toLowerCase()) : [];
+        
+        const isAnimation = m.type === 'hoathinh' || genres.includes('hoạt hình') || genres.includes('anime');
+        if (!isAnimation) return false;
+        
+        const hasAnimeKeywords = genres.includes('anime') || 
+                                 country.includes('nhật bản') || 
+                                 country.includes('japan') || 
+                                 title.includes('anime') || 
+                                 desc.includes('anime');
+                                 
+        return hasAnimeKeywords;
+      };
 
-    // Fallback nếu không có phim gán thủ công
-    if (movies.length === 0) {
-      if (category.slug === 'huyen-thoai-co-tich') {
-        const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
-        movies = allMovies.filter((m: any) =>
-          Array.isArray(m.genres) && m.genres.some((g: string) => {
-            const lower = (g || '').toLowerCase();
-            return lower.includes('thần thoại') || lower.includes('cổ tích') || lower.includes('thần tiên') || lower.includes('mythology') || lower.includes('fantasy');
-          })
-        );
-      } else if (category.slug === 'thanh-xuan-hoc-duong') {
-        const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
-        movies = allMovies.filter((m: any) =>
-          Array.isArray(m.genres) && m.genres.some((g: string) => {
-            const lower = (g || '').toLowerCase();
-            return lower.includes('học đường') || lower.includes('tuổi trẻ') || lower.includes('học sinh') || lower.includes('school') || lower.includes('tuổi thanh xuân');
-          })
-        );
+      const otherAnime = animeAll.filter((m: any) => isAnimeMovie(m) && !assignedSlugs.includes(m.slug));
+      const sortedOtherAnime = TxaMovieRanker.sortMovies(otherAnime);
+      movies = [...configuredMovies, ...sortedOtherAnime].slice(0, 15);
+    } else if (category.slug === 'top-10-phim-le') {
+      const leAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
+      const configuredMovies = assignedSlugs
+        .map(slug => leAll.find((m: any) => m.slug === slug))
+        .filter(Boolean);
+      const otherMovies = leAll.filter((m: any) => m.type === 'movie' && !assignedSlugs.includes(m.slug));
+      const sortedOther = TxaMovieRanker.sortMovies(otherMovies);
+      movies = [...configuredMovies, ...sortedOther].slice(0, 10);
+    } else if (category.slug === 'top-10-phim-bo') {
+      const boAll = await MovieService.getMovies({ limit: 300, sortBy: 'updatedAt' });
+      const configuredMovies = assignedSlugs
+        .map(slug => boAll.find((m: any) => m.slug === slug))
+        .filter(Boolean);
+      const otherMovies = boAll.filter((m: any) => m.type === 'series' && !assignedSlugs.includes(m.slug));
+      const sortedOther = TxaMovieRanker.sortMovies(otherMovies);
+      movies = [...configuredMovies, ...sortedOther].slice(0, 10);
+    } else if (category.slug === 'phim-dien-anh-moi') {
+      // Tự động phân loại phim điện ảnh mới nhất (lấy từ top 100 phim mới nhất để lọc)
+      const latestMovies = await MovieService.getMovies({ limit: 100, sortBy: 'updatedAt' });
+      movies = latestMovies
+        .filter((m: any) => m.type === 'movie')
+        .sort((a: any, b: any) => {
+          const aIsChieuRap = a.genres && a.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'));
+          const bIsChieuRap = b.genres && b.genres.some((g: string) => g.toLowerCase().includes('chiếu rạp'));
+          if (aIsChieuRap && !bIsChieuRap) return -1;
+          if (!aIsChieuRap && bIsChieuRap) return 1;
+          
+          const yearDiff = (b.releaseYear || 0) - (a.releaseYear || 0);
+          if (yearDiff !== 0) return yearDiff;
+          
+          return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+        });
+    } else if (category.slug === 'dahk-o-cho-nay-nay') {
+      const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+      movies = allMovies.filter((m: any) => 
+        m.type === 'movie' && 
+        (m.category === 'Hồng Kông' || m.category === 'TVB' || (Array.isArray(m.genres) && (m.genres.includes('Hồng Kông') || m.genres.includes('TVB'))))
+      );
+    } else if (category.slug === 'toi-so-con-nguoi-em-roi-do') {
+      const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+      movies = allMovies.filter((m: any) => 
+        Array.isArray(m.genres) && m.genres.some((g: string) => {
+          const lower = (g || '').toLowerCase();
+          return lower.includes('kinh dị') || lower.includes('ma') || lower.includes('thriller') || lower.includes('horror');
+        })
+      );
+    } else if (category.slug === 'phim-thai-new') {
+      const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+      movies = allMovies.filter((m: any) => 
+        m.category === 'Thái Lan' || (Array.isArray(m.genres) && m.genres.some((g: string) => (g || '').toLowerCase().includes('thái')))
+      );
+    } else if (category.slug === 'chau-tinh-tri-xem-la-cuoi') {
+      const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+      movies = allMovies.filter((m: any) => 
+        Array.isArray(m.actors) && m.actors.some((a: any) => {
+          const lower = (typeof a === 'string' ? a : (a && a.name ? a.name : '')).toLowerCase();
+          return lower.includes('châu tinh trì') || lower.includes('stephen chow');
+        })
+      );
+    } else if (category.slug === 'viet-nam') {
+      const allVietNam = await MovieService.getMovies({ category: 'Việt Nam' });
+      const configuredMovies = assignedSlugs
+        .map(slug => allVietNam.find((m: any) => m.slug === slug))
+        .filter(Boolean);
+      const otherMovies = allVietNam.filter((m: any) => !assignedSlugs.includes(m.slug));
+      const sortedOther = TxaMovieRanker.sortMovies(otherMovies);
+      movies = [...configuredMovies, ...sortedOther];
+    } else {
+      // Chỉ truy vấn các slugs được chỉ định
+      const assignedMovies = assignedSlugs.length > 0 ? await MovieService.getMovies({ slugs: assignedSlugs }) : [];
+      movies = [...assignedMovies].sort((a, b) => assignedSlugs.indexOf(a.slug) - assignedSlugs.indexOf(b.slug));
+
+      // Fallback nếu không có phim gán thủ công
+      if (movies.length === 0) {
+        if (category.slug === 'huyen-thoai-co-tich') {
+          const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+          movies = allMovies.filter((m: any) =>
+            Array.isArray(m.genres) && m.genres.some((g: string) => {
+              const lower = (g || '').toLowerCase();
+              return lower.includes('thần thoại') || lower.includes('cổ tích') || lower.includes('thần tiên') || lower.includes('mythology') || lower.includes('fantasy');
+            })
+          );
+        } else if (category.slug === 'thanh-xuan-hoc-duong') {
+          const allMovies = await MovieService.getMovies({ limit: 200, sortBy: 'updatedAt' });
+          movies = allMovies.filter((m: any) =>
+            Array.isArray(m.genres) && m.genres.some((g: string) => {
+              const lower = (g || '').toLowerCase();
+              return lower.includes('học đường') || lower.includes('tuổi trẻ') || lower.includes('học sinh') || lower.includes('school') || lower.includes('tuổi thanh xuân');
+            })
+          );
+        }
       }
     }
   }

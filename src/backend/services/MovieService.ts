@@ -2,6 +2,7 @@ import { LocalMovieProvider } from './providers/LocalMovieProvider';
 import { SupabaseMovieProvider } from './providers/SupabaseMovieProvider';
 import type { IMovieProvider, Movie, MovieDetail } from '@apptypes/movie';
 import { getHomepageCategories } from '../data/categories';
+import { CacheService } from '../lib/CacheService';
 
 // Lựa chọn provider dựa trên biến môi trường ENV. 
 const providerType = import.meta.env.PUBLIC_DATA_PROVIDER || 'supabase';
@@ -204,6 +205,7 @@ export const MovieService = {
   // Helper để xóa cache khi admin cào phim mới hoặc đồng bộ
   clearCache: () => {
     movieCache.clear();
+    CacheService.clear(); // Xóa luôn cache của SupabaseMovieProvider
   }
 };
 

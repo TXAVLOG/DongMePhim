@@ -135,10 +135,13 @@ export class SupabaseMovieProvider implements IMovieProvider {
       const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
       const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
 
+      // Lọc danh sách phim DB để loại bỏ phim đã bị soft-delete
+      const filteredMoviesList = moviesList.filter((m: Movie) => !deletedSlugs.has(m.slug));
+
       // Kết hợp với seedMovies để đảm bảo có phim mẫu nếu db trống, loại bỏ phim đã bị xóa
-      const dbSlugs = new Set(moviesList.map(m => m.slug));
+      const dbSlugs = new Set(filteredMoviesList.map((m: Movie) => m.slug));
       const combined = [
-        ...moviesList,
+        ...filteredMoviesList,
         ...seedMovies.filter(m => !dbSlugs.has(m.slug) && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
       ];
 
@@ -556,7 +559,13 @@ export class SupabaseMovieProvider implements IMovieProvider {
       if (error) throw error;
 
       if (dbMovies && dbMovies.length > 0) {
-        return dbMovies.map((m: any) => ({
+        // Lấy danh sách phim đã bị xóa để lọc kết quả tìm kiếm
+        const { data: deletedDataSearch } = await supabase.from('txa_deleted_movies').select('slug');
+        const deletedSlugsSearch = new Set((deletedDataSearch || []).map((d: any) => d.slug));
+
+        const mappedMovies = dbMovies
+          .filter((m: any) => !deletedSlugsSearch.has(m.slug))
+          .map((m: any) => ({
           id: m.id,
           title: m.title,
           originalTitle: m.original_title,
@@ -584,6 +593,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
           require_login: m.require_login || false,
           movie_id_seq: m.movie_id_seq
         }));
+        if (mappedMovies.length > 0) return mappedMovies;
       }
 
       // Fallback KKPhim hoặc VSMOV API search

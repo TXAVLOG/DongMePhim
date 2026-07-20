@@ -1688,7 +1688,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             movies.forEach(m => {
               html += `
                 <div class="swiper-slide">
-                  \${createMovieCardHTML(m)}
+                  ${createMovieCardHTML(m)}
                 </div>
               `;
             });
