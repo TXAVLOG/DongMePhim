@@ -59,14 +59,18 @@ export const GET: APIRoute = async ({ request, url }) => {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId);
 
-    // Tính toán hạn gói cước
+    // Tính toán hạn gói cước & Tên gói cước
+    const rawPkg = (user.package || 'free').toLowerCase();
+    let isExpired = false;
     let expiryText = 'Vô hạn';
     let remainingDays = -1;
-    if (user.expiry_date) {
+
+    if (user.expiry_date && rawPkg !== 'free') {
       const expiry = new Date(user.expiry_date).getTime();
       const diff = expiry - Date.now();
       if (diff <= 0) {
-        expiryText = 'Đã hết hạn';
+        isExpired = true;
+        expiryText = 'Đã hết hạn (Về Gói Free)';
         remainingDays = 0;
       } else {
         remainingDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
@@ -76,10 +80,11 @@ export const GET: APIRoute = async ({ request, url }) => {
     }
 
     // Lấy tên gói cước đẹp mắt
+    const effectivePkgId = isExpired ? 'free' : rawPkg;
     const settings = await SettingService.getSettings();
     const packages = settings.packages || [];
-    const userPkg = packages.find((p: any) => p.id.toLowerCase() === (user.package || 'free').toLowerCase());
-    const packageTitle = userPkg?.title || 'Gói Free';
+    const userPkg = packages.find((p: any) => p.id.toLowerCase() === effectivePkgId);
+    const packageTitle = userPkg?.title || (effectivePkgId === 'free' ? 'Gói Free' : effectivePkgId);
 
     // 4. Lấy số cảnh cáo vi phạm từ local JSON
     const violationsData = loadViolationsData();

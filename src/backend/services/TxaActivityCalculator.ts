@@ -45,33 +45,113 @@ export const TxaActivityCalculator = {
       console.error('Lỗi truy vấn txa_user_activity_stats từ Supabase:', error);
     }
 
+    let stats: UserStats;
+
     if (data) {
-      return data as UserStats;
+      stats = data as UserStats;
+    } else {
+      // Nếu chưa có, tạo mới trên Server Supabase
+      const newStats: Partial<UserStats> = {
+        user_id: userId,
+        total_watch_seconds: 0,
+        total_ratings: 0,
+        total_comments: 0,
+        discord_message_count: 0,
+        level: 'Mầm Non',
+        violation_count: 0
+      };
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('txa_user_activity_stats')
+        .insert(newStats)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Lỗi khởi tạo txa_user_activity_stats trên Supabase:', insertError);
+        stats = { ...newStats, level: 'Mầm Non' } as UserStats;
+      } else {
+        stats = inserted as UserStats;
+      }
     }
 
-    // Nếu chưa có, tạo mới trên Server Supabase
-    const newStats: Partial<UserStats> = {
-      user_id: userId,
-      total_watch_seconds: 0,
-      total_ratings: 0,
-      total_comments: 0,
-      discord_message_count: 0,
-      level: 'Mầm Non',
-      violation_count: 0
-    };
+    // Tự động quét và đồng bộ số liệu thực từ watch_history, txa_comments, txa_movie_ratings
+    await this.syncRealUserStats(userId, stats);
 
-    const { data: inserted, error: insertError } = await supabase
-      .from('txa_user_activity_stats')
-      .insert(newStats)
-      .select()
-      .single();
+    return stats;
+  },
 
-    if (insertError) {
-      console.error('Lỗi khởi tạo txa_user_activity_stats trên Supabase:', insertError);
-      return { ...newStats, level: 'Mầm Non' } as UserStats;
+  async syncRealUserStats(userId: string, stats: UserStats): Promise<void> {
+    try {
+      // 1. Tính tổng thời gian xem từ watch_history
+      const { data: watchRecords } = await supabase
+        .from('watch_history')
+        .select('current_time')
+        .eq('user_id', userId);
+
+      let realWatchSeconds = 0;
+      if (watchRecords && watchRecords.length > 0) {
+        realWatchSeconds = Math.round(watchRecords.reduce((acc, item) => acc + (item.current_time || 0), 0));
+      }
+
+      // Lấy thông tin user để tìm username/name cho bình luận và đánh giá
+      const { data: user } = await supabase
+        .from('users')
+        .select('username, name')
+        .eq('id', userId)
+        .maybeSingle();
+
+      const userNames = [user?.username, user?.name].filter(Boolean) as string[];
+
+      // 2. Tính tổng số bình luận từ txa_comments
+      let realComments = 0;
+      if (userNames.length > 0) {
+        const { count: commentCount } = await supabase
+          .from('txa_comments')
+          .select('*', { count: 'exact', head: true })
+          .in('author', userNames);
+        realComments = commentCount || 0;
+      }
+
+      // 3. Tính tổng số lượt đánh giá từ txa_movie_ratings
+      let realRatings = 0;
+      if (userNames.length > 0) {
+        const { count: ratingCount } = await supabase
+          .from('txa_movie_ratings')
+          .select('*', { count: 'exact', head: true })
+          .in('username', userNames);
+        realRatings = ratingCount || 0;
+      }
+
+      // Cập nhật nếu số liệu thực mới lớn hơn số liệu lưu hiện tại
+      let updated = false;
+      if (realWatchSeconds > stats.total_watch_seconds) {
+        stats.total_watch_seconds = realWatchSeconds;
+        updated = true;
+      }
+      if (realComments > stats.total_comments) {
+        stats.total_comments = realComments;
+        updated = true;
+      }
+      if (realRatings > stats.total_ratings) {
+        stats.total_ratings = realRatings;
+        updated = true;
+      }
+
+      if (updated) {
+        await supabase
+          .from('txa_user_activity_stats')
+          .update({
+            total_watch_seconds: stats.total_watch_seconds,
+            total_comments: stats.total_comments,
+            total_ratings: stats.total_ratings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+      }
+    } catch (e) {
+      console.error('Lỗi khi syncRealUserStats:', e);
     }
-
-    return inserted as UserStats;
   },
 
   // Tăng điểm xem phim (Lưu server)
