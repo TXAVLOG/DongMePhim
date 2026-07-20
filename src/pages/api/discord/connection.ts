@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
 
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('id, username, email, name, package, expiry_date')
+        .select('id, username, email, name, package, expiry_date, avatar_url')
         .eq('id', connection.user_id)
         .maybeSingle();
 
@@ -70,6 +70,7 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
           username: user.username,
           email: user.email,
           name: user.name,
+          avatarUrl: user.avatar_url,
           package: user.package || 'free',
           packageTitle: packageTitle,
           expiryDate: user.expiry_date,

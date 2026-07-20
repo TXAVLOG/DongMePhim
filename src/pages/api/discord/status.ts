@@ -42,7 +42,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     // 2. Lấy thông tin user từ Supabase
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('username, email, name, package, expiry_date')
+      .select('username, email, name, package, expiry_date, avatar_url')
       .eq('id', userId)
       .maybeSingle();
 
@@ -94,6 +94,7 @@ export const GET: APIRoute = async ({ request, url }) => {
         username: user.username,
         email: user.email,
         name: user.name,
+        avatarUrl: user.avatar_url,
         package: user.package || 'free',
         packageTitle: packageTitle,
         expiryText: expiryText,
