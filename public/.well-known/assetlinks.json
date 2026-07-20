@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tphimx.tphimx_setup",
+      "sha256_cert_fingerprints": [
+        "87:8C:53:91:9B:B8:0F:65:1A:E5:0F:54:01:55:36:F0:A0:C5:79:73:EB:9F:C5:FF:A3:6B:EC:41:60:E0:95:5B"
+      ]
+    }
+  }
+]
