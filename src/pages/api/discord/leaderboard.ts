@@ -22,42 +22,45 @@ export const GET: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Unauthorized', 401, request);
     }
 
-    // 1. Lấy tất cả dữ liệu stats từ server Supabase
-    const { data: statsList, error: statsError } = await supabase
-      .from('txa_user_activity_stats')
-      .select('*');
-
-    if (statsError) throw statsError;
-
-    // 2. Lấy danh sách liên kết Discord trực tiếp từ database Supabase
+    // 1. Lấy tất cả danh sách liên kết Discord từ database Supabase
     const { data: connList, error: connError } = await supabase
       .from('txa_discord_connections')
       .select('user_id, discord_id, discord_username');
 
     if (connError) throw connError;
 
-    const connMap = new Map<string, { discord_id: string; username: string }>();
-    (connList || []).forEach(c => {
-      connMap.set(c.user_id, { discord_id: c.discord_id, username: c.discord_username });
+    // 2. Lấy tất cả dữ liệu stats từ server Supabase
+    const { data: statsList } = await supabase
+      .from('txa_user_activity_stats')
+      .select('*');
+
+    const statsMap = new Map<string, any>();
+    (statsList || []).forEach(s => {
+      statsMap.set(s.user_id, s);
     });
 
-    // 3. Tính điểm và lọc những người đã liên kết Discord
-    const leaderboard = (statsList || [])
-      .map(s => {
-        const conn = connMap.get(s.user_id);
-        const points = TxaActivityCalculator.calculatePoints(s);
-        return {
-          userId: s.user_id,
-          discordId: conn?.discord_id || null,
-          discordUsername: conn?.username || null,
-          watchSeconds: s.total_watch_seconds,
-          ratings: s.total_ratings,
-          comments: s.total_comments,
-          chatCount: s.discord_message_count,
-          level: s.level,
-          points
-        };
-      })
+    // 3. Với mỗi user đã kết nối Discord, đảm bảo stats tồn tại và tính điểm
+    const leaderboardPromises = (connList || []).map(async (conn) => {
+      let stats = statsMap.get(conn.user_id);
+      if (!stats) {
+        stats = await TxaActivityCalculator.getOrCreateStats(conn.user_id);
+      }
+      const points = TxaActivityCalculator.calculatePoints(stats);
+      return {
+        userId: conn.user_id,
+        discordId: conn.discord_id,
+        discordUsername: conn.discord_username,
+        watchSeconds: stats.total_watch_seconds || 0,
+        ratings: stats.total_ratings || 0,
+        comments: stats.total_comments || 0,
+        chatCount: stats.discord_message_count || 0,
+        level: stats.level || 'Mầm Non',
+        points
+      };
+    });
+
+    const results = await Promise.all(leaderboardPromises);
+    const leaderboard = results
       .filter(x => x.discordId !== null)
       .sort((a, b) => b.points - a.points)
       .slice(0, 10);

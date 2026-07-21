@@ -578,6 +578,80 @@ export function getEmailTemplate(filename: string): string {
 </body>
 </html>`;
 
+    case 'reset-password-admin.html':
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đặt lại mật khẩu tài khoản - {site_name}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#09090b;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:600px;background-color:#121214;border:1px solid #1f1f23;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03);">
+              <img src="{site_url}/favicon.png" alt="Logo" style="width:56px;height:56px;margin-bottom:16px;border-radius:12px;box-shadow:0 0 15px rgba(59,130,246,0.2);" />
+              <h2 style="margin:0;font-size:24px;font-weight:800;color:#3b82f6;letter-spacing:-0.5px;text-transform:uppercase;">{site_name}</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 30px;">
+              <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#ffffff;">Xin chào {name},</h3>
+              <p style="margin:0 0 24px;font-size:14px;color:#a1a1aa;line-height:1.6;">Mật khẩu tài khoản của bạn trên hệ thống <strong style="color:#ffffff;">{site_name}</strong> vừa được đặt lại bởi Ban Quản Trị hệ thống.</p>
+              
+              <div style="background-color:#18181b;border:1px solid #2563eb;border-radius:16px;padding:24px;margin:24px 0;">
+                <p style="margin:0 0 16px;font-size:13px;color:#3b82f6;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">🔑 Thông tin đăng nhập mới:</p>
+                <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;color:#a1a1aa;line-height:1.9;">
+                  <tr>
+                    <td width="40%" style="font-weight:600;padding:4px 0;">Tên tài khoản:</td>
+                    <td style="color:#ffffff;font-weight:bold;padding:4px 0;">{username}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;padding:4px 0;">Email liên kết:</td>
+                    <td style="color:#ffffff;padding:4px 0;">{email}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;padding:4px 0;">Mật khẩu mới:</td>
+                    <td style="padding:4px 0;"><code style="background-color:#09090b;color:#60a5fa;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:15px;font-weight:bold;border:1px solid #1e3a8a;">{new_password}</code></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;padding:4px 0;">Thời gian thực hiện:</td>
+                    <td style="color:#ffffff;padding:4px 0;">{reset_time}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;padding:4px 0;">Người thực hiện:</td>
+                    <td style="color:#a78bfa;font-weight:bold;padding:4px 0;">{admin_name}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <p style="margin:0 0 20px;font-size:13px;color:#a1a1aa;line-height:1.6;">⚠️ <strong style="color:#f59e0b;">Khuyến nghị bảo mật:</strong> Vui lòng đăng nhập vào tài khoản và chủ động đổi lại mật khẩu mới để đảm bảo tính an toàn cho tài khoản cá nhân của bạn.</p>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="{site_url}" style="display:inline-block;padding:14px 32px;background:linear-gradient(to right, #2563eb, #1d4ed8);color:#ffffff;text-decoration:none;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-radius:12px;box-shadow:0 4px 15px rgba(37,99,235,0.3);">Đăng nhập ngay</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px 40px;background-color:#0c0c0e;border-top:1px solid rgba(255,255,255,0.03);text-align:center;">
+              <p style="margin:0 0 8px;font-size:11px;color:#52525b;">Hệ thống gửi thư tự động từ {site_name} - Trải nghiệm điện ảnh đỉnh cao</p>
+              <p style="margin:0;font-size:10px;color:#3f3f46;">© {year} {site_name}. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
     default:
       return '';
   }

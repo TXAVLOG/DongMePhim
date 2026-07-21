@@ -17,6 +17,10 @@ const packages = settings.packages || [];
         <span class="material-symbols-outlined text-sm">card_giftcard</span>
         <span>Tặng gói cước (Giveaway)</span>
       </button>
+      <button id="reset-password-btn" onclick="openResetPasswordModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer border-none shadow-lg shadow-blue-600/20">
+        <span class="material-symbols-outlined text-sm">lock_reset</span>
+        <span>Đặt lại mật khẩu</span>
+      </button>
       <button id="add-member-btn" class="px-4 py-2.5 bg-primary hover:brightness-110 text-slate-950 font-bold rounded-xl text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer border-none shadow-lg shadow-primary/10">
         <span class="material-symbols-outlined text-sm">person_add</span>
         <span>Thêm thành viên</span>
@@ -853,6 +857,369 @@ const packages = settings.packages || [];
                   renderPills();
                 }
               });
+            }, 100);
+          }
+        };
+
+        window.openResetPasswordModal = function(preselectedUsername) {
+          let selectedUser = null;
+          if (preselectedUsername) {
+            selectedUser = users.find(u => u.username === preselectedUsername || u.email === preselectedUsername);
+          }
+
+          const content = `
+            <div class="space-y-4 text-xs text-left pt-2">
+              <div>
+                <label class="block text-zinc-400 font-bold mb-1">Thành viên cần đặt lại mật khẩu</label>
+                
+                <div id="resetpass-selected-card" class="${selectedUser ? '' : 'hidden'} p-3 bg-zinc-900 border border-blue-500/40 rounded-xl mb-2 flex items-center justify-between">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <img id="resetpass-selected-avatar" src="${selectedUser?.avatar || '/logo-decoy.png'}" class="w-9 h-9 rounded-full object-cover border border-blue-500/30 flex-shrink-0" onerror="this.src='/logo-decoy.png'" />
+                    <div class="min-w-0">
+                      <p id="resetpass-selected-name" class="font-bold text-white text-xs truncate">${selectedUser ? (selectedUser.name || selectedUser.username) + ' (@' + selectedUser.username + ')' : ''}</p>
+                      <p id="resetpass-selected-email" class="text-[10px] text-blue-400 font-mono truncate">${selectedUser?.email || ''}</p>
+                    </div>
+                  </div>
+                  <button type="button" id="resetpass-clear-user" class="text-xs text-zinc-400 hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer px-2 py-1">Tháo chọn</button>
+                </div>
+
+                <div id="resetpass-search-container" class="${selectedUser ? 'hidden' : ''} relative">
+                  <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 transition-all focus-within:border-blue-500">
+                    <span class="material-symbols-outlined text-zinc-500 text-sm mr-2">search</span>
+                    <input type="text" id="resetpass-search-input" placeholder="Gõ tên tài khoản hoặc email để tìm..." class="w-full bg-transparent border-none outline-none text-white text-xs placeholder:text-zinc-600 font-outfit" autocomplete="off" />
+                  </div>
+                  <div id="resetpass-search-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto z-50"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="block text-zinc-400 font-bold">Mật khẩu mới</label>
+                  <button type="button" id="resetpass-generate-btn" class="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">casino</span>
+                    <span>🎲 Tạo mật khẩu mạnh</span>
+                  </button>
+                </div>
+                <div class="relative">
+                  <input type="text" id="resetpass-password-input" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-3 pr-10 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono" placeholder="Nhập mật khẩu mới hoặc bấm tạo tự động..." />
+                  <button type="button" id="resetpass-toggle-show" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white bg-transparent border-none cursor-pointer">
+                    <span class="material-symbols-outlined text-sm">visibility</span>
+                  </button>
+                </div>
+              </div>
+
+              <div id="resetpass-strength-container" class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Độ mạnh mật khẩu</span>
+                  <span id="resetpass-strength-text" class="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Trống</span>
+                </div>
+                <div class="flex gap-1 h-1 w-full rounded-full overflow-hidden bg-zinc-800">
+                  <div id="resetpass-strength-bar-1" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                  <div id="resetpass-strength-bar-2" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                  <div id="resetpass-strength-bar-3" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                  <div id="resetpass-strength-bar-4" class="h-full w-1/4 rounded-full transition-all duration-300"></div>
+                </div>
+                <div id="resetpass-password-conditions" class="grid grid-cols-2 gap-x-2 gap-y-1 pt-1.5 border-t border-white/5 text-[8px] text-zinc-500 font-semibold">
+                  <div class="flex items-center gap-1 cond-item" data-cond="length">
+                    <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                    <span>Tối thiểu 8 ký tự</span>
+                  </div>
+                  <div class="flex items-center gap-1 cond-item" data-cond="uppercase">
+                    <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                    <span>1 chữ viết hoa</span>
+                  </div>
+                  <div class="flex items-center gap-1 cond-item" data-cond="lowercase">
+                    <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                    <span>1 chữ viết thường</span>
+                  </div>
+                  <div class="flex items-center gap-1 cond-item" data-cond="number">
+                    <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                    <span>1 chữ số</span>
+                  </div>
+                  <div class="flex items-center gap-1 cond-item col-span-2" data-cond="special">
+                    <span class="material-symbols-outlined text-[10px]">radio_button_unchecked</span>
+                    <span>1 ký tự đặc biệt (@#$!%*?&)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: '🔑 Đặt Lại Mật Khẩu Thành Viên',
+              content: content,
+              confirmText: 'Đặt lại mật khẩu',
+              cancelText: 'Hủy bỏ',
+              onConfirm: async () => {
+                if (!selectedUser) {
+                  window.showGlobalToast('Vui lòng chọn thành viên cần reset mật khẩu!', 'error');
+                  return;
+                }
+
+                const pwdInput = document.getElementById('resetpass-password-input');
+                const password = pwdInput ? pwdInput.value.trim() : '';
+
+                if (!password) {
+                  window.showGlobalToast('Vui lòng nhập hoặc khởi tạo mật khẩu mới!', 'error');
+                  return;
+                }
+
+                const isPwdValid = password.length >= 8 &&
+                                   /[A-Z]/.test(password) &&
+                                   /[a-z]/.test(password) &&
+                                   /[0-9]/.test(password) &&
+                                   /[^A-Za-z0-9]/.test(password);
+
+                if (!isPwdValid) {
+                  window.showGlobalToast('Mật khẩu chưa đủ mạnh! Vui lòng thỏa mãn cả 5 điều kiện bảo mật.', 'error');
+                  return;
+                }
+
+                const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Ho_Chi_Minh';
+                const clientTime = new Date().toLocaleString('vi-VN') + ' (' + tzName + ')';
+
+                try {
+                  const res = await fetch('/api/admin/members', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      action: 'reset_password',
+                      targetUsername: selectedUser.username,
+                      customPassword: password,
+                      clientTime: clientTime
+                    })
+                  });
+
+                  const data = await res.json();
+                  if (res.ok && data?.data?.success) {
+                    const resultInfo = data.data;
+                    if (resultInfo.emailSent) {
+                      window.showGlobalToast(`Đã reset mật khẩu tài khoản ${selectedUser.username} và gửi email tới ${selectedUser.email}!`, 'success');
+                      loadUsersFromDb();
+                    } else if (resultInfo.isSmtpEnabled) {
+                      window.showGlobalToast(`Đặt lại mật khẩu thành công nhưng gửi email thất bại: ${resultInfo.emailMsg || 'Lỗi SMTP'}. Đã lưu log email.`, 'error');
+                      loadUsersFromDb();
+                    } else {
+                      window.showGlobalToast(`Đã đặt lại mật khẩu thành công cho ${selectedUser.username}! (Hệ thống chưa bật SMTP)`, 'success');
+                      loadUsersFromDb();
+                    }
+                  } else {
+                    window.showGlobalToast(data?.message || 'Không thể đặt lại mật khẩu!', 'error');
+                  }
+                } catch (e) {
+                  window.showGlobalToast('Lỗi kết nối máy chủ!', 'error');
+                }
+              }
+            });
+
+            setTimeout(() => {
+              const searchInput = document.getElementById('resetpass-search-input');
+              const dropdown = document.getElementById('resetpass-search-dropdown');
+              const searchContainer = document.getElementById('resetpass-search-container');
+              const selectedCard = document.getElementById('resetpass-selected-card');
+              const selectedAvatar = document.getElementById('resetpass-selected-avatar');
+              const selectedName = document.getElementById('resetpass-selected-name');
+              const selectedEmail = document.getElementById('resetpass-selected-email');
+              const clearUserBtn = document.getElementById('resetpass-clear-user');
+              const generateBtn = document.getElementById('resetpass-generate-btn');
+              const pwdInput = document.getElementById('resetpass-password-input');
+              const toggleShowBtn = document.getElementById('resetpass-toggle-show');
+
+              function generateStrongPassword(length = 12) {
+                const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+                const lowers = 'abcdefghijkmnopqrstuvwxyz';
+                const numbers = '23456789';
+                const symbols = '@#$!%*?&';
+                const all = uppers + lowers + numbers + symbols;
+
+                let pwd = '';
+                pwd += uppers[Math.floor(Math.random() * uppers.length)];
+                pwd += lowers[Math.floor(Math.random() * lowers.length)];
+                pwd += numbers[Math.floor(Math.random() * numbers.length)];
+                pwd += symbols[Math.floor(Math.random() * symbols.length)];
+
+                for (let i = 4; i < length; i++) {
+                  pwd += all[Math.floor(Math.random() * all.length)];
+                }
+
+                return pwd.split('').sort(() => Math.random() - 0.5).join('');
+              }
+
+              function updatePasswordConditions(val) {
+                const conds = {
+                  length: val.length >= 8,
+                  uppercase: /[A-Z]/.test(val),
+                  lowercase: /[a-z]/.test(val),
+                  number: /[0-9]/.test(val),
+                  special: /[^A-Za-z0-9]/.test(val)
+                };
+
+                let passedCount = 0;
+                Object.entries(conds).forEach(([key, passed]) => {
+                  const item = document.querySelector(`#resetpass-password-conditions .cond-item[data-cond="${key}"]`);
+                  if (item) {
+                    const icon = item.querySelector('.material-symbols-outlined');
+                    if (val.length === 0) {
+                      item.className = 'flex items-center gap-1 cond-item text-zinc-500';
+                      if (icon) icon.textContent = 'radio_button_unchecked';
+                    } else if (passed) {
+                      passedCount++;
+                      item.className = 'flex items-center gap-1 cond-item text-emerald-400';
+                      if (icon) icon.textContent = 'check_circle';
+                    } else {
+                      item.className = 'flex items-center gap-1 cond-item text-rose-500';
+                      if (icon) icon.textContent = 'cancel';
+                    }
+                  }
+                });
+
+                const strengthTextEl = document.getElementById('resetpass-strength-text');
+                const bars = [
+                  document.getElementById('resetpass-strength-bar-1'),
+                  document.getElementById('resetpass-strength-bar-2'),
+                  document.getElementById('resetpass-strength-bar-3'),
+                  document.getElementById('resetpass-strength-bar-4')
+                ];
+
+                bars.forEach(b => { if (b) b.className = 'h-full w-1/4 rounded-full bg-zinc-800 transition-all duration-300'; });
+
+                if (val.length === 0) {
+                  if (strengthTextEl) {
+                    strengthTextEl.textContent = 'Trống';
+                    strengthTextEl.className = 'text-[8px] font-black uppercase tracking-widest text-zinc-500';
+                  }
+                  return;
+                }
+
+                let label = 'Rất yếu';
+                let color = 'bg-rose-500';
+                let activeBars = 1;
+
+                if (passedCount <= 2) { label = 'Yếu'; color = 'bg-rose-500'; activeBars = 1; }
+                else if (passedCount === 3) { label = 'Trung bình'; color = 'bg-amber-500'; activeBars = 2; }
+                else if (passedCount === 4) { label = 'Mạnh'; color = 'bg-yellow-400'; activeBars = 3; }
+                else if (passedCount === 5) { label = 'Cực kỳ bảo mật'; color = 'bg-emerald-400'; activeBars = 4; }
+
+                if (strengthTextEl) {
+                  strengthTextEl.textContent = label;
+                  strengthTextEl.className = `text-[8px] font-black uppercase tracking-widest transition-colors ${passedCount <= 2 ? 'text-rose-400' : passedCount === 3 ? 'text-amber-400' : passedCount === 4 ? 'text-yellow-400' : 'text-emerald-400'}`;
+                }
+
+                for (let i = 0; i < activeBars; i++) {
+                  if (bars[i]) bars[i].className = `h-full w-1/4 rounded-full transition-all duration-300 ${color}`;
+                }
+              }
+
+              if (pwdInput) {
+                pwdInput.addEventListener('input', function() {
+                  updatePasswordConditions(this.value);
+                });
+              }
+
+              if (generateBtn && pwdInput) {
+                generateBtn.onclick = () => {
+                  const strongPwd = generateStrongPassword(14);
+                  pwdInput.value = strongPwd;
+                  pwdInput.type = 'text';
+                  if (toggleShowBtn) {
+                    const icon = toggleShowBtn.querySelector('.material-symbols-outlined');
+                    if (icon) icon.textContent = 'visibility_off';
+                  }
+                  updatePasswordConditions(strongPwd);
+                };
+              }
+
+              if (toggleShowBtn && pwdInput) {
+                toggleShowBtn.onclick = () => {
+                  const isText = pwdInput.type === 'text';
+                  pwdInput.type = isText ? 'password' : 'text';
+                  const icon = toggleShowBtn.querySelector('.material-symbols-outlined');
+                  if (icon) icon.textContent = isText ? 'visibility' : 'visibility_off';
+                };
+              }
+
+              if (clearUserBtn) {
+                clearUserBtn.onclick = () => {
+                  selectedUser = null;
+                  if (selectedCard) selectedCard.classList.add('hidden');
+                  if (searchContainer) searchContainer.classList.remove('hidden');
+                  if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                  }
+                };
+              }
+
+              function selectUser(u) {
+                selectedUser = u;
+                if (selectedAvatar) selectedAvatar.src = u.avatar || '/logo-decoy.png';
+                if (selectedName) selectedName.textContent = (u.name || u.username) + ' (@' + u.username + ')';
+                if (selectedEmail) selectedEmail.textContent = u.email || 'Không có email';
+                if (selectedCard) selectedCard.classList.remove('hidden');
+                if (searchContainer) searchContainer.classList.add('hidden');
+                if (dropdown) dropdown.classList.add('hidden');
+              }
+
+              if (searchInput && dropdown) {
+                let timeout = null;
+                searchInput.addEventListener('input', () => {
+                  clearTimeout(timeout);
+                  timeout = setTimeout(() => {
+                    const query = searchInput.value.trim().toLowerCase();
+                    if (!query) {
+                      dropdown.classList.add('hidden');
+                      return;
+                    }
+
+                    const matched = users.filter(u => 
+                      (u.username || '').toLowerCase().includes(query) ||
+                      (u.email || '').toLowerCase().includes(query) ||
+                      (u.name || '').toLowerCase().includes(query)
+                    ).slice(0, 8);
+
+                    if (matched.length === 0) {
+                      dropdown.innerHTML = '<div class="px-4 py-3 text-zinc-500 italic text-center">Không tìm thấy thành viên khớp với từ khóa</div>';
+                    } else {
+                      dropdown.innerHTML = matched.map(u => {
+                        let displayName = u.name || u.username;
+                        return `
+                          <div class="resetpass-item flex items-center gap-3 px-3 py-2.5 hover:bg-blue-600/10 cursor-pointer transition-all border-b border-zinc-800/50 last:border-none" data-username="${u.username}">
+                            <img src="${u.avatar || '/logo-decoy.png'}" class="w-8 h-8 rounded-full object-cover border border-zinc-700 flex-shrink-0" onerror="this.src='/logo-decoy.png'" />
+                            <div class="flex-1 min-w-0">
+                              <p class="text-white font-bold text-xs truncate">${displayName} <span class="text-zinc-500 font-mono">(@${u.username})</span></p>
+                              <p class="text-blue-400 text-[10px] truncate font-mono">${u.email || 'Không có email'}</p>
+                            </div>
+                          </div>
+                        `;
+                      }).join('');
+                    }
+
+                    dropdown.classList.remove('hidden');
+                  }, 150);
+                });
+
+                dropdown.addEventListener('click', (e) => {
+                  const item = e.target.closest('.resetpass-item');
+                  if (item) {
+                    const uname = item.dataset.username;
+                    const u = users.find(x => x.username === uname);
+                    if (u) selectUser(u);
+                  }
+                });
+
+                document.addEventListener('click', (e) => {
+                  if (searchContainer && dropdown && !searchContainer.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                  }
+                });
+              }
+
+              if (pwdInput && !pwdInput.value) {
+                const initialPwd = generateStrongPassword(14);
+                pwdInput.value = initialPwd;
+                updatePasswordConditions(initialPwd);
+              }
             }, 100);
           }
         };

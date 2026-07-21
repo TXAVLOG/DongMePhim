@@ -377,8 +377,224 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse({ success: true }, 'success', 'Áp dụng hành động hàng loạt thành công!', 200, request);
     }
 
+    // 5. Reset mật khẩu thành viên & gửi email SMTP
+    if (action === 'reset_password') {
+      const targetUsername = username || body.targetUsername || body.email;
+      if (!targetUsername) {
+        return apiResponse(null, 'error', 'Thiếu tên tài khoản hoặc email cần reset mật khẩu!', 400, request);
+      }
+
+      // Lấy thông tin Admin đang thao tác
+      const currentUser = await verifySession(request, cookies);
+      const adminName = currentUser?.name || currentUser?.username || 'Admin';
+
+      // Tìm user theo username hoặc email
+      const { data: targetUser, error: userErr } = await supabase
+        .from('users')
+        .select('*')
+        .or(`username.eq.${targetUsername},email.eq.${targetUsername}`)
+        .maybeSingle();
+
+      if (userErr || !targetUser) {
+        return apiResponse(null, 'error', 'Không tìm thấy người dùng mục tiêu!', 404, request);
+      }
+
+      const settings = await SettingService.getSettings();
+      const secretKey = settings.encryption?.secret_key || '';
+      
+      let newPassword = body.customPassword;
+      if (!newPassword || !validateStrongPassword(newPassword)) {
+        newPassword = generateStrongPassword(12);
+      }
+
+      const securePassword = secretKey ? await encryptPassword(newPassword, secretKey) : newPassword;
+
+      const { error: updateErr } = await supabase
+        .from('users')
+        .update({ password: securePassword, updated_at: new Date().toISOString() })
+        .eq('id', targetUser.id);
+
+      if (updateErr) throw updateErr;
+
+      // Thử gửi Email qua SMTP nếu được cấu hình
+      let emailSent = false;
+      let emailMsg = '';
+      const smtp = settings.smtp || {};
+      const isSmtpEnabled = !!(smtp.smtp_host && smtp.smtp_user && smtp.smtp_pass);
+
+      const targetEmail = targetUser.email || '';
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const isEmailValid = emailRegex.test(targetEmail);
+
+      const siteUrl = (settings.general?.site_url || 'https://dongmephim.online').replace(/\/$/, '');
+      const siteName = settings.general?.site_name || 'DongMePhim';
+      const year = new Date().getFullYear().toString();
+      const resetTime = body.clientTime || new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+      let compiledHtml = '';
+      const rawTemplate = getEmailTemplate('reset-password-admin.html') || getEmailTemplate('verify-email.html');
+
+      if (rawTemplate.includes('{new_password}')) {
+        compiledHtml = rawTemplate
+          .replace(/{name}/g, targetUser.name || targetUser.username)
+          .replace(/{username}/g, targetUser.username)
+          .replace(/{email}/g, targetEmail || 'Chưa cập nhật')
+          .replace(/{new_password}/g, newPassword)
+          .replace(/{reset_time}/g, resetTime)
+          .replace(/{admin_name}/g, adminName)
+          .replace(/{site_name}/g, siteName)
+          .replace(/{site_url}/g, siteUrl)
+          .replace(/{year}/g, year);
+      } else {
+        const resetEmailContent = `<p>Chào <strong>${targetUser.name || targetUser.username}</strong>,</p>
+          <p>Mật khẩu tài khoản của bạn tại <strong>${siteName}</strong> vừa được đặt lại bởi Admin <strong>${adminName}</strong> vào lúc <strong>${resetTime}</strong>.</p>
+          <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; margin: 16px 0;">
+            <p style="margin: 0 0 8px 0;"><strong>Tên tài khoản:</strong> <code>${targetUser.username}</code></p>
+            <p style="margin: 0;"><strong>Mật khẩu mới:</strong> <code style="color: #3b82f6; font-size: 16px; font-weight: bold;">${newPassword}</code></p>
+          </div>
+          <p>Vui lòng đăng nhập và đổi lại mật khẩu mới để bảo mật tài khoản.</p>`;
+
+        compiledHtml = rawTemplate
+          .replace(/{name}/g, targetUser.name || targetUser.username)
+          .replace(/{verification_content}/g, resetEmailContent)
+          .replace(/{site_name}/g, siteName)
+          .replace(/{site_url}/g, siteUrl)
+          .replace(/{year}/g, year);
+      }
+
+      const smtpConfigForLog = {
+        host: smtp.smtp_host,
+        port: smtp.smtp_port,
+        secure: smtp.smtp_secure,
+        user: smtp.smtp_user
+      };
+
+      if (isSmtpEnabled) {
+        if (!isEmailValid) {
+          emailMsg = `Địa chỉ email thành viên (${targetEmail || 'trống'}) không hợp lệ!`;
+          // Lưu log lỗi email không hợp lệ
+          try {
+            await supabase.from('txa_email_logs').insert({
+              recipient: targetEmail || targetUser.username,
+              sender: `${smtp.smtp_from_name || siteName} <${smtp.smtp_from_email || smtp.smtp_user}>`,
+              subject: `[${siteName}] Đặt lại mật khẩu tài khoản thành công`,
+              category: 'password-reset',
+              status: 'failed',
+              response_code: 'Địa chỉ email thành viên không hợp lệ',
+              smtp_config: smtpConfigForLog,
+              html: compiledHtml
+            });
+          } catch (_) {}
+        } else {
+          try {
+            const mailResult = await SmtpClient.sendMail({
+              host: smtp.smtp_host,
+              port: smtp.smtp_port,
+              secure: smtp.smtp_secure as 'SSL' | 'TLS' | 'NONE',
+              user: smtp.smtp_user,
+              pass: smtp.smtp_pass,
+              fromEmail: smtp.smtp_from_email || smtp.smtp_user,
+              fromName: smtp.smtp_from_name || siteName
+            }, {
+              to: targetEmail,
+              subject: `[${siteName}] Đặt lại mật khẩu tài khoản thành công`,
+              html: compiledHtml
+            });
+
+            if (mailResult && mailResult.success) {
+              emailSent = true;
+              emailMsg = `Đã gửi thông báo mật khẩu mới tới email ${targetEmail}`;
+
+              try {
+                await supabase.from('txa_email_logs').insert({
+                  recipient: targetEmail,
+                  sender: `${smtp.smtp_from_name || siteName} <${smtp.smtp_from_email || smtp.smtp_user}>`,
+                  subject: `[${siteName}] Đặt lại mật khẩu tài khoản thành công`,
+                  category: 'password-reset',
+                  status: 'success',
+                  response_code: mailResult.responseCode || '250 OK',
+                  smtp_config: smtpConfigForLog,
+                  html: compiledHtml
+                });
+              } catch (_) {}
+            } else {
+              emailMsg = `Lỗi gửi email SMTP: ${mailResult?.error || 'Thất bại'}`;
+              try {
+                await supabase.from('txa_email_logs').insert({
+                  recipient: targetEmail,
+                  sender: `${smtp.smtp_from_name || siteName} <${smtp.smtp_from_email || smtp.smtp_user}>`,
+                  subject: `[${siteName}] Đặt lại mật khẩu tài khoản thành công`,
+                  category: 'password-reset',
+                  status: 'failed',
+                  response_code: mailResult?.error || 'Lỗi gửi SMTP',
+                  smtp_config: smtpConfigForLog,
+                  html: compiledHtml
+                });
+              } catch (_) {}
+            }
+          } catch (eErr: any) {
+            emailMsg = `Lỗi gửi email: ${eErr.message || 'Không thể kết nối máy chủ SMTP'}`;
+            try {
+              await supabase.from('txa_email_logs').insert({
+                recipient: targetEmail,
+                sender: `${smtp.smtp_from_name || siteName} <${smtp.smtp_from_email || smtp.smtp_user}>`,
+                subject: `[${siteName}] Đặt lại mật khẩu tài khoản thành công`,
+                category: 'password-reset',
+                status: 'failed',
+                response_code: eErr.message || 'Lỗi kết nối SMTP server',
+                smtp_config: smtpConfigForLog,
+                html: compiledHtml
+              });
+            } catch (_) {}
+          }
+        }
+      } else {
+        emailMsg = 'Hệ thống chưa bật SMTP nên không gửi email thông báo.';
+      }
+
+      return apiResponse({
+        success: true,
+        username: targetUser.username,
+        email: targetUser.email,
+        newPassword: newPassword,
+        emailSent: emailSent,
+        emailMsg: emailMsg,
+        isSmtpEnabled: isSmtpEnabled
+      }, 'success', `Reset mật khẩu cho tài khoản ${targetUser.username} thành công!`, 200, request);
+    }
+
     return apiResponse(null, 'error', 'Hành động không hợp lệ!', 400, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
 };
+
+function generateStrongPassword(length: number = 12): string {
+  const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowers = 'abcdefghijkmnopqrstuvwxyz';
+  const numbers = '23456789';
+  const symbols = '@#$!%*?&';
+  const all = uppers + lowers + numbers + symbols;
+
+  let pwd = '';
+  pwd += uppers[Math.floor(Math.random() * uppers.length)];
+  pwd += lowers[Math.floor(Math.random() * lowers.length)];
+  pwd += numbers[Math.floor(Math.random() * numbers.length)];
+  pwd += symbols[Math.floor(Math.random() * symbols.length)];
+
+  for (let i = 4; i < length; i++) {
+    pwd += all[Math.floor(Math.random() * all.length)];
+  }
+
+  return pwd.split('').sort(() => Math.random() - 0.5).join('');
+}
+
+function validateStrongPassword(password: string): boolean {
+  if (!password || password.length < 8) return false;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  return hasUpper && hasLower && hasNumber && hasSpecial;
+}
+

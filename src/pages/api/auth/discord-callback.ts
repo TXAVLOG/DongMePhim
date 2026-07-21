@@ -210,14 +210,38 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
             }
           ];
 
-          await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              embeds: [embed],
-              components: components
-            })
-          });
+          // Quét 10 tin nhắn gần đây nhất trong DM channel để tìm tin nhắn cũ của Bot
+          let existingBotMsgId: string | null = null;
+          try {
+            const historyRes = await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages?limit=10`, { headers });
+            if (historyRes.ok) {
+              const messages = await historyRes.json() as any[];
+              const botMsg = messages.find((m: any) => m.author?.bot || (m.embeds && m.embeds[0]?.title?.includes('QUẢN LÝ TÀI KHOẢN')));
+              if (botMsg) {
+                existingBotMsgId = botMsg.id;
+              }
+            }
+          } catch (hErr) {}
+
+          if (existingBotMsgId) {
+            await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages/${existingBotMsgId}`, {
+              method: 'PATCH',
+              headers,
+              body: JSON.stringify({
+                embeds: [embed],
+                components: components
+              })
+            });
+          } else {
+            await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                embeds: [embed],
+                components: components
+              })
+            });
+          }
         }
       } catch (dmErr) {
         console.warn('Lỗi khi gửi DM thông báo liên kết tài khoản:', dmErr);

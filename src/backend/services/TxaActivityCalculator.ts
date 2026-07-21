@@ -51,14 +51,13 @@ export const TxaActivityCalculator = {
       stats = data as UserStats;
     } else {
       // Nếu chưa có, tạo mới trên Server Supabase
-      const newStats: Partial<UserStats> = {
+      const newStats: Record<string, any> = {
         user_id: userId,
         total_watch_seconds: 0,
         total_ratings: 0,
         total_comments: 0,
         discord_message_count: 0,
-        level: 'Mầm Non',
-        violation_count: 0
+        level: 'Mầm Non'
       };
 
       const { data: inserted, error: insertError } = await supabase
@@ -69,7 +68,7 @@ export const TxaActivityCalculator = {
 
       if (insertError) {
         console.error('Lỗi khởi tạo txa_user_activity_stats trên Supabase:', insertError);
-        stats = { ...newStats, level: 'Mầm Non' } as UserStats;
+        stats = { ...newStats, violation_count: 0 } as UserStats;
       } else {
         stats = inserted as UserStats;
       }
