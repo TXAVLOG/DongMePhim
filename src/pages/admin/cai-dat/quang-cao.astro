@@ -141,6 +141,37 @@ let activeTab = "quang-cao";
               <textarea id="offerwall-script" rows="4" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="Ví dụ: <script src='https://alwingulla.com/act/files/micro.tag.js?p=12345' data-cfasync='false' async></script>"></textarea>
             </div>
           </div>
+        <!-- SECTION 5: Google AdMob Integration for Mobile & Smart TV -->
+        <div id="admob-config-section" class="space-y-6 pt-6 border-t border-glass-stroke transition-all duration-300">
+          <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">smartphone</span>
+            Cấu hình Google AdMob (Dành cho App Android & Smart TV)
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-xs font-label-caps text-text-dim">Trạng thái Google AdMob</label>
+              <select id="admob-enable" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-bold">
+                <option value="false">❌ Tắt quảng cáo Google AdMob trên App</option>
+                <option value="true">⚡ Bật quảng cáo Google AdMob trên App Mobile & TV</option>
+              </select>
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-xs font-label-caps text-text-dim">AdMob Application ID (ca-app-pub-xxx~xxx)</label>
+              <input type="text" id="admob-app-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544~3347511713" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">AdMob Unit ID - Quảng cáo Khởi động App (Sau 5s)</label>
+              <input type="text" id="admob-app-start-ad-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544/3419835294" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">AdMob Unit ID - Quảng cáo Pre-roll (Trước khi xem Phim)</label>
+              <input type="text" id="admob-preroll-ad-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544/1033173712" />
+            </div>
+          </div>
         </div>
 
       </div>
@@ -190,6 +221,12 @@ let activeTab = "quang-cao";
         setVal("google-ads-client-id", ads.google_ads_client_id || "");
         setVal("offerwall-script", ads.offerwall_script || "");
 
+        // Hydrate AdMob Settings
+        setSelect("admob-enable", ads.admob_enable ? "true" : "false");
+        setVal("admob-app-id", ads.admob_app_id || "ca-app-pub-3940256099942544~3347511713");
+        setVal("admob-app-start-ad-id", ads.admob_app_start_ad_id || "ca-app-pub-3940256099942544/3419835294");
+        setVal("admob-preroll-ad-id", ads.admob_preroll_ad_id || "ca-app-pub-3940256099942544/1033173712");
+
         updateSectionVisibility();
       }
 
@@ -236,6 +273,10 @@ let activeTab = "quang-cao";
               click_ad_code: document.getElementById("click-ad-code")?.value || "",
               google_ads_client_id: document.getElementById("google-ads-client-id")?.value || "",
               offerwall_script: document.getElementById("offerwall-script")?.value || "",
+              admob_enable: document.getElementById("admob-enable")?.value === "true",
+              admob_app_id: document.getElementById("admob-app-id")?.value || "",
+              admob_app_start_ad_id: document.getElementById("admob-app-start-ad-id")?.value || "",
+              admob_preroll_ad_id: document.getElementById("admob-preroll-ad-id")?.value || "",
               ad_provider: providerVal,
               google_ads_enable: providerVal !== "none",
               offerwall_enable: false
