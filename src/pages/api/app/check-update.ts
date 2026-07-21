@@ -8,6 +8,14 @@ export const GET: APIRoute = async ({ request }) => {
   const maintenanceMode = settings.app.app_maintenance_enable ?? settings.general.maintenance_enable ?? false;
   const maintenanceMessage = settings.app.app_maintenance_message || settings.general.maintenance_message || "Ứng dụng đang được bảo trì định kỳ để nâng cao hiệu năng. Vui lòng quay lại sau ít phút!";
 
+  // Lấy changelog của phiên bản mới nhất từ app_changelogs[0].content
+  // Fallback về app_release_notes nếu không có
+  const changelogs = settings.app.app_changelogs;
+  const latestChangelog = Array.isArray(changelogs) && changelogs.length > 0
+    ? (changelogs[0]?.content || changelogs[0]?.notes || '')
+    : '';
+  const changelog = latestChangelog || settings.app.app_release_notes || "- Cập nhật trình phát video mượt hơn\n- Sửa lỗi đồng bộ lịch sử xem";
+
   return apiResponse({
     maintenance_mode: maintenanceMode,
     maintenance_message: maintenanceMessage,
@@ -32,7 +40,7 @@ export const GET: APIRoute = async ({ request }) => {
     release_date: "2026-06-18T12:00:00Z",
     size: parseInt(settings.app.app_apk_size) || 52428800,
     sha256: (settings.app.app_apk_sha256 || "abcdef1234567890...").trim(),
-    changelog: settings.app.app_release_notes || "- Cập nhật trình phát video mượt hơn\n- Sửa lỗi đồng bộ lịch sử xem",
+    changelog,
     discord_server_url: (settings.social?.social_discord_url || '').trim(),
     discord_server_enable: settings.social?.social_discord_enable ?? false
   }, 'success', '', 200, request);
