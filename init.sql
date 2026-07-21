@@ -751,6 +751,7 @@ CREATE TABLE IF NOT EXISTS public.txa_email_logs (
 CREATE TABLE IF NOT EXISTS public.txa_user_sessions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid,
+  admin_id uuid,
   session_token uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(),
   user_agent text,
   ip_address text,

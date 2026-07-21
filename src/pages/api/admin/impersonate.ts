@@ -60,7 +60,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .eq('session_token', sessionToken);
 
     if (updateError) {
-      throw updateError;
+      return apiResponse(null, 'error', `Lỗi DB khi cập nhật phiên giả lập: ${updateError.message}`, 500, request);
     }
 
     return apiResponse({ success: true }, 'success', 'Bắt đầu giả lập tài khoản thành công!', 200, request);

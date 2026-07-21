@@ -60,7 +60,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 };
 
 // POST: Thêm, sửa, xóa, hoặc thao tác hàng loạt trên thành viên
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     let body: any = {};
     try {
@@ -518,7 +518,7 @@ export const POST: APIRoute = async ({ request }) => {
                 });
               } catch (_) {}
             } else {
-              emailMsg = `Lỗi gửi email SMTP: ${mailResult?.error || 'Thất bại'}`;
+              emailMsg = `Lỗi gửi email SMTP: ${(mailResult as any)?.error || mailResult?.responseCode || 'Thất bại'}`;
               try {
                 await supabase.from('txa_email_logs').insert({
                   recipient: targetEmail,
@@ -526,7 +526,7 @@ export const POST: APIRoute = async ({ request }) => {
                   subject: `[${siteName}] Đặt lại mật khẩu tài khoản thành công`,
                   category: 'password-reset',
                   status: 'failed',
-                  response_code: mailResult?.error || 'Lỗi gửi SMTP',
+                  response_code: (mailResult as any)?.error || mailResult?.responseCode || 'Lỗi gửi SMTP',
                   smtp_config: smtpConfigForLog,
                   html: compiledHtml
                 });

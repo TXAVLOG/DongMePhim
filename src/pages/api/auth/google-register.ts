@@ -154,7 +154,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     // Create session
-    await createSession(newUser.id, request, cookies);
+    const sessionToken = await createSession(newUser.id, request, cookies);
 
     return apiResponse({
       success: true,
@@ -170,7 +170,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         province: newUser.province,
         ward: newUser.ward,
         phone: newUser.phone
-      }
+      },
+      token: sessionToken || "txa_session",
+      access_token: sessionToken || "txa_session",
+      token_type: "Bearer"
     }, 'success', 'Đăng ký tài khoản Google thành công', 200, request);
 
   } catch (err: any) {

@@ -301,27 +301,39 @@ const packages = settings.packages || [];
         };
 
         window.impersonateUser = async function(userId) {
-          const isConfirm = confirm('Bạn có chắc chắn muốn giả lập đăng nhập dưới danh nghĩa tài khoản này không?');
-          if (!isConfirm) return;
+          const performImpersonate = async () => {
+            try {
+              const res = await fetch('/api/admin/impersonate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetUserId: userId })
+              });
 
-          try {
-            const res = await fetch('/api/admin/impersonate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ targetUserId: userId })
-            });
-
-            const data = await res.json();
-            if (res.ok && data?.status === 'success') {
-              window.showGlobalToast('Đang chuyển hướng...', 'success');
-              setTimeout(() => {
-                window.location.href = '/tphim';
-              }, 1000);
-            } else {
-              window.showGlobalToast(data?.message || 'Giả lập thất bại!', 'error');
+              const data = await res.json();
+              if (res.ok && (data?.status === 'success' || data?.success === true)) {
+                window.showGlobalToast('Đang chuyển hướng...', 'success');
+                setTimeout(() => {
+                  window.location.href = '/tphim';
+                }, 1000);
+              } else {
+                window.showGlobalToast(data?.message || 'Giả lập thất bại!', 'error');
+              }
+            } catch (e) {
+              window.showGlobalToast('Lỗi kết nối mạng!', 'error');
             }
-          } catch (e) {
-            window.showGlobalToast('Lỗi kết nối mạng!', 'error');
+          };
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: 'Xác nhận giả lập đăng nhập',
+              message: 'Bạn có chắc chắn muốn giả lập đăng nhập dưới danh nghĩa tài khoản này không?',
+              type: 'info',
+              confirmText: 'Đăng nhập ngay',
+              cancelText: 'Hủy bỏ',
+              onConfirm: performImpersonate
+            });
+          } else if (confirm('Bạn có chắc chắn muốn giả lập đăng nhập dưới danh nghĩa tài khoản này không?')) {
+            performImpersonate();
           }
         };
 

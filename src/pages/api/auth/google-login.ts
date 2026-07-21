@@ -89,7 +89,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
 
       // Create session
-      await createSession(user.id, request, cookies);
+      const sessionToken = await createSession(user.id, request, cookies);
 
       return apiResponse({
         success: true,
@@ -106,7 +106,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           province: user.province,
           ward: user.ward,
           phone: user.phone
-        }
+        },
+        token: sessionToken || "txa_session",
+        access_token: sessionToken || "txa_session",
+        token_type: "Bearer"
       }, 'success', '', 200, request);
     } else {
       return apiResponse({

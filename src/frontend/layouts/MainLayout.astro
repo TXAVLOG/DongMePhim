@@ -1310,17 +1310,30 @@ const isImpersonating = userObj && !!userObj.adminId;
               try {
                 btn.textContent = 'Đang quay lại...';
                 btn.disabled = true;
-                const res = await fetch('/api/admin/deimpersonate', { method: 'POST' });
-                if (res.ok) {
+                const res = await fetch('/api/admin/deimpersonate', { 
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && (data?.status === 'success' || data?.success === true)) {
                   window.location.href = '/admin/thanh-vien';
                 } else {
-                  alert('Lỗi khi khôi phục quyền Admin!');
+                  const errorMsg = data?.message || 'Lỗi khi khôi phục quyền Admin!';
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast(errorMsg, 'error');
+                  } else {
+                    alert(errorMsg);
+                  }
                   btn.textContent = originalText;
                   btn.disabled = false;
                 }
               } catch (err) {
                 console.error(err);
-                alert('Lỗi kết nối mạng!');
+                if (window.showGlobalToast) {
+                  window.showGlobalToast('Lỗi kết nối mạng!', 'error');
+                } else {
+                  alert('Lỗi kết nối mạng!');
+                }
                 btn.textContent = originalText;
                 btn.disabled = false;
               }
