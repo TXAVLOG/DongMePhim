@@ -147,6 +147,81 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
       try {
         await TxaActivityCalculator.syncMemberPackageRoles(user.id, user.package || 'free');
       } catch (e) {}
+
+      // Gửi tin nhắn DM ngay lập tức cho người dùng thông báo liên kết thành công & bảng quản lý
+      try {
+        const stats = await TxaActivityCalculator.getOrCreateStats(user.id);
+        const watchHours = (Math.round(((stats?.total_watch_seconds || 0) / 3600) * 10) / 10).toFixed(1);
+        const packagesList = settings.packages || [];
+
+        let packageTitle = 'Gói Free';
+        const rawPkg = (user.package || 'free').trim().toLowerCase();
+        const foundPkg = packagesList.find((p: any) => (p.id || '').trim().toLowerCase() === rawPkg || (p.title || '').trim().toLowerCase() === rawPkg);
+        if (foundPkg?.title) {
+          packageTitle = foundPkg.title;
+        } else if (user.package) {
+          packageTitle = user.package;
+        }
+
+        const expiryText = user.expiry_date ? new Date(user.expiry_date).toLocaleDateString('vi-VN') : 'Vô hạn';
+        const usernameDisplay = user.username || user.name || discordUsername;
+
+        const dmRes = await fetch(`https://discord.com/api/v10/users/@me/channels`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ recipient_id: discordId })
+        });
+
+        if (dmRes.ok) {
+          const dmChannel = await dmRes.json() as any;
+          const embed: any = {
+            title: '🔐 QUẢN LÝ TÀI KHOẢN ĐỘNG MÊ PHIM',
+            description: `🎉 **Chúc mừng!** Bạn đã **liên kết tài khoản thành công** với Website Động Mê Phim.\n\n` +
+                         `• **Tên tài khoản:** \`${usernameDisplay}\`\n` +
+                         `• **Email:** \`${user.email}\`\n` +
+                         `• **Gói dịch vụ:** \`${packageTitle}\` (Hạn dùng: \`${expiryText}\`)\n` +
+                         `• **Cấp độ / Danh hiệu:** \`${stats?.level || 'Mầm Non'}\`\n` +
+                         `• **Thống kê:** \`${watchHours}\`h xem phim | \`${stats?.total_ratings || 0}\` lượt đánh giá | \`${stats?.total_comments || 0}\` bình luận\n\n` +
+                         `💡 *Kênh **#xac-minh** đã được tự động ẩn trên Server. Bạn có thể nhấn nút **Đăng Xuất / Hủy Liên Kết** dưới đây bất kỳ lúc nào.*`,
+            color: 0x3498DB
+          };
+
+          if (user.avatar_url) {
+            embed.thumbnail = { url: user.avatar_url };
+          }
+
+          const components = [
+            {
+              type: 1, // ACTION_ROW
+              components: [
+                {
+                  type: 2, // BUTTON
+                  style: 4, // DANGER
+                  label: '🚪 Hủy Liên Kết / Đăng Xuất',
+                  custom_id: 'btn_dm_unlink_action'
+                },
+                {
+                  type: 2, // BUTTON
+                  style: 1, // PRIMARY
+                  label: '🔄 Cập Nhật Thông Tin',
+                  custom_id: 'btn_dm_refresh_action'
+                }
+              ]
+            }
+          ];
+
+          await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              embeds: [embed],
+              components: components
+            })
+          });
+        }
+      } catch (dmErr) {
+        console.warn('Lỗi khi gửi DM thông báo liên kết tài khoản:', dmErr);
+      }
     }
 
     return Response.redirect(`${siteUrl}/thong-tin?discord_success=true`);
