@@ -17,14 +17,20 @@ const AppleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const WindowsIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M0 3.449L9.75 2.1v9.451H0V3.449zm0 17.102L9.75 21.9V12.45H0v8.101zM10.8 1.95L24 0v11.55H10.8V1.95zm0 20.1L24 24V12.45H10.8V22.05z" />
+  </svg>
+);
+
 interface AppDownloadLandingProps {
   settings: any;
 }
 
 export default function AppDownloadLanding({ settings = {} }: AppDownloadLandingProps) {
-  const [device, setDevice] = useState({ isAndroid: false, isIOS: false, isMobile: false });
-  const [zoomQr, setZoomQr] = useState<'android' | 'ios' | 'smart_tv' | null>(null); // 'android' | 'ios' | 'smart_tv' | null
-  const [activeTab, setActiveTab] = useState<'android' | 'ios_ota' | 'ios_ipa' | 'smart_tv'>('android'); // 'android' | 'ios_ota' | 'ios_ipa' | 'smart_tv'
+  const [device, setDevice] = useState({ isAndroid: false, isIOS: false, isWindows: false, isMobile: false });
+  const [zoomQr, setZoomQr] = useState<'windows' | 'android' | 'ios' | 'smart_tv' | null>(null);
+  const [activeTab, setActiveTab] = useState<'windows' | 'android' | 'ios_ota' | 'ios_ipa' | 'smart_tv'>('android');
 
   const isSettingEnabled = (val: any) => {
     if (val === undefined || val === null) return false;
@@ -56,9 +62,16 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
   const smartTvSize = (settings.app_smart_tv_size || '').trim();
   const smartTvSha = (settings.app_smart_tv_sha256 || '').trim();
 
+  // Windows parameters
+  const windowsEnabled = isSettingEnabled(settings.app_windows_download_enable);
+  const windowsUrl = windowsEnabled ? (settings.app_windows_download_url || '').trim() : '';
+  const windowsSize = (settings.app_windows_size || '').trim();
+  const windowsSha = (settings.app_windows_sha256 || '').trim();
+
   const showAndroidTab = androidEnabled && androidUrl;
   const showIosOtaTab = iosDirectEnabled && iosDirectUrl;
   const showIosIpaTab = iosIpaEnabled && iosIpaUrl;
+  const showWindowsTab = windowsEnabled && windowsUrl;
   const showSmartTvTab = false; // Disabled as Smart TVs auto-detect and redirect to /tv
 
   useEffect(() => {
@@ -66,15 +79,20 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
     const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
     const isAndroid = /android/i.test(ua);
     const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    const isWindows = /windows|win32|win64/i.test(ua) || (typeof navigator !== 'undefined' && /win/i.test(navigator.platform || ''));
     const isMobile = isAndroid || isIOS;
-    setDevice({ isAndroid, isIOS, isMobile });
+    setDevice({ isAndroid, isIOS, isWindows, isMobile });
 
-    if (isAndroid && showAndroidTab) {
+    if (isWindows && showWindowsTab) {
+      setActiveTab('windows');
+    } else if (isAndroid && showAndroidTab) {
       setActiveTab('android');
     } else if (isIOS && showIosOtaTab) {
       setActiveTab('ios_ota');
     } else if (isIOS && showIosIpaTab) {
       setActiveTab('ios_ipa');
+    } else if (showWindowsTab && !isMobile) {
+      setActiveTab('windows');
     } else if (showAndroidTab) {
       setActiveTab('android');
     } else if (showIosOtaTab) {
@@ -84,7 +102,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
     } else if (showSmartTvTab) {
       setActiveTab('smart_tv');
     }
-  }, []);
+  }, [showWindowsTab, showAndroidTab, showIosOtaTab, showIosIpaTab, showSmartTvTab]);
 
   const getPlayStoreBadge = () => "https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg";
   const getAppStoreBadge = () => "https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg";
@@ -194,6 +212,67 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
           {/* Action Cards (Left) */}
           <div className={`${device.isMobile ? 'lg:col-span-12' : 'lg:col-span-7'} space-y-6`}>
+            {showWindowsTab && (!device.isMobile || device.isWindows || (!device.isAndroid && !device.isIOS)) && (
+              <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.005] backdrop-blur-[30px] border border-white/[0.05] rounded-[28px] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden text-left">
+                {/* Glow Core */}
+                <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-[radial-gradient(circle,rgba(59,130,246,0.08)_0%,transparent_70%)] filter blur-[20px] pointer-events-none" />
+
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center shadow-[0_5px_20px_rgba(59,130,246,0.15)]">
+                    <WindowsIcon className="w-7 h-7 text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-black text-white text-base tracking-wide uppercase">ỨNG DỤNG CHO WINDOWS (DESKTOP)</h3>
+                      {device.isWindows && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-black uppercase">
+                          Thiết bị của bạn
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-[#64748b] font-bold">Windows 10, Windows 11 (64-bit)...</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-6 font-medium">
+                    Tải trực tiếp bộ cài đặt phần mềm DongMePhim trên máy tính Windows. Trải nghiệm xem phim 4K HDR màn hình rộng, tốc độ tăng tốc GPU tối ưu.
+                  </p>
+
+                  {/* Specifications codeblock */}
+                  {(windowsSize || windowsSha) && (
+                    <div className="bg-black/40 border border-white/[0.03] rounded-2xl p-4 mb-6 font-mono text-[11px] text-zinc-400 space-y-1.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-[#64748b]">File:</span> <span className="text-white font-bold">DongMePhim_v{appVersion}_Setup.exe</span>
+                        </div>
+                        {windowsSize && (
+                          <div>
+                            <span className="text-[#64748b]">Size:</span> <span className="text-blue-400 font-bold">{formatSize(windowsSize)}</span>
+                          </div>
+                        )}
+                      </div>
+                      {windowsSha && (
+                        <div className="break-all">
+                          <span className="text-[#64748b]">SHA256:</span> <span className="text-[#a78bfa]">{windowsSha}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <a
+                      href={windowsUrl}
+                      className="flex-1 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-[0_8px_30px_rgba(59,130,246,0.25)] hover:from-blue-400 hover:to-blue-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      Tải Xuống Windows Setup (.EXE)
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showAndroidTab && (!device.isMobile || device.isAndroid || (!device.isAndroid && !device.isIOS)) && (
               <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.005] backdrop-blur-[30px] border border-white/[0.05] rounded-[28px] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden text-left">
                 {/* Glow Core */}
@@ -361,7 +440,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
           </div>
 
           {/* Desktop QR Codes Column (Right) */}
-          {!device.isMobile && (showAndroidTab || showIosOtaTab || showIosIpaTab || showSmartTvTab) && (
+          {!device.isMobile && (showWindowsTab || showAndroidTab || showIosOtaTab || showIosIpaTab || showSmartTvTab) && (
             <div className="lg:col-span-5">
               <div className="bg-gradient-to-br from-white/[0.02] to-white/[0.005] backdrop-blur-[30px] border border-white/[0.05] rounded-[28px] p-6 md:p-8 h-full flex flex-col justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative text-left">
                 <h3 className="text-sm font-black text-white uppercase tracking-[0.08em] mb-8 flex items-center gap-3">
@@ -369,6 +448,28 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                 </h3>
 
                 <div className="space-y-8">
+                  {/* Windows QR */}
+                  {showWindowsTab && (
+                    <div className="flex gap-4 items-center">
+                      <div 
+                        onClick={() => setZoomQr('windows')}
+                        className="bg-white p-2.5 rounded-[16px] flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.4)] cursor-pointer transition-all duration-300 hover:scale-106 hover:shadow-[0_0_25px_rgba(59,130,246,0.4)] border-2 border-transparent hover:border-blue-500 relative shrink-0"
+                        title="Click để phóng to mã QR"
+                      >
+                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(windowsUrl)}`} alt="Windows QR Code" className="w-[100px] h-[100px]" />
+                        <div className="absolute bottom-1 right-1 bg-black/70 text-blue-400 w-5.5 h-5.5 rounded-full flex items-center justify-center">
+                          <ZoomIn className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-blue-400 text-xs font-black mb-1">Windows Setup EXE</h4>
+                        <p className="text-[11px] text-[#64748b] font-semibold leading-relaxed">
+                          Quét mã bằng điện thoại để nhận link tải bộ cài đặt Windows Setup (.EXE) về máy tính.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Android QR */}
                   {showAndroidTab && (
                     <div className="flex gap-4 items-center">
@@ -441,15 +542,16 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
         </div>
 
         {/* Interactive detailed Installation Guide (Center tab section) */}
-        {(showAndroidTab || showIosOtaTab || showIosIpaTab || showSmartTvTab) ? (
+        {(showWindowsTab || showAndroidTab || showIosOtaTab || showIosIpaTab || showSmartTvTab) ? (
           <div className="mt-8 text-center">
             <p className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-6">
               🛠️ HƯỚNG DẪN CÀI ĐẶT CHI TIẾT TỪNG BƯỚC
             </p>
 
             {/* Capsule Tab Buttons */}
-            <div className="flex justify-center mb-8 p-1.5 rounded-full bg-black/25 border border-white/[0.04] max-w-[640px] mx-auto">
+            <div className="flex justify-center mb-8 p-1.5 rounded-full bg-black/25 border border-white/[0.04] max-w-[680px] mx-auto">
               {[
+                { id: 'windows', label: 'Windows EXE', icon: <WindowsIcon className="w-4 h-4" />, platform: 'windows', show: showWindowsTab },
                 { id: 'android', label: 'Android APK', icon: <AndroidIcon className="w-4 h-4" />, platform: 'android', show: showAndroidTab },
                 { id: 'ios_ota', label: 'iOS Direct', icon: <AppleIcon className="w-4 h-4" />, platform: 'ios', show: showIosOtaTab },
                 { id: 'ios_ipa', label: 'iOS IPA (Sideload)', icon: <AppleIcon className="w-4 h-4" />, platform: 'ios', show: showIosIpaTab },
@@ -459,6 +561,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                 if (!device.isMobile) return true;
                 if (device.isAndroid) return tab.platform === 'android' || tab.platform === 'tv';
                 if (device.isIOS) return tab.platform === 'ios';
+                if (device.isWindows) return tab.platform === 'windows';
                 return true;
               }).map(tab => {
                 const active = activeTab === tab.id;
@@ -477,6 +580,50 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
 
             {/* Installation steps panel based on tab */}
             <div className="bg-gradient-to-br from-white/[0.015] to-white/[0.005] backdrop-blur-[20px] border border-white/[0.05] rounded-[28px] p-6 md:p-10 shadow-[0_20px_40px_rgba(0,0,0,0.25)] text-left">
+              {activeTab === 'windows' && showWindowsTab && (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <h3 className="text-base font-black text-white flex items-center gap-2">
+                        <WindowsIcon className="w-5 h-5 text-blue-400" /> Cài đặt phần mềm Windows Desktop (.exe)
+                      </h3>
+                      <div className="space-y-6">
+                        {[
+                          { step: '01', title: 'Tải bộ cài đặt EXE', desc: `Click chọn nút "Tải Xuống Windows Setup (.EXE)" phía trên để tải về tập tin DongMePhim_v${appVersion}_Setup.exe.` },
+                          { step: '02', title: 'Khởi chạy bộ cài đặt', desc: 'Mở tập tin vừa tải về. Nếu hệ thống Windows SmartScreen hiển thị cảnh báo chặn bộ cài đặt, click vào "More info" -> chọn "Run anyway" để tiếp tục.' },
+                          { step: '03', title: 'Tự động giải nén và cài đặt', desc: 'Bộ cài đặt sẽ tự động nạp thư viện trình phát video high-performance và tạo lối tắt biểu tượng trên Desktop.' },
+                          { step: '04', title: 'Thưởng thức điện ảnh 4K', desc: 'Mở ứng dụng DongMePhim từ Desktop, đăng nhập tài khoản và sẵn sàng trải nghiệm kho phim 4K không quảng cáo!' }
+                        ].map((step, idx) => (
+                          <div className="flex gap-4" key={idx}>
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-[12px] font-black flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                              {step.step}
+                            </div>
+                            <div>
+                              <h4 className="font-black text-white text-[14px] mb-1">{step.title}</h4>
+                              <p className="text-zinc-400 text-xs md:text-sm leading-relaxed font-medium">{step.desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col justify-center">
+                      <div className="bg-blue-500/5 border border-blue-500/15 rounded-[20px] p-6">
+                        <h4 className="text-blue-400 font-black flex items-center gap-2 text-[14px] mb-3 uppercase tracking-wider">
+                          <Info className="w-5 h-5" /> TRẢI NGHIỆM DESKTOP CAO CẤP
+                        </h4>
+                        <p className="text-zinc-400 text-xs md:text-sm leading-relaxed font-medium mb-3">
+                          Phiên bản Windows Desktop mang tới khả năng tăng tốc phần cứng GPU (Hardware Acceleration), hỗ trợ xuất luồng âm thanh vòm 3D và tùy chỉnh phím tắt tua video nhanh bằng bàn phím.
+                        </p>
+                        <p className="text-zinc-400 text-xs md:text-sm leading-relaxed font-medium">
+                          Tự động đồng bộ tiến trình xem dở với ứng dụng di động và trình duyệt Web thời gian thực.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'android' && showAndroidTab && (
                 <div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -684,7 +831,9 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
 
             <div className="bg-white p-4 rounded-[24px] shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex items-center justify-center border-2 border-[#a78bfa]/30">
               <img 
-                src={zoomQr === 'android' 
+                src={zoomQr === 'windows'
+                  ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(windowsUrl)}`
+                  : zoomQr === 'android' 
                   ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(androidUrl)}` 
                   : zoomQr === 'smart_tv'
                   ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(smartTvUrl)}`
@@ -696,7 +845,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
             </div>
             
             <p className="text-[11px] text-zinc-500 font-semibold text-center leading-relaxed">
-              Dùng ứng dụng Quét mã hoặc Máy ảnh trên thiết bị {zoomQr === 'android' ? 'Android' : zoomQr === 'smart_tv' ? 'Smart TV' : 'iOS'} để nhận dạng link.
+              Dùng ứng dụng Quét mã hoặc Máy ảnh trên thiết bị {zoomQr === 'windows' ? 'Windows Desktop' : zoomQr === 'android' ? 'Android' : zoomQr === 'smart_tv' ? 'Smart TV' : 'iOS'} để nhận dạng link.
             </p>
           </div>
         </div>

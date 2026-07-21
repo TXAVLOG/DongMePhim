@@ -41,14 +41,38 @@ export const seedSettings: SiteSettings = {
     telegram_notify_luckydraw: true,
   },
   app: {
-    app_version: "5.1.2",
-    app_release_notes: "- 🖼️ [AVATAR] Hỗ trợ chọn ảnh đại diện từ thiết bị và tự động cắt (crop) ảnh trực quan trước khi tải lên\n- 🔄 [SYNC] Đồng bộ hiển thị ảnh đại diện dạng chuỗi Base64 tức thì trên màn hình Home Drawer và trang Xác nhận TV",
+    app_version: "5.1.7",
+    app_release_notes: "- 🔮 [NAV LIQUID] Nâng cấp thanh điều hướng chất lỏng Liquid Fluid Glassmorphism với Blob indicator và micro-animations.\n- 🎬 [TIẾP TỤC XEM] Bổ sung khung Tiếp tục xem 1-Chạm trên Trang chủ, tự động ghi nhớ % tiến độ và tập phim.\n- 🏷️ [QUICK FILTERS & TOP 10] Thanh lọc thể loại nhanh cuộn ngang và Huy hiệu xếp hạng Top 10 Trending Badges kim loại.\n- ⚡ [IN-APP UPDATE] Tích hợp Google Play In-App Update API tại Splash Screen & thông báo ngầm TxaToast đa nền tảng.\n- 🛡️ [CHỐNG XUNG ĐỘT] Khắc phục triệt me lỗi xung đột chữ ký cài đè (INSTALL_FAILED_UPDATE_INCOMPATIBLE) qua CH Play.\n- 🛠️ [FIX PLAYER] Sửa triệt để lỗi tự ẩn thanh điều khiển video player và tối ưu thời gian hiển thị 4s.",
     app_changelogs: [
       {
-        version: "5.1.2",
-        date: "2026-07-19",
-        title: "🚀 v5.1.2 - Đổi ảnh đại diện & Đồng bộ Base64",
-        content: "- 🖼️ [AVATAR] Hỗ trợ chọn ảnh đại diện từ thiết bị và tự động cắt (crop) ảnh trực quan trước khi tải lên\n- 🔄 [SYNC] Đồng bộ hiển thị ảnh đại diện dạng chuỗi Base64 tức thì trên màn hình Home Drawer và trang Xác nhận TV"
+        version: "5.1.7",
+        date: "2026-07-21",
+        title: "🚀 v5.1.7 - Liquid Nav, Tiếp tục xem, Google Play In-App Update & Sửa lỗi Player Controls",
+        content: "- 🔮 [NAV LIQUID] Nâng cấp thanh điều hướng chất lỏng Liquid Fluid Glassmorphism với Blob indicator và micro-animations.\n- 🎬 [TIẾP TỤC XEM] Bổ sung khung Tiếp tục xem 1-Chạm trên Trang chủ, tự động ghi nhớ % tiến độ và tập phim.\n- 🏷️ [QUICK FILTERS & TOP 10] Thanh lọc thể loại nhanh cuộn ngang và Huy hiệu xếp hạng Top 10 Trending Badges kim loại.\n- ⚡ [IN-APP UPDATE] Tích hợp Google Play In-App Update API tại Splash Screen & thông báo ngầm TxaToast đa nền tảng.\n- 🛡️ [CHỐNG XUNG ĐỘT] Khắc phục triệt me lỗi xung đột chữ ký cài đè (INSTALL_FAILED_UPDATE_INCOMPATIBLE) qua CH Play.\n- 🛠️ [FIX PLAYER] Sửa triệt để lỗi tự ẩn thanh điều khiển video player và tối ưu thời gian hiển thị 4s."
+      },
+      {
+        version: "5.1.6",
+        date: "2026-07-21",
+        title: "🚀 v5.1.6 - Sửa lỗi iOS Build Codemagic & Thông báo ngầm Smart TV / Android",
+        content: "- 🛠️ [IOS BUILD] Khắc phục triệt để lỗi xung đột Swift Package Manager và CocoaPods trên Codemagic iOS Auto-Release workflow.\n- 🔔 [THÔNG BÁO NGẦM] Bổ sung thông báo ngầm (Background Notifications) đa nền tảng cho Android, Smart TV và Desktop.\n- 🚀 [CẬP NHẬT NGẦM] Tự động bắn thông báo hệ thống khi có bản cập nhật app mới, hỗ trợ chạm để tải xuống ngay lập tức.\n- 📺 [SMART TV] Khai báo đầy đủ các quyền thông báo, rung, khởi động cùng hệ thống trên Android TV & Mobile.\n- ⚡ [TỐI ƯU] Tăng cường tính ổn định, tự động đồng bộ hóa thông báo hệ thống ngầm."
+      },
+      {
+        version: "5.1.5",
+        date: "2026-07-21",
+        title: "🚀 v5.1.5 - In-App Updates, Google AdMob & SĐT Google One-Tap",
+        content: "- 🚀 [IN-APP UPDATE] Tích hợp Google Play In-App Updates API, cập nhật trực tiếp trong ứng dụng\n- 📢 [ADMOB] Tích hợp Google AdMob chính thức (Khởi động 5s & Pre-roll trước khi xem phim)\n- 👑 [VIP BYPASS] Tự động ẩn toàn bộ quảng cáo cho tài khoản mua gói không quảng cáo\n- 📱 [GOOGLE SĐT] Bổ sung bắt buộc nhập Số điện thoại (+84) khi đăng ký Google One-Tap\n- ⚙️ [SYS] Khắc phục triệt để lỗi thiếu cột users.phone và tối ưu cơ sở dữ liệu"
+      },
+      {
+        version: "5.1.4",
+        date: "2026-07-21",
+        title: "🚀 v5.1.4 - Sửa crash thông báo, Bảo mật số điện thoại & Smart TV Avatar",
+        content: "- 🛠️ [FIX CRASH] Khắc phục lỗi crash PlatformException invalid_icon khi hiển thị thông báo tải xuống trên Android\n- 📱 [SĐT] Bổ sung bắt buộc nhập số điện thoại (+84) khi đăng ký tài khoản, kiểm tra real-time và lưu DB\n- 🔔 [BANNER] Tự động hiển thị banner cảnh báo cho tài khoản chưa cập nhật số điện thoại\n- 📺 [SMART TV] Vô hiệu hóa tính năng đổi ảnh đại diện trên Smart TV, hỗ trợ đa ngôn ngữ vi/en\n- ⚡ [CẢI TIẾN] Tối ưu hiệu năng, nâng cao bảo mật và ổn định hệ thống"
+      },
+      {
+        version: "5.1.3",
+        date: "2026-07-20",
+        title: "🚀 v5.1.3 - Cắt ảnh Web/Mobile, Sửa Discord Link & Đa ngôn ngữ",
+        content: "- 🖼️ [CẮT ẢNH] Nâng cấp công cụ cắt ảnh đại diện trên Mobile giống 100% bản Web. Hỗ trợ kéo di chuyển, chụm 2 ngón thu phóng, cuộn chuột và thanh trượt Zoom 10% - 400%\n- 🔗 [DISCORD] Khắc phục hoàn toàn lỗi không mở được liên kết máy chủ Discord, chuẩn hóa tiền tố URL https:// và khai báo intent queries Android/iOS\n- 🌐 [LOCALIZATION] Chuẩn hóa 100% chuỗi giao diện tiếng Việt & API Base URL toàn app qua TxaLanguage và TxaApi.baseUrl, rà soát sạch 0 trùng lặp key\n- ⚡ [CẢI TIẾN] Tối ưu hóa hiệu năng, độ ổn định khi xem phim và đồng bộ tài khoản"
       },
       {
         version: "5.1.1",
@@ -119,25 +143,25 @@ export const seedSettings: SiteSettings = {
     ],
     app_android_download_enable: true,
     app_android_download_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-Mobile.apk",
-    app_apk_size: "74438901",
-    app_apk_sha256: "b9edb552d5a283a3907d274faab73ffca50d36ff9fab044775d52e212e60ec9c",
+    app_apk_size: "76441190",
+    app_apk_sha256: "9cdd6ee93c1a7a25bdb46e173d1c0416fca5b67383d59c4d6abe51c1ba110274",
     app_ios_direct_install_enable: false,
     app_ios_download_url: "/ios-access",
     app_ios_ipa_download_enable: true,
-    app_ios_ipa_url: "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.1.2_512/DongMePhim-Premium-v5.1.2+512.ipa",
+    app_ios_ipa_url: "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.1.7_518/DongMePhim-Premium-v5.1.7+518.ipa",
     app_google_play_enable: false,
     app_google_play_url: "",
     app_app_store_enable: false,
     app_app_store_url: "",
     app_smart_tv_enable: true,
     app_smart_tv_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-TV.apk",
-    app_smart_tv_size: "74438901",
-    app_smart_tv_sha256: "b9edb552d5a283a3907d274faab73ffca50d36ff9fab044775d52e212e60ec9c",
+    app_smart_tv_size: "76441190",
+    app_smart_tv_sha256: "9cdd6ee93c1a7a25bdb46e173d1c0416fca5b67383d59c4d6abe51c1ba110274",
     app_smart_tv_code: "3779765",
     app_windows_download_enable: true,
-    app_windows_download_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.1.2_Setup.exe",
-    app_windows_size: "26193428",
-    app_windows_sha256: "f870e43ec410d692ea2c6a8ea69458b581e83107fe27ad6f15233e89928a4d48",
+    app_windows_download_url: "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.1.7_Setup.exe",
+    app_windows_size: "26203934",
+    app_windows_sha256: "1dafd669c0b351a13d81bf963f5cc7a56c077a9b225bd2ab32a2c44a2c13b689",
   },
   user: {
     allow_registration: true,
