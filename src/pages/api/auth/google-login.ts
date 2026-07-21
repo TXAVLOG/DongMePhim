@@ -104,7 +104,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           avatar: user.avatar_url || '',
           gender: user.gender,
           province: user.province,
-          ward: user.ward
+          ward: user.ward,
+          phone: user.phone
         }
       }, 'success', '', 200, request);
     } else {

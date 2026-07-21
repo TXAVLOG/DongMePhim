@@ -1910,6 +1910,16 @@ const isImpersonating = userObj && !!userObj.adminId;
           </div>
 
           <form id="google-extra-form" class="space-y-3 sm:space-y-4" novalidate>
+            <!-- Phone Field (Fixed +84 prefix) -->
+            <div class="space-y-1 auth-field relative">
+              <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Số điện thoại (+84)</label>
+              <div class="flex items-center">
+                <span class="bg-white/10 text-primary font-bold px-3.5 py-3 rounded-l-xl text-xs flex items-center border border-r-0 border-glass-stroke select-none shrink-0">+84</span>
+                <input type="tel" id="google-extra-phone" name="phone" placeholder="VD: 912345678..." class="w-full bg-white/5 border border-glass-stroke rounded-r-xl py-3 pl-3 pr-10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" required />
+              </div>
+              <p class="google-extra-phone-error text-[9px] text-rose-400 font-medium ml-1 mt-0.5 opacity-0 transition-opacity"></p>
+            </div>
+
             <!-- Gender Selection Field -->
             <div class="space-y-1 auth-field">
               <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Giới tính</label>
@@ -2717,6 +2727,16 @@ const isImpersonating = userObj && !!userObj.adminId;
         const form = e.target.closest('#google-extra-form');
         if (form) {
           e.preventDefault();
+          const rawPhone = document.getElementById('google-extra-phone')?.value || '';
+          const cleanDigits = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
+          const formattedPhone = '+84' + cleanDigits;
+          const phoneRegex = /^\+84[35789]\d{8}$/;
+
+          if (!rawPhone || !phoneRegex.test(formattedPhone)) {
+            if (window.showGlobalToast) window.showGlobalToast('Số điện thoại không hợp lệ! Vui lòng nhập 9 chữ số bắt đầu bằng 3, 5, 7, 8, 9 (VD: 912345678)', 'error');
+            return;
+          }
+
           const gender = document.getElementById('google-extra-gender')?.value;
           const province = document.getElementById('google-extra-province')?.value;
           const ward = document.getElementById('google-extra-ward')?.value;
@@ -2742,6 +2762,7 @@ const isImpersonating = userObj && !!userObj.adminId;
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               ...window.TXA_TEMP_GOOGLE_AUTH,
+              phone: formattedPhone,
               gender,
               province,
               ward

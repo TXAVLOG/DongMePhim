@@ -13,13 +13,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { credential, accessToken, gender, province, ward } = body;
+    const { credential, accessToken, gender, province, ward, phone } = body;
 
     if (!credential && !accessToken) {
       return apiResponse(null, 'error', 'Thiếu credential hoặc accessToken từ Google', 400, request);
     }
     if (!gender || !province || !ward) {
       return apiResponse(null, 'error', 'Vui lòng điền đầy đủ thông tin giới tính và địa chỉ!', 400, request);
+    }
+
+    // Validate phone number format
+    const rawPhone = (phone || '').toString().trim();
+    const cleanDigits = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
+    const formattedPhone = '+84' + cleanDigits;
+    const phoneRegex = /^\+84[35789]\d{8}$/;
+
+    if (!rawPhone || !phoneRegex.test(formattedPhone)) {
+      return apiResponse(null, 'error', 'Số điện thoại không hợp lệ! Vui lòng nhập 9 chữ số bắt đầu bằng 3, 5, 7, 8, 9 (VD: 912345678)', 400, request);
     }
 
     let email = '';
@@ -79,7 +89,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse(null, 'error', 'Không tìm thấy địa chỉ email trong tài khoản Google', 400, request);
     }
 
-    // Check if user already exists
+    // Check if user email already exists
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id')
@@ -92,6 +102,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     if (existingUser) {
       return apiResponse(null, 'error', 'Tài khoản với địa chỉ email này đã tồn tại!', 400, request);
+    }
+
+    // Check if phone number is already registered by another account
+    const { data: phoneUser, error: phoneCheckErr } = await supabase
+      .from('users')
+      .select('id')
+      .eq('phone', formattedPhone)
+      .maybeSingle();
+
+    if (phoneCheckErr) {
+      throw phoneCheckErr;
+    }
+
+    if (phoneUser) {
+      return apiResponse(null, 'error', `Số điện thoại ${formattedPhone} đã được đăng ký cho tài khoản khác!`, 400, request);
     }
 
     // Insert user into Supabase
@@ -115,6 +140,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         gender: gender,
         province: province,
         ward: ward,
+        phone: formattedPhone,
         package: 'free',
         status: 'active',
         email_verified: true,
@@ -142,7 +168,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         avatar: newUser.avatar_url || '',
         gender: newUser.gender,
         province: newUser.province,
-        ward: newUser.ward
+        ward: newUser.ward,
+        phone: newUser.phone
       }
     }, 'success', 'Đăng ký tài khoản Google thành công', 200, request);
 
