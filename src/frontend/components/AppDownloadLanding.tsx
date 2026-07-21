@@ -324,8 +324,8 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                     </a>
                     
                     {playStoreEnabled && playStoreUrl && (
-                      <a href={playStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 h-[52px] flex items-center justify-center bg-black border border-white/10 rounded-2xl hover:bg-white/5 active:scale-[0.98] transition-all">
-                        <img src={getPlayStoreBadge()} alt="Google Play Store" className="h-9 object-contain" />
+                      <a href={playStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 h-[52px] flex items-center justify-center hover:opacity-80 active:scale-[0.98] transition-all">
+                        <img src={getPlayStoreBadge()} alt="Google Play Store" className="h-12 object-contain" />
                       </a>
                     )}
                   </div>
@@ -375,8 +375,8 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                     )}
 
                     {appStoreEnabled && appStoreUrl && (
-                      <a href={appStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 h-[52px] flex items-center justify-center bg-black border border-white/10 rounded-2xl hover:bg-white/5 active:scale-[0.98] transition-all">
-                        <img src={getAppStoreBadge()} alt="App Store badge" className="h-9 object-contain" />
+                      <a href={appStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 h-[52px] flex items-center justify-center hover:opacity-80 active:scale-[0.98] transition-all">
+                        <img src={getAppStoreBadge()} alt="App Store badge" className="h-12 object-contain" />
                       </a>
                     )}
                   </div>
