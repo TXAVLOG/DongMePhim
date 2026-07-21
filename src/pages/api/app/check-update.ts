@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ request }) => {
   // Fallback về app_release_notes nếu không có
   const changelogs = settings.app.app_changelogs;
   const latestChangelog = Array.isArray(changelogs) && changelogs.length > 0
-    ? (changelogs[0]?.content || changelogs[0]?.notes || '')
+    ? (changelogs[0]?.content || '')
     : '';
   const changelog = latestChangelog || settings.app.app_release_notes || "- Cập nhật trình phát video mượt hơn\n- Sửa lỗi đồng bộ lịch sử xem";
 
