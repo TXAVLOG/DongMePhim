@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   email_verified boolean DEFAULT true,
   expiry_date timestamp with time zone,
   join_date timestamp with time zone,
+  phone character varying,
   avatar_change_count integer DEFAULT 0,
   last_avatar_changed_at timestamp with time zone,
   PRIMARY KEY (id)
