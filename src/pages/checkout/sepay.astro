@@ -170,6 +170,8 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
 
     // CHÚ Ý: Không lắng nghe event 'pagehide' vì sẽ làm xóa nhầm đơn hàng khi chuyển tab/ứng dụng ngân hàng
 
+    let isApp = false;
+
     async function checkPaymentStatus(isManualClick = false) {
       if (!txid || isApproved || isChecking) return;
       isChecking = true;
@@ -184,8 +186,12 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
             isApproved = true;
             if (pollInterval) clearInterval(pollInterval);
             if (window.showGlobalToast) window.showGlobalToast('Thanh toán thành công! Đang kích hoạt gói cước...', 'success');
+            
+            if (isApp) {
+              window.location.href = `dongmephim://payment-status?txid=${encodeURIComponent(txid)}&status=approved`;
+            }
             setTimeout(() => {
-              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId || '')}&packageTitle=${encodeURIComponent(packageTitle)}`;
+              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId || '')}&packageTitle=${encodeURIComponent(packageTitle)}&isApp=${isApp ? '1' : ''}`;
             }, 1000);
             isChecking = false;
             return;
@@ -205,8 +211,12 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
             isApproved = true;
             if (pollInterval) clearInterval(pollInterval);
             if (window.showGlobalToast) window.showGlobalToast('Thanh toán thành công! Đang kích hoạt gói cước...', 'success');
+            
+            if (isApp) {
+              window.location.href = `dongmephim://payment-status?txid=${encodeURIComponent(txid)}&status=approved`;
+            }
             setTimeout(() => {
-              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId || '')}&packageTitle=${encodeURIComponent(packageTitle)}`;
+              window.location.href = `/checkout/success?method=sepay&cycle=${cycle}&price=${price}&txid=${txid}&packageId=${encodeURIComponent(packageId || '')}&packageTitle=${encodeURIComponent(packageTitle)}&isApp=${isApp ? '1' : ''}`;
             }, 1000);
             isChecking = false;
             return;
@@ -255,6 +265,7 @@ const accountName = payments.sepay_account_name || payments.manual_account_name 
       price = Number(urlParams.get('price')) || 0;
       cycle = urlParams.get('cycle') || 'monthly';
       email = urlParams.get('email') || '';
+      isApp = urlParams.get('isApp') === '1' || urlParams.get('isApp') === 'true';
 
       if (email) {
         sessionStorage.setItem('txa_saved_email', email);
