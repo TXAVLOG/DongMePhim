@@ -402,6 +402,15 @@ const CustomSubtitleSystem: React.FC<{
     }
     return false;
   });
+
+  useEffect(() => {
+    const handleVoiceoverChanged = (e: any) => {
+      setIsVoiceover(!!e.detail);
+    };
+    window.addEventListener('txa-voiceover-changed', handleVoiceoverChanged);
+    return () => window.removeEventListener('txa-voiceover-changed', handleVoiceoverChanged);
+  }, []);
+
   const hasSpokenIntroRef = useRef<boolean>(false);
   const lastSpokenCueIdRef = useRef<string | null>(null);
 
@@ -2244,7 +2253,39 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
         });
       }
 
-      // Native subtitle settings menu removed in favor of custom two-column CC panel.
+      // Thuyết minh AI (by TXA) toggle item trong Menu Cài Đặt (⚙️)
+      let isVoiceoverEnabled = typeof window !== 'undefined' ? localStorage.getItem('txa_voiceover_enabled') === 'true' : false;
+      art.setting.add({
+        width: 240,
+        html: 'Thuyết minh AI (by TXA)',
+        tooltip: isVoiceoverEnabled ? 'Đang bật' : 'Tắt',
+        switch: isVoiceoverEnabled,
+        onSelect: function (item: any) {
+          const nextVal = !item.switch;
+          item.switch = nextVal;
+          item.tooltip = nextVal ? 'Đang bật' : 'Tắt';
+          localStorage.setItem('txa_voiceover_enabled', String(nextVal));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('txa-voiceover-changed', { detail: nextVal }));
+          }
+
+          if (!nextVal && typeof window !== 'undefined' && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+          } else if (nextVal && typeof window !== 'undefined' && window.speechSynthesis) {
+            const utter = new SpeechSynthesisUtterance("Bản quyền thuyết minh bởi T X A.");
+            utter.lang = 'vi-VN';
+            utter.rate = 1.1;
+            const voices = window.speechSynthesis.getVoices();
+            const best = voices.find(v => v.lang.includes('vi') && (v.name.includes('HoaiMy') || v.name.includes('NamMinh'))) ||
+                         voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
+            if (best) utter.voice = best;
+            window.speechSynthesis.speak(utter);
+          }
+
+          art.notice.show = `Thuyết minh AI (by TXA): ${nextVal ? 'Đang bật' : 'Tắt'}`;
+          return nextVal;
+        }
+      });
 
       // Sửa lỗi toggle update dom ngay lập tức
       art.setting.add({
