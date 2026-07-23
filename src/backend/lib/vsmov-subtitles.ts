@@ -185,11 +185,12 @@ export async function crawlSubtitlesListFromVsmov(
       });
       if (apiRes.ok) {
         const apiJson = await apiRes.json() as any;
-        if (apiJson.status && Array.isArray(apiJson.episodes) && apiJson.episodes.length > 0) {
-          vsmovServers = apiJson.episodes;
+        const eps = apiJson.episodes || apiJson.data?.episodes || apiJson.data?.item?.episodes;
+        if (apiJson.status && Array.isArray(eps) && eps.length > 0) {
+          vsmovServers = eps;
           log.push(`[VSMOV] Khớp dữ liệu từ API VSMOV (slug: "${targetSlug}"): Tìm thấy ${vsmovServers.length} server(s)`);
         } else {
-          log.push(`[VSMOV] API VSMOV (slug: "${targetSlug}") trả về không có tập phim.`);
+          log.push(`[VSMOV] API VSMOV (slug: "${targetSlug}") không tìm thấy danh sách tập phim.`);
         }
       } else {
         log.push(`[VSMOV] Thử truy vấn slug "${targetSlug}" thất bại (HTTP ${apiRes.status})`);
@@ -199,43 +200,54 @@ export async function crawlSubtitlesListFromVsmov(
     }
   }
 
-  // 2. Nếu chưa tìm được và có movieTitle (hoặc targetSlug bị sai), tự động tìm kiếm trên VSMOV
+  // 2. Tự động tìm kiếm theo tên phim (thử cả tên đầy đủ và tên ngắn gọn không chứa "(Phần X)")
   if (vsmovServers.length === 0 && movieTitle) {
-    const keyword = movieTitle.trim();
-    try {
-      log.push(`[VSMOV] Đang tự động tìm kiếm từ khóa "${keyword}" trên VSMOV API (/api/tim-kiem)...`);
-      const searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=5`;
-      const searchRes = await fetch(searchUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vsmov.com/' },
-        signal: AbortSignal.timeout(15000)
-      });
+    const rawKeyword = movieTitle.trim();
+    const cleanKeyword = rawKeyword.replace(/\(.*?\)/g, '').replace(/(phần|mùa|season)\s*\d+/gi, '').replace(/[^\w\sàáảãạăắằẳẵặâấầnẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/gi, ' ').trim();
+    
+    const keywordsToTry = [rawKeyword];
+    if (cleanKeyword && cleanKeyword.toLowerCase() !== rawKeyword.toLowerCase()) {
+      keywordsToTry.push(cleanKeyword);
+    }
 
-      if (searchRes.ok) {
-        const searchJson = await searchRes.json() as any;
-        const items = searchJson?.data?.items || searchJson?.items || [];
-        if (Array.isArray(items) && items.length > 0) {
-          const matchedItem = items[0];
-          const foundSlug = matchedItem.slug;
-          log.push(`[VSMOV] Found match on VSMOV: "${matchedItem.name}" -> slug: "${foundSlug}"`);
+    for (const kw of keywordsToTry) {
+      if (vsmovServers.length > 0) break;
+      try {
+        log.push(`[VSMOV] Tìm kiếm với từ khóa "${kw}" trên VSMOV (/api/tim-kiem)...`);
+        const searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(kw)}&limit=5`;
+        const searchRes = await fetch(searchUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vsmov.com/' },
+          signal: AbortSignal.timeout(15000)
+        });
 
-          const detailUrl = `https://vsmov.com/api/phim/${foundSlug}`;
-          const detailRes = await fetch(detailUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vsmov.com/' },
-            signal: AbortSignal.timeout(15000)
-          });
-          if (detailRes.ok) {
-            const detailJson = await detailRes.json() as any;
-            if (detailJson.status && Array.isArray(detailJson.episodes)) {
-              vsmovServers = detailJson.episodes;
-              log.push(`[VSMOV] Lấy dữ liệu thành công từ phim "${matchedItem.name}": ${vsmovServers.length} server(s)`);
+        if (searchRes.ok) {
+          const searchJson = await searchRes.json() as any;
+          const items = searchJson?.data?.items || searchJson?.items || searchJson?.data || [];
+          if (Array.isArray(items) && items.length > 0) {
+            const matchedItem = items[0];
+            const foundSlug = matchedItem.slug;
+            log.push(`[VSMOV] Tìm thấy phim trên VSMOV: "${matchedItem.name}" -> slug: "${foundSlug}"`);
+
+            const detailUrl = `https://vsmov.com/api/phim/${foundSlug}`;
+            const detailRes = await fetch(detailUrl, {
+              headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vsmov.com/' },
+              signal: AbortSignal.timeout(15000)
+            });
+            if (detailRes.ok) {
+              const detailJson = await detailRes.json() as any;
+              const detailEps = detailJson.episodes || detailJson.data?.episodes || detailJson.data?.item?.episodes;
+              if (detailJson.status && Array.isArray(detailEps) && detailEps.length > 0) {
+                vsmovServers = detailEps;
+                log.push(`[VSMOV] Lấy dữ liệu thành công từ phim "${matchedItem.name}": ${vsmovServers.length} server(s)`);
+              }
             }
+          } else {
+            log.push(`[VSMOV] Không có kết quả phù hợp cho từ khóa "${kw}".`);
           }
-        } else {
-          log.push(`[VSMOV] Không tìm thấy kết quả phù hợp cho từ khóa "${keyword}" trên VSMOV.`);
         }
+      } catch (searchErr: any) {
+        log.push(`[VSMOV] Lỗi khi tìm kiếm từ khóa "${kw}": ${searchErr.message}`);
       }
-    } catch (searchErr: any) {
-      log.push(`[VSMOV] Lỗi khi tự động tìm kiếm trên VSMOV: ${searchErr.message}`);
     }
   }
 

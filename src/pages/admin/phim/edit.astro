@@ -583,20 +583,20 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
           const log = responseData.data?.log || [];
 
           if (responseData.status !== "success" || !responseData.data) {
-            throw new Error(responseData.message || (log.length ? log.join('\n') : "Không thể cào VSMOV"));
+            throw new Error(responseData.message || "Không thể cào dữ liệu từ VSMOV");
           }
 
           if (subtitles.length === 0) {
-            if (window.showGlobalToast) window.showGlobalToast("⚠️ Không tìm thấy phụ đề nào từ phim này!", "warning");
+            if (window.showGlobalToast) window.showGlobalToast("⚠️ VSMOV không có nguồn phim hoặc phụ đề cho phim này!", "warning");
             
-            // Nếu không có phụ đề nhưng có log, hiển thị log
+            // Nếu không có phụ đề nhưng có log, hiển thị log dạng modal gọn gàng
             if (log.length > 0 && window.txamodal) {
               window.txamodal.show({
                 title: "⚠️ Kết quả cào phụ đề VSMOV",
                 content: `
                   <div class="space-y-3 text-left">
-                    <p class="text-xs text-amber-400 font-bold">Không tìm thấy file phụ đề nào. Chi tiết nhật ký:</p>
-                    <div class="text-[10px] font-mono p-3 bg-zinc-950 rounded-xl space-y-1 text-zinc-400 max-h-48 overflow-y-auto">
+                    <p class="text-xs text-amber-400 font-bold">Không tìm thấy file phụ đề nào trên VSMOV cho phim này. Chi tiết nhật ký:</p>
+                    <div class="text-[10px] font-mono p-3 bg-zinc-950 rounded-xl space-y-1 text-zinc-400 max-h-48 overflow-y-auto custom-scrollbar">
                       ${log.map(l => `<div>${l}</div>`).join('')}
                     </div>
                   </div>
@@ -893,7 +893,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             console.log(subtitles);
           }
         } catch (e) {
-          if (window.showGlobalToast) window.showGlobalToast("Lỗi cào VSMOV: " + e.message, "error");
+          const shortErr = (e.message || "Không thể cào VSMOV").split('\n')[0];
+          if (window.showGlobalToast) window.showGlobalToast("⚠️ " + shortErr, "warning");
         } finally {
           btnCrawlVsmovSubs.disabled = false;
           btnCrawlVsmovSubs.textContent = "Cập nhật phụ đề & m3u8";
