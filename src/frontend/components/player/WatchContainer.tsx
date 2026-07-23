@@ -2158,8 +2158,15 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
     // Gửi trạng thái đang xem lên Discord (chỉ gửi/edit khi đổi tập/phim mới)
     const currentWatchKey = `${movie.slug}:${currentEpisode.slug}`;
-    if (username && lastDiscordWatchKeyRef.current !== currentWatchKey) {
+    const storedWatchKey = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('last_discord_watch_key') : null;
+    const storedMessageId = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('last_discord_msg_id') : null;
+
+    if (username && storedWatchKey !== currentWatchKey) {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('last_discord_watch_key', currentWatchKey);
+      }
       lastDiscordWatchKeyRef.current = currentWatchKey;
+
       fetch('/api/discord/watch-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2169,13 +2176,16 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           movieSlug: movie.slug,
           episodeName: currentEpisode.name,
           episodeSlug: currentEpisode.slug,
-          lastMessageId: lastDiscordMessageIdRef.current || undefined
+          lastMessageId: storedMessageId || lastDiscordMessageIdRef.current || undefined
         })
       })
       .then(res => res.json())
       .then((resData: any) => {
         if (resData?.data?.messageId) {
           lastDiscordMessageIdRef.current = resData.data.messageId;
+          if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('last_discord_msg_id', resData.data.messageId);
+          }
         }
       })
       .catch(err => console.warn('Lỗi gửi cập nhật trạng thái xem lên Discord:', err));
