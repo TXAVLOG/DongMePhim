@@ -4,8 +4,8 @@ import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
 
-// Bảng lưu messageId tin nhắn xem phim gần nhất của từng user trên Discord
-const userWatchMessageMap = new Map<string, { messageId: string; channelId: string }>();
+// Bảng lưu thông tin xem phim gần nhất của từng user trên Discord
+const userWatchMessageMap = new Map<string, { watchKey: string; messageId: string; modLogMessageId?: string }>();
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -19,9 +19,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { movieTitle, movieSlug, episodeName, lastMessageId } = body;
+    const { movieTitle, movieSlug, episodeName, episodeSlug, lastMessageId } = body;
     if (!movieTitle || !movieSlug || !episodeName) {
       return apiResponse(null, 'error', 'Thiếu tham số', 400, request);
+    }
+
+    const currentWatchKey = `${movieSlug}:${episodeSlug || episodeName}`;
+    const userCache = userWatchMessageMap.get(user.id);
+
+    // Chặn gửi lặp: nếu user vẫn đang xem cùng phim & cùng tập, không làm gì cả
+    if (userCache && userCache.watchKey === currentWatchKey) {
+      return apiResponse({ sent: false, reason: 'Đang xem cùng phim và tập, không gửi lại' }, 'success', '', 200, request);
     }
 
     // 1. Kiểm tra liên kết từ Supabase
@@ -57,7 +65,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // Gửi tin nhắn trạng thái lên Discord với Embed chuẩn hyperlink
     const discordId = connection.discord_id;
     const siteUrl = (settings.general?.site_url || 'https://dongmephim.online').replace(/\/$/, '');
-    const watchUrl = `${siteUrl}/xem/${movieSlug}?ep=${encodeURIComponent(body.episodeSlug || '')}`;
+    const watchUrl = `${siteUrl}/xem/${movieSlug}?ep=${encodeURIComponent(episodeSlug || '')}`;
 
     const content = `🍿 <@${discordId}> đang xem tập **${epNumOnly}** phim **${movieTitle}**`;
     const embed = {
@@ -71,7 +79,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     };
 
     // 4. Kiểm tra xem có thể edit tin nhắn cũ không
-    const existingMessageId = lastMessageId || userWatchMessageMap.get(user.id)?.messageId;
+    const existingMessageId = lastMessageId || userCache?.messageId;
     let finalMessageId: string | null = null;
     let isUpdated = false;
 
@@ -117,11 +125,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     }
 
-    if (finalMessageId) {
-      userWatchMessageMap.set(user.id, { messageId: finalMessageId, channelId: channelDangXem });
-    }
-
-    // 5. Gửi nhật ký theo dõi riêng tới kênh #mod-log
+    // 5. Gửi hoặc chỉnh sửa nhật ký theo dõi riêng tới kênh #mod-log (tránh spam)
     let channelModLog = discord.channels?.mod_log || discord.channels?.modlog;
     if (!channelModLog && discord.guild_id) {
       try {
@@ -136,6 +140,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       } catch (e) {}
     }
 
+    let finalModLogId: string | undefined = userCache?.modLogMessageId;
     if (channelModLog) {
       try {
         const modLogEmbed = {
@@ -153,17 +158,48 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           }
         };
 
-        await fetch(`https://discord.com/api/v10/channels/${channelModLog}/messages`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bot ${discord.bot_token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ embeds: [modLogEmbed] })
-        });
+        let modLogUpdated = false;
+        if (finalModLogId) {
+          try {
+            const patchLogRes = await fetch(`https://discord.com/api/v10/channels/${channelModLog}/messages/${finalModLogId}`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bot ${discord.bot_token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ embeds: [modLogEmbed] })
+            });
+            if (patchLogRes.ok) {
+              modLogUpdated = true;
+            }
+          } catch (e) {}
+        }
+
+        if (!modLogUpdated) {
+          const postLogRes = await fetch(`https://discord.com/api/v10/channels/${channelModLog}/messages`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bot ${discord.bot_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ embeds: [modLogEmbed] })
+          });
+          if (postLogRes.ok) {
+            const logData: any = await postLogRes.json();
+            finalModLogId = logData.id;
+          }
+        }
       } catch (logErr) {
         console.warn('Lỗi khi gửi nhật ký xem phim tới kênh #mod-log:', logErr);
       }
+    }
+
+    if (finalMessageId) {
+      userWatchMessageMap.set(user.id, {
+        watchKey: currentWatchKey,
+        messageId: finalMessageId,
+        modLogMessageId: finalModLogId
+      });
     }
 
     return apiResponse({ sent: true, updated: isUpdated, messageId: finalMessageId }, 'success', '', 200, request);
