@@ -11,12 +11,12 @@ export interface SubtitleCue {
 
 const proxySubtitleUrl = (u: string) => {
   if (!u) return '';
-  if (u.startsWith('/') || u.startsWith('blob:') || u.startsWith('data:')) {
+  if (u.startsWith('/') || u.startsWith('blob:') || u.startsWith('data:') || u.includes('/api/proxy-subtitle')) {
     return u;
   }
   try {
-    const parsed = new URL(u, window.location.origin);
-    if (parsed.origin === window.location.origin) {
+    const parsed = new URL(u, typeof window !== 'undefined' ? window.location.origin : 'https://dongmephim.online');
+    if (typeof window !== 'undefined' && parsed.origin === window.location.origin) {
       return u;
     }
   } catch {
