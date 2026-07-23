@@ -720,18 +720,31 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
 
                     if (!fileUrl) return;
 
-                    // Tránh trùng lặp
-                    const exists = targetEp.subtitles.some(s => 
-                      (s.file || '').toLowerCase() === fileUrl.toLowerCase()
+                    const labelName = extractedSub.label || 'Tiếng Việt';
+
+                    // 1. Kiểm tra xem tập đã có ô phụ đề của nhãn này mà chưa có link không
+                    const existingEmpty = targetEp.subtitles.find(s => 
+                      ((s.label || '').toLowerCase() === labelName.toLowerCase()) && (!s.file || s.file.trim() === '')
                     );
 
-                    if (!exists) {
-                      targetEp.subtitles.push({
-                        label: extractedSub.label || 'Tiếng Việt',
-                        file: fileUrl,
-                        default: (extractedSub.label || '').toLowerCase().includes('việt')
-                      });
+                    if (existingEmpty) {
+                      existingEmpty.file = fileUrl;
+                      existingEmpty.default = labelName.toLowerCase().includes('việt');
                       attachedCount++;
+                    } else {
+                      // 2. Kiểm tra xem link này đã được thêm vào tập chưa
+                      const exists = targetEp.subtitles.some(s => 
+                        (s.file || '').toLowerCase() === fileUrl.toLowerCase()
+                      );
+
+                      if (!exists) {
+                        targetEp.subtitles.push({
+                          label: labelName,
+                          file: fileUrl,
+                          default: labelName.toLowerCase().includes('việt')
+                        });
+                        attachedCount++;
+                      }
                     }
                   }
                 });

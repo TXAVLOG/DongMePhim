@@ -116,19 +116,23 @@ export async function fetchEmbedData(embedUrl: string): Promise<EmbedData> {
     }
 
     for (const sub of rawSubs) {
-      let label = sub.name || sub.code || 'Phụ đề';
-      if (sub.code === 'vie' || label.toLowerCase().startsWith('vie')) {
+      let label = sub.name || sub.label || sub.title || sub.code || 'Phụ đề';
+      const cleanLower = label.toLowerCase();
+
+      if (sub.code === 'vie' || cleanLower.includes('vie') || cleanLower.includes('việt') || cleanLower.includes('viet')) {
         label = 'Tiếng Việt';
-      } else if (sub.code === 'eng' || label.toLowerCase().startsWith('eng')) {
+      } else if (sub.code === 'eng' || cleanLower.includes('eng') || cleanLower.includes('english')) {
         label = 'English';
+      } else if (sub.code === 'zho' || sub.code === 'chi' || cleanLower.includes('trung') || cleanLower.includes('china') || cleanLower.includes('chinese')) {
+        label = 'Tiếng Trung';
       }
 
-      let subUrl = sub.url || '';
+      let subUrl = sub.url || sub.file || '';
       if (subUrl.startsWith('/')) subUrl = `${origin}${subUrl}`;
       if (!subUrl) continue;
 
       const proxyUrl = `/api/proxy-subtitle?url=${encodeURIComponent(subUrl)}`;
-      subtitles.push({ label, file: proxyUrl, default: sub.code === 'vie', originalUrl: subUrl });
+      subtitles.push({ label, file: proxyUrl, default: label === 'Tiếng Việt', originalUrl: subUrl });
     }
 
     if (m3u8Url || subtitles.length > 0) {
