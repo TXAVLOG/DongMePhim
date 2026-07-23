@@ -631,15 +631,57 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
               }
 
               const origin = window.location.origin;
-              const lines = window.currentExtractedSubtitles.map((sub, index) => {
-                let url = sub.originalUrl || '';
-                if (linkType === 'proxy') {
-                  const fullProxy = sub.proxyUrl.startsWith('http')
-                    ? sub.proxyUrl
-                    : `${origin}${sub.proxyUrl.startsWith('/') ? '' : '/'}${sub.proxyUrl}`;
-                  url = fullProxy;
+
+              const epGroups = new Map();
+              window.currentExtractedSubtitles.forEach(sub => {
+                const key = typeof sub.episodeIndex === 'number' ? sub.episodeIndex : (sub.episodeName || '0');
+                if (!epGroups.has(key)) {
+                  epGroups.set(key, []);
                 }
-                return `${index + 1} - ${url}`;
+                epGroups.get(key).push(sub);
+              });
+
+              const lines = [];
+              epGroups.forEach((subs) => {
+                const firstSub = subs[0];
+                let epNum = typeof firstSub.episodeIndex === 'number' ? (firstSub.episodeIndex + 1) : 1;
+                if (firstSub.episodeName) {
+                  const matchNum = firstSub.episodeName.match(/\d+/);
+                  if (matchNum) epNum = parseInt(matchNum[0], 10);
+                }
+
+                const hasMultiple = subs.length > 1;
+
+                subs.forEach((sub, subIdx) => {
+                  let url = sub.originalUrl || '';
+                  if (linkType === 'proxy') {
+                    const fullProxy = sub.proxyUrl.startsWith('http')
+                      ? sub.proxyUrl
+                      : `${origin}${sub.proxyUrl.startsWith('/') ? '' : '/'}${sub.proxyUrl}`;
+                    url = fullProxy;
+                  }
+
+                  let langTag = '';
+                  const labelLower = (sub.label || '').toLowerCase();
+                  const urlLower = url.toLowerCase();
+                  if (hasMultiple || labelLower.includes('eng') || labelLower.includes('việt') || labelLower.includes('trung')) {
+                    if (labelLower.includes('việt') || labelLower.includes('vie') || urlLower.includes('/vie_')) {
+                      langTag = '(VI)';
+                    } else if (labelLower.includes('eng') || urlLower.includes('/eng_')) {
+                      langTag = '(EN)';
+                    } else if (labelLower.includes('trung') || labelLower.includes('zho') || urlLower.includes('/zho_') || urlLower.includes('/chi_')) {
+                      langTag = '(CN)';
+                    } else if (sub.label) {
+                      langTag = `(${sub.label})`;
+                    }
+                  }
+
+                  if (subIdx === 0) {
+                    lines.push(`${epNum} - ${url}${langTag}`);
+                  } else {
+                    lines.push(`${url}${langTag}`);
+                  }
+                });
               });
 
               const textContent = lines.join('\n');

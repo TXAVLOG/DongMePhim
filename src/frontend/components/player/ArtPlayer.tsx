@@ -396,6 +396,15 @@ const CustomSubtitleSystem: React.FC<{
   const [activePrimaryCue, setActivePrimaryCue] = useState<SubtitleCue | null>(null);
   const [activeSecondaryCue, setActiveSecondaryCue] = useState<SubtitleCue | null>(null);
 
+  const [isVoiceover, setIsVoiceover] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('txa_voiceover_enabled') === 'true';
+    }
+    return false;
+  });
+  const hasSpokenIntroRef = useRef<boolean>(false);
+  const lastSpokenCueIdRef = useRef<string | null>(null);
+
   const [showPanel, setShowPanel] = useState(false);
   const [panelView, setPanelView] = useState<'main' | 'custom' | 'select-option'>('main');
   const [selectedSetting, setSelectedSetting] = useState<string | null>(null);
@@ -542,6 +551,67 @@ const CustomSubtitleSystem: React.FC<{
       window.removeEventListener('txa-toggle-subtitle-panel', handleTogglePanel);
     };
   }, [art, primaryCues, secondaryCues, mode]);
+
+  useEffect(() => {
+    hasSpokenIntroRef.current = false;
+    lastSpokenCueIdRef.current = null;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, [art, primaryIdx]);
+
+  useEffect(() => {
+    if (!isVoiceover || mode === 'off') return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    // Ưu tiên lấy câu phụ đề Tiếng Việt (chỉ thuyết minh riêng phụ đề Tiếng Việt)
+    let targetCue: SubtitleCue | null = null;
+    const isViText = (str: string) => /[àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i.test(str);
+
+    if (activePrimaryCue && activePrimaryCue.text && isViText(activePrimaryCue.text)) {
+      targetCue = activePrimaryCue;
+    } else if (activeSecondaryCue && activeSecondaryCue.text && isViText(activeSecondaryCue.text)) {
+      targetCue = activeSecondaryCue;
+    } else if (activePrimaryCue && activePrimaryCue.text) {
+      const currentTrack = tracks[primaryIdx];
+      const label = (currentTrack?.label || '').toLowerCase();
+      if (label.includes('vi') || label.includes('tiếng việt') || label.includes('viet') || label.includes('vsi') || tracks.length === 1) {
+        targetCue = activePrimaryCue;
+      }
+    }
+
+    if (!targetCue || !targetCue.text) return;
+
+    const currentId = targetCue.id || `${targetCue.startTime}-${targetCue.text}`;
+    if (lastSpokenCueIdRef.current === currentId) return;
+
+    lastSpokenCueIdRef.current = currentId;
+
+    const synth = window.speechSynthesis;
+    synth.cancel();
+
+    const cleanText = targetCue.text.replace(/<[^>]*>/g, '').replace(/[\r\n]+/g, ' ').trim();
+    if (!cleanText) return;
+
+    let textToSpeak = cleanText;
+    if (!hasSpokenIntroRef.current) {
+      hasSpokenIntroRef.current = true;
+      textToSpeak = `Bản quyền thuyết minh bởi T X A. ${cleanText}`;
+    }
+
+    const utter = new SpeechSynthesisUtterance(textToSpeak);
+    utter.lang = 'vi-VN';
+    utter.rate = 1.1;
+
+    const voices = synth.getVoices();
+    const bestVoice = voices.find(v => v.lang.includes('vi') && (v.name.includes('HoaiMy') || v.name.includes('NamMinh'))) ||
+                      voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
+    if (bestVoice) {
+      utter.voice = bestVoice;
+    }
+
+    synth.speak(utter);
+  }, [activePrimaryCue, activeSecondaryCue, isVoiceover, mode, primaryIdx, tracks]);
 
   useEffect(() => {
     if (!showPanel) return;
@@ -1036,6 +1106,52 @@ const CustomSubtitleSystem: React.FC<{
                   </button>
                 </div>
               </div>
+
+              {/* Voiceover AI Button (by TXA) */}
+              <button
+                onClick={() => {
+                  const nextVal = !isVoiceover;
+                  setIsVoiceover(nextVal);
+                  localStorage.setItem('txa_voiceover_enabled', String(nextVal));
+                  if (!nextVal && typeof window !== 'undefined' && window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                  } else if (nextVal && typeof window !== 'undefined' && window.speechSynthesis) {
+                    hasSpokenIntroRef.current = false;
+                    const utter = new SpeechSynthesisUtterance("Bản quyền thuyết minh bởi T X A.");
+                    utter.lang = 'vi-VN';
+                    utter.rate = 1.1;
+                    const voices = window.speechSynthesis.getVoices();
+                    const best = voices.find(v => v.lang.includes('vi') && (v.name.includes('HoaiMy') || v.name.includes('NamMinh'))) ||
+                                 voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
+                    if (best) utter.voice = best;
+                    window.speechSynthesis.speak(utter);
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '10px 14px',
+                  marginTop: '12px',
+                  backgroundColor: isVoiceover ? 'rgba(124, 58, 237, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                  border: isVoiceover ? '1px solid rgba(124, 58, 237, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px', color: isVoiceover ? '#a78bfa' : '#9ca3af' }}>record_voice_over</span>
+                  <span>Thuyết minh AI (by TXA)</span>
+                </div>
+                <span style={{ fontSize: '11px', color: isVoiceover ? '#a78bfa' : '#6b7280', fontWeight: 800 }}>
+                  {isVoiceover ? 'ĐANG BẬT' : 'TẮT'}
+                </span>
+              </button>
 
               {mode !== 'off' ? (
                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
