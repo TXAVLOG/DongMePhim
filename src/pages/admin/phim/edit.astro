@@ -194,12 +194,12 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
         <div id="vsmovPanel" class="mb-6 p-4 bg-zinc-950/40 rounded-2xl border border-glass-stroke">
           <label class="block text-xs font-bold text-zinc-300 mb-2 uppercase tracking-wide">Cào & Ghép m3u8 + Phụ đề từ VSMOV</label>
           <div class="flex gap-2">
-            <input type="text" id="vsmovUrlInput" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-secondary text-sm text-white" placeholder="Dán link phim VSMOV (Ví dụ: https://vsmov.com/phim/giac-mo-trao-em)" />
+            <input type="text" id="vsmovUrlInput" class="flex-1 bg-zinc-950 border border-glass-stroke rounded-xl text-on-surface py-2.5 px-4 focus:outline-none focus:ring-1 focus:ring-secondary text-sm text-white" placeholder="Dán link phim VSMOV (hoặc để trống để tự động cào theo slug phim)" />
             <button type="button" id="btnCrawlVsmovSubs" class="bg-secondary hover:brightness-110 text-slate-950 py-2.5 px-5 rounded-xl text-xs font-bold transition-all cursor-pointer">
               Cập nhật phụ đề & m3u8
             </button>
           </div>
-          <p class="text-[11px] text-zinc-500 mt-2">Hệ thống sẽ gọi VSMOV API → lấy toàn bộ server/tập → trích xuất link m3u8 và phụ đề từ trang embed → ghép vào phim. Hoạt động cả khi phim chưa có tập nào.</p>
+          <p class="text-[11px] text-zinc-500 mt-2">Hệ thống sẽ gọi VSMOV API → tự động lấy theo slug/tên phim hoặc URL dán vào → trích xuất link m3u8 và phụ đề từ trang embed → hiển thị nhật ký cào và xuất link nhanh.</p>
         </div>
 
         <!-- Dynamic Servers List -->
@@ -560,10 +560,8 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
       // Crawl and Merge VSMOV subtitles click handler
       btnCrawlVsmovSubs.onclick = async () => {
         const vsmovUrl = vsmovUrlInput.value.trim();
-        if (!vsmovUrl) {
-          if (window.showGlobalToast) window.showGlobalToast("Vui lòng dán link phim VSMOV!", "warning");
-          return;
-        }
+        const currentMovieSlug = movieData.movie.slug || editSlug;
+        const currentMovieTitle = movieData.movie.name;
 
         btnCrawlVsmovSubs.disabled = true;
         btnCrawlVsmovSubs.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">autorenew</span> Đang cào VSMOV...';
@@ -574,109 +572,289 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               action: "enrich_subtitles",
-              vsmovUrl: vsmovUrl
+              vsmovUrl: vsmovUrl,
+              movieSlug: currentMovieSlug,
+              movieTitle: currentMovieTitle
             })
           });
 
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
+          const responseData = await res.json();
+          const subtitles = responseData.data?.subtitles || [];
+          const log = responseData.data?.log || [];
+
+          if (responseData.status !== "success" || !responseData.data) {
+            throw new Error(responseData.message || (log.length ? log.join('\n') : "Không thể cào VSMOV"));
           }
 
-          const responseData = await res.json();
-          if (responseData.status === "success" && responseData.data) {
-            const subtitles = responseData.data.subtitles || [];
-            const log = responseData.data.log || [];
-
-            if (subtitles.length === 0) {
-              if (window.showGlobalToast) window.showGlobalToast("⚠️ Không tìm thấy phụ đề nào từ link này!", "warning");
-              return;
-            }
-
-            // Define global copy function if not exists
-            if (!window.copyToClipboard) {
-              window.copyToClipboard = (text) => {
-                navigator.clipboard.writeText(text).then(() => {
-                  if (window.showGlobalToast) window.showGlobalToast("Đã sao chép link phụ đề!", "success");
-                }).catch(err => {
-                  console.error("Lỗi copy:", err);
-                  alert("Không thể copy, vui lòng copy tay: " + text);
-                });
-              };
-            }
-
-            // Build HTML table for the modal
-            const tableRows = subtitles.map(sub => {
-              const safeProxy = (sub.proxyUrl || '').replace(/"/g, '&quot;');
-              const safeOriginal = (sub.originalUrl || '').replace(/"/g, '&quot;');
-              return `
-              <tr class="hover:bg-white/5 transition-colors border-b border-zinc-800 last:border-b-0">
-                <td class="p-3 font-semibold text-white text-xs">${sub.serverName}</td>
-                <td class="p-3 text-zinc-300 text-xs">${sub.episodeName}</td>
-                <td class="p-3 text-zinc-400 text-xs font-mono">${sub.label}</td>
-                <td class="p-3 text-right space-x-1.5 whitespace-nowrap">
-                  <button data-link="${safeProxy}" onclick="copyToClipboard(this.getAttribute('data-link'))" class="px-2.5 py-1.5 rounded bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[12px]">content_copy</span> Proxy Link
-                  </button>
-                  <button data-link="${safeOriginal}" onclick="copyToClipboard(this.getAttribute('data-link'))" class="px-2.5 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[12px]">link</span> Link gốc
-                  </button>
-                </td>
-              </tr>
-              `;
-            }).join('');
-
-            const modalHtml = `
-              <div class="space-y-4 text-left">
-                <p class="text-xs text-zinc-400 leading-relaxed">
-                  Tìm thấy <strong class="text-white">${subtitles.length}</strong> phụ đề từ phim VSMOV. Hãy sao chép link (nên dùng Proxy Link để tránh lỗi chặn CORS) và tự điền vào mục Phụ đề của từng tập phim.
-                </p>
-                <div class="border border-zinc-800 rounded-xl overflow-hidden bg-zinc-950/40">
-                  <div class="max-h-64 overflow-y-auto custom-scrollbar">
-                    <table class="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr class="bg-zinc-950 border-b border-zinc-800 sticky top-0">
-                          <th class="p-3 font-bold text-zinc-400">Server</th>
-                          <th class="p-3 font-bold text-zinc-400">Tập</th>
-                          <th class="p-3 font-bold text-zinc-400">Nhãn</th>
-                          <th class="p-3 font-bold text-zinc-400 text-right">Sao chép</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-zinc-800 bg-zinc-900/10">
-                        ${tableRows}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                
-                <details class="bg-zinc-950/50 border border-zinc-800 rounded-xl p-3">
-                  <summary class="text-[11px] font-bold text-zinc-500 cursor-pointer select-none">Xem Log chi tiết quá trình cào</summary>
-                  <div class="mt-2 text-[10px] font-mono space-y-1 text-zinc-500 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                    ${log.map(l => `<div>${l}</div>`).join('')}
-                  </div>
-                </details>
-              </div>
-            `;
-
-            if (window.txamodal) {
+          if (subtitles.length === 0) {
+            if (window.showGlobalToast) window.showGlobalToast("⚠️ Không tìm thấy phụ đề nào từ phim này!", "warning");
+            
+            // Nếu không có phụ đề nhưng có log, hiển thị log
+            if (log.length > 0 && window.txamodal) {
               window.txamodal.show({
-                title: "✅ Trích xuất phụ đề VSMOV thành công",
-                content: modalHtml,
-                confirmText: "",
+                title: "⚠️ Kết quả cào phụ đề VSMOV",
+                content: `
+                  <div class="space-y-3 text-left">
+                    <p class="text-xs text-amber-400 font-bold">Không tìm thấy file phụ đề nào. Chi tiết nhật ký:</p>
+                    <div class="text-[10px] font-mono p-3 bg-zinc-950 rounded-xl space-y-1 text-zinc-400 max-h-48 overflow-y-auto">
+                      ${log.map(l => `<div>${l}</div>`).join('')}
+                    </div>
+                  </div>
+                `,
                 cancelText: "Đóng",
-                size: "lg"
+                confirmText: ""
               });
-            } else {
-              alert(`Tìm thấy ${subtitles.length} phụ đề. Vui lòng xem ở Console.`);
-              console.log(subtitles);
             }
+            return;
+          }
+
+          window.currentExtractedSubtitles = subtitles;
+
+          // Define global copy function if not exists
+          if (!window.copyToClipboard) {
+            window.copyToClipboard = (text) => {
+              navigator.clipboard.writeText(text).then(() => {
+                if (window.showGlobalToast) window.showGlobalToast("Đã sao chép link!", "success");
+              }).catch(err => {
+                console.error("Lỗi copy:", err);
+                alert("Không thể copy, vui lòng copy tay: " + text);
+              });
+            };
+          }
+
+          // Define exportSubtitles function
+          if (!window.exportSubtitles) {
+            window.exportSubtitles = (actionType, linkType) => {
+              if (!window.currentExtractedSubtitles || window.currentExtractedSubtitles.length === 0) {
+                if (window.showGlobalToast) window.showGlobalToast("Không có danh sách phụ đề!", "warning");
+                return;
+              }
+
+              const origin = window.location.origin;
+              const lines = window.currentExtractedSubtitles.map((sub, index) => {
+                let url = sub.originalUrl || '';
+                if (linkType === 'proxy') {
+                  const fullProxy = sub.proxyUrl.startsWith('http')
+                    ? sub.proxyUrl
+                    : `${origin}${sub.proxyUrl.startsWith('/') ? '' : '/'}${sub.proxyUrl}`;
+                  url = fullProxy;
+                }
+                return `${index + 1} - ${url}`;
+              });
+
+              const textContent = lines.join('\n');
+
+              if (actionType === 'copy') {
+                navigator.clipboard.writeText(textContent).then(() => {
+                  if (window.showGlobalToast) {
+                    window.showGlobalToast(`Đã sao chép ${lines.length} link phụ đề (${linkType === 'proxy' ? 'Proxy' : 'Gốc'})!`, 'success');
+                  }
+                }).catch(err => {
+                  console.error('Lỗi copy:', err);
+                  alert('Không thể sao chép tự động:\n\n' + textContent);
+                });
+              } else if (actionType === 'download') {
+                const slugStr = window.movieData?.movie?.slug || editSlug || 'vsmov';
+                const filename = `phu_de_${linkType}_${slugStr}.txt`;
+                const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+                if (window.showGlobalToast) {
+                  window.showGlobalToast(`Đã tải xuống tệp ${filename}!`, 'success');
+                }
+              }
+            };
+          }
+
+          // Define autoApplySubtitlesToEpisodes function (matching by episode index & name)
+          if (!window.autoApplySubtitlesToEpisodes) {
+            window.autoApplySubtitlesToEpisodes = (linkType = 'proxy') => {
+              if (!window.currentExtractedSubtitles || window.currentExtractedSubtitles.length === 0) {
+                if (window.showGlobalToast) window.showGlobalToast("Không có danh sách phụ đề để chèn!", "warning");
+                return;
+              }
+
+              if (!movieData.episodes || movieData.episodes.length === 0) {
+                if (window.showGlobalToast) window.showGlobalToast("Chưa có server/tập nào trong danh sách phim!", "warning");
+                return;
+              }
+
+              const origin = window.location.origin;
+              let attachedCount = 0;
+
+              movieData.episodes.forEach(server => {
+                const serverEps = server.server_data || server.serverData || [];
+
+                window.currentExtractedSubtitles.forEach(extractedSub => {
+                  let targetEp = null;
+
+                  // 1. Tìm theo episodeIndex chuẩn xác
+                  if (typeof extractedSub.episodeIndex === 'number' && serverEps[extractedSub.episodeIndex]) {
+                    targetEp = serverEps[extractedSub.episodeIndex];
+                  }
+
+                  // 2. Tìm theo tên tập nếu index vượt quá hoặc chưa có
+                  if (!targetEp) {
+                    const cleanExtractedName = (extractedSub.episodeName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    targetEp = serverEps.find(e => {
+                      const epName = (e.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                      return epName === cleanExtractedName || (epName && cleanExtractedName && (epName.includes(cleanExtractedName) || cleanExtractedName.includes(epName)));
+                    });
+                  }
+
+                  if (targetEp) {
+                    targetEp.subtitles = targetEp.subtitles || [];
+
+                    let fileUrl = extractedSub.originalUrl || '';
+                    if (linkType === 'proxy') {
+                      fileUrl = extractedSub.proxyUrl.startsWith('http')
+                        ? extractedSub.proxyUrl
+                        : `${origin}${extractedSub.proxyUrl.startsWith('/') ? '' : '/'}${extractedSub.proxyUrl}`;
+                    }
+
+                    if (!fileUrl) return;
+
+                    // Tránh trùng lặp
+                    const exists = targetEp.subtitles.some(s => 
+                      (s.file || '').toLowerCase() === fileUrl.toLowerCase()
+                    );
+
+                    if (!exists) {
+                      targetEp.subtitles.push({
+                        label: extractedSub.label || 'Tiếng Việt',
+                        file: fileUrl,
+                        default: (extractedSub.label || '').toLowerCase().includes('việt')
+                      });
+                      attachedCount++;
+                    }
+                  }
+                });
+              });
+
+              renderServers();
+
+              if (window.showGlobalToast) {
+                window.showGlobalToast(`⚡ Đã tự động chèn ${attachedCount} phụ đề (${linkType === 'proxy' ? 'Proxy' : 'Gốc'}) vào các tập phim theo đúng index!`, 'success');
+              }
+            };
+          }
+
+          // Build HTML table for the modal
+          const tableRows = subtitles.map(sub => {
+            const safeProxy = (sub.proxyUrl || '').replace(/"/g, '&quot;');
+            const safeOriginal = (sub.originalUrl || '').replace(/"/g, '&quot;');
+            const epIdxDisplay = typeof sub.episodeIndex === 'number' ? `#${sub.episodeIndex + 1}` : '-';
+            return `
+            <tr class="hover:bg-white/5 transition-colors border-b border-zinc-800 last:border-b-0">
+              <td class="p-3 font-mono text-zinc-400 text-xs font-bold">${epIdxDisplay}</td>
+              <td class="p-3 font-semibold text-white text-xs">${sub.serverName}</td>
+              <td class="p-3 text-zinc-300 text-xs">${sub.episodeName}</td>
+              <td class="p-3 text-zinc-400 text-xs font-mono">${sub.label}</td>
+              <td class="p-3 text-right space-x-1.5 whitespace-nowrap">
+                <button data-link="${safeProxy}" onclick="copyToClipboard(this.getAttribute('data-link'))" class="px-2.5 py-1.5 rounded bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">content_copy</span> Proxy Link
+                </button>
+                <button data-link="${safeOriginal}" onclick="copyToClipboard(this.getAttribute('data-link'))" class="px-2.5 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-[10px] transition-all cursor-pointer inline-flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">link</span> Link gốc
+                </button>
+              </td>
+            </tr>
+            `;
+          }).join('');
+
+          const modalHtml = `
+            <div class="space-y-4 text-left">
+              <p class="text-xs text-zinc-400 leading-relaxed">
+                Tìm thấy <strong class="text-white">${subtitles.length}</strong> phụ đề từ phim VSMOV. Sử dụng các nút bấm bên dưới để tự động chèn vào danh sách tập phim theo đúng index hoặc xuất/tải xuống.
+              </p>
+
+              <!-- Main Auto Apply Panel -->
+              <div class="p-4 bg-primary/10 border border-primary/30 rounded-2xl space-y-2.5 shadow-lg shadow-primary/5">
+                <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm text-primary">auto_awesome</span> Tự động ghép phụ đề VSMOV vào các tập (Khớp theo Index tập):
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button onclick="autoApplySubtitlesToEpisodes('proxy')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-slate-950 font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-primary/20 border-none">
+                    <span class="material-symbols-outlined text-sm font-bold">bolt</span> Tự động chèn (Dùng Link Proxy)
+                  </button>
+                  <button onclick="autoApplySubtitlesToEpisodes('original')" class="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-secondary">link</span> Tự động chèn (Dùng Link Gốc)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Toolbar xuất & tải danh sách -->
+              <div class="p-3.5 bg-zinc-950/80 border border-glass-stroke rounded-2xl space-y-2">
+                <div class="text-[11px] font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm text-primary">ios_share</span> Xuất / Tải nhanh toàn bộ danh sách phụ đề dạng văn bản (.txt / Clipboard):
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button onclick="exportSubtitles('copy', 'original')" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold text-[11px] transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs text-secondary">content_copy</span> Copy Link Gốc
+                  </button>
+                  <button onclick="exportSubtitles('copy', 'proxy')" class="px-3 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary font-bold text-[11px] transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs">content_copy</span> Copy Link Proxy
+                  </button>
+                  <button onclick="exportSubtitles('download', 'original')" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 font-bold text-[11px] transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs">download</span> Tải TXT Link Gốc
+                  </button>
+                  <button onclick="exportSubtitles('download', 'proxy')" class="px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-400 font-bold text-[11px] transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs">download</span> Tải TXT Link Proxy
+                  </button>
+                </div>
+              </div>
+
+              <div class="border border-zinc-800 rounded-xl overflow-hidden bg-zinc-950/40">
+                <div class="max-h-64 overflow-y-auto custom-scrollbar">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-zinc-950 border-b border-zinc-800 sticky top-0">
+                        <th class="p-3 font-bold text-zinc-400">Index</th>
+                        <th class="p-3 font-bold text-zinc-400">Server</th>
+                        <th class="p-3 font-bold text-zinc-400">Tập</th>
+                        <th class="p-3 font-bold text-zinc-400">Nhãn</th>
+                        <th class="p-3 font-bold text-zinc-400 text-right">Sao chép</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-800 bg-zinc-900/10">
+                      ${tableRows}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <details class="bg-zinc-950/50 border border-zinc-800 rounded-xl p-3" open>
+                <summary class="text-[11px] font-bold text-zinc-400 cursor-pointer select-none">Nhật ký (Log) chi tiết quá trình cào</summary>
+                <div class="mt-2 text-[10px] font-mono space-y-1 text-zinc-400 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                  ${log.map(l => `<div>${l}</div>`).join('')}
+                </div>
+              </details>
+            </div>
+          `;
+
+          if (window.txamodal) {
+            window.txamodal.show({
+              title: "✅ Trích xuất phụ đề VSMOV thành công",
+              content: modalHtml,
+              confirmText: "",
+              cancelText: "Đóng",
+              size: "lg"
+            });
           } else {
-            throw new Error(responseData.message || "Không thể cào VSMOV");
+            alert(`Tìm thấy ${subtitles.length} phụ đề. Vui lòng xem ở Console.`);
+            console.log(subtitles);
           }
         } catch (e) {
           if (window.showGlobalToast) window.showGlobalToast("Lỗi cào VSMOV: " + e.message, "error");
         } finally {
           btnCrawlVsmovSubs.disabled = false;
-          btnCrawlVsmovSubs.textContent = "Cập nhật phụ đề";
+          btnCrawlVsmovSubs.textContent = "Cập nhật phụ đề & m3u8";
         }
       };
 

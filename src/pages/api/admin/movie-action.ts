@@ -156,26 +156,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // 0. Cào phụ đề từ VSMOV (Trả về danh sách để copy-paste thủ công)
     if (action === 'enrich_subtitles') {
-      const { vsmovUrl } = body;
-      if (!vsmovUrl) {
-        return apiResponse(null, 'error', 'Thiếu đường dẫn phim VSMOV!', 400, request);
-      }
+      const { vsmovUrl, movieSlug, movieTitle } = body;
 
-      let vsmovSlug = vsmovUrl.trim();
+      let vsmovSlug = (vsmovUrl || '').trim();
       if (vsmovSlug.includes('/phim/')) {
         vsmovSlug = vsmovSlug.split('/phim/')[1]?.split('?')[0]?.split('#')[0] || '';
       } else if (vsmovSlug.includes('/api/phim/')) {
         vsmovSlug = vsmovSlug.split('/api/phim/')[1]?.split('?')[0]?.split('#')[0] || '';
       }
 
-      if (!vsmovSlug) {
-        return apiResponse(null, 'error', 'Đường dẫn VSMOV không hợp lệ!', 400, request);
+      // Nếu không nhập link VSMOV, ưu tiên dùng movieSlug truyền lên
+      if (!vsmovSlug && movieSlug) {
+        vsmovSlug = movieSlug.trim();
       }
 
-      const { success, subtitles, log } = await crawlSubtitlesListFromVsmov(vsmovSlug);
+      const { success, subtitles, log } = await crawlSubtitlesListFromVsmov(vsmovSlug, movieTitle);
 
       if (!success) {
-        return apiResponse(null, 'error', log.join('\n') || 'Không thể cào phụ đề VSMOV', 400, request);
+        return apiResponse({ log }, 'error', log.join('\n') || 'Không thể cào phụ đề VSMOV', 400, request);
       }
 
       return apiResponse({ subtitles, log }, 'success', 'Cào phụ đề thành công!', 200, request);

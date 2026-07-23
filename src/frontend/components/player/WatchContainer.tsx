@@ -1605,6 +1605,8 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const playerGetTimeRef = useRef<(() => number) | null>(null);
   const adVideoRef = useRef<HTMLVideoElement | null>(null);
   const lastDiscordUpdateRef = useRef<number>(0);
+  const lastDiscordWatchKeyRef = useRef<string>('');
+  const lastDiscordMessageIdRef = useRef<string>('');
 
   const [dynamicSubtitles, setDynamicSubtitles] = useState<any[]>([]);
 
@@ -2154,10 +2156,10 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     const username = typeof localStorage !== 'undefined' ? (window.APP_USER ? window.APP_USER.username : null) : null;
     const isoNow = new Date().toISOString();
 
-    // Gửi trạng thái đang xem lên Discord (live watch feed) mỗi 30 giây
-    const nowMs = Date.now();
-    if (username && nowMs - lastDiscordUpdateRef.current > 30000) {
-      lastDiscordUpdateRef.current = nowMs;
+    // Gửi trạng thái đang xem lên Discord (chỉ gửi/edit khi đổi tập/phim mới)
+    const currentWatchKey = `${movie.slug}:${currentEpisode.slug}`;
+    if (username && lastDiscordWatchKeyRef.current !== currentWatchKey) {
+      lastDiscordWatchKeyRef.current = currentWatchKey;
       fetch('/api/discord/watch-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2166,9 +2168,17 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           movieTitle: movie.title,
           movieSlug: movie.slug,
           episodeName: currentEpisode.name,
-          episodeSlug: currentEpisode.slug
+          episodeSlug: currentEpisode.slug,
+          lastMessageId: lastDiscordMessageIdRef.current || undefined
         })
-      }).catch(err => console.warn('Lỗi gửi cập nhật trạng thái xem lên Discord:', err));
+      })
+      .then(res => res.json())
+      .then((resData: any) => {
+        if (resData?.data?.messageId) {
+          lastDiscordMessageIdRef.current = resData.data.messageId;
+        }
+      })
+      .catch(err => console.warn('Lỗi gửi cập nhật trạng thái xem lên Discord:', err));
     }
 
     // Luôn cập nhật thistory local dưới dạng dict

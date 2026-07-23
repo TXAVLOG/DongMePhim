@@ -22,6 +22,7 @@ interface EmbedData {
 export interface ExtractedSubtitle {
   serverName: string;
   episodeName: string;
+  episodeIndex: number;
   label: string;
   originalUrl: string;
   proxyUrl: string;
@@ -155,38 +156,87 @@ export async function fetchSubtitlesFromVsmovEmbed(embedUrl: string): Promise<Su
  * and proxy link for copy-paste in admin panel.
  */
 export async function crawlSubtitlesListFromVsmov(
-  vsmovSlug: string
+  vsmovSlug: string,
+  movieTitle?: string
 ): Promise<{ success: boolean; subtitles: ExtractedSubtitle[]; log: string[] }> {
   const log: string[] = [];
   const subtitlesList: ExtractedSubtitle[] = [];
 
-  if (!vsmovSlug) {
-    return { success: false, subtitles: [], log: ['Thiếu slug phim VSMOV!'] };
+  let targetSlug = (vsmovSlug || '').trim();
+
+  if (!targetSlug) {
+    log.push(`[VSMOV] Không nhập link VSMOV. Tự động truy vấn theo thông tin phim.`);
+  } else {
+    log.push(`[VSMOV] Truy vấn VSMOV với slug: "${targetSlug}"`);
   }
 
-  // Fetch servers from VSMOV API
+  // 1. Thử lấy dữ liệu từ VSMOV API với targetSlug
   let vsmovServers: any[] = [];
-  try {
-    const apiUrl = `https://vsmov.com/api/phim/${vsmovSlug}`;
-    const apiRes = await fetch(apiUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vsmov.com/' },
-      signal: AbortSignal.timeout(15000)
-    });
-    if (apiRes.ok) {
-      const apiJson = await apiRes.json() as any;
-      if (apiJson.status && Array.isArray(apiJson.episodes)) {
-        vsmovServers = apiJson.episodes;
-        log.push(`[VSMOV] API: Tìm thấy ${vsmovServers.length} server(s)`);
+  if (targetSlug) {
+    try {
+      const apiUrl = `https://vsmov.com/api/phim/${targetSlug}`;
+      const apiRes = await fetch(apiUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vsmov.com/' },
+        signal: AbortSignal.timeout(15000)
+      });
+      if (apiRes.ok) {
+        const apiJson = await apiRes.json() as any;
+        if (apiJson.status && Array.isArray(apiJson.episodes) && apiJson.episodes.length > 0) {
+          vsmovServers = apiJson.episodes;
+          log.push(`[VSMOV] Khớp dữ liệu từ API VSMOV (slug: "${targetSlug}"): Tìm thấy ${vsmovServers.length} server(s)`);
+        } else {
+          log.push(`[VSMOV] API VSMOV (slug: "${targetSlug}") trả về không có tập phim.`);
+        }
       } else {
-        log.push(`[VSMOV] API trả về trạng thái thất bại hoặc không có tập phim.`);
-        return { success: false, subtitles: [], log };
+        log.push(`[VSMOV] Thử truy vấn slug "${targetSlug}" thất bại (HTTP ${apiRes.status})`);
       }
-    } else {
-      log.push(`[VSMOV] Lỗi gọi API VSMOV (HTTP ${apiRes.status})`);
-      return { success: false, subtitles: [], log };
+    } catch (err: any) {
+      log.push(`[VSMOV] Lỗi kết nối API cho slug "${targetSlug}": ${err.message}`);
     }
-  } catch (err: any) {
-    log.push(`[VSMOV] Lỗi kết nối API VSMOV: ${err.message}`);
+  }
+
+  // 2. Nếu chưa tìm được và có movieTitle (hoặc targetSlug bị sai), tự động tìm kiếm trên VSMOV
+  if (vsmovServers.length === 0 && movieTitle) {
+    const keyword = movieTitle.trim();
+    try {
+      log.push(`[VSMOV] Đang tự động tìm kiếm từ khóa "${keyword}" trên VSMOV API (/api/tim-kiem)...`);
+      const searchUrl = `https://vsmov.com/api/tim-kiem?keyword=${encodeURIComponent(keyword)}&limit=5`;
+      const searchRes = await fetch(searchUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vsmov.com/' },
+        signal: AbortSignal.timeout(15000)
+      });
+
+      if (searchRes.ok) {
+        const searchJson = await searchRes.json() as any;
+        const items = searchJson?.data?.items || searchJson?.items || [];
+        if (Array.isArray(items) && items.length > 0) {
+          const matchedItem = items[0];
+          const foundSlug = matchedItem.slug;
+          log.push(`[VSMOV] Found match on VSMOV: "${matchedItem.name}" -> slug: "${foundSlug}"`);
+
+          const detailUrl = `https://vsmov.com/api/phim/${foundSlug}`;
+          const detailRes = await fetch(detailUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://vsmov.com/' },
+            signal: AbortSignal.timeout(15000)
+          });
+          if (detailRes.ok) {
+            const detailJson = await detailRes.json() as any;
+            if (detailJson.status && Array.isArray(detailJson.episodes)) {
+              vsmovServers = detailJson.episodes;
+              log.push(`[VSMOV] Lấy dữ liệu thành công từ phim "${matchedItem.name}": ${vsmovServers.length} server(s)`);
+            }
+          }
+        } else {
+          log.push(`[VSMOV] Không tìm thấy kết quả phù hợp cho từ khóa "${keyword}" trên VSMOV.`);
+        }
+      }
+    } catch (searchErr: any) {
+      log.push(`[VSMOV] Lỗi khi tự động tìm kiếm trên VSMOV: ${searchErr.message}`);
+    }
+  }
+
+  if (vsmovServers.length === 0) {
+    log.push(`[VSMOV] Không thể cào phụ đề: Không tìm thấy dữ liệu nguồn phim trên VSMOV.`);
     return { success: false, subtitles: [], log };
   }
 
@@ -198,7 +248,8 @@ export async function crawlSubtitlesListFromVsmov(
 
     if (!Array.isArray(eps) || eps.length === 0) continue;
 
-    for (const ep of eps) {
+    for (let epIndex = 0; epIndex < eps.length; epIndex++) {
+      const ep = eps[epIndex];
       const epName = normalizeEpName(ep.name || '');
       const embedUrl = ep.link_embed || ep.linkEmbed || '';
 
@@ -215,6 +266,7 @@ export async function crawlSubtitlesListFromVsmov(
             subtitlesList.push({
               serverName,
               episodeName: epName,
+              episodeIndex: epIndex,
               label: sub.label,
               originalUrl: sub.originalUrl || '',
               proxyUrl: sub.file
