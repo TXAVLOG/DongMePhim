@@ -685,75 +685,104 @@ const { genres, countries } = await MovieService.getGenresAndCountries();
                 return;
               }
 
-              const origin = window.location.origin;
-              let attachedCount = 0;
+              const runApply = () => {
+                const origin = window.location.origin;
+                let attachedCount = 0;
 
-              movieData.episodes.forEach(server => {
-                const serverEps = server.server_data || server.serverData || [];
+                movieData.episodes.forEach(server => {
+                  const serverEps = server.server_data || server.serverData || [];
 
-                window.currentExtractedSubtitles.forEach(extractedSub => {
-                  let targetEp = null;
+                  window.currentExtractedSubtitles.forEach(extractedSub => {
+                    let targetEp = null;
 
-                  // 1. Tìm theo episodeIndex chuẩn xác
-                  if (typeof extractedSub.episodeIndex === 'number' && serverEps[extractedSub.episodeIndex]) {
-                    targetEp = serverEps[extractedSub.episodeIndex];
-                  }
-
-                  // 2. Tìm theo tên tập nếu index vượt quá hoặc chưa có
-                  if (!targetEp) {
-                    const cleanExtractedName = (extractedSub.episodeName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-                    targetEp = serverEps.find(e => {
-                      const epName = (e.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-                      return epName === cleanExtractedName || (epName && cleanExtractedName && (epName.includes(cleanExtractedName) || cleanExtractedName.includes(epName)));
-                    });
-                  }
-
-                  if (targetEp) {
-                    targetEp.subtitles = targetEp.subtitles || [];
-
-                    let fileUrl = extractedSub.originalUrl || '';
-                    if (linkType === 'proxy') {
-                      fileUrl = extractedSub.proxyUrl.startsWith('http')
-                        ? extractedSub.proxyUrl
-                        : `${origin}${extractedSub.proxyUrl.startsWith('/') ? '' : '/'}${extractedSub.proxyUrl}`;
+                    // 1. Tìm theo episodeIndex chuẩn xác
+                    if (typeof extractedSub.episodeIndex === 'number' && serverEps[extractedSub.episodeIndex]) {
+                      targetEp = serverEps[extractedSub.episodeIndex];
                     }
 
-                    if (!fileUrl) return;
+                    // 2. Tìm theo tên tập nếu index vượt quá hoặc chưa có
+                    if (!targetEp) {
+                      const cleanExtractedName = (extractedSub.episodeName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                      targetEp = serverEps.find(e => {
+                        const epName = (e.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                        return epName === cleanExtractedName || (epName && cleanExtractedName && (epName.includes(cleanExtractedName) || cleanExtractedName.includes(epName)));
+                      });
+                    }
 
-                    const labelName = extractedSub.label || 'Tiếng Việt';
+                    if (targetEp) {
+                      targetEp.subtitles = targetEp.subtitles || [];
 
-                    // 1. Kiểm tra xem tập đã có ô phụ đề của nhãn này mà chưa có link không
-                    const existingEmpty = targetEp.subtitles.find(s => 
-                      ((s.label || '').toLowerCase() === labelName.toLowerCase()) && (!s.file || s.file.trim() === '')
-                    );
+                      let fileUrl = extractedSub.originalUrl || '';
+                      if (linkType === 'proxy') {
+                        fileUrl = extractedSub.proxyUrl.startsWith('http')
+                          ? extractedSub.proxyUrl
+                          : `${origin}${extractedSub.proxyUrl.startsWith('/') ? '' : '/'}${extractedSub.proxyUrl}`;
+                      }
 
-                    if (existingEmpty) {
-                      existingEmpty.file = fileUrl;
-                      existingEmpty.default = labelName.toLowerCase().includes('việt');
-                      attachedCount++;
-                    } else {
-                      // 2. Kiểm tra xem link này đã được thêm vào tập chưa
-                      const exists = targetEp.subtitles.some(s => 
-                        (s.file || '').toLowerCase() === fileUrl.toLowerCase()
+                      if (!fileUrl) return;
+
+                      const labelName = extractedSub.label || 'Tiếng Việt';
+
+                      // 1. Kiểm tra xem tập đã có ô phụ đề của nhãn này mà chưa có link không
+                      const existingEmpty = targetEp.subtitles.find(s => 
+                        ((s.label || '').toLowerCase() === labelName.toLowerCase()) && (!s.file || s.file.trim() === '')
                       );
 
-                      if (!exists) {
-                        targetEp.subtitles.push({
-                          label: labelName,
-                          file: fileUrl,
-                          default: labelName.toLowerCase().includes('việt')
-                        });
+                      if (existingEmpty) {
+                        existingEmpty.file = fileUrl;
+                        existingEmpty.default = labelName.toLowerCase().includes('việt');
                         attachedCount++;
+                      } else {
+                        // 2. Kiểm tra xem link này đã được thêm vào tập chưa
+                        const exists = targetEp.subtitles.some(s => 
+                          (s.file || '').toLowerCase() === fileUrl.toLowerCase()
+                        );
+
+                        if (!exists) {
+                          targetEp.subtitles.push({
+                            label: labelName,
+                            file: fileUrl,
+                            default: labelName.toLowerCase().includes('việt')
+                          });
+                          attachedCount++;
+                        }
                       }
                     }
+                  });
+                });
+
+                renderServers();
+
+                if (window.showGlobalToast) {
+                  window.showGlobalToast(`⚡ Đã tự động chèn ${attachedCount} phụ đề (${linkType === 'proxy' ? 'Proxy' : 'Gốc'}) vào các tập phim theo đúng index!`, 'success');
+                }
+              };
+
+              // Hiển thị txamodal xác nhận trước khi tự động chèn phụ đề
+              const subCount = window.currentExtractedSubtitles.length;
+              const linkTypeName = linkType === 'proxy' ? 'Proxy Link (Khuyên dùng)' : 'Link Gốc';
+
+              if (window.txamodal) {
+                window.txamodal.show({
+                  title: '⚡ Xác nhận ghép phụ đề VSMOV',
+                  content: `
+                    <div class="space-y-3 text-xs text-left pt-1">
+                      <p class="text-zinc-300">Bạn có chắc chắn muốn tự động chèn <strong>${subCount} phụ đề VSMOV</strong> vào danh sách tập phim?</p>
+                      <div class="p-3.5 bg-zinc-950 rounded-xl border border-zinc-800 text-[11px] space-y-1.5 font-sans">
+                        <div class="flex justify-between items-center"><span class="text-zinc-400">Loại đường dẫn:</span> <span class="text-primary font-bold">${linkTypeName}</span></div>
+                        <div class="flex justify-between items-center"><span class="text-zinc-400">Quy tắc ghép:</span> <span class="text-secondary font-bold">Khớp theo Index tập (#1, #2,...)</span></div>
+                        <div class="flex justify-between items-center"><span class="text-zinc-400">Thao tác:</span> <span class="text-emerald-400 font-bold">Tự điền vào từng tập & render lại UI</span></div>
+                      </div>
+                    </div>
+                  `,
+                  confirmText: 'Chèn Phụ Đề Ngay',
+                  cancelText: 'Hủy',
+                  onConfirm: () => {
+                    runApply();
                   }
                 });
-              });
-
-              renderServers();
-
-              if (window.showGlobalToast) {
-                window.showGlobalToast(`⚡ Đã tự động chèn ${attachedCount} phụ đề (${linkType === 'proxy' ? 'Proxy' : 'Gốc'}) vào các tập phim theo đúng index!`, 'success');
+              } else if (confirm(`Bạn có chắc chắn muốn tự động chèn ${subCount} phụ đề VSMOV vào các tập phim?`)) {
+                runApply();
               }
             };
           }
