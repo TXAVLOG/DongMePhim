@@ -66,7 +66,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const newTime = parseFloat(current_time) || 0;
     const timeWatched = newTime - oldTime;
 
-    if (timeWatched > 0 && timeWatched < 60) {
+    if (timeWatched > 0 && timeWatched <= 300) {
       const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
       await TxaActivityCalculator.incrementWatchTime(user.id, Math.round(timeWatched));
     }

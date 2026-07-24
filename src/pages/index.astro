@@ -148,7 +148,7 @@ const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;
       <Fragment set:html={settings.ads.offerwall_script} />
     )}
 </head>
-<body data-decoy-enable={String(decoyEnable)} class="bg-[#030303] min-h-screen flex items-center justify-center relative select-none overflow-hidden">
+<body data-decoy-enable={String(decoyEnable)} class="bg-[#030303] min-h-[100dvh] flex flex-col items-center justify-center relative select-none overflow-y-auto py-8 sm:py-12 px-4">
     <script is:inline>
       (function() {
         const decoy = document.body.getAttribute('data-decoy-enable') !== 'false';
@@ -207,32 +207,32 @@ const zaloLockEnable = settings.general?.zalo_lock_enable ?? true;
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- 2. LANDING PAGE (Presented after load)                        -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <main id="landing-page" class="absolute z-20 hidden flex-col items-center justify-center px-4 max-w-4xl text-center transition-all duration-1000 opacity-0 transform scale-95">
+    <main id="landing-page" class="relative z-20 hidden flex-col items-center justify-center px-4 max-w-4xl text-center transition-all duration-1000 opacity-0 transform scale-95 w-full my-auto">
         <!-- Logo and Brand -->
-        <div class="mb-6 inline-flex items-center gap-3 bg-white/5 border border-white/10 rounded-full px-5 py-2 backdrop-blur-md">
-            <img src="/logo-icon.gif" alt="DongPhim Logo" class="h-8 w-auto" />
-            <span class="text-xs font-black tracking-[0.25em] uppercase text-white/90">{settings.general.site_name.toUpperCase()} ENTERTAINMENT</span>
+        <div class="mb-4 sm:mb-6 inline-flex items-center gap-2.5 sm:gap-3 bg-white/5 border border-white/10 rounded-full px-4 sm:px-5 py-1.5 sm:py-2 backdrop-blur-md">
+            <img src="/logo-icon.gif" alt="DongPhim Logo" class="h-6 sm:h-8 w-auto" />
+            <span class="text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.25em] uppercase text-white/90">{settings.general.site_name.toUpperCase()} ENTERTAINMENT</span>
         </div>
 
-        <h2 class="font-display-hero text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-none mb-6">
+        <h2 class="font-display-hero text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight sm:leading-none mb-4 sm:mb-6 break-words">
             Thế Giới Điện Ảnh <br class="hidden sm:inline" />
             <span class="gradient-text font-black">Trong Tầm Tay Bạn</span>
         </h2>
 
-        <p class="font-sans text-sm sm:text-lg text-on-surface-variant/80 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p class="font-sans text-xs sm:text-base text-on-surface-variant/80 max-w-2xl mx-auto mb-6 sm:mb-10 leading-relaxed px-2">
             Xem ngay hàng ngàn bộ phim bom tấn chiếu rạp, phim bộ dài tập đặc sắc với chất lượng 4K/HDR sắc nét, âm thanh sống động, cập nhật tập mới nhanh nhất mỗi ngày.
         </p>
 
         <!-- Main CTA Button -->
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-5 w-full mb-12">
-            <a href="/tphim" class="glow-btn relative inline-flex items-center justify-center gap-3 px-8 py-4.5 bg-zinc-950/80 hover:bg-zinc-900 border border-white/10 rounded-2xl font-black text-sm uppercase tracking-widest text-white shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 group cursor-pointer z-30">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mb-8 sm:mb-12">
+            <a href="/tphim" class="glow-btn relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-zinc-950/80 hover:bg-zinc-900 border border-white/10 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest text-white shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 group cursor-pointer z-30">
                 <span>Khám phá ngay</span>
                 <span class="material-symbols-outlined text-sm transition-transform duration-300 group-hover:translate-x-1.5">arrow_forward</span>
             </a>
         </div>
 
         <!-- Features Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl border-t border-white/10 pt-12 text-left w-full px-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl border-t border-white/10 pt-8 sm:pt-12 text-left w-full px-2 sm:px-4">
             <div class="glass-card p-6 rounded-2xl space-y-4 hover:border-secondary-container/40 hover:scale-[1.03] transition-all duration-300 cursor-pointer shadow-lg group">
                 <div class="w-12 h-12 rounded-xl bg-secondary-container/10 flex items-center justify-center text-secondary-container group-hover:bg-secondary-container/20 transition-colors">
                     <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">hd</span>

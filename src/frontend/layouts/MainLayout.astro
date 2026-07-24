@@ -1266,7 +1266,7 @@ const isImpersonating = userObj && !!userObj.adminId;
     </script>
 
     <!-- Mở thẻ bọc chính -->
-    <div id="main-app-container">
+    <div id="main-app-container" class="pb-28 sm:pb-32 pb-[calc(7rem+env(safe-area-inset-bottom,0px))]">
     {isImpersonating && (
       <div id="impersonation-banner" class="fixed left-0 right-0 z-[9999] bg-amber-500 text-slate-900 flex items-center justify-between px-6 py-2 font-bold text-xs shadow-lg md:top-0 md:bottom-auto md:border-b border-amber-400 bottom-0 top-auto border-t">
         <div class="flex items-center gap-2">
@@ -1384,7 +1384,7 @@ const isImpersonating = userObj && !!userObj.adminId;
     )}
 
     <!-- TopNavBar (Mobile Header like Image 1) -->
-    <nav class="fixed top-0 w-full z-50 backdrop-blur-[20px] bg-surface/60 border-b border-glass-stroke shadow-2xl transition-all duration-300 md:hidden" id="mobile-top-nav">
+    <nav class="fixed top-0 w-full z-50 backdrop-blur-[20px] bg-surface/60 border-b border-glass-stroke shadow-2xl transition-all duration-300 md:hidden pt-[env(safe-area-inset-top,0px)]" id="mobile-top-nav">
         <div class="flex justify-between items-center px-6 py-3">
             <a class="flex items-center gap-2" href="/tphim">
                 <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-8 w-auto dyn-logo-img" />
@@ -1593,7 +1593,7 @@ const isImpersonating = userObj && !!userObj.adminId;
     </div>
 
     <!-- BottomNavBar (Mobile Pill) -->
-    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-[94%] max-w-md rounded-full backdrop-blur-[25px] bg-surface/80 border border-white/20 shadow-2xl overflow-hidden" style="box-shadow: 0 8px 32px rgba(0,0,0,0.3); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);">
+    <nav class="fixed left-1/2 -translate-x-1/2 z-50 md:hidden w-[94%] max-w-md rounded-full backdrop-blur-[25px] bg-surface/80 border border-white/20 shadow-2xl overflow-hidden" style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); box-shadow: 0 8px 32px rgba(0,0,0,0.3); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);">
       <div class="flex justify-between items-center px-4 py-3">
         <a href="/tphim" class={`flex flex-col items-center gap-1 ${isActive('/tphim') ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface transition-colors'}`}>
           <span class="material-symbols-outlined text-xl">home</span>

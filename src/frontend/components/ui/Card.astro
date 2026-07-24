@@ -186,11 +186,11 @@ const progress = getEpisodeProgress() as any;
   </a>
 
   <!-- Text Titles below the Poster container (centered, matches Image 1) -->
-  <div class="mt-2.5 px-1 space-y-0.5 text-center">
-    <h3 class="font-bold text-sm text-white line-clamp-1 group-hover:text-primary transition-colors" data-txatooltip={title}>
+  <div class="mt-2.5 px-1 space-y-0.5 text-center min-w-0">
+    <h3 class="font-bold text-xs sm:text-sm text-white line-clamp-1 leading-tight group-hover:text-primary transition-colors break-words" data-txatooltip={title}>
       {title}
     </h3>
-    <p class="text-[11px] text-zinc-500 truncate font-medium" data-txatooltip={movie?.originalTitle || ''}>
+    <p class="text-[10px] sm:text-[11px] text-zinc-500 truncate font-medium leading-tight" data-txatooltip={movie?.originalTitle || ''}>
       {movie?.originalTitle || movie?.title || ''}
     </p>
   </div>
