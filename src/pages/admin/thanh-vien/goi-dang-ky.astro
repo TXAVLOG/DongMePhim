@@ -984,6 +984,12 @@ const groupedPackages = packages.map((pkg: any) => {
                     <span>Bỏ qua Quảng cáo</span>
                   </label>
                 </div>
+                <div>
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="custom_app_icon" value="true" class="accent-primary" />
+                    <span>Đổi Icon App Độc Quyền</span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -1120,6 +1126,7 @@ const groupedPackages = packages.map((pkg: any) => {
                   hide_watermark: form.querySelector('input[name="hide_watermark"]').checked,
                   vip_badge: form.querySelector('input[name="vip_badge"]').checked,
                   bypass_ads: form.querySelector('input[name="bypass_ads"]').checked,
+                  custom_app_icon: form.querySelector('input[name="custom_app_icon"]')?.checked ?? false,
                   allowed_servers: allowed_servers
                 }
               };
@@ -1353,6 +1360,13 @@ const groupedPackages = packages.map((pkg: any) => {
                   </label>
                   ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
                 </div>
+                <div class="relative group/lock">
+                  <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input type="checkbox" name="custom_app_icon" value="true" ${pkg.permissions?.custom_app_icon ? 'checked' : ''} ${isFree ? 'disabled' : ''} class="accent-primary" />
+                    <span>Đổi Icon App Độc Quyền</span>
+                  </label>
+                  ${isFree ? '<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-max text-[9px] p-2 rounded-lg bg-black border border-white/10 opacity-0 group-hover/lock:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-xl">Mặc định khóa đối với gói Free</span>' : ''}
+                </div>
               </div>
             </div>
 
@@ -1499,6 +1513,7 @@ const groupedPackages = packages.map((pkg: any) => {
                     hide_watermark: form.querySelector('input[name="hide_watermark"]').checked,
                     vip_badge: form.querySelector('input[name="vip_badge"]').checked,
                     bypass_ads: form.querySelector('input[name="bypass_ads"]').checked,
+                    custom_app_icon: form.querySelector('input[name="custom_app_icon"]')?.checked ?? false,
                     allowed_servers: allowed_servers
                   };
                 }
