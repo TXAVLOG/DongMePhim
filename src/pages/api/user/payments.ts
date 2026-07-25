@@ -231,6 +231,31 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     }
 
+    // Nếu trạng thái là 'approved' -> Tự động cập nhật gói cước và ngày hết hạn cho người dùng trong DB
+    if (status === 'approved' && packageTitle) {
+      try {
+        const { SettingService } = await import('@services/SettingService');
+        const settings = await SettingService.getSettings();
+        const allPkgs = settings.packages || [];
+        const matchedPkg = allPkgs.find((p: any) => p.title?.toLowerCase() === packageTitle.toLowerCase() || p.id?.toLowerCase() === packageTitle.toLowerCase() || (p.title && packageTitle.toLowerCase().includes(p.title.toLowerCase())));
+        if (matchedPkg) {
+          const cycleDays = cycle === 'annual' ? 365 : 30;
+          const expiryDate = new Date(Date.now() + 3600 * 1000 * 24 * cycleDays).toISOString();
+          
+          await supabase
+            .from('profiles')
+            .update({
+              package: matchedPkg.id,
+              expiry_date: expiryDate,
+              permissions: matchedPkg.permissions || {}
+            })
+            .eq('username', username);
+        }
+      } catch (pkgUpdateErr) {
+        console.error('Lỗi khi tự động nâng cấp gói cho user:', pkgUpdateErr);
+      }
+    }
+
     // Nếu trạng thái là 'approved' và đây là gói Key Bypass Zalo -> Tự động sinh mã Key và gửi Email cho khách
     let generatedKeyCode: string | null = null;
     if (status === 'approved' && (packageTitle.toLowerCase().includes('bypass') || packageTitle.toLowerCase().includes('zalo') || packageTitle.toLowerCase().includes('key'))) {
