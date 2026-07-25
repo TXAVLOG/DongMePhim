@@ -51,6 +51,8 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         year: parseInt(m.releaseYear || m.release_year, 10) || 2026,
         time: m.durationMinutes || m.duration_minutes || "",
         content: m.description || "",
+        country: m.country || m.country_name || (typeof m.country === 'object' ? (m.country.name || m.country.slug) : '') || (Array.isArray(m.countries) ? m.countries.map((c: any) => c.name || c).join(', ') : '') || '',
+        genres: Array.isArray(m.genres) ? m.genres : (typeof m.genres === 'string' ? [m.genres] : []),
         imdb: { vote_average: parseFloat(m.imdbScore || m.imdb_score) || 0 },
         tmdb: { vote_average: parseFloat(m.tmdbScore || m.tmdb_score || m.imdbScore || m.imdb_score) || 0 },
         is_favorite: favoriteIds.includes(Number(seqId)),
