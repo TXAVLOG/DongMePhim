@@ -5,7 +5,19 @@ import { SettingService } from '@services/SettingService';
 export const GET: APIRoute = async ({ request }) => {
   try {
     const settings = await SettingService.getSettings();
-    const packagesList = settings.packages || [];
+    const now = new Date();
+    const packagesList = (settings.packages || []).map((pkg: any) => {
+      const isActiveSale = (pkg.sale_price || pkg.sale_annual_price) && (!pkg.sale_end_date || new Date(pkg.sale_end_date) >= now);
+      const effectiveMonthlyPrice = (isActiveSale && pkg.sale_price) ? Number(pkg.sale_price) : Number(pkg.price || 0);
+      const effectiveAnnualPrice = (isActiveSale && pkg.sale_annual_price) ? Number(pkg.sale_annual_price) : (pkg.annual_price ? Number(pkg.annual_price) : null);
+      
+      return {
+        ...pkg,
+        effective_price: effectiveMonthlyPrice,
+        effective_annual_price: effectiveAnnualPrice,
+        is_active_sale: !!isActiveSale
+      };
+    });
     const payments = settings.payments || {} as any;
 
     const paymentInfo = {
