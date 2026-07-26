@@ -264,7 +264,11 @@ export const seedSettings: SiteSettings = {
     google_ads_client_id: "ca-pub-123456789",
     offerwall_enable: false,
     offerwall_script: "",
-    ad_provider: "none"
+    ad_provider: "none",
+    admob_enable: false,
+    admob_app_id: "ca-app-pub-3940256099942544~3347511713",
+    admob_app_start_ad_id: "ca-app-pub-3940256099942544/3419835294",
+    admob_preroll_ad_id: "ca-app-pub-3940256099942544/1033173712"
   },
   discord: {
     bot_token: "",
@@ -352,6 +356,22 @@ export class LocalSettingProvider implements ISettingProvider {
             }
             if (parsed.ads.offerwall_script === undefined) {
               parsed.ads.offerwall_script = "";
+              adsChanged = true;
+            }
+            if (parsed.ads.admob_enable === undefined) {
+              parsed.ads.admob_enable = false;
+              adsChanged = true;
+            }
+            if (parsed.ads.admob_app_id === undefined) {
+              parsed.ads.admob_app_id = seedSettings.ads.admob_app_id;
+              adsChanged = true;
+            }
+            if (parsed.ads.admob_app_start_ad_id === undefined) {
+              parsed.ads.admob_app_start_ad_id = seedSettings.ads.admob_app_start_ad_id;
+              adsChanged = true;
+            }
+            if (parsed.ads.admob_preroll_ad_id === undefined) {
+              parsed.ads.admob_preroll_ad_id = seedSettings.ads.admob_preroll_ad_id;
               adsChanged = true;
             }
             if (parsed.ads.ad_provider === undefined) {

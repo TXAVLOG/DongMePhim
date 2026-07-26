@@ -411,7 +411,7 @@ INSERT INTO public.settings (key, value) VALUES (
     "app_windows_sha256": "d791ddf4b12fdbaf342f98d8019420069bfbfdb3353cd16a6e182310e6903ba3",
     "app_maintenance_enable": false,
     "app_maintenance_message": "Ứng dụng đang được bảo trì định kỳ để nâng cao hiệu năng. Vui lòng quay lại sau ít phút!"
-  }'::jsonb�n giải phân đoạn HLS và lỗi không tìm thấy tập phim trên máy chủ Vercel.\\n- 💎 [UI] Tối ưu hóa trình phát TxaPlayer thích ứng tốt hơn với kết nối mạng yếu."
+  }'::jsonb�n giải phân đoạn HLS và lỗi không tìm thấy tập phim trên máy chủ Vercel.\\n- 💎 [UI] Tối ưu hóa trình phát TxaPlayer thích ứng tốt hơn với kết nối mạng yếu."
       }
     ],
     "app_android_download_enable": true,
@@ -562,7 +562,11 @@ INSERT INTO public.settings (key, value) VALUES (
     "google_ads_client_id": "ca-pub-123456789",
     "offerwall_enable": false,
     "offerwall_script": "",
-    "ad_provider": "none"
+    "ad_provider": "none",
+    "admob_enable": false,
+    "admob_app_id": "ca-app-pub-3940256099942544~3347511713",
+    "admob_app_start_ad_id": "ca-app-pub-3940256099942544/3419835294",
+    "admob_preroll_ad_id": "ca-app-pub-3940256099942544/1033173712"
   }'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
 

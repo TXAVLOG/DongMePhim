@@ -211,6 +211,10 @@ export interface AdSettings {
   offerwall_enable?: boolean;
   offerwall_script?: string;
   ad_provider?: 'none' | 'google_ads' | 'offerwall' | 'both';
+  admob_enable?: boolean;
+  admob_app_id?: string;
+  admob_app_start_ad_id?: string;
+  admob_preroll_ad_id?: string;
 }
 
 export interface DiscordSettings {

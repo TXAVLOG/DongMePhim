@@ -42,6 +42,7 @@ export const GET: APIRoute = async ({ request }) => {
     sha256: (settings.app.app_apk_sha256 || "abcdef1234567890...").trim(),
     changelog,
     discord_server_url: (settings.social?.social_discord_url || '').trim(),
-    discord_server_enable: settings.social?.social_discord_enable ?? false
+    discord_server_enable: settings.social?.social_discord_enable ?? false,
+    ads: settings.ads
   }, 'success', '', 200, request);
 };
