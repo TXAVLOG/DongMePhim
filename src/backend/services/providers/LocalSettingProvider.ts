@@ -278,6 +278,10 @@ export const seedSettings: SiteSettings = {
     admin_ids: "",
     api_key: "txa-discord-secure-key-2026",
     is_setup_completed: false
+  },
+  pwa: {
+    vapid_public_key: "BPHOzS5-cuqD7AnIzZVUFjWvBo2r5ETsJR7ir__O3FZaqsobABZFlcOJmV8nxVg1oQWQN2GNCdRjLZqGOOC__Ek",
+    vapid_private_key: "p9vb7mscPUag8TWCaKbANy6Q5Gio9TGcFIcM_6mzj6c"
   }
 };
 
@@ -416,6 +420,10 @@ export class LocalSettingProvider implements ISettingProvider {
           }
           if (parsed.discord === undefined) {
             parsed.discord = { ...seedSettings.discord };
+            changed = true;
+          }
+          if (parsed.pwa === undefined) {
+            parsed.pwa = { ...seedSettings.pwa };
             changed = true;
           }
           if (changed) {

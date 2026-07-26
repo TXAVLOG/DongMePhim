@@ -570,6 +570,16 @@ INSERT INTO public.settings (key, value) VALUES (
   }'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
 
+INSERT INTO public.settings (key, value) VALUES (
+  'pwa',
+  '{
+    "vapid_public_key": "BPHOzS5-cuqD7AnIzZVUFjWvBo2r5ETsJR7ir__O3FZaqsobABZFlcOJmV8nxVg1oQWQN2GNCdRjLZqGOOC__Ek",
+    "vapid_private_key": "p9vb7mscPUag8TWCaKbANy6Q5Gio9TGcFIcM_6mzj6c"
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+
+
 -- Table: public.notifications
 CREATE TABLE IF NOT EXISTS public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

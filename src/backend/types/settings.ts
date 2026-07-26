@@ -238,6 +238,11 @@ export interface EncryptionSettings {
   aes_iv?: string;
 }
 
+export interface PwaSettings {
+  vapid_public_key?: string;
+  vapid_private_key?: string;
+}
+
 export interface SiteSettings {
   general: GeneralSettings;
   smtp: SMTPSettings;
@@ -252,6 +257,7 @@ export interface SiteSettings {
   ads: AdSettings;
   discord?: DiscordSettings;
   encryption?: EncryptionSettings;
+  pwa?: PwaSettings;
 }
 
 export interface ISettingProvider {
