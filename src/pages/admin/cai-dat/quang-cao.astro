@@ -39,12 +39,10 @@ let activeTab = "quang-cao";
             Nhà cung cấp quảng cáo chính
           </h3>
           <div class="space-y-2">
-            <label class="text-xs font-label-caps text-text-dim">Chọn nhà cung cấp hiển thị</label>
+            <label class="text-xs font-label-caps text-text-dim">Trạng thái Google AdSense</label>
             <select id="ad-provider-select" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-bold">
-              <option value="none">❌ Tắt quảng cáo mạng (Không hiển thị)</option>
-              <option value="google_ads">🌐 Chỉ chạy Google AdSense</option>
-              <option value="offerwall">🧱 Chỉ chạy Monetag Offerwall</option>
-              <option value="both">⚡ Chạy song song cả hai (AdSense & Monetag)</option>
+              <option value="none">❌ Tắt quảng cáo Google AdSense trên Web</option>
+              <option value="google_ads">🌐 Bật quảng cáo Google AdSense trên Web</option>
             </select>
           </div>
         </div>
@@ -128,19 +126,6 @@ let activeTab = "quang-cao";
           </div>
         </div>
 
-        <!-- SECTION 4: Offerwall Integration -->
-        <div id="offerwall-config-section" class="space-y-6 pt-6 border-t border-glass-stroke transition-all duration-300">
-          <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary">gavel</span>
-            Cấu hình Offerwall (Monetag / PropellerAds)
-          </h3>
-
-          <div class="grid grid-cols-1 gap-6">
-            <div class="space-y-2">
-              <label class="text-xs font-label-caps text-text-dim">Mã script tích hợp Offerwall (Nhập thẻ &lt;script&gt;)</label>
-              <textarea id="offerwall-script" rows="4" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="Ví dụ: <script src='https://alwingulla.com/act/files/micro.tag.js?p=12345' data-cfasync='false' async></script>"></textarea>
-            </div>
-          </div>
         <!-- SECTION 5: Google AdMob Integration for Mobile & Smart TV -->
         <div id="admob-config-section" class="space-y-6 pt-6 border-t border-glass-stroke transition-all duration-300">
           <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-4 text-xl font-bold text-white flex items-center gap-2">
@@ -183,13 +168,9 @@ let activeTab = "quang-cao";
       function updateSectionVisibility() {
         const provider = document.getElementById("ad-provider-select")?.value;
         const googleSection = document.getElementById("google-ads-config-section");
-        const offerwallSection = document.getElementById("offerwall-config-section");
 
         if (googleSection) {
-          googleSection.classList.toggle("hidden", provider !== "google_ads" && provider !== "both");
-        }
-        if (offerwallSection) {
-          offerwallSection.classList.toggle("hidden", provider !== "offerwall" && provider !== "both");
+          googleSection.classList.toggle("hidden", provider !== "google_ads");
         }
       }
 
@@ -219,7 +200,6 @@ let activeTab = "quang-cao";
         setVal("click-ad-code", ads.click_ad_code || "");
 
         setVal("google-ads-client-id", ads.google_ads_client_id || "");
-        setVal("offerwall-script", ads.offerwall_script || "");
 
         // Hydrate AdMob Settings
         setSelect("admob-enable", ads.admob_enable ? "true" : "false");
