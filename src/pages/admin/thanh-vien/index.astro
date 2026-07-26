@@ -528,9 +528,9 @@ const packages = settings.packages || [];
           if (digits.length >= 4) {
             const firstTwo = digits.substring(0, 2);
             const lastTwo = digits.substring(digits.length - 2);
-            return `<span class="txatooltip text-zinc-300 font-mono cursor-help" data-txatooltip="${cleanPhone}">+84${firstTwo}....${lastTwo}</span>`;
+            return `<span class="text-zinc-300 font-mono cursor-help hover:text-primary transition-colors" data-txatooltip="${cleanPhone}">+84${firstTwo}....${lastTwo}</span>`;
           }
-          return `<span class="txatooltip text-zinc-300 font-mono cursor-help" data-txatooltip="${cleanPhone}">${cleanPhone}</span>`;
+          return `<span class="text-zinc-300 font-mono cursor-help hover:text-primary transition-colors" data-txatooltip="${cleanPhone}">${cleanPhone}</span>`;
         }
 
         function renderUsers(list) {
