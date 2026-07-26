@@ -1716,6 +1716,88 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
   const [isInPlaylist, setIsInPlaylist] = useState<boolean>(false);
   const [isCinemaMode, setIsCinemaMode] = useState<boolean>(false);
   const [selectedPlayer, setSelectedPlayer] = useState<'txaplayer' | 'artplayer'>('txaplayer');
+  const [downloadProgress, setDownloadProgress] = useState<{ [key: string]: number }>({});
+  const [downloadState, setDownloadState] = useState<{ [key: string]: 'idle' | 'downloading' | 'completed' | 'failed' }>({});
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleDownloadEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+      
+      const { type, streamUrl, episodeName, progress, error } = detail;
+      
+      if (type === 'DOWNLOAD_PROGRESS') {
+        setDownloadProgress(prev => ({ ...prev, [streamUrl]: progress }));
+        setDownloadState(prev => ({ ...prev, [streamUrl]: 'downloading' }));
+      } else if (type === 'DOWNLOAD_COMPLETE') {
+        setDownloadProgress(prev => ({ ...prev, [streamUrl]: 100 }));
+        setDownloadState(prev => ({ ...prev, [streamUrl]: 'completed' }));
+        if ((window as any).showGlobalToast) {
+          (window as any).showGlobalToast(`Tải xuống hoàn tất: ${episodeName}!`, 'success');
+        }
+      } else if (type === 'DOWNLOAD_FAILED') {
+        setDownloadState(prev => ({ ...prev, [streamUrl]: 'failed' }));
+        if ((window as any).showGlobalToast) {
+          (window as any).showGlobalToast(`Lỗi tải xuống: ${error || 'Không xác định'}`, 'error');
+        }
+      }
+    };
+    
+    window.addEventListener('pwa-download-event', handleDownloadEvent);
+    return () => window.removeEventListener('pwa-download-event', handleDownloadEvent);
+  }, []);
+
+  const checkIfEpisodeCached = async (streamUrl: string) => {
+    if (typeof caches === 'undefined') return false;
+    try {
+      const cache = await caches.open('dongmephim-video-cache');
+      const matched = await cache.match(streamUrl);
+      return !!matched;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (!currentEpisode) return;
+    const playUrl = resolvePlayUrl(currentEpisode);
+    checkIfEpisodeCached(playUrl).then(isCached => {
+      if (isCached) {
+        setDownloadState(prev => ({ ...prev, [playUrl]: 'completed' }));
+        setDownloadProgress(prev => ({ ...prev, [playUrl]: 100 }));
+      }
+    });
+  }, [currentEpisode, serverIndex]);
+
+  const handleDownloadOffline = () => {
+    if (!currentEpisode) return;
+    
+    if (typeof navigator === 'undefined' || !navigator.serviceWorker || !navigator.serviceWorker.controller) {
+      if ((window as any).showGlobalToast) {
+        (window as any).showGlobalToast('Tính năng tải offline yêu cầu trình duyệt hỗ trợ Service Worker.', 'warning');
+      }
+      return;
+    }
+    
+    const playUrl = resolvePlayUrl(currentEpisode);
+    const epName = `${movie.title} - ${currentEpisode.name}`;
+    
+    setDownloadState(prev => ({ ...prev, [playUrl]: 'downloading' }));
+    setDownloadProgress(prev => ({ ...prev, [playUrl]: 0 }));
+    
+    navigator.serviceWorker.controller.postMessage({
+      type: 'DOWNLOAD_EPISODE',
+      streamUrl: playUrl,
+      episodeName: epName
+    });
+    
+    if ((window as any).showGlobalToast) {
+      (window as any).showGlobalToast(`Bắt đầu tải xuống ${currentEpisode.name} để xem offline...`, 'info');
+    }
+  };
+
   const [isCompact, setIsCompact] = useState<boolean>(true);
   const [autoNext, setAutoNext] = useState<boolean>(true);
   const [autoSkip, setAutoSkip] = useState<boolean>(false);
@@ -2150,6 +2232,22 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
   const handleTimeUpdate = async (time: number, duration: number) => {
     if (!currentEpisode) return;
+
+    // Prefetch next episode if progress > 80%
+    if (duration > 0 && (time / duration) > 0.8) {
+      const nextEp = currentServer && currentServer.serverData[episodeIndex + 1];
+      if (nextEp && typeof navigator !== 'undefined' && navigator.serviceWorker && navigator.serviceWorker.controller) {
+        const prefetchKey = `prefetched:${movie.slug}:${nextEp.slug}`;
+        if (!sessionStorage.getItem(prefetchKey)) {
+          sessionStorage.setItem(prefetchKey, 'true');
+          const nextPlayUrl = resolvePlayUrl(nextEp);
+          navigator.serviceWorker.controller.postMessage({
+            type: 'PREFETCH_EPISODE',
+            streamUrl: nextPlayUrl
+          });
+        }
+      }
+    }
 
     const timeRounded = Math.round(time);
     const durationRounded = Math.round(duration);
@@ -2767,6 +2865,27 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
               {selectedPlayer === 'txaplayer' ? 'TXAPlayer' : 'ArtPlayer'}
             </span>
           </button>
+
+          {/* Tải offline */}
+          {typeof navigator !== 'undefined' && ('serviceWorker' in navigator) && currentEpisode && (
+            <button 
+              onClick={handleDownloadOffline}
+              disabled={downloadState[resolvePlayUrl(currentEpisode)] === 'downloading'}
+              className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className={`material-symbols-outlined text-[18px] ${downloadState[resolvePlayUrl(currentEpisode)] === 'completed' ? 'text-green-500' : downloadState[resolvePlayUrl(currentEpisode)] === 'downloading' ? 'animate-spin text-amber-500' : ''}`}>
+                {downloadState[resolvePlayUrl(currentEpisode)] === 'completed' ? 'download_done' : downloadState[resolvePlayUrl(currentEpisode)] === 'downloading' ? 'progress_activity' : 'download'}
+              </span>
+              <span>
+                {downloadState[resolvePlayUrl(currentEpisode)] === 'completed' 
+                  ? 'Đã tải offline' 
+                  : downloadState[resolvePlayUrl(currentEpisode)] === 'downloading' 
+                    ? `Đang tải (${downloadProgress[resolvePlayUrl(currentEpisode)] || 0}%)` 
+                    : 'Tải offline'
+                }
+              </span>
+            </button>
+          )}
 
           {/* Chia sẻ */}
           <button 

@@ -1208,3 +1208,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Table: public.txa_push_subscriptions
+CREATE TABLE IF NOT EXISTS public.txa_push_subscriptions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES public.users(id) ON DELETE CASCADE,
+  subscription jsonb NOT NULL,
+  device_info text,
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
+
+ALTER TABLE public.txa_push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all_authenticated_users" ON public.txa_push_subscriptions 
+  FOR ALL TO public USING ((auth.uid() = user_id) OR is_admin());

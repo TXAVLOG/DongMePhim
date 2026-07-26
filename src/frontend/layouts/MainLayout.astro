@@ -5415,14 +5415,112 @@ const isImpersonating = userObj && !!userObj.adminId;
           }
         }
 
-        // Service Worker registration
+        // Service Worker registration & PWA Events
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js')
-              .then((reg) => console.log('[SW] Registered successfully with scope:', reg.scope))
+              .then((reg) => {
+                console.log('[SW] Registered successfully with scope:', reg.scope);
+                
+                // If user is already subscribed and logged in, we can verify it
+                if (Notification.permission === 'granted') {
+                  reg.pushManager.getSubscription().then(sub => {
+                    if (sub) {
+                      // Silently sync with backend if logged in
+                      const username = window.APP_USER ? window.APP_USER.username : '';
+                      if (username) {
+                        fetch('/api/user/push-subscription', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ subscription: sub, username })
+                        }).catch(() => {});
+                      }
+                    }
+                  });
+                }
+              })
               .catch((err) => console.error('[SW] Registration failed:', err));
           });
+
+          // Forward HLS segment download progress from service worker to window events
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            const data = event.data;
+            if (data && (data.type === 'DOWNLOAD_PROGRESS' || data.type === 'DOWNLOAD_COMPLETE' || data.type === 'DOWNLOAD_FAILED')) {
+              window.dispatchEvent(new CustomEvent('pwa-download-event', { detail: data }));
+            }
+          });
         }
+
+        // Web Push Notification registration helper
+        window.subscribeToPushNotifications = async function() {
+          if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.warn('[PWA] Push Notifications are not supported in this browser.');
+            if (window.showGlobalToast) window.showGlobalToast('Trình duyệt của bạn không hỗ trợ thông báo đẩy.', 'warning');
+            return null;
+          }
+
+          try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+              throw new Error('Quyền nhận thông báo bị từ chối bởi người dùng.');
+            }
+
+            const reg = await navigator.serviceWorker.ready;
+            
+            // 1. Fetch VAPID Public Key from settings API
+            let vapidPublicKey = '';
+            try {
+              const resSettings = await fetch('/api/admin/settings');
+              if (resSettings.ok) {
+                const settingsData = await resSettings.json();
+                vapidPublicKey = settingsData?.data?.pwa?.vapid_public_key;
+              }
+            } catch (e) {
+              console.warn('[PWA] Failed to fetch server VAPID key, using pre-shared key.', e);
+            }
+
+            // Fallback default VAPID key (VAPID standard base64 url-safe representation)
+            if (!vapidPublicKey) {
+              vapidPublicKey = 'BEl62iUZGZaAOYpQC5tSMEJ5V709gG5vQ12FskM033S5083L31a2V65893a7s89s89012a9s8s73a2139s8d9f1';
+            }
+
+            // 2. Convert base64 VAPID key to Uint8Array applicationServerKey
+            const padding = '='.repeat((4 - (vapidPublicKey.length % 4)) % 4);
+            const base64 = (vapidPublicKey + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+              outputArray[i] = rawData.charCodeAt(i);
+            }
+
+            // 3. Subscribe to push manager
+            const subscription = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: outputArray
+            });
+
+            // 4. Save subscription object to Supabase database
+            const username = window.APP_USER ? window.APP_USER.username : '';
+            const res = await fetch('/api/user/push-subscription', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ subscription, username })
+            });
+
+            const result = await res.json();
+            if (res.ok && result.status === 'success') {
+              if (window.showGlobalToast) window.showGlobalToast('🔔 Đã bật thông báo nhận phim mới thành công!', 'success');
+              return subscription;
+            } else {
+              throw new Error(result.message || 'Lỗi gửi subscription lên máy chủ.');
+            }
+
+          } catch (err) {
+            console.error('[PWA] Push subscription registration failed:', err);
+            if (window.showGlobalToast) window.showGlobalToast(err.message || 'Lỗi đăng ký thông báo đẩy.', 'error');
+            return null;
+          }
+        };
 
         // Offline / Online handler
         let originalTitle = document.title;
