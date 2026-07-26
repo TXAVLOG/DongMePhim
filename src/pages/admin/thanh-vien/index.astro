@@ -104,6 +104,7 @@ const packages = settings.packages || [];
             </th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">TÊN TÀI KHOẢN / EMAIL</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">NGÀY ĐĂNG KÝ</th>
+            <th class="px-8 py-4 text-xs font-label-caps text-text-dim">SỐ ĐIỆN THOẠI</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">GÓI DỊCH VỤ</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">XÁC MINH EMAIL</th>
             <th class="px-8 py-4 text-xs font-label-caps text-text-dim">TRẠNG THÁI</th>
@@ -424,9 +425,15 @@ const packages = settings.packages || [];
                   <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Tên tài khoản (Không thể thay đổi)</label>
                   <input type="text" id="modal-username" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none" value="${u.username}" readonly />
                 </div>
-                <div class="flex flex-col gap-1">
-                  <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Email</label>
-                  <input type="email" id="modal-email" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" value="${u.email || ''}" required />
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Email</label>
+                    <input type="email" id="modal-email" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" value="${u.email || ''}" required />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Số điện thoại</label>
+                    <input type="text" id="modal-phone" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" value="${u.phone || ''}" placeholder="Chưa cập nhật" />
+                  </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                   <div class="flex flex-col gap-1">
@@ -465,6 +472,7 @@ const packages = settings.packages || [];
             cancelText: 'Hủy bỏ',
             onConfirm: async () => {
               const email = document.getElementById('modal-email').value.trim();
+              const phone = document.getElementById('modal-phone').value.trim();
               const pack = document.getElementById('modal-package').value;
               const role = document.getElementById('modal-role').value;
               const verified = document.getElementById('modal-verified').value === 'true';
@@ -483,6 +491,7 @@ const packages = settings.packages || [];
                     action: 'edit',
                     username,
                     email,
+                    phone,
                     package: pack,
                     role,
                     emailVerified: verified,
@@ -504,13 +513,33 @@ const packages = settings.packages || [];
           });
         };
 
+        function formatPhone(phone) {
+          if (!phone || phone.trim() === '') {
+            return '<span class="text-rose-500/85 font-black italic">Chưa cập nhật</span>';
+          }
+          const cleanPhone = phone.trim();
+          let digits = cleanPhone.replace(/\D/g, '');
+          if (digits.startsWith('84')) {
+            digits = digits.substring(2);
+          }
+          if (digits.startsWith('0')) {
+            digits = digits.substring(1);
+          }
+          if (digits.length >= 4) {
+            const firstTwo = digits.substring(0, 2);
+            const lastTwo = digits.substring(digits.length - 2);
+            return `<span class="txatooltip text-zinc-300 font-mono cursor-help" data-txatooltip="${cleanPhone}">+84${firstTwo}....${lastTwo}</span>`;
+          }
+          return `<span class="txatooltip text-zinc-300 font-mono cursor-help" data-txatooltip="${cleanPhone}">${cleanPhone}</span>`;
+        }
+
         function renderUsers(list) {
           if (!tbody) return;
           
           if (list.length === 0) {
             tbody.innerHTML = `
               <tr>
-                <td colspan="7" class="px-8 py-12 text-center text-xs text-text-dim italic font-outfit">
+                <td colspan="8" class="px-8 py-12 text-center text-xs text-text-dim italic font-outfit">
                   Không tìm thấy thành viên nào khớp với bộ lọc của bạn.
                 </td>
               </tr>
@@ -591,6 +620,7 @@ const packages = settings.packages || [];
                   </div>
                 </td>
                 <td class="px-8 py-4 text-xs text-text-dim font-outfit">${registeredDate}</td>
+                <td class="px-8 py-4 text-xs font-outfit">${formatPhone(u.phone)}</td>
                 <td class="px-8 py-4">
                   <button onclick="changeUserPackage('${u.username}')" class="px-2 py-1 rounded text-[10px] font-bold ${styleClass} cursor-pointer hover:brightness-110 font-outfit" ${styleAttr} data-txatooltip="Nhấp để đổi nhanh gói">
                     ${packageText}
@@ -1247,9 +1277,15 @@ const packages = settings.packages || [];
                     <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Tên tài khoản</label>
                     <input type="text" id="modal-username" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập tên tài khoản..." required />
                   </div>
-                  <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Email</label>
-                    <input type="email" id="modal-email" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập email..." required />
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1">
+                      <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Email</label>
+                      <input type="email" id="modal-email" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập email..." required />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Số điện thoại</label>
+                      <input type="text" id="modal-phone" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nhập số điện thoại..." />
+                    </div>
                   </div>
                   <div class="flex flex-col gap-1 relative">
                     <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Mật khẩu</label>
@@ -1331,6 +1367,7 @@ const packages = settings.packages || [];
                 const username = document.getElementById('modal-username').value.trim();
                 const email = document.getElementById('modal-email').value.trim();
                 const password = document.getElementById('modal-password').value.trim();
+                const phone = document.getElementById('modal-phone').value.trim();
                 const pack = document.getElementById('modal-package').value;
                 const role = document.getElementById('modal-role').value;
                 const verified = document.getElementById('modal-verified').value === 'true';
@@ -1367,6 +1404,7 @@ const packages = settings.packages || [];
                       username,
                       email,
                       password,
+                      phone,
                       package: pack,
                       role,
                       emailVerified: verified,

@@ -44,6 +44,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         gender: u.gender || '',
         province: u.province || '',
         ward: u.ward || '',
+        phone: u.phone || '',
         createdAt: u.created_at,
         status: u.status || 'active',
         package: u.package || 'free',
@@ -67,7 +68,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       body = await request.json();
     } catch (e) {}
 
-    const { action, username, email, password, role, roles, package: userPackage, status, emailVerified, oldUsername, expiryDate, joinDate } = body;
+    const { action, username, email, password, role, roles, package: userPackage, status, emailVerified, oldUsername, expiryDate, joinDate, phone } = body;
     if (!action) {
       return apiResponse(null, 'error', 'Thiếu hành động (action)!', 400, request);
     }
@@ -111,7 +112,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           status: status || 'active',
           email_verified: emailVerified !== false,
           expiry_date: expiryDate || null,
-          join_date: joinDate || new Date().toISOString()
+          join_date: joinDate || new Date().toISOString(),
+          phone: phone || null
         });
 
       if (error) throw error;
@@ -136,6 +138,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
       const updates: any = {};
       if (email !== undefined) updates.email = email;
+      if (phone !== undefined) updates.phone = phone || null;
       if (password !== undefined) {
         const settings = await SettingService.getSettings();
         const secretKey = settings.encryption?.secret_key || '';
