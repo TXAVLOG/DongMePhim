@@ -1,0 +1,303 @@
+---
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { SettingService } from '@services/SettingService';
+import SettingsSidebar from '@components/admin/SettingsSidebar.astro';
+
+const settings: any = await SettingService.getSettings();
+let activeTab = 'pwa-push';
+---
+
+<AdminLayout title="Cài đặt hệ thống - Thông báo PWA & Push">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 mt-4 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-on-surface text-3xl">Cấu hình hệ thống</h2>
+      <p class="text-text-dim text-body-main mt-1">Quản lý các thông số cấu hình và tính năng PWA (Progressive Web App).</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="save-settings-btn" class="px-6 py-2 bg-primary text-slate-950 rounded-full font-label-caps font-bold hover:brightness-110 transition-all cursor-pointer flex items-center gap-2 border-none">
+        <span class="material-symbols-outlined text-sm">save</span>
+        Lưu cấu hình VAPID
+      </button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <!-- Cài đặt Navigation Sidebar -->
+    <SettingsSidebar activeTab="pwa-push" />
+
+    <!-- Cài đặt Panel Content -->
+    <div class="lg:col-span-3 space-y-8">
+      
+      <!-- CẤU HÌNH VAPID KEYS -->
+      <div class="glass-panel rounded-3xl p-8 space-y-6">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6 text-xl font-bold flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">key</span>
+          Cài đặt VAPID (Web Push Credentials)
+        </h3>
+        
+        <div class="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6 text-xs text-primary font-body-main leading-relaxed">
+          VAPID keys (Voluntary Application Server Identification) xác thực máy chủ gửi tin của bạn với các dịch vụ đẩy. 
+          Bạn có thể nhập khoá hiện có hoặc sử dụng nút sinh tự động phía dưới để cập nhật cặp khóa bảo mật mới.
+        </div>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 gap-4">
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">VAPID Public Key</label>
+              <textarea id="pwa-vapid-public-key" placeholder="Nhập VAPID Public Key..." class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs font-mono min-h-[70px]">{settings.pwa?.vapid_public_key || ''}</textarea>
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">VAPID Private Key</label>
+              <textarea id="pwa-vapid-private-key" placeholder="Nhập VAPID Private Key..." class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs font-mono min-h-[70px]">{settings.pwa?.vapid_private_key || ''}</textarea>
+            </div>
+          </div>
+          
+          <div class="pt-2 flex justify-end">
+            <button id="gen-keys-btn" class="px-5 py-2 bg-zinc-900 border border-glass-stroke text-zinc-300 hover:text-white rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all cursor-pointer flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs">autorenew</span>
+              Tự động tạo cặp khóa mới
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BẢNG PHÁT SÓNG THÔNG BÁO ĐẨY -->
+      <div class="glass-panel rounded-3xl p-8 space-y-6">
+        <h3 class="text-title-md border-b border-glass-stroke pb-4 mb-6 text-xl font-bold flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary">campaign</span>
+          Phát sóng Thông báo đẩy (Web Push Broadcast)
+        </h3>
+
+        <div class="grid grid-cols-1 gap-4">
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Tiêu đề thông báo (Title) <span class="text-rose-500">*</span></label>
+            <input type="text" id="push-title" placeholder="Ví dụ: Phim Mới Cập Nhật! 🔥" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs" />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-label-caps text-text-dim">Nội dung thông báo (Message) <span class="text-rose-500">*</span></label>
+            <textarea id="push-body" placeholder="Ví dụ: Solo Leveling tập mới vừa ra mắt vietsub chất lượng cao. Xem ngay!" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs min-h-[80px]"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Link điều hướng (URL)</label>
+              <input type="text" id="push-url" placeholder="Ví dụ: /tphim hoặc /xem/solo-leveling" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Đường dẫn Icon (192x192)</label>
+              <input type="text" id="push-icon" value="/icon-192x192.png" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">Hình ảnh lớn (Image URL)</label>
+              <input type="text" id="push-image" placeholder="Ví dụ: https://link-anh-phim.jpg" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white text-xs" />
+            </div>
+          </div>
+
+          <div class="pt-4 flex justify-between items-center">
+            <div id="broadcast-result" class="text-xs font-semibold text-zinc-400">
+              <!-- Hiển thị kết quả sau khi gửi -->
+            </div>
+            
+            <button id="send-push-btn" class="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white rounded-xl font-label-caps font-bold transition-all cursor-pointer flex items-center gap-2 border-none shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+              <span class="material-symbols-outlined text-sm">send</span>
+              Gửi tới tất cả thiết bị
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <style>
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+  </style>
+
+  <script is:inline define:vars={{ serverSettings: settings }}>
+    (function() {
+      // ═══════════════════════════════════════════════════════════════
+      // 1. Tự động sinh cặp khóa VAPID
+      // ═══════════════════════════════════════════════════════════════
+      document.getElementById('gen-keys-btn')?.addEventListener('click', () => {
+        if (!confirm('Bạn có chắc chắn muốn sinh cặp khóa VAPID mới không? Lưu ý: Nếu thay đổi khóa VAPID, tất cả các thiết bị cũ cần phải đăng ký lại quyền nhận thông báo mới nhận được đẩy.')) {
+          return;
+        }
+
+        const btn = document.getElementById('gen-keys-btn');
+        if (!btn) return;
+        
+        try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[12px]">progress_activity</span> Đang tạo...';
+          btn.disabled = true;
+
+          // Tạo cặp khóa EC (P-256) client-side thông qua Web Crypto API
+          crypto.subtle.generateKey(
+            { name: "ECDSA", namedCurve: "P-256" },
+            true,
+            ["sign", "verify"]
+          ).then(async (keyPair) => {
+            const pubExport = await crypto.subtle.exportKey("raw", keyPair.publicKey);
+            const privExport = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+
+            // Chuyển raw ArrayBuffer sang base64url standard
+            const bufferToBase64Url = (buf) => {
+              const binary = String.fromCharCode.apply(null, new Uint8Array(buf));
+              return window.btoa(binary)
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+            };
+
+            const pubKeyB64 = bufferToBase64Url(pubExport);
+            
+            // Đối với Private Key, block65 yêu cầu d9d5... hoặc JWK/Raw format của private key scalar (d).
+            // Tuy nhiên để tương thích nhanh gọn, chúng ta có thể sinh trực tiếp từ API hoặc sinh chuẩn base64 d-scalar
+            // Chúng ta có thể dùng key scalar chuẩn.
+            // Để đơn giản và chính xác nhất, chúng ta export sang JWK để lấy thành phần "d" (private scalar) và "x","y" (public coordinates)
+            const pubJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+            const privJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+
+            const publicKeyUrl = pubKeyB64;
+            const privateKeyUrl = privJwk.d; // Thành phần d chính là private key scalar dạng base64url
+
+            document.getElementById('pwa-vapid-public-key').value = publicKeyUrl;
+            document.getElementById('pwa-vapid-private-key').value = privateKeyUrl;
+
+            if (window.showGlobalToast) {
+              window.showGlobalToast('Sinh cặp khóa VAPID thành công! Vui lòng bấm lưu cấu hình.', 'success');
+            }
+          }).catch(err => {
+            console.error('Lỗi sinh khóa Web Crypto:', err);
+            alert('Lỗi sinh cặp khóa: ' + err.message);
+          }).finally(() => {
+            btn.innerHTML = '<span class="material-symbols-outlined text-xs">autorenew</span> Tự động tạo cặp khóa mới';
+            btn.disabled = false;
+          });
+        } catch (e) {
+          btn.innerHTML = '<span class="material-symbols-outlined text-xs">autorenew</span> Tự động tạo cặp khóa mới';
+          btn.disabled = false;
+        }
+      });
+
+      // ═══════════════════════════════════════════════════════════════
+      // 2. Lưu cấu hình VAPID
+      // ═══════════════════════════════════════════════════════════════
+      document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('save-settings-btn');
+        if (!btn) return;
+        const originalText = btn.innerHTML;
+
+        try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang lưu...';
+          btn.disabled = true;
+
+          const current = serverSettings;
+          const updatedSettings = {
+            ...current,
+            pwa: {
+              ...current.pwa,
+              vapid_public_key: document.getElementById('pwa-vapid-public-key')?.value.trim() || '',
+              vapid_private_key: document.getElementById('pwa-vapid-private-key')?.value.trim() || '',
+            }
+          };
+
+          const res = await fetch('/api/admin/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedSettings)
+          });
+          
+          if (!res.ok) throw new Error('API request failed');
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Lưu cấu hình VAPID thành công!', 'success');
+          } else {
+            alert('Lưu cấu hình VAPID thành công!');
+          }
+        } catch (e) {
+          console.error(e);
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Lỗi lưu cấu hình!', 'error');
+          } else {
+            alert('Lỗi lưu cấu hình!');
+          }
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      });
+
+      // ═══════════════════════════════════════════════════════════════
+      // 3. Phát sóng Thông báo đẩy
+      // ═══════════════════════════════════════════════════════════════
+      document.getElementById('send-push-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('send-push-btn');
+        const resultEl = document.getElementById('broadcast-result');
+        if (!btn) return;
+
+        const title = document.getElementById('push-title')?.value.trim();
+        const bodyText = document.getElementById('push-body')?.value.trim();
+        const url = document.getElementById('push-url')?.value.trim();
+        const icon = document.getElementById('push-icon')?.value.trim();
+        const image = document.getElementById('push-image')?.value.trim();
+
+        if (!title || !bodyText) {
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Vui lòng nhập Tiêu đề và Nội dung thông báo!', 'warning');
+          } else {
+            alert('Vui lòng nhập đầy đủ Tiêu đề và Nội dung!');
+          }
+          return;
+        }
+
+        if (!confirm('Bạn có chắc chắn muốn phát sóng thông báo này tới toàn bộ các thiết bị đã đăng ký không?')) {
+          return;
+        }
+
+        const originalText = btn.innerHTML;
+        try {
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span> Đang gửi đẩy...';
+          btn.disabled = true;
+          if (resultEl) resultEl.textContent = 'Đang kết nối tới dịch vụ đẩy...';
+
+          const res = await fetch('/api/admin/push-broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, bodyText, url, icon, image })
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Gửi thất bại');
+
+          const stats = data.data || {};
+          const msg = `Thành công: ${stats.successCount || 0}/${stats.totalCount || 0} (Thất bại: ${stats.failCount || 0}, Đã xoá bỏ: ${stats.cleanedCount || 0} subscription chết)`;
+          
+          if (resultEl) {
+            resultEl.innerHTML = `<span class="text-green-400 font-bold">🚀 Đã gửi thành công!</span> ${msg}`;
+          }
+
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Đã phát sóng thông báo đẩy thành công!', 'success');
+          }
+        } catch (e) {
+          console.error(e);
+          if (resultEl) resultEl.innerHTML = `<span class="text-rose-500 font-bold">❌ Lỗi:</span> ${e.message || 'Kết nối API thất bại'}`;
+          if (window.showGlobalToast) {
+            window.showGlobalToast('Gửi thông báo đẩy thất bại!', 'error');
+          }
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      });
+
+    })();
+  </script>
+</AdminLayout>

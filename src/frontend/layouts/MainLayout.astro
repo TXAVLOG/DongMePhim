@@ -5522,6 +5522,68 @@ const isImpersonating = userObj && !!userObj.adminId;
           }
         };
 
+        // Tự động yêu cầu nhận thông báo đẩy sau 6 giây nếu người dùng chưa chọn
+        if (typeof window !== 'undefined') {
+          const runAutoPushPrompt = () => {
+            setTimeout(async () => {
+              if (('Notification' in window) && Notification.permission === 'default') {
+                console.log('[PWA] Tự động hiển thị hộp thoại đăng ký nhận thông báo...');
+                try {
+                  const reg = await navigator.serviceWorker.ready;
+                  
+                  // Lấy khoá VAPID
+                  let vapidPublicKey = '';
+                  try {
+                    const resSettings = await fetch('/api/admin/settings');
+                    if (resSettings.ok) {
+                      const settingsData = await resSettings.json();
+                      vapidPublicKey = settingsData?.data?.pwa?.vapid_public_key;
+                    }
+                  } catch (e) {}
+
+                  if (!vapidPublicKey) {
+                    vapidPublicKey = 'BEl62iUZGZaAOYpQC5tSMEJ5V709gG5vQ12FskM033S5083L31a2V65893a7s89s89012a9s8s73a2139s8d9f1';
+                  }
+
+                  const permission = await Notification.requestPermission();
+                  if (permission === 'granted') {
+                    const padding = '='.repeat((4 - (vapidPublicKey.length % 4)) % 4);
+                    const base64 = (vapidPublicKey + padding).replace(/\-/g, '+').replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) {
+                      outputArray[i] = rawData.charCodeAt(i);
+                    }
+
+                    const subscription = await reg.pushManager.subscribe({
+                      userVisibleOnly: true,
+                      applicationServerKey: outputArray
+                    });
+
+                    const username = window.APP_USER ? window.APP_USER.username : '';
+                    await fetch('/api/user/push-subscription', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ subscription, username })
+                    });
+                    
+                    if (window.showGlobalToast) window.showGlobalToast('🔔 Đã bật nhận thông báo phim mới thành công!', 'success');
+                  }
+                } catch (err) {
+                  console.warn('[PWA] Silent auto-push registration failed:', err);
+                }
+              }
+            }, 6000);
+          };
+
+          if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            runAutoPushPrompt();
+          } else {
+            window.addEventListener('DOMContentLoaded', runAutoPushPrompt, { once: true });
+          }
+          document.addEventListener('astro:page-load', runAutoPushPrompt);
+        }
+
         // Offline / Online handler
         let originalTitle = document.title;
         let titleBlinkInterval = null;
