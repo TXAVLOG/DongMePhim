@@ -1,0 +1,55 @@
+---
+import MainLayout from '../frontend/layouts/MainLayout.astro';
+import { SettingService } from '../backend/services/SettingService';
+
+const settings = await SettingService.getSettings();
+const title = 'Hệ Thống Đang Bảo Trì';
+const description = settings.general.maintenance_message || 'Hệ thống đang được nâng cấp để mang lại trải nghiệm điện ảnh đỉnh cao hơn. Vui lòng quay lại sau!';
+---
+
+<MainLayout title={title} description={description}>
+  <div class="min-h-[80vh] flex items-center justify-center px-4">
+    <div class="max-w-2xl w-full text-center space-y-8">
+      <div class="relative inline-block">
+        <!-- Simple Animated Gear Icon -->
+        <div class="text-6xl md:text-8xl animate-spin-slow text-primary-500">
+          ⚙️
+        </div>
+        <div class="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+      </div>
+
+      <div class="space-y-4">
+        <h1 class="text-4xl md:text-6xl font-bold tracking-tight text-white">
+          {title}
+        </h1>
+        <p class="text-lg md:text-xl text-zinc-400 leading-relaxed max-w-lg mx-auto">
+          {description}
+        </p>
+      </div>
+
+      <div class="flex flex-col items-center justify-center gap-4 pt-8">
+        <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-800/50 border border-zinc-700 text-zinc-400 text-sm">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+          </span>
+          Đội ngũ kỹ thuật đang nỗ lực xử lý
+        </div>
+
+        <a href="/" class="text-zinc-500 hover:text-white transition-colors text-sm underline underline-offset-4">
+          Thử tải lại trang
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin-slow {
+      animation: spin-slow 8s linear infinite;
+    }
+  </style>
+</MainLayout>
