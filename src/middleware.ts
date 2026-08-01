@@ -1,6 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { verifySession } from '@lib/auth';
 import { RateLimiter } from './backend/lib/RateLimiter';
+import { SettingService } from './backend/services/SettingService';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const pathname = context.url.pathname;
@@ -49,6 +50,40 @@ export const onRequest = defineMiddleware(async (context, next) => {
         }
       }
     );
+  }
+
+  // Check Maintenance Mode
+  const settings = await SettingService.getSettings();
+  const isMaintenance = settings.general.maintenance_enable;
+
+  if (isMaintenance) {
+    const currentUser = await verifySession(context.request, context.cookies) as any;
+    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.roles === 'admin');
+
+    // Admin can bypass maintenance mode
+    if (!isAdmin) {
+      // Bypass if accessing the maintenance path itself to avoid infinite redirect
+      if (pathname === '/maintenance') {
+        return next();
+      }
+
+      // Redirect others to maintenance page (or a simple response)
+      if (pathname.startsWith('/api/')) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            message: settings.general.maintenance_message || 'Hệ thống đang bảo trì, vui lòng quay lại sau!',
+            code: 503
+          }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      return context.redirect('/maintenance');
+    }
   }
 
   if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && pathname !== '/api/admin/movie-action' && pathname !== '/admin/phim/edit') {
