@@ -148,22 +148,40 @@ let activeTab = "quang-cao";
             </div>
 
             <div class="space-y-2">
-              <label class="text-xs font-label-caps text-text-dim">AdMob Unit ID - Quảng cáo Khởi động App (Sau 5s)</label>
-              <input type="text" id="admob-app-start-ad-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544/3419835294" />
+              <label class="text-xs font-label-caps text-text-dim">🤖 Android - AdMob Unit ID: Quảng cáo Khởi động App</label>
+              <input type="text" id="admob-app-start-ad-id-android" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (Android)" />
             </div>
 
             <div class="space-y-2">
-              <label class="text-xs font-label-caps text-text-dim">AdMob Unit ID - Quảng cáo Pre-roll (Trước khi xem Phim)</label>
-              <input type="text" id="admob-preroll-ad-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544/1033173712" />
+              <label class="text-xs font-label-caps text-text-dim">🍏 iOS - AdMob Unit ID: Quảng cáo Khởi động App</label>
+              <input type="text" id="admob-app-start-ad-id-ios" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (iOS)" />
             </div>
 
-            <div class="space-y-2 md:col-span-2">
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">🤖 Android - AdMob Unit ID: Quảng cáo Pre-roll (Trước khi xem Phim)</label>
+              <input type="text" id="admob-preroll-ad-id-android" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (Android)" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim">🍏 iOS - AdMob Unit ID: Quảng cáo Pre-roll (Trước khi xem Phim)</label>
+              <input type="text" id="admob-preroll-ad-id-ios" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (iOS)" />
+            </div>
+
+            <div class="space-y-2">
               <label class="text-xs font-label-caps text-text-dim flex items-center gap-1">
                 <span class="material-symbols-outlined text-amber-400 text-sm">stars</span>
-                AdMob Unit ID - Quảng cáo Rewarded (Xem để Mở khóa Icon App 3 ngày)
+                🤖 Android - AdMob Unit ID: Rewarded (Xem để Mở khóa Icon 3 ngày)
               </label>
-              <input type="text" id="admob-rewarded-ad-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544/5224354917" />
-              <p class="text-xs text-text-dim mt-1">⚠️ Phải chọn đúng loại <strong class="text-amber-400">Rewarded</strong> khi tạo đơn vị trên AdMob Console (KHÔNG phải Interstitial). Để trống = dùng Test ID.</p>
+              <input type="text" id="admob-rewarded-ad-id-android" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (Android)" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim flex items-center gap-1">
+                <span class="material-symbols-outlined text-amber-400 text-sm">stars</span>
+                🍏 iOS - AdMob Unit ID: Rewarded (Xem để Mở khóa Icon 3 ngày)
+              </label>
+              <input type="text" id="admob-rewarded-ad-id-ios" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (iOS)" />
+              <p class="text-xs text-text-dim mt-1 md:col-span-2">⚠️ Phải chọn đúng loại <strong class="text-amber-400">Rewarded</strong> khi tạo đơn vị trên AdMob Console. Để trống = dùng Test ID tự động.</p>
             </div>
           </div>
         </div>
@@ -213,9 +231,12 @@ let activeTab = "quang-cao";
         // Hydrate AdMob Settings
         setSelect("admob-enable", ads.admob_enable ? "true" : "false");
         setVal("admob-app-id", ads.admob_app_id || "ca-app-pub-3940256099942544~3347511713");
-        setVal("admob-app-start-ad-id", ads.admob_app_start_ad_id || "");
-        setVal("admob-preroll-ad-id", ads.admob_preroll_ad_id || "");
-        setVal("admob-rewarded-ad-id", ads.admob_rewarded_ad_id || "");
+        setVal("admob-app-start-ad-id-android", ads.admob_app_start_ad_id_android || "");
+        setVal("admob-app-start-ad-id-ios", ads.admob_app_start_ad_id_ios || "");
+        setVal("admob-preroll-ad-id-android", ads.admob_preroll_ad_id_android || "");
+        setVal("admob-preroll-ad-id-ios", ads.admob_preroll_ad_id_ios || "");
+        setVal("admob-rewarded-ad-id-android", ads.admob_rewarded_ad_id_android || "");
+        setVal("admob-rewarded-ad-id-ios", ads.admob_rewarded_ad_id_ios || "");
 
         updateSectionVisibility();
       }
@@ -265,9 +286,12 @@ let activeTab = "quang-cao";
               offerwall_script: document.getElementById("offerwall-script")?.value || "",
               admob_enable: document.getElementById("admob-enable")?.value === "true",
               admob_app_id: document.getElementById("admob-app-id")?.value || "",
-              admob_app_start_ad_id: document.getElementById("admob-app-start-ad-id")?.value || "",
-              admob_preroll_ad_id: document.getElementById("admob-preroll-ad-id")?.value || "",
-              admob_rewarded_ad_id: document.getElementById("admob-rewarded-ad-id")?.value || "",
+              admob_app_start_ad_id_android: document.getElementById("admob-app-start-ad-id-android")?.value || "",
+              admob_app_start_ad_id_ios: document.getElementById("admob-app-start-ad-id-ios")?.value || "",
+              admob_preroll_ad_id_android: document.getElementById("admob-preroll-ad-id-android")?.value || "",
+              admob_preroll_ad_id_ios: document.getElementById("admob-preroll-ad-id-ios")?.value || "",
+              admob_rewarded_ad_id_android: document.getElementById("admob-rewarded-ad-id-android")?.value || "",
+              admob_rewarded_ad_id_ios: document.getElementById("admob-rewarded-ad-id-ios")?.value || "",
               ad_provider: providerVal,
               google_ads_enable: providerVal !== "none",
               offerwall_enable: false
