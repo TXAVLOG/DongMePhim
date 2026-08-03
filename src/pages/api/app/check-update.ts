@@ -43,6 +43,15 @@ export const GET: APIRoute = async ({ request }) => {
     changelog,
     discord_server_url: (settings.social?.social_discord_url || '').trim(),
     discord_server_enable: settings.social?.social_discord_enable ?? false,
+    // Social links for contact (used in banned/block screens)
+    social_telegram_url: (settings.social?.social_telegram_url || '').trim(),
+    social_telegram_enable: settings.social?.social_telegram_enable ?? false,
+    social_fb_url: (settings.social?.social_fb_url || '').trim(),
+    social_fb_enable: settings.social?.social_fb_enable ?? false,
+    social_fb_group_url: (settings.social?.social_fb_group_url || '').trim(),
+    social_fb_group_enable: settings.social?.social_fb_group_enable ?? false,
+    social_zalo_url: (settings.social?.social_zalo_group_url || '').trim(),
+    social_zalo_enable: settings.social?.social_zalo_group_enable ?? false,
     ads: settings.ads
   }, 'success', '', 200, request);
 };
