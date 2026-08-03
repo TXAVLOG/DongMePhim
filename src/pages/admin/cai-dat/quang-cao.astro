@@ -142,10 +142,6 @@ let activeTab = "quang-cao";
               </select>
             </div>
 
-            <div class="space-y-2 md:col-span-2">
-              <label class="text-xs font-label-caps text-text-dim">AdMob Application ID (ca-app-pub-xxx~xxx)</label>
-              <input type="text" id="admob-app-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544~3347511713" />
-            </div>
 
             <div class="space-y-2">
               <label class="text-xs font-label-caps text-text-dim">🤖 Android - AdMob Unit ID: Quảng cáo Khởi động App</label>
@@ -230,7 +226,7 @@ let activeTab = "quang-cao";
 
         // Hydrate AdMob Settings
         setSelect("admob-enable", ads.admob_enable ? "true" : "false");
-        setVal("admob-app-id", ads.admob_app_id || "ca-app-pub-3940256099942544~3347511713");
+
         setVal("admob-app-start-ad-id-android", ads.admob_app_start_ad_id_android || "");
         setVal("admob-app-start-ad-id-ios", ads.admob_app_start_ad_id_ios || "");
         setVal("admob-preroll-ad-id-android", ads.admob_preroll_ad_id_android || "");
@@ -285,7 +281,7 @@ let activeTab = "quang-cao";
               google_ads_client_id: document.getElementById("google-ads-client-id")?.value || "",
               offerwall_script: document.getElementById("offerwall-script")?.value || "",
               admob_enable: document.getElementById("admob-enable")?.value === "true",
-              admob_app_id: document.getElementById("admob-app-id")?.value || "",
+
               admob_app_start_ad_id_android: document.getElementById("admob-app-start-ad-id-android")?.value || "",
               admob_app_start_ad_id_ios: document.getElementById("admob-app-start-ad-id-ios")?.value || "",
               admob_preroll_ad_id_android: document.getElementById("admob-preroll-ad-id-android")?.value || "",
