@@ -1225,6 +1225,201 @@ CREATE TABLE IF NOT EXISTS public.txa_push_subscriptions (
   subscription jsonb NOT NULL,
   device_info text,
   created_at timestamp with time zone DEFAULT now(),
+    SELECT 
+        m.id AS movie_id,
+        COUNT(*) AS comments_24h,
+        COUNT(DISTINCT c.author) AS unique_commenters_24h
+    FROM public.txa_comments c
+    JOIN public.movies m ON m.slug = c.movie_slug
+    WHERE c.created_at >= now() - INTERVAL '24 hours'
+    GROUP BY m.id
+),
+comments_prev_24h AS (
+    SELECT 
+        m.id AS movie_id,
+        COUNT(*) AS comments_prev_24h
+    FROM public.txa_comments c
+    JOIN public.movies m ON m.slug = c.movie_slug
+    WHERE c.created_at >= now() - INTERVAL '48 hours' AND c.created_at < now() - INTERVAL '24 hours'
+    GROUP BY m.id
+),
+ratings_24h AS (
+    SELECT 
+        m.id AS movie_id,
+        COUNT(*) AS ratings_24h,
+        AVG(r.rating) AS avg_rating_24h
+    FROM public.txa_movie_ratings r
+    JOIN public.movies m ON m.slug = r.movie_slug
+    WHERE r.created_at >= now() - INTERVAL '24 hours'
+    GROUP BY m.id
+),
+global_stats AS (
+    SELECT COALESCE(AVG(rating), 8.0) AS avg_rating_all FROM public.txa_movie_ratings
+),
+movie_overall AS (
+    SELECT 
+        m.id AS movie_id,
+        COALESCE(fav.fav_count, 0) AS total_favorites,
+        COALESCE(rat.rating_count, 0) AS total_ratings,
+        COALESCE(rat.avg_rating, 8.0) AS overall_avg_rating,
+        COALESCE(com.comment_count, 0) AS total_comments
+    FROM public.movies m
+    LEFT JOIN (
+        SELECT movie_id, COUNT(*) AS fav_count FROM public.favorites GROUP BY movie_id
+    ) fav ON fav.movie_id = m.id
+    LEFT JOIN (
+        SELECT m.id AS movie_id, COUNT(*) AS rating_count, AVG(r.rating) AS avg_rating
+        FROM public.txa_movie_ratings r
+        JOIN public.movies m ON m.slug = r.movie_slug
+        GROUP BY m.id
+    ) rat ON rat.movie_id = m.id
+    LEFT JOIN (
+        SELECT m.id AS movie_id, COUNT(*) AS comment_count
+        FROM public.txa_comments c
+        JOIN public.movies m ON m.slug = c.movie_slug
+        GROUP BY m.id
+    ) com ON com.movie_id = m.id
+)
+SELECT 
+    m.id AS movie_id,
+    m.title,
+    m.slug,
+    m.type,
+    m.created_at,
+    m.imdb_score,
+    m.tmdb_score,
+    
+    COALESCE(v24.unique_viewers_24h, 0) AS unique_viewers_24h,
+    COALESCE(v24.views_24h, 0) AS views_24h,
+    COALESCE(v24.total_watch_time_24h, 0) AS total_watch_time_24h,
+    
+    mo.total_favorites,
+    COALESCE(f24.favorites_24h, 0) AS favorites_24h,
+    CASE 
+        WHEN COALESCE(v24.unique_viewers_24h, 0) > 0 
+        THEN (COALESCE(f24.favorites_24h, 0)::numeric / v24.unique_viewers_24h)
+        ELSE 0 
+    END AS favorite_rate_24h,
+
+    COALESCE(c24.comments_24h, 0) AS comments_24h,
+    COALESCE(c24.unique_commenters_24h, 0) AS unique_commenters_24h,
+    
+    ((COALESCE(r24.ratings_24h, 0) * COALESCE(r24.avg_rating_24h, 8.0) + 5 * (SELECT avg_rating_all FROM global_stats)) / (COALESCE(r24.ratings_24h, 0) + 5)) AS bayesian_rating_24h,
+    ((mo.total_ratings * mo.overall_avg_rating + 10 * (SELECT avg_rating_all FROM global_stats)) / (mo.total_ratings + 10)) AS bayesian_rating_overall,
+    
+    (1 + ln(1 + (
+        ABS(
+            (COALESCE(v24.views_24h, 0) + COALESCE(f24.favorites_24h, 0) * 5 + COALESCE(c24.comments_24h, 0) * 3) - 
+            (COALESCE(vp.views_prev_24h, 0) + COALESCE(fp.favorites_prev_24h, 0) * 5 + COALESCE(cp.comments_prev_24h, 0) * 3)
+        )::numeric / GREATEST(COALESCE(vp.views_prev_24h, 0) + COALESCE(fp.favorites_prev_24h, 0) * 5 + COALESCE(cp.comments_prev_24h, 0) * 3, 1)
+    ))) AS growth_velocity,
+    
+    EXTRACT(EPOCH FROM (now() - m.created_at)) / 3600 AS age_hours,
+    
+    mo.total_ratings,
+    mo.total_comments
+FROM public.movies m
+JOIN movie_overall mo ON mo.movie_id = m.id
+LEFT JOIN activity_24h v24 ON v24.movie_id = m.id
+LEFT JOIN activity_prev_24h vp ON vp.movie_id = m.id
+LEFT JOIN favs_24h f24 ON f24.movie_id = m.id
+LEFT JOIN favs_prev_24h fp ON fp.movie_id = m.id
+LEFT JOIN comments_24h c24 ON c24.movie_id = m.id
+LEFT JOIN comments_prev_24h cp ON cp.movie_id = m.id
+LEFT JOIN ratings_24h r24 ON r24.movie_id = m.id;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_movie_trending_stats_movie_id ON public.mv_movie_trending_stats (movie_id);
+
+-- Recommendations Function
+CREATE OR REPLACE FUNCTION public.get_personalized_recommendations(
+    p_user_id UUID,
+    p_limit INT DEFAULT 10
+)
+RETURNS TABLE (
+    id UUID,
+    title VARCHAR,
+    slug VARCHAR,
+    poster_url VARCHAR,
+    banner_url VARCHAR,
+    release_year INT,
+    quality VARCHAR,
+    status VARCHAR,
+    type VARCHAR,
+    imdb_score NUMERIC,
+    trending_score NUMERIC
+) AS $$
+DECLARE
+    v_has_history BOOLEAN;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 FROM public.watch_history WHERE user_id = p_user_id LIMIT 1
+    ) INTO v_has_history;
+
+    IF p_user_id IS NULL OR NOT v_has_history THEN
+        RETURN QUERY
+        SELECT 
+            m.id, m.title, m.slug, m.poster_url, m.banner_url, m.release_year, 
+            m.quality, m.status, m.type, m.imdb_score,
+            (
+                CASE 
+                    WHEN (ts.unique_viewers_24h = 0 AND ts.views_24h = 0)
+                    THEN COALESCE(m.imdb_score, m.tmdb_score, 8.0) * 10
+                    ELSE (
+                        (4 * ts.unique_viewers_24h + 0.0017 * ts.total_watch_time_24h + 15 * ts.favorites_24h + 8 * ts.comments_24h) * ts.growth_velocity
+                        / POWER((ts.age_hours / 24 + 2), 1.5)
+                    )
+                END
+            )::numeric AS trending_score
+        FROM public.movies m
+        JOIN public.mv_movie_trending_stats ts ON ts.movie_id = m.id
+        ORDER BY trending_score DESC
+        LIMIT p_limit;
+    ELSE
+        RETURN QUERY
+        WITH watched_genres AS (
+            SELECT DISTINCT jsonb_array_elements_text(m.genres) AS genre
+            FROM public.watch_history wh
+            JOIN public.movies m ON m.id = wh.movie_id
+            WHERE wh.user_id = p_user_id
+        ),
+        candidate_movies AS (
+            SELECT DISTINCT m.id
+            FROM public.movies m
+            JOIN watched_genres wg ON m.genres @> jsonb_build_array(wg.genre)
+            WHERE NOT EXISTS (
+                SELECT 1 FROM public.watch_history wh 
+                WHERE wh.movie_id = m.id AND wh.user_id = p_user_id
+            )
+        )
+        SELECT 
+            m.id, m.title, m.slug, m.poster_url, m.banner_url, m.release_year, 
+            m.quality, m.status, m.type, m.imdb_score,
+            (
+                CASE 
+                    WHEN (ts.unique_viewers_24h = 0 AND ts.views_24h = 0)
+                    THEN COALESCE(m.imdb_score, m.tmdb_score, 8.0) * 10
+                    ELSE (
+                        (4 * ts.unique_viewers_24h + 0.0017 * ts.total_watch_time_24h + 15 * ts.favorites_24h + 8 * ts.comments_24h) * ts.growth_velocity
+                        / POWER((ts.age_hours / 24 + 2), 1.5)
+                    )
+                END
+            )::numeric AS trending_score
+        FROM public.movies m
+        JOIN candidate_movies cm ON cm.id = m.id
+        JOIN public.mv_movie_trending_stats ts ON ts.movie_id = m.id
+        ORDER BY trending_score DESC
+        LIMIT p_limit;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Table: public.txa_push_subscriptions
+CREATE TABLE IF NOT EXISTS public.txa_push_subscriptions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES public.users(id) ON DELETE CASCADE,
+  subscription jsonb NOT NULL,
+  device_info text,
+  created_at timestamp with time zone DEFAULT now(),
   PRIMARY KEY (id)
 );
 
@@ -1232,3 +1427,88 @@ ALTER TABLE public.txa_push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "allow_all_authenticated_users" ON public.txa_push_subscriptions 
   FOR ALL TO public USING ((auth.uid() = user_id) OR is_admin());
+
+-- =================================================================================
+-- Table: public.txa_device_logs
+-- Ghi nhận fingerprint thiết bị để theo dõi và block truy cập
+-- Platform: android | ios | windows | tv | web | linux
+-- Blocking key: device_fingerprint (stable, không phụ thuộc IP)
+-- =================================================================================
+
+CREATE TABLE IF NOT EXISTS public.txa_device_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+
+  -- Fingerprint ổn định (key dùng để block, không đổi khi đổi IP/mạng)
+  -- Android/TV : sha256(ANDROID_ID)
+  -- iOS        : sha256(identifierForVendor)
+  -- Windows    : sha256(MachineGuid + ComputerName)
+  -- Web        : sha256(localStorage UUID)
+  device_fingerprint text NOT NULL UNIQUE,
+
+  platform text NOT NULL,                    -- 'android' | 'ios' | 'windows' | 'tv' | 'web' | 'linux'
+
+  -- Thông tin phần cứng thiết bị
+  device_name text,                          -- "samsung SM-M336K"
+  device_model text,                         -- "m33x"
+  device_brand text,                         -- "samsung"
+  os_version text,                           -- "Android 16 (API 36)"
+  app_version text,                          -- "5.5.1"
+  screen_resolution text,                    -- "1080x2408"
+  locale text,                               -- "vi_VN"
+  cpu_cores integer,
+  is_rooted boolean DEFAULT false,
+  is_physical_device boolean DEFAULT true,
+  build_fingerprint text,                    -- Android build fingerprint chuẩn
+
+  -- Mạng (chỉ lưu tham khảo, KHÔNG dùng làm key block)
+  ip_address text,
+  user_agent text,                           -- Dành cho web client
+
+  -- Liên kết người dùng
+  user_id uuid REFERENCES public.users(id) ON DELETE SET NULL,
+  username text,
+
+  -- Trạng thái block
+  is_blocked boolean NOT NULL DEFAULT false,
+  block_reason text,                         -- Lý do admin nhập khi block
+  blocked_at timestamp with time zone,
+  blocked_by text,                           -- Username admin thực hiện block
+
+  -- Thống kê
+  first_seen_at timestamp with time zone NOT NULL DEFAULT now(),
+  last_seen_at timestamp with time zone NOT NULL DEFAULT now(),
+  visit_count integer NOT NULL DEFAULT 1,
+
+  PRIMARY KEY (id)
+);
+
+ALTER TABLE public.txa_device_logs ENABLE ROW LEVEL SECURITY;
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_txa_device_logs_fingerprint
+  ON public.txa_device_logs (device_fingerprint);
+
+CREATE INDEX IF NOT EXISTS idx_txa_device_logs_is_blocked
+  ON public.txa_device_logs (is_blocked) WHERE is_blocked = true;
+
+CREATE INDEX IF NOT EXISTS idx_txa_device_logs_platform
+  ON public.txa_device_logs (platform);
+
+CREATE INDEX IF NOT EXISTS idx_txa_device_logs_ip
+  ON public.txa_device_logs (ip_address);
+
+CREATE INDEX IF NOT EXISTS idx_txa_device_logs_user_id
+  ON public.txa_device_logs (user_id);
+
+-- RLS Policies
+-- App/public có thể ghi (qua API server, server dùng service role)
+CREATE POLICY "insert_device_logs"
+  ON public.txa_device_logs FOR INSERT TO public WITH CHECK (true);
+
+-- Public có thể update (last_seen, visit_count - qua server)
+CREATE POLICY "update_device_logs"
+  ON public.txa_device_logs FOR UPDATE TO public USING (true);
+
+-- Chỉ admin mới được đọc danh sách
+CREATE POLICY "select_device_logs_admin"
+  ON public.txa_device_logs FOR SELECT TO public USING (is_admin());
