@@ -156,6 +156,15 @@ let activeTab = "quang-cao";
               <label class="text-xs font-label-caps text-text-dim">AdMob Unit ID - Quảng cáo Pre-roll (Trước khi xem Phim)</label>
               <input type="text" id="admob-preroll-ad-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544/1033173712" />
             </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-xs font-label-caps text-text-dim flex items-center gap-1">
+                <span class="material-symbols-outlined text-amber-400 text-sm">stars</span>
+                AdMob Unit ID - Quảng cáo Rewarded (Xem để Mở khóa Icon App 3 ngày)
+              </label>
+              <input type="text" id="admob-rewarded-ad-id" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-3940256099942544/5224354917" />
+              <p class="text-xs text-text-dim mt-1">⚠️ Phải chọn đúng loại <strong class="text-amber-400">Rewarded</strong> khi tạo đơn vị trên AdMob Console (KHÔNG phải Interstitial). Để trống = dùng Test ID.</p>
+            </div>
           </div>
         </div>
 
@@ -204,8 +213,9 @@ let activeTab = "quang-cao";
         // Hydrate AdMob Settings
         setSelect("admob-enable", ads.admob_enable ? "true" : "false");
         setVal("admob-app-id", ads.admob_app_id || "ca-app-pub-3940256099942544~3347511713");
-        setVal("admob-app-start-ad-id", ads.admob_app_start_ad_id || "ca-app-pub-3940256099942544/3419835294");
-        setVal("admob-preroll-ad-id", ads.admob_preroll_ad_id || "ca-app-pub-3940256099942544/1033173712");
+        setVal("admob-app-start-ad-id", ads.admob_app_start_ad_id || "");
+        setVal("admob-preroll-ad-id", ads.admob_preroll_ad_id || "");
+        setVal("admob-rewarded-ad-id", ads.admob_rewarded_ad_id || "");
 
         updateSectionVisibility();
       }
@@ -257,6 +267,7 @@ let activeTab = "quang-cao";
               admob_app_id: document.getElementById("admob-app-id")?.value || "",
               admob_app_start_ad_id: document.getElementById("admob-app-start-ad-id")?.value || "",
               admob_preroll_ad_id: document.getElementById("admob-preroll-ad-id")?.value || "",
+              admob_rewarded_ad_id: document.getElementById("admob-rewarded-ad-id")?.value || "",
               ad_provider: providerVal,
               google_ads_enable: providerVal !== "none",
               offerwall_enable: false
