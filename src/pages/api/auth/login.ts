@@ -99,6 +99,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse({ errorType: 'verification', error_code: 'EMAIL_NOT_VERIFIED', email: user.email, method: settings.user?.verification_method || 'link' }, 'error', 'Tài khoản chưa được xác minh email! Vui lòng kích hoạt tài khoản để đăng nhập.', 400, request);
     }
 
+    // Kiểm tra trạng thái tài khoản bị khóa
+    if (user.status === 'banned' || user.status === 'suspended') {
+      return apiResponse(
+        { errorType: 'banned', error_code: 'ACCOUNT_BANNED' },
+        'error',
+        'Tài khoản của bạn đã bị khóa bởi quản trị viên. Vui lòng liên hệ hỗ trợ để được giải quyết.',
+        403,
+        request
+      );
+    }
+
     // Create secure session cookie and get token
     const sessionToken = await createSession(user.id, request, cookies);
 

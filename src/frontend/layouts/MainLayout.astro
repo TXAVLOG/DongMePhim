@@ -3779,9 +3779,18 @@ const isImpersonating = userObj && !!userObj.adminId;
                 }
 
                 const errorType = data.data?.errorType;
+                const errorCode = data.data?.error_code;
                 const errorMsg = data.message || 'Đăng nhập thất bại!';
 
-                if (errorType === 'identity') {
+                if (errorCode === 'ACCOUNT_BANNED' || errorType === 'banned') {
+                  // Tài khoản bị khóa → đóng modal + show màn hình chặn toàn trang
+                  closeLoginModal();
+                  if (typeof window.showAccountBannedOverlay === 'function') {
+                    window.showAccountBannedOverlay(errorMsg);
+                  } else {
+                    showGlobalToast(errorMsg, 'error');
+                  }
+                } else if (errorType === 'identity') {
                   if (idInput) {
                     idInput.style.borderColor = 'rgba(239, 68, 68, 0.8)';
                     const idMsgEl = idInput.closest('.auth-field').querySelector('.login-id-error');
@@ -5798,6 +5807,108 @@ const isImpersonating = userObj && !!userObj.adminId;
         }
         document.addEventListener('astro:page-load', initScrollReveal);
       })();
+    </script>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- ACCOUNT BANNED OVERLAY — Hiển thị toàn trang khi tài khoản bị khóa -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div id="account-banned-overlay" class="fixed inset-0 z-[99999] hidden flex-col items-center justify-center bg-[#0A0A0F]" style="display:none;">
+      <div class="flex flex-col items-center max-w-md w-full px-8 text-center">
+        <!-- Icon khóa -->
+        <div class="w-24 h-24 rounded-full flex items-center justify-center mb-7"
+          style="background: radial-gradient(circle, rgba(255,149,0,0.2) 0%, rgba(255,149,0,0.04) 100%); border: 2px solid rgba(255,149,0,0.5);">
+          <span class="material-symbols-outlined" style="font-size:48px;color:#FF9500;">lock_person</span>
+        </div>
+        <!-- Tiêu đề -->
+        <h1 class="text-white text-2xl font-bold tracking-tight mb-3">Tài Khoản Bị Khóa</h1>
+        <!-- Mô tả -->
+        <p class="text-white/55 text-sm leading-relaxed mb-2">
+          Tài khoản của bạn đã bị quản trị viên khóa truy cập vào hệ thống.
+        </p>
+        <!-- Lý do -->
+        <p id="banned-reason-text" class="text-white/75 text-sm leading-relaxed mb-6 hidden"></p>
+        <!-- Hướng dẫn liên hệ -->
+        <div class="w-full rounded-2xl p-4 mb-8 flex items-start gap-3 text-left"
+          style="background:rgba(255,149,0,0.07);border:1px solid rgba(255,149,0,0.18);">
+          <span class="material-symbols-outlined mt-0.5 shrink-0" style="font-size:20px;color:rgba(255,149,0,0.8);">support_agent</span>
+          <p class="text-white/60 text-xs leading-relaxed">
+            Liên hệ hỗ trợ qua <strong class="text-white/80">Telegram</strong> hoặc <strong class="text-white/80">Fanpage DongMePhim</strong> để kháng cáo quyết định khóa tài khoản và được hỗ trợ nhanh nhất.
+          </p>
+        </div>
+        <!-- Nút Đăng xuất -->
+        <button id="banned-logout-btn" onclick="window.doAccountBannedLogout()"
+          class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-base mb-3 transition-all duration-200 hover:brightness-110 active:scale-95"
+          style="background:#FF9500;color:#000;">
+          <span class="material-symbols-outlined text-lg">logout</span>
+          Đăng Xuất
+        </button>
+        <!-- Nút về trang chủ (không logout) -->
+        <button onclick="window.location.href='/'"
+          class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm transition-all duration-200 hover:bg-white/5"
+          style="border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.55);">
+          <span class="material-symbols-outlined text-base">home</span>
+          Về Trang Chủ
+        </button>
+      </div>
+    </div>
+
+    <script is:inline>
+      // ══════════════════════════════════════════════════════════════
+      // Account Banned Overlay Logic
+      // ══════════════════════════════════════════════════════════════
+      window.showAccountBannedOverlay = function(reason) {
+        const overlay = document.getElementById('account-banned-overlay');
+        if (!overlay) return;
+
+        // Ẩn header & footer
+        const header = document.querySelector('header, nav, #main-header, .site-header');
+        const footer = document.querySelector('footer, #main-footer, .site-footer');
+        if (header) header.style.display = 'none';
+        if (footer) footer.style.display = 'none';
+        document.body.style.overflow = 'hidden';
+
+        // Hiển thị lý do nếu có
+        const reasonEl = document.getElementById('banned-reason-text');
+        if (reasonEl && reason && reason.trim()) {
+          reasonEl.textContent = reason;
+          reasonEl.classList.remove('hidden');
+        }
+
+        overlay.style.display = 'flex';
+        overlay.classList.remove('hidden');
+      };
+
+      window.doAccountBannedLogout = async function() {
+        const btn = document.getElementById('banned-logout-btn');
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-base">progress_activity</span> Đang đăng xuất...';
+        }
+        try {
+          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+        } catch (_) {}
+        window.location.href = '/';
+      };
+
+      // Kiểm tra trạng thái tài khoản hiện tại khi vào trang (nếu đã login)
+      async function checkBannedOnLoad() {
+        try {
+          const res = await fetch('/api/auth/me', { credentials: 'include' });
+          if (!res.ok) return;
+          const data = await res.json();
+          const user = data?.data?.user || data?.data;
+          if (user && (user.status === 'banned' || user.status === 'suspended')) {
+            window.showAccountBannedOverlay('Tài khoản của bạn đã bị khóa bởi quản trị viên.');
+          }
+        } catch (_) {}
+      }
+
+      // Chỉ chạy nếu có session cookie
+      if (document.cookie.includes('txa_gate_passed') || document.cookie.includes('txa_session')) {
+        document.addEventListener('astro:page-load', checkBannedOnLoad);
+        if (document.readyState !== 'loading') checkBannedOnLoad();
+        else document.addEventListener('DOMContentLoaded', checkBannedOnLoad);
+      }
     </script>
   </body>
 </html>
