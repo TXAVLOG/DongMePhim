@@ -455,23 +455,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }
       }
 
-      // Nếu lưu đè phim hệ thống, đảm bảo xóa khỏi bảng txa_deleted_movies nếu lỡ đã bị xóa trước đó
-      await supabase
-        .from('txa_deleted_movies')
-        .delete()
-        .eq('slug', movieSlug);
-
       MovieService.clearCache();
       return apiResponse({ success: true }, 'success', 'Lưu dữ liệu phim thành công!', 200, request);
     }
 
-    // 2. Thao tác Xóa phim (Hỗ trợ cả đơn lẻ và hàng loạt)
+    // 2. Thao tác Xóa phim (Hỗ trợ cả đơn lẻ và hàng loạt) - Hard delete hoàn toàn
     if (action === 'delete') {
       const items = body.items || [];
       if (items.length === 0) {
         const targetSlug = slug || movieData?.slug;
         if (targetSlug) {
-          items.push({ slug: targetSlug, isStatic: isStatic === true || isStatic === 'true' });
+          items.push({ slug: targetSlug });
         }
       }
 
@@ -479,31 +473,33 @@ export const POST: APIRoute = async ({ request, locals }) => {
         return apiResponse(null, 'error', 'Thiếu thông tin phim cần xóa!', 400, request);
       }
 
-      // Nhóm phim hệ thống và phim crawled
-      const staticSlugs = items.filter((x: any) => x.isStatic).map((x: any) => x.slug);
-      const crawledSlugs = items.filter((x: any) => !x.isStatic).map((x: any) => x.slug);
+      const allSlugs = items.map((x: any) => x.slug).filter(Boolean);
 
-      if (staticSlugs.length > 0) {
-        const deletePayloads = staticSlugs.map((s: string) => ({ slug: s }));
-        const { error } = await supabase
-          .from('txa_deleted_movies')
-          .upsert(deletePayloads, { onConflict: 'slug' });
-        
-        if (error) {
-          console.error('Lỗi khi lưu slugs phim hệ thống đã xóa:', error);
-          return apiResponse(null, 'error', `Lỗi soft delete: ${error.message}`, 500, request);
+      if (allSlugs.length > 0) {
+        // Lấy movie IDs để xóa các bản ghi liên quan
+        const { data: moviesData } = await supabase
+          .from('movies')
+          .select('id')
+          .in('slug', allSlugs);
+
+        const movieIds = (moviesData || []).map((m: any) => m.id).filter(Boolean);
+
+        if (movieIds.length > 0) {
+          // Xóa các bản ghi liên quan (favorites, comments, watch_history)
+          // movie_actors, movie_genres, movie_countries, schedules đã có CASCADE nên tự xóa
+          await supabase.from('favorites').delete().in('movie_id', movieIds);
+          await supabase.from('txa_comments').delete().in('movie_id', movieIds);
         }
-      }
 
-      if (crawledSlugs.length > 0) {
+        // Hard delete phim - watch_history, movie_actors, movie_genres, movie_countries, schedules sẽ CASCADE
         const { error } = await supabase
           .from('movies')
           .delete()
-          .in('slug', crawledSlugs);
+          .in('slug', allSlugs);
 
         if (error) {
           console.error('Lỗi khi xóa phim khỏi Supabase:', error);
-          return apiResponse(null, 'error', `Lỗi hard delete: ${error.message}`, 500, request);
+          return apiResponse(null, 'error', `Lỗi xóa phim: ${error.message}`, 500, request);
         }
       }
 

@@ -131,18 +131,11 @@ export class SupabaseMovieProvider implements IMovieProvider {
         }));
       }
 
-      // Lấy danh sách phim hệ thống đã bị xóa từ database
-      const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
-      const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
-
-      // Lọc danh sách phim DB để loại bỏ phim đã bị soft-delete
-      const filteredMoviesList = moviesList.filter((m: Movie) => !deletedSlugs.has(m.slug));
-
-      // Kết hợp với seedMovies để đảm bảo có phim mẫu nếu db trống, loại bỏ phim đã bị xóa
-      const dbSlugs = new Set(filteredMoviesList.map((m: Movie) => m.slug));
+      // Kết hợp với seedMovies
+      const dbSlugs = new Set(moviesList.map((m: Movie) => m.slug));
       const combined = [
-        ...filteredMoviesList,
-        ...seedMovies.filter(m => !dbSlugs.has(m.slug) && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
+        ...moviesList,
+        ...seedMovies.filter(m => !dbSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
       ];
 
       let result = combined;
@@ -151,7 +144,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
         const foundMap = new Map<string, Movie>();
         result.forEach(m => foundMap.set(m.slug, m));
         
-        const missingSlugs = params.slugs.filter(s => !foundMap.has(s) && !deletedSlugs.has(s));
+        const missingSlugs = params.slugs.filter(s => !foundMap.has(s));
         if (missingSlugs.length > 0) {
           const fetchedMissing = await Promise.all(missingSlugs.map(s => this.getMovieBySlug(s)));
           fetchedMissing.forEach(m => {
@@ -231,17 +224,6 @@ export class SupabaseMovieProvider implements IMovieProvider {
 
   async getMovieBySlug(slug: string): Promise<MovieDetail | null> {
     try {
-      // 0. Kiểm tra xem phim hệ thống đã bị xóa chưa
-      const { data: deletedMovie } = await supabase
-        .from('txa_deleted_movies')
-        .select('slug')
-        .eq('slug', slug)
-        .maybeSingle();
-
-      if (deletedMovie) {
-        return null;
-      }
-
       // 1. Kiểm tra database Supabase
       const { data: dbMovie, error } = await supabase
         .from('movies')
@@ -530,15 +512,10 @@ export class SupabaseMovieProvider implements IMovieProvider {
         list.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
       }
 
-      // Lấy danh sách phim hệ thống đã bị xóa từ database
-      const { data: deletedData } = await supabase.from('txa_deleted_movies').select('slug');
-      const deletedSlugs = new Set((deletedData || []).map((d: any) => d.slug));
-      list = list.filter(m => !deletedSlugs.has(m.slug));
-
       const dbSlugs = new Set(list.map(m => m.slug));
       const combined = [
         ...list,
-        ...seedMovies.filter(m => m.id !== movieId && !dbSlugs.has(m.slug) && !deletedSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
+        ...seedMovies.filter(m => m.id !== movieId && !dbSlugs.has(m.slug)).map(m => ({ ...m, isStatic: true }))
       ];
       return combined.slice(0, 12);
     } catch (e) {
@@ -559,12 +536,7 @@ export class SupabaseMovieProvider implements IMovieProvider {
       if (error) throw error;
 
       if (dbMovies && dbMovies.length > 0) {
-        // Lấy danh sách phim đã bị xóa để lọc kết quả tìm kiếm
-        const { data: deletedDataSearch } = await supabase.from('txa_deleted_movies').select('slug');
-        const deletedSlugsSearch = new Set((deletedDataSearch || []).map((d: any) => d.slug));
-
         const mappedMovies = dbMovies
-          .filter((m: any) => !deletedSlugsSearch.has(m.slug))
           .map((m: any) => ({
           id: m.id,
           title: m.title,
