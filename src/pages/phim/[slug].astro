@@ -42,14 +42,12 @@ if (movie && rawServers.length > 0) {
   
   let firstUnreleasedIdx = -1;
   
-  // Hide unreleased episodes only if status is "ongoing"
-  if (movie.status === 'ongoing') {
-    for (let i = 0; i < allEps.length; i++) {
-      const ep = allEps[i];
-      if (TxaSchedule.isEpisodeUnreleased(ep.name || '', i, allEps, movie.broadcastSchedule)) {
-        firstUnreleasedIdx = i;
-        break;
-      }
+  // Hide unreleased episodes if a broadcast schedule is set
+  for (let i = 0; i < allEps.length; i++) {
+    const ep = allEps[i];
+    if (TxaSchedule.isEpisodeUnreleased(ep.name || '', i, allEps, movie.broadcastSchedule)) {
+      firstUnreleasedIdx = i;
+      break;
     }
   }
 
