@@ -471,8 +471,11 @@ export function mergeMovieEpisodes(existingServers: any[], newServers: any[]): a
 
       for (const newEp of incomingEpisodes) {
         const epSlug = newEp.slug;
-        const newLinkM3u8 = newEp.linkM3u8 || newEp.link_m3u8 || '';
-        const newLinkEmbed = newEp.linkEmbed || newEp.link_embed || '';
+        const newLinkM3u8 = (newEp.linkM3u8 || newEp.link_m3u8 || '').trim();
+        const newLinkEmbed = (newEp.linkEmbed || newEp.link_embed || '').trim();
+
+        // Bỏ qua nếu tập phim không có link thực tế
+        if (!newLinkM3u8 && !newLinkEmbed) continue;
 
         const existingEpIdx = existingServer.serverData.findIndex(
           (ep: any) => ep.slug === epSlug
@@ -513,8 +516,8 @@ export function mergeMovieEpisodes(existingServers: any[], newServers: any[]): a
               }
 
               const altEp = altServer.serverData[altEpIdx];
-              const altLinkM3u8 = altEp.linkM3u8 || altEp.link_m3u8 || '';
-              const altLinkEmbed = altEp.linkEmbed || altEp.link_embed || '';
+              const altLinkM3u8 = (altEp.linkM3u8 || altEp.link_m3u8 || '').trim();
+              const altLinkEmbed = (altEp.linkEmbed || altEp.link_embed || '').trim();
 
               if (altLinkM3u8 === newLinkM3u8 && altLinkEmbed === newLinkEmbed) {
                 break;
@@ -549,39 +552,41 @@ export function mergeMovieEpisodes(existingServers: any[], newServers: any[]): a
     }
   }
 
-  // Sort episodes and normalize output structure to use camelCase
-  return mergedServers.map((server: any) => {
-    const srvData = Array.isArray(server.serverData || server.server_data) ? (server.serverData || server.server_data) : [];
-    
-    // Sort
-    srvData.sort((a: any, b: any) => {
-      const aNum = parseInt(a.name?.replace(/\D/g, '') || '');
-      const bNum = parseInt(b.name?.replace(/\D/g, '') || '');
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return aNum - bNum;
-      }
-      return String(a.name || '').localeCompare(String(b.name || ''));
-    });
+  // Sort episodes, normalize structure, and filter out empty servers
+  return mergedServers
+    .map((server: any) => {
+      const srvData = Array.isArray(server.serverData || server.server_data) ? (server.serverData || server.server_data) : [];
 
-    return {
-      serverName: server.serverName || server.server_name || "Server VIP",
-      serverData: srvData.map((ep: any) => ({
-        name: ep.name || '',
-        slug: ep.slug || `tap-${ep.name}`,
-        filename: ep.filename || '',
-        linkEmbed: ep.linkEmbed || ep.link_embed || '',
-        linkM3u8: ep.linkM3u8 || ep.link_m3u8 || '',
-        thumbUrl: ep.thumbUrl || ep.thumb_url || '',
-        subtitles: ep.subtitles || ep.subtitles_data || [],
-        timeIntroStart: ep.timeIntroStart || ep.time_intro_start || 0,
-        timeIntroEnd: ep.timeIntroEnd || ep.time_intro_end || 0,
-        timeOutroStart: ep.timeOutroStart || ep.time_outro_start || 0,
-        timeOutroEnd: ep.timeOutroEnd || ep.time_outro_end || 0,
-        airDate: ep.airDate || ep.air_date || '',
-        airTime: ep.airTime || ep.air_time || ''
-      }))
-    };
-  });
+      // Sort
+      srvData.sort((a: any, b: any) => {
+        const aNum = parseInt(a.name?.replace(/\D/g, '') || '');
+        const bNum = parseInt(b.name?.replace(/\D/g, '') || '');
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return aNum - bNum;
+        }
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      });
+
+      return {
+        serverName: server.serverName || server.server_name || "Server VIP",
+        serverData: srvData.map((ep: any) => ({
+          name: ep.name || '',
+          slug: ep.slug || `tap-${ep.name}`,
+          filename: ep.filename || '',
+          linkEmbed: ep.linkEmbed || ep.link_embed || '',
+          linkM3u8: ep.linkM3u8 || ep.link_m3u8 || '',
+          thumbUrl: ep.thumbUrl || ep.thumb_url || '',
+          subtitles: ep.subtitles || ep.subtitles_data || [],
+          timeIntroStart: ep.timeIntroStart || ep.time_intro_start || 0,
+          timeIntroEnd: ep.timeIntroEnd || ep.time_intro_end || 0,
+          timeOutroStart: ep.timeOutroStart || ep.time_outro_start || 0,
+          timeOutroEnd: ep.timeOutroEnd || ep.time_outro_end || 0,
+          airDate: ep.airDate || ep.air_date || '',
+          airTime: ep.airTime || ep.air_time || ''
+        }))
+      };
+    })
+    .filter(server => server.serverData.length > 0);
 }
 
 export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): MovieDetail {

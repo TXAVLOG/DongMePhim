@@ -54,17 +54,30 @@ export class TxaSchedule {
    */
   static isScheduleActive(nextDate: string | null | undefined, nextTime: string | null | undefined): boolean {
     if (!nextDate) return false;
-    let targetDateTimeStr = `${nextDate}T00:00:00+07:00`;
+
+    // Chuẩn hóa nextDate để chắc chắn là YYYY-MM-DD
+    const dateRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const dateMatch = nextDate.trim().match(dateRegex);
+    if (!dateMatch) return false;
+
+    let targetDateTimeStr = `${nextDate.trim()}T00:00:00+07:00`;
     if (nextTime) {
-      const parts = nextTime.split(':');
+      const trimmedTime = nextTime.trim();
+      const parts = trimmedTime.split(':');
       if (parts.length === 2) {
-        targetDateTimeStr = `${nextDate}T${nextTime}:00+07:00`;
+        targetDateTimeStr = `${nextDate.trim()}T${trimmedTime}:00+07:00`;
+      } else if (parts.length === 1 && trimmedTime.length === 4) {
+        // Trường hợp chỉ nhập "1500" thay vì "15:00"
+        const hh = trimmedTime.substring(0, 2);
+        const mm = trimmedTime.substring(2, 4);
+        targetDateTimeStr = `${nextDate.trim()}T${hh}:${mm}:00+07:00`;
       } else {
-        targetDateTimeStr = `${nextDate}T${nextTime}+07:00`;
+        targetDateTimeStr = `${nextDate.trim()}T${trimmedTime}+07:00`;
       }
     }
     try {
       const targetDate = new Date(targetDateTimeStr).getTime();
+      if (isNaN(targetDate)) return false;
       return Date.now() < targetDate;
     } catch (e) {
       return false;
@@ -94,8 +107,9 @@ export class TxaSchedule {
       return false;
     }
 
+    // Nếu không chỉ định nextEpisode nhưng lịch vẫn còn active → ẩn toàn bộ tập
     if (!nextEpisode) {
-      return false;
+      return true;
     }
 
     const normNextEp = nextEpisode.trim().toLowerCase();
