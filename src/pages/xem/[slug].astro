@@ -83,6 +83,13 @@ if (movie && movie.episodes && movie.episodes.length > 0) {
     let targetEpIdx = 0;
     if (epSlug) {
       targetEpIdx = allEps.findIndex((e: any) => e.slug === epSlug);
+      if (targetEpIdx === -1) {
+        const normTarget = epSlug.toLowerCase().replace(/^(tap|tập|ep|episode|ep-|-)+/g, '').replace(/^0+/g, '').trim();
+        targetEpIdx = allEps.findIndex((e: any) => {
+          const norm = (e.slug || '').toLowerCase().replace(/^(tap|tập|ep|episode|ep-|-)+/g, '').replace(/^0+/g, '').trim();
+          return norm === normTarget;
+        });
+      }
     }
     
     if (targetEpIdx >= firstUnreleasedIdx && targetEpIdx !== -1) {

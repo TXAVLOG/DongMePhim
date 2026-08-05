@@ -289,7 +289,7 @@ const findEpisodeIndexBySlug = (serverData: any[], targetSlug?: string): number 
   if (idx !== -1) return idx;
 
   const normalizeSlug = (s: string) => {
-    return s.toLowerCase().replace(/^(tap|tập|ep|episode|ep-|-)+/g, '').trim();
+    return s.toLowerCase().replace(/^(tap|tập|ep|episode|ep-|-)+/g, '').replace(/^0+/g, '').trim();
   };
   const normTarget = normalizeSlug(targetSlug);
   idx = serverData.findIndex(ep => normalizeSlug(ep.slug) === normTarget);

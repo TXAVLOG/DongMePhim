@@ -269,8 +269,9 @@ self.addEventListener('fetch', (event) => {
           url.pathname.endsWith('.js') ||
           url.pathname.startsWith('/fonts/')
         )) {
+          const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
+            cache.put(event.request, responseToCache);
           });
         }
         return networkResponse;
