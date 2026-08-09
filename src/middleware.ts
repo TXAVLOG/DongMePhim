@@ -86,9 +86,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && pathname !== '/api/admin/movie-action' && pathname !== '/admin/phim/edit') {
+  if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && pathname !== '/api/admin/movie-action' && pathname !== '/admin/phim/edit' && pathname !== '/api/admin/deimpersonate') {
     const currentUser = await verifySession(context.request, context.cookies) as any;
-    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.roles === 'admin');
+    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.roles === 'admin' || !!currentUser.adminId);
 
     if (!isAdmin) {
       if (pathname === '/api/admin/members' && context.request.method === 'POST') {
