@@ -1573,12 +1573,29 @@ if (movie && movie.actors && movie.actors.length > 0) {
       }
     }
 
+    function isServerAllowed(allowedList: string[] | any, serverName: string | any) {
+      if (!serverName) return false;
+      const list = (allowedList && allowedList.length > 0) ? allowedList : ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+      const target = serverName.toLowerCase().trim();
+      const targetClean = target.replace(/#\d+/g, '').replace(/[-_]/g, ' ').trim();
+      return list.some((s: string) => {
+        if (!s) return false;
+        const allowed = s.toLowerCase().trim();
+        if (allowed === '*' || allowed === 'all' || allowed === 'tất cả') return true;
+        const allowedClean = allowed.replace(/#\d+/g, '').replace(/[-_]/g, ' ').trim();
+        if (target === allowed || targetClean === allowedClean) return true;
+        if (target.includes(allowed) || allowed.includes(target)) return true;
+        if (targetClean.includes(allowedClean) || allowedClean.includes(targetClean)) return true;
+        return false;
+      });
+    }
+
     function applyServerLocks() {
       // 1. Phim Bộ server buttons
       const serverBtns = document.querySelectorAll('.server-btn');
       serverBtns.forEach(btn => {
         const srvName = btn.getAttribute('data-server-name') || btn.textContent.trim();
-        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        const isLocked = !isAdmin && !isServerAllowed(allowedServers, srvName);
         if (isLocked) {
           if (!btn.querySelector('.lock-badge')) {
             const originalText = btn.getAttribute('data-server-name') || btn.textContent.trim();
@@ -1596,7 +1613,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       const watchBtns = document.querySelectorAll('a[data-server-idx]');
       watchBtns.forEach((btn: any) => {
         const srvName = btn.getAttribute('data-server-name') || '';
-        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        const isLocked = !isAdmin && !isServerAllowed(allowedServers, srvName);
         if (isLocked) {
           if (!btn.querySelector('.lock-badge')) {
             btn.innerHTML = `
@@ -1699,7 +1716,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
         const idx = parseInt(btn.getAttribute('data-server-idx') || '0');
         const srvName = btn.getAttribute('data-server-name') || '';
         
-        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        const isLocked = !isAdmin && !isServerAllowed(allowedServers, srvName);
         if (isLocked) {
           showServerLockedModal();
           return;
@@ -1732,7 +1749,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       if (epBtn) {
         const srvBtn = document.querySelector('.server-btn.bg-primary');
         const srvName = srvBtn ? srvBtn.getAttribute('data-server-name') : (servers[activeServerIdx]?.serverName || '');
-        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        const isLocked = !isAdmin && !isServerAllowed(allowedServers, srvName);
         if (isLocked) {
           e.preventDefault();
           showServerLockedModal();
@@ -1744,7 +1761,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       const btn = e.target.closest('a[data-server-idx]');
       if (btn) {
         const srvName = btn.getAttribute('data-server-name') || '';
-        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        const isLocked = !isAdmin && !isServerAllowed(allowedServers, srvName);
         if (isLocked) {
           e.preventDefault();
           showServerLockedModal();
@@ -1757,7 +1774,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       if (watchBtn) {
         const srvBtn = document.querySelector('.server-btn.bg-primary');
         const srvName = srvBtn ? srvBtn.getAttribute('data-server-name') : (servers[activeServerIdx]?.serverName || '');
-        const isLocked = !isAdmin && !allowedServers.some(s => s.toLowerCase() === srvName.toLowerCase());
+        const isLocked = !isAdmin && !isServerAllowed(allowedServers, srvName);
         if (isLocked) {
           e.preventDefault();
           showServerLockedModal();

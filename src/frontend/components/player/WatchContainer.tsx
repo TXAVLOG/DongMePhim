@@ -4,6 +4,7 @@ import { TXAPlayer } from '@txa/txaplayer';
 import type { MovieDetail, Episode } from '@apptypes/movie';
 import { TxaModal } from '../ui/txamodal';
 import { supabase } from '@lib/supabase';
+import { isServerAllowed } from '@lib/utils';
 
 const formatLocalAirDateTime = (dateStr?: string, timeStr?: string) => {
   if (!dateStr) return { date: '', time: '', text: '' };
@@ -1336,7 +1337,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
         let mergedAllowed: string[] = [];
         if (settings.general?.package_system_enable === false && !!username) {
           mergedAllowed = (movie.episodes || []).map((ep: any) => ep.serverName).filter(Boolean);
-        } else if (userPkg) {
+        } else if (userPkg && userPkg.permissions?.allowed_servers && userPkg.permissions.allowed_servers.length > 0) {
           mergedAllowed = [...(userPkg.permissions?.allowed_servers || [])];
           const userPrice = userPkg.price || 0;
           packages.forEach((p: any) => {
@@ -1350,7 +1351,13 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           });
         } else {
           const freePkg = packages.find((p: any) => p.id === 'free');
-          mergedAllowed = freePkg?.permissions?.allowed_servers || ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+          mergedAllowed = (freePkg?.permissions?.allowed_servers && freePkg.permissions.allowed_servers.length > 0)
+            ? freePkg.permissions.allowed_servers
+            : ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
+        }
+
+        if (!mergedAllowed || mergedAllowed.length === 0) {
+          mergedAllowed = ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
         }
         setAllowedServers(mergedAllowed);
 
@@ -2392,9 +2399,9 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     }
   };
 
-  const selectServer = (idx: number) => {
+    const selectServer = (idx: number) => {
     const srv = servers[idx];
-    const isLocked = srv && !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === srv.serverName.toLowerCase());
+    const isLocked = srv && !isAdmin && !isServerAllowed(allowedServers, srv.serverName);
     if (isLocked) {
       const modalContent = `
         <div class="flex flex-col items-center justify-center p-6 text-center relative overflow-hidden space-y-4">
@@ -2614,7 +2621,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 <span className="text-xs font-bold text-zinc-400">Đang chuẩn bị nguồn phát...</span>
               </div>
             </div>
-          ) : !isAdmin && currentServer && !allowedServers.some((s: string) => s.toLowerCase() === currentServer.serverName.toLowerCase()) && !(((typeof window !== 'undefined' ? (window as any).TXA_SITE_SETTINGS : null)?.general?.package_system_enable === false) && isLoggedIn) ? (
+          ) : !isAdmin && currentServer && !isServerAllowed(allowedServers, currentServer.serverName) && !(((typeof window !== 'undefined' ? (window as any).TXA_SITE_SETTINGS : null)?.general?.package_system_enable === false) && isLoggedIn) ? (
             ((typeof window !== 'undefined' ? (window as any).TXA_SITE_SETTINGS : null)?.general?.package_system_enable === false) && !isLoggedIn ? (
               <LoginRequiredPlayerPlaceholder />
             ) : (
@@ -2982,7 +2989,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                   <div className="flex items-center gap-1.5 overflow-x-auto max-w-[320px] sm:max-w-md hide-scrollbar">
                     {servers.map((srv, idx) => {
                       const isActive = idx === serverIndex;
-                      const isLocked = !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === srv.serverName.toLowerCase());
+                      const isLocked = !isAdmin && !isServerAllowed(allowedServers, srv.serverName);
                       return (
                         <button
                           key={srv.serverName}

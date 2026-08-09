@@ -5,6 +5,7 @@ import { SettingService } from '@services/SettingService';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { TxaSchedule } from '@lib/TxaSchedule';
+import { isServerAllowed } from '@lib/utils';
 
 export const GET: APIRoute = async ({ params, cookies, request }) => {
   try {
@@ -301,7 +302,7 @@ export const GET: APIRoute = async ({ params, cookies, request }) => {
     package_system_enable: settings.general?.package_system_enable !== false,
     history: historyData,
     servers: filteredServers.map((srv: any) => {
-      const isServerLocked = !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === srv.serverName.toLowerCase());
+      const isServerLocked = !isAdmin && !isServerAllowed(allowedServers, srv.serverName);
       return {
         server_name: srv.serverName,
         is_locked: isServerLocked,

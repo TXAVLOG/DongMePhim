@@ -3,6 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { SettingService } from '@services/SettingService';
 import { verifyUserFromRequest } from '@lib/auth';
+import { isServerAllowed } from '@lib/utils';
 
 export const GET: APIRoute = async ({ params, request }) => {
   const { episodeId } = params;
@@ -97,7 +98,7 @@ export const GET: APIRoute = async ({ params, request }) => {
       allowedServers = freePkg?.permissions?.allowed_servers || ["Vietsub", "Thuyết Minh", "Lồng Tiếng"];
     }
 
-    const isServerLocked = !isAdmin && !allowedServers.some((s: string) => s.toLowerCase() === matchedServerName.toLowerCase());
+    const isServerLocked = !isAdmin && !isServerAllowed(allowedServers, matchedServerName);
     if (isServerLocked) {
       if (settings.general?.package_system_enable === false && !user) {
         return apiResponse(null, 'error', 'Vui lòng đăng nhập tài khoản để xem nguồn phát này.', 403, request);
