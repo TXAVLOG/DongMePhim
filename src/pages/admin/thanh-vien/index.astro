@@ -312,6 +312,8 @@ const packages = settings.packages || [];
 
               const data = await res.json();
               if (res.ok && (data?.status === 'success' || data?.success === true)) {
+                document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
+                localStorage.setItem('zalo_access_status', 'approved');
                 window.showGlobalToast('Đang chuyển hướng...', 'success');
                 setTimeout(() => {
                   window.location.href = '/tphim';

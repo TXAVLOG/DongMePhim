@@ -63,6 +63,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse(null, 'error', `Lỗi DB khi cập nhật phiên giả lập: ${updateError.message}`, 500, request);
     }
 
+    cookies.set('txa_gate_passed', 'true', { path: '/', maxAge: 604800, httpOnly: false });
+
     return apiResponse({ success: true }, 'success', 'Bắt đầu giả lập tài khoản thành công!', 200, request);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);

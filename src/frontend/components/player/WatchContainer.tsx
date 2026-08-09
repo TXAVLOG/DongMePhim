@@ -1447,7 +1447,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
     const checkAndFetch = () => {
       const user = window.APP_USER;
-      const hasCookie = typeof document !== 'undefined' && document.cookie.includes('txa_gate_passed');
+      const hasCookie = typeof document !== 'undefined' && (document.cookie.includes('txa_gate_passed') || !!(window as any).APP_USER);
       
       if (!hasCookie) {
         // Guest user — load immediately
@@ -1666,7 +1666,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     return subs;
   }, [currentEpisode, dynamicSubtitles]);
 
-  // DevTools detection with admin bypass
+  // DevTools detection & anti-tamper with admin bypass
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -1685,39 +1685,79 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
     let devtoolsOpen = false;
     const threshold = 160;
 
-    const emitEvent = (isOpen: boolean) => {
-      if (isOpen && !devtoolsOpen) {
-        setIsHacked(true);
+    const emitEvent = () => {
+      if (!devtoolsOpen) {
         devtoolsOpen = true;
+        setIsHacked(true);
       }
     };
 
+    // 1. Check window dimensions (docked devtools)
     const checkSize = () => {
       const widthThreshold = window.outerWidth - window.innerWidth > threshold;
       const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-      
       if (widthThreshold || heightThreshold) {
-        emitEvent(true);
+        emitEvent();
       }
     };
 
+    // 2. Check debugger delay (un-deactivated breakpoints)
     const checkDebugger = () => {
       const startTime = performance.now();
-      debugger;
+      (function() {}.constructor("debugger")());
       const endTime = performance.now();
       if (endTime - startTime > 100) {
-        emitEvent(true);
+        emitEvent();
       }
     };
 
+    // 3. Console getter inspection trap (triggers even if breakpoints are disabled or undocked!)
+    const checkConsoleGetter = () => {
+      const el = new Image();
+      Object.defineProperty(el, 'id', {
+        get: function() {
+          emitEvent();
+          return '';
+        }
+      });
+      console.log('%c', el);
+    };
+
+    // 4. Keyboard shortcuts prevention (F12, Ctrl+Shift+I/J/C, Ctrl+U)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.keyCode === 123 || // F12
+        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || // Ctrl+Shift+I/J/C
+        (e.ctrlKey && e.keyCode === 85) // Ctrl+U
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        emitEvent();
+        return false;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
     const sizeInterval = setInterval(checkSize, 1000);
     const debugInterval = setInterval(checkDebugger, 1000);
+    const consoleInterval = setInterval(checkConsoleGetter, 1500);
 
     return () => {
+      window.removeEventListener('keydown', handleKeyDown);
       clearInterval(sizeInterval);
       clearInterval(debugInterval);
+      clearInterval(consoleInterval);
     };
   }, []);
+
+  // Freeze loop when DevTools is detected
+  useEffect(() => {
+    if (!isHacked) return;
+    const freezeInterval = setInterval(() => {
+      (function() {}.constructor("debugger")());
+    }, 100);
+    return () => clearInterval(freezeInterval);
+  }, [isHacked]);
 
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const [isInPlaylist, setIsInPlaylist] = useState<boolean>(false);

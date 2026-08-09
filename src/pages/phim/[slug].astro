@@ -1515,7 +1515,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
       const packages: any[] = siteSettings.packages || [];
       const userPackage = packages.find((p: any) => p.id === userPkgId)?.title || 'Free';
       const packageSystemEnable = siteSettings.general?.package_system_enable !== false;
-      const isLoggedIn = document.cookie.includes('txa_gate_passed');
+      const isLoggedIn = document.cookie.includes('txa_gate_passed') || !!(window as any).APP_USER;
       
       let modalContent = '';
       if (!packageSystemEnable && !isLoggedIn) {
@@ -1785,7 +1785,7 @@ if (movie && movie.actors && movie.actors.length > 0) {
 
     // 5. Auth Checks for Action Buttons & Tools
     const checkLogin = () => {
-      return document.cookie.includes('txa_gate_passed');
+      return document.cookie.includes('txa_gate_passed') || !!(window as any).APP_USER;
     };
 
     const requireLogin = (action: () => void) => {

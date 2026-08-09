@@ -410,6 +410,9 @@ const isImpersonating = userObj && !!userObj.adminId;
       function syncTlogged() {
         if (window.APP_USER) {
           localStorage.setItem('tlogged_in_as', window.APP_USER.username);
+          if (!document.cookie.includes('txa_gate_passed')) {
+            document.cookie = "txa_gate_passed=true; path=/; max-age=604800";
+          }
         } else {
           localStorage.removeItem('tlogged_in_as');
         }

@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
-const entryPath = path.resolve('dist/server/entry.mjs');
+let entryPath = path.resolve('dist/server/entry.mjs');
+if (!fs.existsSync(entryPath)) {
+  entryPath = path.resolve('dist/_worker.js');
+}
 if (fs.existsSync(entryPath)) {
   let content = fs.readFileSync(entryPath, 'utf8');
 
