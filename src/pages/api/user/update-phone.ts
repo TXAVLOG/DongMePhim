@@ -3,6 +3,8 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 
+import { sanitizeVNPhone } from '@lib/utils';
+
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const authUser = await verifyUserFromRequest(request, cookies);
@@ -20,19 +22,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse(null, 'error', 'Vui lòng nhập số điện thoại!', 400, request);
     }
 
-    // Format & Validate Phone (+84 prefix, strip leading 0, 9 digits starting with 3,5,7,8,9)
-    let rawDigits = String(phone).replace(/[^0-9]/g, '');
-    if (rawDigits.startsWith('84')) {
-      rawDigits = rawDigits.slice(2);
-    }
-    if (rawDigits.startsWith('0')) {
-      rawDigits = rawDigits.replace(/^0+/, '');
-    }
+    // Format & Validate Phone
+    const formattedPhone = sanitizeVNPhone(phone);
 
-    const formattedPhone = `+84${rawDigits}`;
-    const phoneRegex = /^\+84[35789]\d{8}$/;
-
-    if (!phoneRegex.test(formattedPhone)) {
+    if (!formattedPhone) {
       return apiResponse(null, 'error', 'Số điện thoại không hợp lệ! Vui lòng nhập đúng 9 chữ số thuộc các đầu số nhà mạng (+84)', 400, request);
     }
 

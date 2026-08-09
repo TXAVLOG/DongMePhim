@@ -37,3 +37,21 @@ export function isServerAllowed(allowedServers: string[] | undefined | null, ser
   });
 }
 
+export function sanitizeVNPhone(phoneInput: any): string | null {
+  if (!phoneInput) return null;
+  let str = phoneInput.toString().trim();
+  let digits = str.replace(/\D/g, '');
+
+  if (digits.startsWith('84')) {
+    digits = digits.substring(2);
+  }
+
+  digits = digits.replace(/^0+/, '');
+
+  if (/^[35789]\d{8}$/.test(digits)) {
+    return '+84' + digits;
+  }
+
+  return null;
+}
+

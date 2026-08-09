@@ -6,6 +6,8 @@ import { SettingService } from '@services/SettingService';
 import { encryptPassword } from '@lib/passwordCrypto';
 import { getGravatarUrl } from '@lib/gravatar';
 
+import { sanitizeVNPhone } from '@lib/utils';
+
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     let body: any = {};
@@ -23,12 +25,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     // Validate phone number format
-    const rawPhone = (phone || '').toString().trim();
-    const cleanDigits = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
-    const formattedPhone = '+84' + cleanDigits;
-    const phoneRegex = /^\+84[35789]\d{8}$/;
+    const formattedPhone = sanitizeVNPhone(phone);
 
-    if (!rawPhone || !phoneRegex.test(formattedPhone)) {
+    if (!formattedPhone) {
       return apiResponse(null, 'error', 'Số điện thoại không hợp lệ! Vui lòng nhập 9 chữ số bắt đầu bằng 3, 5, 7, 8, 9 (VD: 912345678)', 400, request);
     }
 

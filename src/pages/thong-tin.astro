@@ -588,6 +588,9 @@ const settings = await SettingService.getSettings();
     function validateUpdatePhone() {
       if (!phoneInput) return false;
       let raw = phoneInput.value.replace(/[^0-9]/g, '');
+      if (raw.startsWith('84') && raw.length === 11) {
+        raw = raw.slice(2);
+      }
       if (raw.startsWith('0')) {
         raw = raw.replace(/^0+/, '');
         phoneInput.value = raw;

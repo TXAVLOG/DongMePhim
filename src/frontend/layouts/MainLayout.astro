@@ -2752,8 +2752,12 @@ const isImpersonating = userObj && !!userObj.adminId;
         if (form) {
           e.preventDefault();
           const rawPhone = document.getElementById('google-extra-phone')?.value || '';
-          const cleanDigits = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
-          const formattedPhone = '+84' + cleanDigits;
+          let digits = rawPhone.replace(/\D/g, '');
+          if (digits.startsWith('84') && digits.length === 11) {
+            digits = digits.substring(2);
+          }
+          digits = digits.replace(/^0+/, '');
+          const formattedPhone = '+84' + digits;
           const phoneRegex = /^\+84[35789]\d{8}$/;
 
           if (!rawPhone || !phoneRegex.test(formattedPhone)) {
@@ -3885,6 +3889,9 @@ const isImpersonating = userObj && !!userObj.adminId;
           let msg = '';
 
           let raw = val.replace(/[^0-9]/g, '');
+          if (raw.startsWith('84') && raw.length === 11) {
+            raw = raw.slice(2);
+          }
           if (raw.startsWith('0')) {
             raw = raw.replace(/^0+/, '');
             input.value = raw;
@@ -4156,7 +4163,11 @@ const isImpersonating = userObj && !!userObj.adminId;
               try {
                 const username = document.getElementById('reg-username').value.trim();
                 const email = document.getElementById('reg-email').value.trim();
-                const rawPhone = document.getElementById('reg-phone').value.trim().replace(/^0+/, '');
+                let rawPhone = document.getElementById('reg-phone').value.trim().replace(/\D/g, '');
+                if (rawPhone.startsWith('84') && rawPhone.length === 11) {
+                  rawPhone = rawPhone.substring(2);
+                }
+                rawPhone = rawPhone.replace(/^0+/, '');
                 const phone = '+84' + rawPhone;
                 const password = document.getElementById('reg-password').value;
                 const gender = document.getElementById('reg-gender').value;

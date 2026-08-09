@@ -7,6 +7,8 @@ import { SmtpClient } from '@lib/api/smtpClient';
 import { encryptPassword } from '@lib/passwordCrypto';
 import { getGravatarUrl } from '@lib/gravatar';
 
+import { sanitizeVNPhone } from '@lib/utils';
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     let body: any = {};
@@ -19,18 +21,10 @@ export const POST: APIRoute = async ({ request }) => {
       return apiResponse(null, 'error', 'Vui lòng điền đầy đủ thông tin bắt buộc (bao gồm Số điện thoại)!', 400, request);
     }
 
-    // Format & Validate Phone Number (+84 prefix, strip leading 0, 9 digits starting with 3,5,7,8,9)
-    let rawDigits = String(phone).replace(/[^0-9]/g, '');
-    if (rawDigits.startsWith('84')) {
-      rawDigits = rawDigits.slice(2);
-    }
-    if (rawDigits.startsWith('0')) {
-      rawDigits = rawDigits.replace(/^0+/, '');
-    }
-    const formattedPhone = `+84${rawDigits}`;
-    const phoneRegex = /^\+84[35789]\d{8}$/;
+    // Format & Validate Phone Number
+    const formattedPhone = sanitizeVNPhone(phone);
 
-    if (!phoneRegex.test(formattedPhone)) {
+    if (!formattedPhone) {
       return apiResponse(null, 'error', 'Số điện thoại không hợp lệ! Vui lòng nhập đúng 9 chữ số thuộc các đầu số nhà mạng (+84)', 400, request);
     }
 
