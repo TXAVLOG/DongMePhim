@@ -41,14 +41,20 @@ export const seedSettings: SiteSettings = {
     telegram_notify_luckydraw: true,
   },
   app: {
-    app_version: "5.1.7",
-    app_release_notes: "- 🔮 [NAV LIQUID] Nâng cấp thanh điều hướng chất lỏng Liquid Fluid Glassmorphism với Blob indicator và micro-animations.\n- 🎬 [TIẾP TỤC XEM] Bổ sung khung Tiếp tục xem 1-Chạm trên Trang chủ, tự động ghi nhớ % tiến độ và tập phim.\n- 🏷️ [QUICK FILTERS & TOP 10] Thanh lọc thể loại nhanh cuộn ngang và Huy hiệu xếp hạng Top 10 Trending Badges kim loại.\n- ⚡ [IN-APP UPDATE] Tích hợp Google Play In-App Update API tại Splash Screen & thông báo ngầm TxaToast đa nền tảng.\n- 🛡️ [CHỐNG XUNG ĐỘT] Khắc phục triệt me lỗi xung đột chữ ký cài đè (INSTALL_FAILED_UPDATE_INCOMPATIBLE) qua CH Play.\n- 🛠️ [FIX PLAYER] Sửa triệt để lỗi tự ẩn thanh điều khiển video player và tối ưu thời gian hiển thị 4s.",
+    app_version: "5.5.3",
+    app_release_notes: "- 🛡️ [AN TOÀN & BẢO MẬT] Tối ưu hóa ứng dụng theo tiêu chuẩn bảo mật mới nhất của Google Play, đảm bảo an toàn tuyệt đối cho thiết bị của bạn.\n- 🔄 [CẬP NHẬT TIỆN LỢI] Nâng cấp tính năng cập nhật phiên bản mới nhanh chóng và mượt mà hơn ngay trong ứng dụng.\n- 🎨 [ĐỔI ICON ỨNG DỤNG] Khắc phục triệt để lỗi đổi Icon ứng dụng trên các dòng máy iPhone/iPad (iOS), giúp bạn thoải mái đổi màu sắc app theo sở thích.\n- 📺 [TRẢI NGHIỆM XEM PHIM] Tối ưu hóa hệ thống hiển thị thông minh, giảm thiểu tối đa gián đoạn khi thưởng thức các bộ phim yêu thích.\n- ⚡ [TĂNG TỐC HỆ THỐNG] Tinh gọn giao diện cài đặt, giúp app khởi động nhanh hơn, cuộn mượt mà và tiết kiệm pin đáng kể.",
     app_changelogs: [
       {
-        version: "5.1.7",
-        date: "2026-07-21",
-        title: "🚀 v5.1.7 - Liquid Nav, Tiếp tục xem, Google Play In-App Update & Sửa lỗi Player Controls",
-        content: "- 🔮 [NAV LIQUID] Nâng cấp thanh điều hướng chất lỏng Liquid Fluid Glassmorphism với Blob indicator và micro-animations.\n- 🎬 [TIẾP TỤC XEM] Bổ sung khung Tiếp tục xem 1-Chạm trên Trang chủ, tự động ghi nhớ % tiến độ và tập phim.\n- 🏷️ [QUICK FILTERS & TOP 10] Thanh lọc thể loại nhanh cuộn ngang và Huy hiệu xếp hạng Top 10 Trending Badges kim loại.\n- ⚡ [IN-APP UPDATE] Tích hợp Google Play In-App Update API tại Splash Screen & thông báo ngầm TxaToast đa nền tảng.\n- 🛡️ [CHỐNG XUNG ĐỘT] Khắc phục triệt me lỗi xung đột chữ ký cài đè (INSTALL_FAILED_UPDATE_INCOMPATIBLE) qua CH Play.\n- 🛠️ [FIX PLAYER] Sửa triệt để lỗi tự ẩn thanh điều khiển video player và tối ưu thời gian hiển thị 4s."
+        version: "5.5.3",
+        date: "2026-08-10",
+        title: "🚀 v5.5.3 - Nâng Cấp Trải Nghiệm, Đổi Icon Ứng Dụng Mượt Mà & Tối Ưu Hệ Thống",
+        content: "- 🛡️ [AN TOÀN & BẢO MẬT] Tối ưu hóa ứng dụng theo tiêu chuẩn bảo mật mới nhất của Google Play, đảm bảo an toàn tuyệt đối cho thiết bị của bạn.\n- 🔄 [CẬP NHẬT TIỆN LỢI] Nâng cấp tính năng cập nhật phiên bản mới nhanh chóng và mượt mà hơn ngay trong ứng dụng.\n- 🎨 [ĐỔI ICON ỨNG DỤNG] Khắc phục triệt để lỗi đổi Icon ứng dụng trên các dòng máy iPhone/iPad (iOS), giúp bạn thoải mái đổi màu sắc app theo sở thích.\n- 📺 [TRẢI NGHIỆM XEM PHIM] Tối ưu hóa hệ thống hiển thị thông minh, giảm thiểu tối đa gián đoạn khi thưởng thức các bộ phim yêu thích.\n- ⚡ [TĂNG TỐC HỆ THỐNG] Tinh gọn giao diện cài đặt, giúp app khởi động nhanh hơn, cuộn mượt mà và tiết kiệm pin đáng kể."
+      },
+      {
+        version: "5.5.2",
+        date: "2026-08-04",
+        title: "🔐 v5.5.2 - Hệ Thống Chặn Thiết Bị & Tài Khoản + Sửa Lỗi Ads Đổi Acc",
+        content: "- 🔐 [BẢO MẬT] Tăng cường cơ chế ngăn chặn truy cập trái phép vào ứng dụng.\n- 🚫 [QUẢN LÝ TÀI KHOẢN] Cải thiện cơ chế xử lý đối với các tài khoản bị khóa.\n- 🌐 [WEBSITE] Cập nhật giao diện thông báo khi tài khoản không thể truy cập.\n- 🔗 [HỖ TRỢ] Bổ sung các kênh liên hệ hỗ trợ chính thức ngay trong ứng dụng."
       },
       {
         version: "5.1.6",
