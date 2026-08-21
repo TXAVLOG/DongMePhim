@@ -22,8 +22,8 @@ export const GET: APIRoute = async ({ request }) => {
     is_active: true,
     ios_active: true,
     latest_version: (settings.app.app_version || '').trim(),
-    min_version: "4.0.0",
-    force_update: false,
+    min_version: (settings.app.app_min_version || settings.app.min_version || "5.0.0").trim(),
+    force_update: settings.app.app_force_update ?? settings.app.force_update ?? false,
     download_url: (settings.app.app_android_download_url || settings.app.app_ios_download_url || '').trim(),
     apk_url: (settings.app.app_android_download_url || '').trim(),
     ios_download_url: (settings.app.app_ios_download_url || '').trim(),
@@ -52,6 +52,26 @@ export const GET: APIRoute = async ({ request }) => {
     social_fb_group_enable: settings.social?.social_fb_group_enable ?? false,
     social_zalo_url: (settings.social?.social_zalo_group_url || '').trim(),
     social_zalo_enable: settings.social?.social_zalo_group_enable ?? false,
-    ads: settings.ads
+    ads: {
+      admob_enable: settings.ads?.admob_enable ?? true,
+      admob_app_start_ad_id_android: settings.ads?.admob_app_start_ad_id_android || "",
+      admob_app_start_ad_id_ios: settings.ads?.admob_app_start_ad_id_ios || "",
+      admob_preroll_ad_id_android: settings.ads?.admob_preroll_ad_id_android || "",
+      admob_preroll_ad_id_ios: settings.ads?.admob_preroll_ad_id_ios || "",
+      admob_rewarded_ad_id_android: settings.ads?.admob_rewarded_ad_id_android || "",
+      admob_rewarded_ad_id_ios: settings.ads?.admob_rewarded_ad_id_ios || "",
+      admob_banner_ad_id_android: settings.ads?.admob_banner_ad_id_android || "",
+      admob_banner_ad_id_ios: settings.ads?.admob_banner_ad_id_ios || "",
+      pre_roll_enable: settings.ads?.pre_roll_enable ?? false,
+      pre_roll_type: settings.ads?.pre_roll_type || "video",
+      pre_roll_url: settings.ads?.pre_roll_url || "",
+      pre_roll_skip_seconds: settings.ads?.pre_roll_skip_seconds ?? 5,
+      click_ad_enable: settings.ads?.click_ad_enable ?? false,
+      click_ad_threshold: settings.ads?.click_ad_threshold ?? 5,
+      click_ad_code: settings.ads?.click_ad_code || "",
+      ad_provider: settings.ads?.ad_provider || "google_ads",
+      google_ads_enable: settings.ads?.google_ads_enable ?? true,
+      offerwall_enable: false
+    }
   }, 'success', '', 200, request);
 };

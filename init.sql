@@ -361,83 +361,51 @@ INSERT INTO public.settings (key, value) VALUES (
     "telegram_bot_token": "mock_bot_token",
     "telegram_chat_id": "123456789",
     "telegram_channel_id": "@dongphimtxa",
-    "telegram_bot_userna  '{
-    "app_version": "5.3.2",
-    "app_release_notes": "- 🎛️ Ma trận dải dọc: Kích hoạt mảng không gian 3 cột giải phóng tầm nhìn từ trên xuống.\\n- 🔑 Tần số liên kết: Chuẩn hóa chứng thực Google Native và tối ưu sóng khôi phục đa vũ trụ.\\n- 📊 Bảng 15 Key Zalo: Tự động trích xuất mã API gốc kèm nút copy 1-chạm & xuất file TXT.\\n- 🛡️ TxaErrorWidget: Bắt lỗi toàn cục tức thì từ khi vừa bật app kèm nút chia sẻ file log crash.",
+    "telegram_bot_username": "dongmephim_bot"
+  }'::jsonb
+) ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.settings (key, value) VALUES (
+  'app',
+  '{
+    "app_version": "5.5.4",
+    "app_release_notes": "- 🎬 [TRÌNH PHÁT VIDEO] Nâng cấp giao diện xem phim tinh gọn, tối ưu hiển thị chuẩn rạp chiếu.\\n- ⚡ [TỐI ƯU HIỆU NĂNG] Cải thiện tốc độ tải luồng phát và độ ổn định khi xem phim dài tập.\\n- 🛠️ [SỬA LỖI & HOÀN THIỆN] Khắc phục các lỗi hiển thị nhỏ và nâng cấp trải nghiệm người dùng.",
     "app_changelogs": [
       {
-        "version": "5.3.2",
-        "date": "2026-07-22",
-        "title": "🌌 v5.3.2 - Ma trận dải dọc 3 cột, Bảng 15 Key Zalo & TxaErrorWidget toàn cục",
-        "content": "- 🎛️ [MA TRẬN DẢI DỌC] Chuyển đổi toàn bộ danh mục lọc phim sang dạng Lưới dải dọc 3 cột từ trên xuống cực kỳ mượt mà.\\n- 📊 [BẢNG 15 KEY ZALO] Tự động hiển thị 15 mã Key thiết bị chuẩn API backend, hỗ trợ sao chép có hiệu ứng & xuất file TXT.\\n- 🛡️ [TXAERRORWIDGET] Bắt lỗi toàn cục từ khi vừa mở app, giao diện Liquid Glass kèm nút chia sẻ trực tiếp file log crash.\\n- 🔑 [GOOGLE LOGIN] Tự động khắc phục triệt để mã lỗi Error Code 10 phát sinh trên Google Play Console."
-      },
-      {
-        "version": "5.3.1",
-        "date": "2026-07-22",
-        "title": "🚀 v5.3.1 - Google Play Billing IAP & Target Android 16 (API 36)",
-        "content": "- 💳 [PLAY BILLING IAP] Tích hợp thanh toán trực tiếp Google Play In-App Purchase cho 2 gói mã Key Bypass Zalo (Thường & Admin).\\n- 🤖 [ANDROID 16] Nâng cấp targetSdkVersion lên Android 16 (API 36) tuân thủ chính sách mới nhất của Google Play Console.\\n- 🛠️ [RESTORE IAP] Tối ưu hóa luồng Khôi phục đơn hàng (Restore Purchases) với thông báo trạng thái real-time chuẩn xác."
-      },
-      {
-        "version": "5.0.3",
-        "date": "2026-07-15",
-        "title": "🚀 v5.0.3 - Storyboard Scrubbing & Subtitle Styling",
-        "content": "- 📺 [STORYBOARD] Tích hợp tính năng xem trước ảnh thu nhỏ storyboard khi tua (kéo thả hoặc nhấn phím remote)\\n- 🎛️ [REMOTE] Hỗ trợ hoàn toàn D-Pad remote Smart TV cho Panel Cài đặt cải tiến\\n- 🌍 [I18N] Việt hóa/Đa ngôn ngữ toàn bộ giao diện điều chỉnh tùy chọn kiểu dáng phụ đề\\n- 💎 [SUBTITLE] Cho phép tùy biến cỡ chữ, màu sắc, kiểu viền, độ mờ nền và vị trí của phụ đề song ngữ trực tiếp trong ngăn kéo Cài đặt\\n- ⚙️ [SYS] Đồng bộ và lưu cấu hình người dùng vào SharedPreferences tự động áp dụng khi đổi tập"
+        "version": "5.5.4",
+        "date": "2026-08-19",
+        "title": "🚀 v5.5.4 - Tinh Gọn Trình Phát, Nâng Cao Trải Nghiệm Xem Phim & Tối Ưu Hệ Thống",
+        "content": "- 🎬 [TRÌNH PHÁT VIDEO] Nâng cấp giao diện xem phim tinh gọn, tối ưu hiển thị chuẩn rạp chiếu.\\n- ⚡ [TỐI ƯU HIỆU NĂNG] Cải thiện tốc độ tải luồng phát và độ ổn định khi xem phim dài tập.\\n- 🛠️ [SỬA LỖI & HOÀN THIỆN] Khắc phục các lỗi hiển thị nhỏ và nâng cấp trải nghiệm người dùng."
       }
     ],
     "app_android_download_enable": true,
     "app_android_download_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-Mobile.apk",
-    "app_apk_size": "77408665",
-    "app_apk_sha256": "a5e2442494fa44dd86eb5e05ab1e1960ca0da53a4acb7833cd8d4a95137ae0e0",
+    "app_apk_size": "80124160",
+    "app_apk_sha256": "d85abc319c276ff6d5ee40aacebfa8f94d342478f8126e18e960e6c2456ca5b1",
     "app_appbundle_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-AppBundle.aab",
-    "app_appbundle_size": "70928220",
-    "app_appbundle_sha256": "eff35da4a3091663b952e7814da13b253a0baa910b6013feaa2ab5c710b9d889",
+    "app_appbundle_size": "73647477",
+    "app_appbundle_sha256": "e409aded9396c6fece90781e4bf8088d3c49e9fb7abc6e627ab137461a9d4a3e",
     "app_ios_direct_install_enable": false,
     "app_ios_download_url": "/ios-access",
     "app_ios_ipa_download_enable": true,
-    "app_ios_ipa_url": "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.3.2_532/DongMePhim-Premium-v5.3.2+532.ipa",
-    "app_ipa_url": "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.3.2_532/DongMePhim-Premium-v5.3.2+532.ipa",
+    "app_ios_ipa_url": "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.5.4_554/DongMePhim-Premium-v5.5.4+554.ipa",
+    "app_ipa_url": "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.5.4_554/DongMePhim-Premium-v5.5.4+554.ipa",
     "app_google_play_enable": true,
     "app_google_play_url": "https://play.google.com/store/apps/details?id=com.tphimx.tphimx_setup",
     "app_app_store_enable": false,
     "app_app_store_url": "",
     "app_smart_tv_enable": true,
     "app_smart_tv_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-TV.apk",
-    "app_smart_tv_size": "77408665",
-    "app_smart_tv_sha256": "a5e2442494fa44dd86eb5e05ab1e1960ca0da53a4acb7833cd8d4a95137ae0e0",
+    "app_smart_tv_size": "80124160",
+    "app_smart_tv_sha256": "d85abc319c276ff6d5ee40aacebfa8f94d342478f8126e18e960e6c2456ca5b1",
     "app_smart_tv_code": "3779765",
     "app_windows_download_enable": true,
-    "app_windows_download_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.3.2_Setup.exe",
-    "app_windows_size": "26280017",
-    "app_windows_sha256": "d791ddf4b12fdbaf342f98d8019420069bfbfdb3353cd16a6e182310e6903ba3",
+    "app_windows_download_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.5.4_Setup.exe",
+    "app_windows_size": "28557669",
+    "app_windows_sha256": "3f60b8d0b2115b6ac75b3dcb2ce6a00ad782455281ba14dfb78b0becc1e3b6fb",
     "app_maintenance_enable": false,
     "app_maintenance_message": "Ứng dụng đang được bảo trì định kỳ để nâng cao hiệu năng. Vui lòng quay lại sau ít phút!"
-  }'::jsonb�n giải phân đoạn HLS và lỗi không tìm thấy tập phim trên máy chủ Vercel.\\n- 💎 [UI] Tối ưu hóa trình phát TxaPlayer thích ứng tốt hơn với kết nối mạng yếu."
-      }
-    ],
-    "app_android_download_enable": true,
-    "app_android_download_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-Mobile.apk",
-    "app_apk_size": "74159873",
-    "app_apk_sha256": "b8d50a7c30cf9b67b4232b9292bb1b558cbe4b47b013c61d3f6a8ad5d4d4b488",
-    "app_ios_direct_install_enable": false,
-    "app_ios_download_url": "/ios-access",
-    "app_ios_ipa_download_enable": true,
-    "app_ios_ipa_url": "https://github.com/TXAVLOG/dongmephim-mobile/releases/download/v5.0.3_503/DongMePhim-Premium-v5.0.3+503.ipa",
-    "app_google_play_enable": false,
-    "app_google_play_url": "",
-    "app_app_store_enable": false,
-    "app_app_store_url": "",
-    "app_smart_tv_enable": true,
-    "app_smart_tv_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim-TV.apk",
-    "app_smart_tv_size": "74159873",
-    "app_smart_tv_sha256": "b8d50a7c30cf9b67b4232b9292bb1b558cbe4b47b013c61d3f6a8ad5d4d4b488",
-    "app_smart_tv_code": "3779765",
-    "app_windows_download_enable": true,
-    "app_windows_download_url": "https://pub-ffb3837c19c940af8cc1bc7f2682fd70.r2.dev/DongMePhim_v5.0.3_Setup.exe",
-    "app_windows_size": "26144959",
-    "app_windows_sha256": "90bf7e1e184f4cfa040f686f2bd4ec54904575ccffc09f5862b65b8be8d773fa",
-    "app_maintenance_enable": false,
-    "app_maintenance_message": "Ứng dụng đang được bảo trì định kỳ để nâng cao hiệu năng. Vui lòng quay lại sau ít phút!"
-  }\'::jsonb
+  }'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO public.settings (key, value) VALUES (

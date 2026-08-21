@@ -177,7 +177,23 @@ let activeTab = "quang-cao";
                 🍏 iOS - AdMob Unit ID: Rewarded (Xem để Mở khóa Icon 3 ngày)
               </label>
               <input type="text" id="admob-rewarded-ad-id-ios" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (iOS)" />
-              <p class="text-xs text-text-dim mt-1 md:col-span-2">⚠️ Phải chọn đúng loại <strong class="text-amber-400">Rewarded</strong> khi tạo đơn vị trên AdMob Console. Để trống = dùng Test ID tự động.</p>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim flex items-center gap-1">
+                <span class="material-symbols-outlined text-cyan-400 text-sm">view_carousel</span>
+                🤖 Android - AdMob Unit ID: Biểu ngữ (Banner Ads)
+              </label>
+              <input type="text" id="admob-banner-ad-id-android" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (Android Banner)" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-label-caps text-text-dim flex items-center gap-1">
+                <span class="material-symbols-outlined text-cyan-400 text-sm">view_carousel</span>
+                🍏 iOS - AdMob Unit ID: Biểu ngữ (Banner Ads)
+              </label>
+              <input type="text" id="admob-banner-ad-id-ios" class="w-full bg-surface-container border border-glass-stroke rounded-xl px-4 py-2.5 focus:ring-1 focus:ring-primary focus:outline-none text-white font-mono text-xs" placeholder="ca-app-pub-xxx/xxx (iOS Banner)" />
+              <p class="text-xs text-text-dim mt-1 md:col-span-2">⚠️ Chọn đúng loại <strong class="text-primary">Biểu ngữ / Banner</strong> trên AdMob Console. Chỉ hiển thị với người dùng gói Free / Khách.</p>
             </div>
           </div>
         </div>
@@ -233,6 +249,8 @@ let activeTab = "quang-cao";
         setVal("admob-preroll-ad-id-ios", ads.admob_preroll_ad_id_ios || "");
         setVal("admob-rewarded-ad-id-android", ads.admob_rewarded_ad_id_android || "");
         setVal("admob-rewarded-ad-id-ios", ads.admob_rewarded_ad_id_ios || "");
+        setVal("admob-banner-ad-id-android", ads.admob_banner_ad_id_android || "");
+        setVal("admob-banner-ad-id-ios", ads.admob_banner_ad_id_ios || "");
 
         updateSectionVisibility();
       }
@@ -288,6 +306,8 @@ let activeTab = "quang-cao";
               admob_preroll_ad_id_ios: document.getElementById("admob-preroll-ad-id-ios")?.value || "",
               admob_rewarded_ad_id_android: document.getElementById("admob-rewarded-ad-id-android")?.value || "",
               admob_rewarded_ad_id_ios: document.getElementById("admob-rewarded-ad-id-ios")?.value || "",
+              admob_banner_ad_id_android: document.getElementById("admob-banner-ad-id-android")?.value || "",
+              admob_banner_ad_id_ios: document.getElementById("admob-banner-ad-id-ios")?.value || "",
               ad_provider: providerVal,
               google_ads_enable: providerVal !== "none",
               offerwall_enable: false

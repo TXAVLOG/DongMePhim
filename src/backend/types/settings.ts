@@ -215,6 +215,14 @@ export interface AdSettings {
   admob_app_id?: string;
   admob_app_start_ad_id?: string;
   admob_preroll_ad_id?: string;
+  admob_app_start_ad_id_android?: string;
+  admob_app_start_ad_id_ios?: string;
+  admob_preroll_ad_id_android?: string;
+  admob_preroll_ad_id_ios?: string;
+  admob_rewarded_ad_id_android?: string;
+  admob_rewarded_ad_id_ios?: string;
+  admob_banner_ad_id_android?: string;
+  admob_banner_ad_id_ios?: string;
 }
 
 export interface DiscordSettings {
