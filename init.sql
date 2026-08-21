@@ -510,8 +510,8 @@ INSERT INTO public.settings (key, value) VALUES (
     "stripe_secret_key": "mock_stripe_sec_key",
     "vat_rate": 8,
     "manual_enable": true,
-    "manual_bank_name": "Techcombank",
-    "manual_account_no": "2923252311",
+    "manual_bank_name": "Ngân hàng Quân đội MB Bank",
+    "manual_account_no": "2211231106",
     "manual_account_name": "TANG XUAN ANH"
   }'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
@@ -531,10 +531,18 @@ INSERT INTO public.settings (key, value) VALUES (
     "offerwall_enable": false,
     "offerwall_script": "",
     "ad_provider": "none",
-    "admob_enable": false,
-    "admob_app_id": "ca-app-pub-3940256099942544~3347511713",
-    "admob_app_start_ad_id": "ca-app-pub-3940256099942544/3419835294",
-    "admob_preroll_ad_id": "ca-app-pub-3940256099942544/1033173712"
+    "admob_enable": true,
+    "admob_app_id": "ca-app-pub-1543189450912703~2267525511",
+    "admob_app_start_ad_id": "ca-app-pub-1543189450912703/7479521417",
+    "admob_preroll_ad_id": "ca-app-pub-1543189450912703/7914635685",
+    "admob_app_start_ad_id_android": "ca-app-pub-1543189450912703/7479521417",
+    "admob_preroll_ad_id_android": "ca-app-pub-1543189450912703/7914635685",
+    "admob_rewarded_ad_id_android": "ca-app-pub-1543189450912703/9254657575",
+    "admob_banner_ad_id_android": "ca-app-pub-1543189450912703/2225333886",
+    "admob_app_start_ad_id_ios": "ca-app-pub-1543189450912703/7479521417",
+    "admob_preroll_ad_id_ios": "ca-app-pub-1543189450912703/7914635685",
+    "admob_rewarded_ad_id_ios": "ca-app-pub-1543189450912703/6552472614",
+    "admob_banner_ad_id_ios": "ca-app-pub-1543189450912703/2225333886"
   }'::jsonb
 ) ON CONFLICT (key) DO NOTHING;
 
