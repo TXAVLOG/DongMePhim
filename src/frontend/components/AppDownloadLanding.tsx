@@ -49,6 +49,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
   const iosDirectUrl = iosDirectEnabled ? (settings.app_ios_download_url || '').trim() : '';
   const iosIpaEnabled = isSettingEnabled(settings.app_ios_ipa_download_enable);
   const iosIpaUrl = iosIpaEnabled ? (settings.app_ios_ipa_url || '').trim() : '';
+  const iosQrUrl = iosIpaUrl || iosDirectUrl || (typeof window !== 'undefined' ? `${window.location.origin}/tai-app` : 'https://dongmephim.online/tai-app');
 
   // Play Store & App Store parameters
   const playStoreEnabled = isSettingEnabled(settings.app_google_play_enable);
@@ -118,7 +119,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
   const changelogs = Array.isArray(settings.app_changelogs) && settings.app_changelogs.length > 0
     ? settings.app_changelogs
     : null;
-  const appVersion = changelogs ? (changelogs[0]?.version || settings.app_version || '4.7.0') : (settings.app_version || '4.7.0');
+  const appVersion = changelogs ? (changelogs[0]?.version || settings.app_version || '5.7.0') : (settings.app_version || '5.7.0');
   const releaseNotes = settings.app_release_notes || '🚀 Bản cập nhật mới hiệu năng vượt trội!';
   const releaseNotesLines = releaseNotes.split('\\n');
 
@@ -192,10 +193,10 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: <Gauge className="w-8 h-8 text-[#a78bfa]" />, title: 'Stream V6 Ultra HD', desc: 'Bypass mọi giới hạn băng thông, tự động tải luồng phim siêu mượt 1080p/4K từ máy chủ Cloudflare.' },
-              { icon: <Ban className="w-8 h-8 text-[#f43f5e]" />, title: '100% Không Quảng Cáo', desc: 'Lọc sạch toàn bộ các pop-up và banner độc hại, mang lại môi trường xem phim an toàn, tinh khiết.' },
-              { icon: <Download className="w-8 h-8 text-[#10b981]" />, title: 'Tải Phim Offline', desc: 'Lưu trực tiếp tập phim vào bộ nhớ máy tốc độ cao, thưởng thức bất cứ lúc nào không cần kết nối mạng.' },
-              { icon: <Tv className="w-8 h-8 text-[#06b6d4]" />, title: 'Phát Nền & PiP', desc: 'Thu nhỏ cửa sổ phát video xuống góc màn hình hoặc tiếp tục nghe nhạc phim ngay cả khi tắt màn hình.' }
+              { icon: <Download className="w-8 h-8 text-[#10b981]" />, title: 'Tải Phim Offline Đa Luồng', desc: 'Tải nhanh 8-12 luồng song song, lưu trữ vào máy xem bất cứ lúc nào không cần mạng, hỗ trợ resume thông minh.' },
+              { icon: <Gauge className="w-8 h-8 text-[#a78bfa]" />, title: 'Stream V6 Ultra HD 4K', desc: 'Bypass giới hạn băng thông, tự động tải luồng phim siêu mượt 1080p/4K từ mạng lưới Cloudflare CDN tốc độ cao.' },
+              { icon: <Ban className="w-8 h-8 text-[#f43f5e]" />, title: '100% Sạch Quảng Cáo', desc: 'Lọc sạch toàn bộ pop-up độc hại, giao diện rạp chiếu phim tinh gọn mang lại trải nghiệm xem phim đỉnh cao.' },
+              { icon: <Tv className="w-8 h-8 text-[#06b6d4]" />, title: 'Phát Nền, PiP & Đổi Icon', desc: 'Thu nhỏ cửa sổ PiP đa nhiệm, thuyết minh AI tự động và tùy biến 6 bộ icon giao diện màn hình chính độc quyền.' }
             ].map((f, i) => (
               <div key={i} className="bg-gradient-to-br from-white/[0.02] to-white/[0.005] backdrop-blur-[20px] border border-white/[0.05] rounded-[24px] p-6 text-left flex flex-col h-full transition-all duration-300 hover:-translate-y-1.5 hover:border-[#a78bfa]/25 hover:shadow-[0_15px_35px_rgba(124,58,237,0.1)]">
                 <div className="w-12 h-12 rounded-[16px] bg-white/[0.02] border border-white/[0.04] flex items-center justify-center mb-5 shrink-0">
@@ -500,15 +501,15 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                         className="bg-white p-2.5 rounded-[16px] flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.4)] cursor-pointer transition-all duration-300 hover:scale-106 hover:shadow-[0_0_25px_rgba(167,139,250,0.4)] border-2 border-transparent hover:border-[#a78bfa] relative shrink-0"
                         title="Click để phóng to mã QR"
                       >
-                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin + '/ios-access' : '')}`} alt="iOS QR Code" className="w-[100px] h-[100px]" />
+                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(iosQrUrl)}`} alt="iOS QR Code" className="w-[100px] h-[100px]" />
                         <div className="absolute bottom-1 right-1 bg-black/70 text-[#a78bfa] w-5.5 h-5.5 rounded-full flex items-center justify-center">
                           <ZoomIn className="w-3.5 h-3.5" />
                         </div>
                       </div>
                       <div>
-                        <h4 className="text-[#a78bfa] text-xs font-black mb-1">iOS Direct & Sideload</h4>
+                        <h4 className="text-[#a78bfa] text-xs font-black mb-1">iOS IPA & Sideload</h4>
                         <p className="text-[11px] text-[#64748b] font-semibold leading-relaxed">
-                          Quét bằng Camera để đăng ký UDID thiết bị chép trực tiếp hoặc tải tệp cấu hình.
+                          Quét mã bằng Camera để nhận link tải trực tiếp tệp tin IPA cài đặt qua AltStore, Esign hoặc Sideloadly.
                         </p>
                       </div>
                     </div>
@@ -837,7 +838,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                   ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(androidUrl)}` 
                   : zoomQr === 'smart_tv'
                   ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(smartTvUrl)}`
-                  : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin + '/ios-access' : '')}`
+                  : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(iosQrUrl)}`
                 } 
                 alt="Zoomed QR" 
                 className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px]" 
