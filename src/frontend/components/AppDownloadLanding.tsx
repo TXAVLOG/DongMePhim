@@ -28,6 +28,7 @@ interface AppDownloadLandingProps {
 }
 
 export default function AppDownloadLanding({ settings = {} }: AppDownloadLandingProps) {
+  const [appSettings, setAppSettings] = useState<any>(settings);
   const [device, setDevice] = useState({ isAndroid: false, isIOS: false, isWindows: false, isMobile: false });
   const [zoomQr, setZoomQr] = useState<'windows' | 'android' | 'ios' | 'smart_tv' | null>(null);
   const [activeTab, setActiveTab] = useState<'windows' | 'android' | 'ios_ota' | 'ios_ipa' | 'smart_tv'>('android');
@@ -39,35 +40,35 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
   };
 
   // Android parameters
-  const androidEnabled = isSettingEnabled(settings.app_android_download_enable);
-  const androidUrl = androidEnabled ? (settings.app_android_download_url || '').trim() : '';
-  const apkSize = (settings.app_apk_size || '').trim();
-  const apkSha = (settings.app_apk_sha256 || '').trim();
+  const androidEnabled = isSettingEnabled(appSettings.app_android_download_enable ?? settings.app_android_download_enable);
+  const androidUrl = androidEnabled ? (appSettings.app_android_download_url || settings.app_android_download_url || '').trim() : '';
+  const apkSize = (appSettings.app_apk_size || settings.app_apk_size || '').trim();
+  const apkSha = (appSettings.app_apk_sha256 || settings.app_apk_sha256 || '').trim();
 
   // iOS parameters
-  const iosDirectEnabled = isSettingEnabled(settings.app_ios_direct_install_enable);
-  const iosDirectUrl = iosDirectEnabled ? (settings.app_ios_download_url || '').trim() : '';
-  const iosIpaEnabled = isSettingEnabled(settings.app_ios_ipa_download_enable);
-  const iosIpaUrl = iosIpaEnabled ? (settings.app_ios_ipa_url || '').trim() : '';
+  const iosDirectEnabled = isSettingEnabled(appSettings.app_ios_direct_install_enable ?? settings.app_ios_direct_install_enable);
+  const iosDirectUrl = iosDirectEnabled ? (appSettings.app_ios_download_url || settings.app_ios_download_url || '').trim() : '';
+  const iosIpaEnabled = isSettingEnabled(appSettings.app_ios_ipa_download_enable ?? settings.app_ios_ipa_download_enable);
+  const iosIpaUrl = iosIpaEnabled ? (appSettings.app_ios_ipa_url || settings.app_ios_ipa_url || '').trim() : '';
   const iosQrUrl = iosIpaUrl || iosDirectUrl || (typeof window !== 'undefined' ? `${window.location.origin}/tai-app` : 'https://dongmephim.online/tai-app');
 
   // Play Store & App Store parameters
-  const playStoreEnabled = isSettingEnabled(settings.app_google_play_enable);
-  const playStoreUrl = playStoreEnabled ? (settings.app_google_play_url || '').trim() : '';
-  const appStoreEnabled = isSettingEnabled(settings.app_app_store_enable);
-  const appStoreUrl = appStoreEnabled ? (settings.app_app_store_url || '').trim() : '';
+  const playStoreEnabled = isSettingEnabled(appSettings.app_google_play_enable ?? settings.app_google_play_enable);
+  const playStoreUrl = playStoreEnabled ? (appSettings.app_google_play_url || settings.app_google_play_url || '').trim() : '';
+  const appStoreEnabled = isSettingEnabled(appSettings.app_app_store_enable ?? settings.app_app_store_enable);
+  const appStoreUrl = appStoreEnabled ? (appSettings.app_app_store_url || settings.app_app_store_url || '').trim() : '';
 
   // Smart TV parameters
-  const smartTvEnabled = isSettingEnabled(settings.app_smart_tv_enable);
-  const smartTvUrl = smartTvEnabled ? (settings.app_smart_tv_url || '').trim() : '';
-  const smartTvSize = (settings.app_smart_tv_size || '').trim();
-  const smartTvSha = (settings.app_smart_tv_sha256 || '').trim();
+  const smartTvEnabled = isSettingEnabled(appSettings.app_smart_tv_enable ?? settings.app_smart_tv_enable);
+  const smartTvUrl = smartTvEnabled ? (appSettings.app_smart_tv_url || settings.app_smart_tv_url || '').trim() : '';
+  const smartTvSize = (appSettings.app_smart_tv_size || settings.app_smart_tv_size || '').trim();
+  const smartTvSha = (appSettings.app_smart_tv_sha256 || settings.app_smart_tv_sha256 || '').trim();
 
   // Windows parameters
-  const windowsEnabled = isSettingEnabled(settings.app_windows_download_enable);
-  const windowsUrl = windowsEnabled ? (settings.app_windows_download_url || '').trim() : '';
-  const windowsSize = (settings.app_windows_size || '').trim();
-  const windowsSha = (settings.app_windows_sha256 || '').trim();
+  const windowsEnabled = isSettingEnabled(appSettings.app_windows_download_enable ?? settings.app_windows_download_enable);
+  const windowsUrl = windowsEnabled ? (appSettings.app_windows_download_url || settings.app_windows_download_url || '').trim() : '';
+  const windowsSize = (appSettings.app_windows_size || settings.app_windows_size || '').trim();
+  const windowsSha = (appSettings.app_windows_sha256 || settings.app_windows_sha256 || '').trim();
 
   const showAndroidTab = androidEnabled && androidUrl;
   const showIosOtaTab = iosDirectEnabled && iosDirectUrl;
@@ -103,6 +104,27 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
     } else if (showSmartTvTab) {
       setActiveTab('smart_tv');
     }
+
+    // Live sync from Supabase API in client
+    fetch('/api/app/check-update')
+      .then(res => res.json())
+      .then((json: any) => {
+        if (json && json.status === 'success' && json.data) {
+          const data = json.data;
+          setAppSettings((prev: any) => ({
+            ...prev,
+            app_version: data.latest_version || prev.app_version,
+            app_android_download_url: data.apk_url || prev.app_android_download_url,
+            app_windows_download_url: data.windows_download_url || prev.app_windows_download_url,
+            app_ios_ipa_url: data.ios_ipa_url || prev.app_ios_ipa_url,
+            app_ios_download_url: data.ios_download_url || prev.app_ios_download_url,
+            app_google_play_url: data.google_play_url || prev.app_google_play_url,
+            app_app_store_url: data.app_store_url || prev.app_app_store_url,
+            app_smart_tv_url: data.smart_tv_url || prev.app_smart_tv_url,
+          }));
+        }
+      })
+      .catch(() => {});
   }, [showWindowsTab, showAndroidTab, showIosOtaTab, showIosIpaTab, showSmartTvTab]);
 
   const getPlayStoreBadge = () => "https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg";
@@ -115,12 +137,12 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
     return (num / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
-  // Common parameters - ưu tiên lấy từ danh sách changelogs
-  const changelogs = Array.isArray(settings.app_changelogs) && settings.app_changelogs.length > 0
-    ? settings.app_changelogs
+  // Common parameters - lấy từ Supabase
+  const changelogs = Array.isArray(appSettings.app_changelogs) && appSettings.app_changelogs.length > 0
+    ? appSettings.app_changelogs
     : null;
-  const appVersion = changelogs ? (changelogs[0]?.version || settings.app_version || '5.7.0') : (settings.app_version || '5.7.0');
-  const releaseNotes = settings.app_release_notes || '🚀 Bản cập nhật mới hiệu năng vượt trội!';
+  const appVersion = appSettings.app_version || (changelogs ? changelogs[0]?.version : '5.7.0') || '5.7.0';
+  const releaseNotes = appSettings.app_release_notes || '🚀 Bản cập nhật mới hiệu năng vượt trội!';
   const releaseNotesLines = releaseNotes.split('\\n');
 
   const renderChangelog = () => (
