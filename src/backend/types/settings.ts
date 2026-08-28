@@ -199,6 +199,7 @@ export interface SubscriptionPlan {
 }
 
 export interface AdSettings {
+  admob_rewarded_ad_id: string | undefined;
   pre_roll_enable: boolean;
   pre_roll_type: 'video' | 'embed';
   pre_roll_url: string;
@@ -221,8 +222,14 @@ export interface AdSettings {
   admob_preroll_ad_id_ios?: string;
   admob_rewarded_ad_id_android?: string;
   admob_rewarded_ad_id_ios?: string;
+  admob_rewarded_ad_free_id_android?: string;
+  admob_rewarded_ad_free_id_ios?: string;
   admob_banner_ad_id_android?: string;
   admob_banner_ad_id_ios?: string;
+  admob_ad_free_enable?: boolean;
+  admob_ad_free_required_ads?: number;
+  admob_ad_free_duration_hours?: number;
+  admob_ad_free_max_stack_hours?: number;
 }
 
 export interface DiscordSettings {
