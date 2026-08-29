@@ -116,17 +116,9 @@ const TxaTooltip: React.FC<{
   return (
     <div
       data-txatooltip={tooltipText}
-      className={`relative group/txatt inline-flex items-center justify-center shrink-0 ${className}`}
+      className={`relative inline-flex items-center justify-center shrink-0 ${className}`}
     >
       {children}
-      <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/txatt:opacity-100 transition-all duration-150 transform scale-90 group-hover/txatt:scale-100 z-50 whitespace-nowrap hidden md:flex items-center gap-1.5 bg-[#0f0f14]/95 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-white/15 shadow-2xl backdrop-blur-md">
-        <span>{title}</span>
-        {shortcut && (
-          <span className="bg-white/15 text-white/90 text-[10px] font-mono px-1.5 py-0.2 rounded border border-white/20">
-            {shortcut}
-          </span>
-        )}
-      </div>
     </div>
   );
 };
@@ -1062,6 +1054,33 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
     };
   }, [resetControlsTimer]);
 
+  // Close popups and context menu when clicking outside
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        target.closest &&
+        (target.closest('.txa-popup-container') || target.closest('.txa-context-menu') || target.closest('.txa-menu-toggle-btn'))
+      ) {
+        return;
+      }
+      setActiveMenu(null);
+      setContextMenuPos(null);
+    };
+
+    if (activeMenu || contextMenuPos) {
+      window.addEventListener('click', handleGlobalClick);
+      window.addEventListener('contextmenu', handleGlobalClick);
+      window.addEventListener('touchstart', handleGlobalClick);
+    }
+    return () => {
+      window.removeEventListener('click', handleGlobalClick);
+      window.removeEventListener('contextmenu', handleGlobalClick);
+      window.removeEventListener('touchstart', handleGlobalClick);
+    };
+  }, [activeMenu, contextMenuPos]);
+
   // Comprehensive Desktop Keyboard Hotkeys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1524,6 +1543,11 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
         onPlaying={() => setIsBuffering(false)}
         onClick={e => {
           e.stopPropagation();
+          if (activeMenu || contextMenuPos) {
+            setActiveMenu(null);
+            setContextMenuPos(null);
+            return;
+          }
           togglePlay();
         }}
         onDoubleClick={e => {
@@ -1687,7 +1711,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
           ======================================================== */}
       {activeMenu === 'subtitles' && (
         <div
-          className="absolute z-50 bottom-16 sm:bottom-18 right-3 sm:right-6 bg-[#0f0f14]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-3 sm:p-4 shadow-2xl w-[360px] max-w-[calc(100vw-24px)] text-white"
+          className="txa-popup-container absolute z-50 bottom-16 sm:bottom-18 right-3 sm:right-6 bg-[#0f0f14]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-3 sm:p-4 shadow-2xl w-[360px] max-w-[calc(100vw-24px)] text-white"
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
@@ -1802,7 +1826,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
           ======================================================== */}
       {activeMenu === 'settings' && (
         <div
-          className="absolute z-50 bottom-16 sm:bottom-18 right-3 sm:right-6 bg-[#0f0f14]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-3 sm:p-4 shadow-2xl w-[320px] max-w-[calc(100vw-24px)] text-white text-xs font-sans"
+          className="txa-popup-container absolute z-50 bottom-16 sm:bottom-18 right-3 sm:right-6 bg-[#0f0f14]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-3 sm:p-4 shadow-2xl w-[320px] max-w-[calc(100vw-24px)] text-white text-xs font-sans"
           onClick={e => e.stopPropagation()}
         >
           {/* VIEW 1: MAIN SETTINGS MENU (Image 3) */}
@@ -2402,9 +2426,13 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
             {tracks.length > 0 && (
               <TxaTooltip title="Phụ đề" shortcut="C">
                 <button
-                  onClick={() => setActiveMenu(activeMenu === 'subtitles' ? null : 'subtitles')}
+                  onClick={e => {
+                    e.stopPropagation();
+                    setActiveMenu(activeMenu === 'subtitles' ? null : 'subtitles');
+                    if (contextMenuPos) setContextMenuPos(null);
+                  }}
                   data-txatooltip="Phụ đề (C)"
-                  className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${
+                  className={`txa-menu-toggle-btn w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${
                     activeMenu === 'subtitles' || subMode !== 'off'
                       ? 'bg-[#0284c7]/20 text-[#38bdf8] border border-[#38bdf8]/30 shadow-[0_0_12px_rgba(2,132,199,0.3)]'
                       : 'bg-white/5 hover:bg-white/10 text-white/90'
@@ -2457,16 +2485,18 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
             {/* Settings Gear Icon [⚙️] */}
             <TxaTooltip title="Cài đặt" shortcut="S">
               <button
-                onClick={() => {
+                onClick={e => {
+                  e.stopPropagation();
                   if (activeMenu === 'settings') {
                     setActiveMenu(null);
                   } else {
                     setActiveMenu('settings');
                     setSettingsView('main');
                   }
+                  if (contextMenuPos) setContextMenuPos(null);
                 }}
                 data-txatooltip="Cài đặt (S)"
-                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${
+                className={`txa-menu-toggle-btn w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${
                   activeMenu === 'settings' ? 'bg-[#7c3aed] text-white' : 'bg-white/5 hover:bg-white/10 text-white/90'
                 }`}
               >
@@ -2495,7 +2525,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
           ======================================================== */}
       {contextMenuPos && (
         <div
-          className="absolute z-50 bg-[#0f0f14]/95 backdrop-blur-2xl border border-white/15 rounded-2xl p-1.5 shadow-2xl w-[230px] text-white text-xs font-sans select-none animate-scale-in"
+          className="txa-context-menu absolute z-50 bg-[#0f0f14]/95 backdrop-blur-2xl border border-white/15 rounded-2xl p-1.5 shadow-2xl w-[230px] text-white text-xs font-sans select-none animate-scale-in"
           style={{ left: `${contextMenuPos.x}px`, top: `${contextMenuPos.y}px` }}
           onClick={e => e.stopPropagation()}
         >
