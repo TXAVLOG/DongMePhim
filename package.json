@@ -29,6 +29,7 @@
 		"astro": "^6.4.8",
 		"clsx": "^2.1.1",
 		"edge-tts-universal": "^1.4.0",
+		"hls.js": "^1.7.1",
 		"lucide-react": "^1.21.0",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",

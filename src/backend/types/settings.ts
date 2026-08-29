@@ -48,6 +48,10 @@ export interface TelegramSettings {
 
 export interface AppSettings {
   app_version: string;
+  app_min_version?: string;
+  min_version?: string;
+  app_force_update?: boolean;
+  force_update?: boolean;
   app_release_notes: string;
   app_changelogs: { version: string; date: string; title: string; content: string }[];
   app_android_download_enable: boolean;
@@ -138,7 +142,6 @@ export interface LuckyDrawSettings {
 export interface PaymentSettings {
   sepay_sandbox_api_key: string;
   sandbox_mode: boolean;
-  sepay_sandbox_mode?: boolean;
   payos_enable: boolean;
   payos_client_id: string;
   payos_api_key: string;
@@ -199,7 +202,7 @@ export interface SubscriptionPlan {
 }
 
 export interface AdSettings {
-  admob_rewarded_ad_id: string | undefined;
+  admob_rewarded_ad_id?: string;
   pre_roll_enable: boolean;
   pre_roll_type: 'video' | 'embed';
   pre_roll_url: string;

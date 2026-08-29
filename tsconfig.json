@@ -6,23 +6,41 @@
     "./worker-configuration.d.ts"
   ],
   "exclude": [
-    "dist"
+    "dist",
+    "node_modules",
+    ".astro"
   ],
   "compilerOptions": {
     "types": [
       "./worker-configuration.d.ts",
-      "node"
+      "node",
+      "astro/client"
     ],
-    "baseUrl": ".",
     "paths": {
-      "@components/*": ["src/frontend/components/*"],
-      "@layouts/*": ["src/frontend/layouts/*"],
-      "@styles/*": ["src/frontend/styles/*"],
-      "@templates/*": ["src/frontend/templates/*"],
-      "@services/*": ["src/backend/services/*"],
-      "@apptypes/*": ["src/backend/types/*"],
-      "@lib/*": ["src/backend/lib/*"],
-      "@data/*": ["src/backend/data/*"]
+      "@components/*": [
+        "./src/frontend/components/*"
+      ],
+      "@layouts/*": [
+        "./src/frontend/layouts/*"
+      ],
+      "@styles/*": [
+        "./src/frontend/styles/*"
+      ],
+      "@templates/*": [
+        "./src/frontend/templates/*"
+      ],
+      "@services/*": [
+        "./src/backend/services/*"
+      ],
+      "@apptypes/*": [
+        "./src/backend/types/*"
+      ],
+      "@lib/*": [
+        "./src/backend/lib/*"
+      ],
+      "@data/*": [
+        "./src/backend/data/*"
+      ]
     }
   }
 }

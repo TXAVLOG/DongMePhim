@@ -586,7 +586,7 @@ export function mergeMovieEpisodes(existingServers: any[], newServers: any[]): a
         }))
       };
     })
-    .filter(server => server.serverData.length > 0);
+    .filter((server: any) => server.serverData.length > 0);
 }
 
 export function mapKKPhimToMovieDetail(data: any, source: string = 'kkphim'): MovieDetail {

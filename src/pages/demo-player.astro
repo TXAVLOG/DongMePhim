@@ -1,6 +1,6 @@
 ---
 import MainLayout from '@layouts/MainLayout.astro';
-import { TXAPlayer } from '@txa/txaplayer';
+import { TXAPlayer } from '@components/player/TXAPlayer';
 import { MovieService } from '@services/MovieService';
 import { SettingService } from '@services/SettingService';
 
@@ -26,14 +26,14 @@ const subtitles = [
 ];
 ---
 
-<MainLayout title={`Demo Player Song Ngữ: ${title} | ${settings.general.site_name || 'WebFilm'}`}>
+<MainLayout title={`Demo TXAPlayer Song Ngữ: ${title} | ${settings.general.site_name || 'WebFilm'}`}>
   <div class="max-w-container-max mx-auto px-gutter py-section-gap pt-24 pb-20 w-full flex-1">
     <div class="flex items-center gap-3 mb-6">
       <a href="/" class="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-glass-stroke hover:bg-white/10 hover:border-white/20 transition-all duration-300 active:scale-95 group" data-txatooltip="Quay lại trang chủ">
         <span class="material-symbols-outlined text-white text-[20px] transition-transform duration-300 group-hover:-translate-x-0.5" style="font-variation-settings: 'FILL' 0, 'wght' 600;">chevron_left</span>
       </a>
       <h1 class="text-lg md:text-xl font-outfit font-bold text-white tracking-tight flex items-center gap-2">
-        <span class="text-white/60 font-normal">Trang Demo Song Ngữ (TXAPlayer)</span>
+        <span class="text-[#a78bfa] font-semibold">Demo TXAPlayer:</span>
         <span>{title}</span>
       </h1>
     </div>
@@ -60,26 +60,22 @@ const subtitles = [
         timeIntroEnd={90}
         timeOutroStart={4700}
         timeOutroEnd={4850}
-        adSettings={settings.ads}
-        movieSlug="ke-trom-mat-trang-2"
-        episodeSlug="full"
       />
     </div>
 
     <div class="mt-8 backdrop-blur-md bg-white/5 border border-glass-stroke rounded-2xl p-6 shadow-xl max-w-3xl">
       <h2 class="text-white font-bold font-outfit text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
         <span class="material-symbols-outlined text-[#7c3aed] text-lg">info</span>
-        Hướng dẫn kiểm thử song ngữ & Storyboard
+        Hướng dẫn kiểm thử tính năng TXAPlayer
       </h2>
       <ul class="text-zinc-400 text-xs space-y-2.5 leading-relaxed font-sans list-disc list-inside">
-        <li>Trình phát phát luồng HLS chất lượng cao Kẻ Trộm Mặt Trăng 2 (Despicable Me 2).</li>
-        <li>Bật/tắt phụ đề song ngữ bằng trình chọn CC (chọn Tiếng Việt hoặc Korean).</li>
-        <li>Di chuột lên thanh tua (seek bar) để kiểm tra <strong class="text-white">ảnh xem trước Storyboard</strong> chính xác (160x90px, lưới 10x10, mỗi 10 giây).</li>
-        <li>Đổi các độ phân giải (1080p, 720p, 480p) trong nút răng cưa để kiểm tra đổi chất lượng.</li>
-        <li>Tua đến giây thứ <strong class="text-white">15</strong> để test Skip Intro (hoặc bật tự động skip intro).</li>
-        <li>Xem video một lát, sau đó tải lại trang để kiểm tra <strong class="text-white">Popup Modal phát tiếp (Resume)</strong>.</li>
+        <li>Trình phát HLS phát luồng adaptive chất lượng cao chuẩn Master Playlist (1080p/720p/480p).</li>
+        <li><strong class="text-white">Phụ đề & Song ngữ:</strong> Nút phụ đề ở thanh điều khiển hỗ trợ 3 chế độ (Bật, Song ngữ, Tắt), chọn track riêng cho phụ đề chính và phụ đề phụ. Hỗ trợ tải file srt/vtt từ máy tính.</li>
+        <li><strong class="text-white">Cài đặt giao diện & Menu:</strong> Nút bánh răng mở menu cài đặt (Tốc độ, Cấu hình âm thanh, Tùy chỉnh phụ đề, Thuyết minh AI, Tự động Skip).</li>
+        <li><strong class="text-white">Cấu hình âm thanh:</strong> Thuyết minh AI, Âm thanh vòm 3D, Tối ưu EQ giọng nói & bass, và thanh trượt Khuếch đại âm lượng lên đến 200%.</li>
+        <li><strong class="text-white">Storyboard:</strong> Di chuột trên thanh tua để xem ảnh thumbnail storyboard tương ứng theo thời gian.</li>
+        <li><strong class="text-white">Intro / Outro:</strong> Vùng highlight màu xanh và đỏ trên thanh tua, tự động skip hoặc nút bỏ qua giới thiệu/kết phim.</li>
       </ul>
     </div>
   </div>
 </MainLayout>
-

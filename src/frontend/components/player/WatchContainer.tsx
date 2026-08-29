@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ArtPlayer } from './ArtPlayer';
-import { TXAPlayer } from '@txa/txaplayer';
+import { TXAPlayer } from './TXAPlayer';
 import type { MovieDetail, Episode } from '@apptypes/movie';
 import { TxaModal } from '../ui/txamodal';
 import { supabase } from '@lib/supabase';
@@ -2845,6 +2845,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           {/* Yêu thích */}
           <button 
             onClick={toggleFavorite} 
+            data-txatooltip={isFavorited ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích'}
             className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
           >
             <span className={`material-symbols-outlined text-[18px] ${isFavorited ? 'text-rose-500 fill-rose-500' : ''}`} style={{ fontVariationSettings: isFavorited ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
@@ -2854,6 +2855,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           {/* Thêm vào */}
           <button 
             onClick={togglePlaylist} 
+            data-txatooltip={isInPlaylist ? 'Xóa khỏi danh sách phát' : 'Thêm vào danh sách phát'}
             className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
           >
             <span className={`material-symbols-outlined text-[18px] ${isInPlaylist ? 'text-primary fill-primary' : ''}`} style={{ fontVariationSettings: isInPlaylist ? "'FILL' 1" : "'FILL' 0" }}>{isInPlaylist ? 'bookmark_added' : 'bookmark_add'}</span>
@@ -2863,6 +2865,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           {/* Chuyển tập */}
           <button 
             onClick={toggleAutoNext}
+            data-txatooltip="Tự động chuyển tập khi hết phim"
             className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
           >
             <span>Chuyển tập</span>
@@ -2874,6 +2877,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           {/* Bỏ qua giới thiệu */}
           <button 
             onClick={toggleAutoSkip}
+            data-txatooltip="Tự động bỏ qua đoạn intro/outro"
             className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
           >
             <span>Bỏ qua giới thiệu</span>
@@ -2885,6 +2889,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           {/* Rạp phim */}
           <button 
             onClick={toggleCinemaMode}
+            data-txatooltip="Chế độ rạp phim (tối nền xung quanh)"
             className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
           >
             <span>Rạp phim</span>
@@ -2905,6 +2910,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
                 (window as any).showGlobalToast(`Đã chuyển sang trình phát ${nextPlayer === 'txaplayer' ? 'TXAPlayer' : 'ArtPlayer'}!`, 'success');
               }
             }}
+            data-txatooltip="Chuyển đổi giữa trình phát TXAPlayer và ArtPlayer"
             className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
           >
             <span>Trình phát</span>
@@ -2918,6 +2924,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
             <button 
               onClick={handleDownloadOffline}
               disabled={downloadState[resolvePlayUrl(currentEpisode)] === 'downloading'}
+              data-txatooltip="Tải video về xem offline khi không có mạng"
               className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className={`material-symbols-outlined text-[18px] ${downloadState[resolvePlayUrl(currentEpisode)] === 'completed' ? 'text-green-500' : downloadState[resolvePlayUrl(currentEpisode)] === 'downloading' ? 'animate-spin text-amber-500' : ''}`}>
@@ -2937,6 +2944,7 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
           {/* Chia sẻ */}
           <button 
             onClick={handleShare}
+            data-txatooltip="Chia sẻ phim lên mạng xã hội hoặc sao chép liên kết"
             className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0 text-zinc-300"
           >
             <span className="material-symbols-outlined text-[18px]">share</span>
