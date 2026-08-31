@@ -110,11 +110,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return apiResponse({
       success: true,
       watch_time_added: watchTimeAdded,
+      old_time: oldTime,
+      new_time: newTime,
       current_time: newTime,
       duration: parseFloat(duration) || 0,
       movie_title: movie.title,
       episode_name: episodeName
-    }, 'success', `Đã lưu tiến độ xem (Cộng dồn +${watchTimeAdded}s vào CSDL)`, 200, request, true);
+    }, 'success', `Đã lưu tiến độ xem (Cộng dồn +${watchTimeAdded}s từ ${Math.round(oldTime)}s lên ${Math.round(newTime)}s)`, 200, request, true);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
