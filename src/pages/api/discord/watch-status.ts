@@ -3,6 +3,7 @@ import { apiResponse } from '@lib/api/response';
 import { supabase } from '@lib/supabase';
 import { verifyUserFromRequest } from '@lib/auth';
 import { SettingService } from '@services/SettingService';
+import { TxaJsonDb } from '@services/TxaJsonDb';
 
 // Bảng lưu thông tin xem phim gần nhất của từng user trên Discord
 const userWatchMessageMap = new Map<string, { watchKey: string; messageId: string; modLogMessageId?: string }>();
@@ -51,10 +52,34 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return apiResponse({ sent: false, reason: 'Chưa cấu hình Bot Token' }, 'success', '', 200, request);
     }
 
-    const channelDangXem = discord.channels?.dang_xem;
+    const localConfig = await TxaJsonDb.getDiscordConfig();
+    let channelDangXem = discord.channels?.dang_xem || discord.channels?.dangxem || localConfig?.channels?.dang_xem;
+    let channelModLog = discord.channels?.mod_log || discord.channels?.modlog || localConfig?.channels?.mod_log;
 
-    if (!channelDangXem) {
-      return apiResponse({ sent: false, reason: 'Chưa cấu hình kênh đang xem (#dang-xem)' }, 'success', '', 200, request);
+    // Tự động tìm ID kênh nếu chưa cấu hình chính xác
+    if ((!channelDangXem || !channelModLog) && discord.guild_id) {
+      try {
+        const chRes = await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/channels`, {
+          headers: { 'Authorization': `Bot ${discord.bot_token}` }
+        });
+        if (chRes.ok) {
+          const list: any[] = await chRes.json();
+          if (!channelDangXem) {
+            const foundDangXem = list.find((c: any) => c.type === 0 && (c.name === 'dang-xem' || c.name === 'dang_xem' || c.name.includes('dang-xem') || c.name.includes('đang-xem')));
+            if (foundDangXem) channelDangXem = foundDangXem.id;
+          }
+          if (!channelModLog) {
+            const foundModLog = list.find((c: any) => c.type === 0 && (c.name === 'mod-log' || c.name === 'mod_log'));
+            if (foundModLog) channelModLog = foundModLog.id;
+          }
+        }
+      } catch (e) {
+        console.warn('Lỗi khi fetch guild channels từ Discord:', e);
+      }
+    }
+
+    if (!channelDangXem && !channelModLog) {
+      return apiResponse({ sent: false, reason: 'Chưa tìm thấy kênh Discord (#dang-xem hoặc #mod-log)' }, 'success', '', 200, request);
     }
 
     // 3. Chuẩn hóa tên tập để tránh lặp từ "tập Tập"
@@ -78,68 +103,55 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     };
 
-    // 4. Kiểm tra xem có thể edit tin nhắn cũ không
-    const existingMessageId = lastMessageId || userCache?.messageId;
-    let finalMessageId: string | null = null;
-    let isUpdated = false;
+    // 4. Gửi hoặc chỉnh sửa tin nhắn trạng thái tại kênh #dang-xem
+    if (channelDangXem) {
+      if (existingMessageId) {
+        try {
+          const patchRes = await fetch(`https://discord.com/api/v10/channels/${channelDangXem}/messages/${existingMessageId}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bot ${discord.bot_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content, embeds: [embed] })
+          });
 
-    if (existingMessageId) {
-      try {
-        const patchRes = await fetch(`https://discord.com/api/v10/channels/${channelDangXem}/messages/${existingMessageId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bot ${discord.bot_token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ content, embeds: [embed] })
-        });
-
-        if (patchRes.ok) {
-          const patchData: any = await patchRes.json();
-          finalMessageId = patchData.id || existingMessageId;
-          isUpdated = true;
+          if (patchRes.ok) {
+            const patchData: any = await patchRes.json();
+            finalMessageId = patchData.id || existingMessageId;
+            isUpdated = true;
+          }
+        } catch (patchErr) {
+          console.warn('Không thể edit tin nhắn xem phim cũ trên Discord (#dang-xem):', patchErr);
         }
-      } catch (patchErr) {
-        console.warn('Không thể edit tin nhắn xem phim cũ trên Discord:', patchErr);
       }
-    }
 
-    // Nếu không edit được (hoặc chưa có tin nhắn cũ), gửi tin nhắn mới
-    if (!isUpdated) {
-      const postRes = await fetch(`https://discord.com/api/v10/channels/${channelDangXem}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bot ${discord.bot_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ content, embeds: [embed] })
-      });
+      // Nếu không edit được (hoặc chưa có tin nhắn cũ), gửi tin nhắn mới
+      if (!isUpdated) {
+        try {
+          const postRes = await fetch(`https://discord.com/api/v10/channels/${channelDangXem}/messages`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bot ${discord.bot_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content, embeds: [embed] })
+          });
 
-      if (postRes.ok) {
-        const postData: any = await postRes.json();
-        finalMessageId = postData.id;
-      } else {
-        const errTxt = await postRes.text();
-        console.warn(`Lỗi khi gửi watch-status lên Discord: ${postRes.status} - ${errTxt}`);
-        return apiResponse({ sent: false, error: errTxt }, 'success', '', 200, request);
+          if (postRes.ok) {
+            const postData: any = await postRes.json();
+            finalMessageId = postData.id;
+          } else {
+            const errTxt = await postRes.text();
+            console.warn(`Lỗi khi gửi watch-status tới #dang-xem: ${postRes.status} - ${errTxt}`);
+          }
+        } catch (postErr) {
+          console.warn('Lỗi kết nối khi gửi watch-status tới #dang-xem:', postErr);
+        }
       }
     }
 
     // 5. Gửi hoặc chỉnh sửa nhật ký theo dõi riêng tới kênh #mod-log (tránh spam)
-    let channelModLog = discord.channels?.mod_log || discord.channels?.modlog;
-    if (!channelModLog && discord.guild_id) {
-      try {
-        const chRes = await fetch(`https://discord.com/api/v10/guilds/${discord.guild_id}/channels`, {
-          headers: { 'Authorization': `Bot ${discord.bot_token}` }
-        });
-        if (chRes.ok) {
-          const list: any[] = await chRes.json();
-          const found = list.find((c: any) => c.type === 0 && (c.name === 'mod-log' || c.name === 'mod_log'));
-          if (found) channelModLog = found.id;
-        }
-      } catch (e) {}
-    }
-
     let finalModLogId: string | undefined = userCache?.modLogMessageId;
     if (channelModLog) {
       try {
