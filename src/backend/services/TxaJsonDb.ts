@@ -3,12 +3,11 @@ import { SettingService } from './SettingService';
 function getFsAndPath() {
   if (typeof process !== 'undefined' && typeof process.cwd === 'function') {
     try {
-      // Use indirect eval to prevent bundlers from attempting to resolve Node.js fs/path statically.
-      const indirectEval = (0, eval);
-      const req = indirectEval('require');
+      // Use dynamic require to prevent bundlers from attempting to resolve Node.js fs/path statically.
+      const dynamicRequire = new Function('moduleName', 'return require(moduleName)');
       return {
-        fs: req('fs'),
-        path: req('path')
+        fs: dynamicRequire('fs'),
+        path: dynamicRequire('path')
       };
     } catch (e) {
       // Fallback
