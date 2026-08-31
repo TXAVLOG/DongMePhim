@@ -3,8 +3,9 @@ import { SettingService } from './SettingService';
 function getFsAndPath() {
   if (typeof process !== 'undefined' && typeof process.cwd === 'function') {
     try {
-      // Use eval('require') to prevent Cloudflare/Vite/Esbuild bundlers from attempting to resolve/bundle Node.js fs/path modules statically.
-      const req = eval('require');
+      // Use indirect eval to prevent bundlers from attempting to resolve Node.js fs/path statically.
+      const indirectEval = (0, eval);
+      const req = indirectEval('require');
       return {
         fs: req('fs'),
         path: req('path')

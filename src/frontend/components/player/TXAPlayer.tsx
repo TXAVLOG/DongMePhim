@@ -329,7 +329,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
             return;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
 
       // Fallback if local API is unreachable
       try {
@@ -340,7 +340,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
             setDisplayIp(data.ip);
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     };
 
     fetchIp();
@@ -366,7 +366,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
       try {
         const stored = localStorage.getItem('tsettings');
         if (stored) return !!JSON.parse(stored).autoSkip;
-      } catch (e) {}
+      } catch (e) { }
     }
     return false;
   });
@@ -745,7 +745,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
         const urlObj = new URL(realUrl);
         const streamParam = urlObj.searchParams.get('url');
         if (streamParam) realUrl = decodeURIComponent(streamParam);
-      } catch (e) {}
+      } catch (e) { }
     }
     if (realUrl.includes('webfilm.txasoftdev.workers.dev/txa_media/')) {
       realUrl = realUrl.replace('https://webfilm.txasoftdev.workers.dev/txa_media/', 'https://pub-23023fab408a4b7aa2786bfde1d472d9.r2.dev/txa_media/');
@@ -797,7 +797,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
           }
 
           if (isAutoPlay) {
-            video.play().catch(() => {});
+            video.play().catch(() => { });
           }
         });
 
@@ -815,11 +815,11 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = realUrl;
         if (currentTime > 0) video.currentTime = currentTime;
-        if (isAutoPlay) video.play().catch(() => {});
+        if (isAutoPlay) video.play().catch(() => { });
       } else {
         video.src = realUrl;
         if (currentTime > 0) video.currentTime = currentTime;
-        if (isAutoPlay) video.play().catch(() => {});
+        if (isAutoPlay) video.play().catch(() => { });
       }
     };
 
@@ -949,7 +949,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     } else {
       video.pause();
     }
@@ -1006,10 +1006,10 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
     const container = containerRef.current;
     if (!container) return;
     if (!document.fullscreenElement) {
-      container.requestFullscreen().catch(() => {});
+      container.requestFullscreen().catch(() => { });
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { });
       setIsFullscreen(false);
     }
   };
@@ -1730,9 +1730,8 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
                         setSubMode(m);
                         localStorage.setItem('txa_sub_mode', m);
                       }}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all border-none ${
-                        isActive ? 'bg-white text-black font-bold shadow' : 'bg-transparent text-white/70 hover:text-white'
-                      }`}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all border-none ${isActive ? 'bg-white text-black font-bold shadow' : 'bg-transparent text-white/70 hover:text-white'
+                        }`}
                     >
                       {label}
                     </button>
@@ -1775,9 +1774,8 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
                             }
                           }
                         }}
-                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
-                          isSelected ? 'bg-white/10 font-bold text-[#ffeb3b]' : 'text-white/80 hover:bg-white/5'
-                        }`}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${isSelected ? 'bg-white/10 font-bold text-[#ffeb3b]' : 'text-white/80 hover:bg-white/5'
+                          }`}
                       >
                         <span className="truncate">{t.label}</span>
                         {isSelected && <span className="material-symbols-outlined text-[14px] text-[#ffeb3b]">check</span>}
@@ -1801,9 +1799,8 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
                           setSecondarySubIdx(idx);
                           localStorage.setItem('txa_sub_secondary_idx', String(idx));
                         }}
-                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
-                          isSelected ? 'bg-white/10 font-bold text-[#ffeb3b]' : 'text-white/80 hover:bg-white/5'
-                        }`}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${isSelected ? 'bg-white/10 font-bold text-[#ffeb3b]' : 'text-white/80 hover:bg-white/5'
+                          }`}
                       >
                         <span className="truncate">{t.label}</span>
                         {isSelected && <span className="material-symbols-outlined text-[14px] text-[#ffeb3b]">check</span>}
@@ -1914,7 +1911,7 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
                     const parsed = stored ? JSON.parse(stored) : {};
                     parsed.autoSkip = nextVal;
                     localStorage.setItem('tsettings', JSON.stringify(parsed));
-                  } catch (e) {}
+                  } catch (e) { }
                   showNotice(`Tự động Skip: ${nextVal ? 'Bật' : 'Tắt'}`);
                 }}
                 className="flex items-center justify-between py-2 px-2 hover:bg-white/5 rounded-xl cursor-pointer"
@@ -2213,9 +2210,8 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
                         detailSettingsConfig[activeDetailKey].onChange(opt.value);
                         setSettingsView(activeDetailKey.startsWith('primary') ? 'sub-primary' : 'sub-secondary');
                       }}
-                      className={`flex items-center justify-between py-2 px-2.5 rounded-xl cursor-pointer ${
-                        isSelected ? 'bg-white/10 text-[#7c3aed] font-bold' : 'text-white/80 hover:bg-white/5'
-                      }`}
+                      className={`flex items-center justify-between py-2 px-2.5 rounded-xl cursor-pointer ${isSelected ? 'bg-white/10 text-[#7c3aed] font-bold' : 'text-white/80 hover:bg-white/5'
+                        }`}
                     >
                       <span>{opt.label}</span>
                       {isSelected && <span className="material-symbols-outlined text-[16px] text-[#7c3aed]">check</span>}
@@ -2232,9 +2228,8 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
           BOTTOM CONTROL BAR & SEEKBAR
           ======================================================== */}
       <div
-        className={`absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black/95 via-black/60 to-transparent pt-8 pb-3.5 px-4 transition-opacity duration-300 ${
-          isControlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black/95 via-black/60 to-transparent pt-8 pb-3.5 px-4 transition-opacity duration-300 ${isControlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={e => e.stopPropagation()}
       >
         {/* Storyboard Scrubbing Preview Tooltip */}
@@ -2432,11 +2427,10 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
                     if (contextMenuPos) setContextMenuPos(null);
                   }}
                   data-txatooltip="Phụ đề (C)"
-                  className={`txa-menu-toggle-btn w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${
-                    activeMenu === 'subtitles' || subMode !== 'off'
+                  className={`txa-menu-toggle-btn w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${activeMenu === 'subtitles' || subMode !== 'off'
                       ? 'bg-[#0284c7]/20 text-[#38bdf8] border border-[#38bdf8]/30 shadow-[0_0_12px_rgba(2,132,199,0.3)]'
                       : 'bg-white/5 hover:bg-white/10 text-white/90'
-                  }`}
+                    }`}
                 >
                   <span className="material-symbols-outlined text-[16px] sm:text-[19px]">subtitles</span>
                 </button>
@@ -2453,11 +2447,10 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
                   showNotice(`Thuyết minh AI: ${nextVal ? 'Bật' : 'Tắt'}`);
                 }}
                 data-txatooltip="Thuyết minh AI (V)"
-                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${
-                  aiVoiceover
+                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${aiVoiceover
                     ? 'bg-[#7c3aed] text-white shadow-[0_0_12px_rgba(124,58,237,0.6)]'
                     : 'bg-white/5 hover:bg-white/10 text-white/90'
-                }`}
+                  }`}
               >
                 <span className="material-symbols-outlined text-[16px] sm:text-[19px]">record_voice_over</span>
               </button>
@@ -2496,9 +2489,8 @@ export const TXAPlayer: React.FC<TXAPlayerProps> = ({
                   if (contextMenuPos) setContextMenuPos(null);
                 }}
                 data-txatooltip="Cài đặt (S)"
-                className={`txa-menu-toggle-btn w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${
-                  activeMenu === 'settings' ? 'bg-[#7c3aed] text-white' : 'bg-white/5 hover:bg-white/10 text-white/90'
-                }`}
+                className={`txa-menu-toggle-btn w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all active:scale-95 ${activeMenu === 'settings' ? 'bg-[#7c3aed] text-white' : 'bg-white/5 hover:bg-white/10 text-white/90'
+                  }`}
               >
                 <span className="material-symbols-outlined text-[16px] sm:text-[19px]">settings</span>
               </button>

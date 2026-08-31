@@ -1418,12 +1418,12 @@ export const WatchContainer: React.FC<WatchContainerProps> = ({
 
               if (videoId) {
                 let originParam = '';
-                if (typeof window !== 'undefined') {
+                if (typeof window !== 'undefined' && window.location.origin) {
                   originParam = `&origin=${encodeURIComponent(window.location.origin)}`;
                 }
-                randomUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&enablejsapi=1${originParam}`;
-              } else if (randomUrl.includes('youtube.com') || randomUrl.includes('youtu.be')) {
-                randomUrl = randomUrl.replace('youtube.com', 'youtube-nocookie.com').replace('youtu.be', 'youtube-nocookie.com');
+                randomUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&playsinline=1&enablejsapi=1&rel=0${originParam}`;
+              } else if (randomUrl.includes('youtube-nocookie.com')) {
+                randomUrl = randomUrl.replace('youtube-nocookie.com', 'youtube.com');
               }
             }
 

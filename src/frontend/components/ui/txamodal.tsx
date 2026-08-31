@@ -26,13 +26,13 @@ export function txamodal({ isOpen, onClose, title, children, className }: TxaMod
 
   return (
     <div className="txamodal" onClick={onClose}>
-      <div 
+      <div
         className={cn("txamodal-content", className)}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
           {title && <h2 className="text-lg font-outfit font-semibold text-white">{title}</h2>}
-          <button 
+          <button
             onClick={onClose}
             className={cn("rounded-full p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors", !title && "absolute top-4 right-4")}
           >

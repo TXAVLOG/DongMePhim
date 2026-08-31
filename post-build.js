@@ -134,3 +134,24 @@ export { __default_with_scheduled as default };
 } else {
   console.error('entry.mjs not found at', entryPath);
 }
+
+// Fix Rolldown createRequire(import.meta.url) in Cloudflare Workers (workerd) where import.meta.url is undefined
+function patchCreateRequire(dir) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      patchCreateRequire(fullPath);
+    } else if (entry.isFile() && (entry.name.endsWith('.mjs') || entry.name.endsWith('.js'))) {
+      let code = fs.readFileSync(fullPath, 'utf8');
+      if (code.includes('createRequire(import.meta.url)')) {
+        code = code.replace(/createRequire\(import\.meta\.url\)/g, 'createRequire(import.meta.url || "file:///")');
+        fs.writeFileSync(fullPath, code, 'utf8');
+        console.log(`Successfully patched createRequire in ${entry.name}`);
+      }
+    }
+  }
+}
+
+patchCreateRequire(path.resolve('dist/server'));

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Smartphone, Download, CheckCircle2, Info, QrCode, X, 
-  ZoomIn, Play, Gauge, Ban, Tv, Shield 
+import {
+  Smartphone, Download, CheckCircle2, Info, QrCode, X,
+  ZoomIn, Play, Gauge, Ban, Tv, Shield
 } from 'lucide-react';
 
 // Custom Brand Icons
@@ -124,7 +124,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
           }));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [showWindowsTab, showAndroidTab, showIosOtaTab, showIosIpaTab, showSmartTvTab]);
 
   const getPlayStoreBadge = () => "https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg";
@@ -161,7 +161,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                 {(log.content || '').split('\n').filter(Boolean).map((line: string, li: number) => (
                   <p key={li} className="text-[13.5px] text-zinc-400 leading-relaxed font-medium flex items-start gap-2">
                     <span className="text-[#a78bfa] mt-1.5 shrink-0">•</span>
-                    <span>{line.replace(/^[-\s*•]+/,'')}</span>
+                    <span>{line.replace(/^[-\s*•]+/, '')}</span>
                   </p>
                 ))}
               </div>
@@ -173,7 +173,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
           {releaseNotesLines.map((line: string, idx: number) => (
             <p key={idx} className="text-[13.5px] text-zinc-400 leading-relaxed font-medium flex items-start gap-2">
               <span className="text-[#a78bfa] mt-1.5 shrink-0">•</span>
-              <span>{line.replace(/^[-\s*•]+/,'')}</span>
+              <span>{line.replace(/^[-\s*•]+/, '')}</span>
             </p>
           ))}
         </div>
@@ -191,7 +191,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
       <div className="absolute bottom-[15%] right-[15%] w-[450px] h-[450px] rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.04)_0%,transparent_70%)] blur-[50px] pointer-events-none z-0" />
 
       <div className="max-w-7xl mx-auto w-full relative z-10 flex-grow flex flex-col">
-        
+
         {/* Header Hero Section */}
         <div className="text-center mb-12 md:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/15 to-pink-500/5 border border-purple-500/25 mb-6 shadow-[0_5px_20px_rgba(124,58,237,0.15)]">
@@ -345,7 +345,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                       <Download className="w-4 h-4" />
                       Tải Xuống Tệp APK
                     </a>
-                    
+
                     {playStoreEnabled && playStoreUrl && (
                       <a href={playStoreUrl} target="_blank" rel="noopener noreferrer" className="flex-1 h-[52px] flex items-center justify-center hover:opacity-80 active:scale-[0.98] transition-all">
                         <img src={getPlayStoreBadge()} alt="Google Play Store" className="h-12 object-contain" />
@@ -386,7 +386,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                         Cài Đặt Trực Tiếp (OTA)
                       </a>
                     )}
-                    
+
                     {showIosIpaTab && (
                       <a
                         href={iosIpaUrl}
@@ -474,7 +474,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                   {/* Windows QR */}
                   {showWindowsTab && (
                     <div className="flex gap-4 items-center">
-                      <div 
+                      <div
                         onClick={() => setZoomQr('windows')}
                         className="bg-white p-2.5 rounded-[16px] flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.4)] cursor-pointer transition-all duration-300 hover:scale-106 hover:shadow-[0_0_25px_rgba(59,130,246,0.4)] border-2 border-transparent hover:border-blue-500 relative shrink-0"
                         title="Click để phóng to mã QR"
@@ -496,7 +496,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                   {/* Android QR */}
                   {showAndroidTab && (
                     <div className="flex gap-4 items-center">
-                      <div 
+                      <div
                         onClick={() => setZoomQr('android')}
                         className="bg-white p-2.5 rounded-[16px] flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.4)] cursor-pointer transition-all duration-300 hover:scale-106 hover:shadow-[0_0_25px_rgba(61,220,132,0.4)] border-2 border-transparent hover:border-[#3DDC84] relative shrink-0"
                         title="Click để phóng to mã QR"
@@ -518,7 +518,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                   {/* iOS QR */}
                   {(showIosOtaTab || showIosIpaTab) && (
                     <div className="flex gap-4 items-center">
-                      <div 
+                      <div
                         onClick={() => setZoomQr('ios')}
                         className="bg-white p-2.5 rounded-[16px] flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.4)] cursor-pointer transition-all duration-300 hover:scale-106 hover:shadow-[0_0_25px_rgba(167,139,250,0.4)] border-2 border-transparent hover:border-[#a78bfa] relative shrink-0"
                         title="Click để phóng to mã QR"
@@ -540,7 +540,7 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
                   {/* Smart TV QR */}
                   {showSmartTvTab && (
                     <div className="flex gap-4 items-center">
-                      <div 
+                      <div
                         onClick={() => setZoomQr('smart_tv')}
                         className="bg-white p-2.5 rounded-[16px] flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.4)] cursor-pointer transition-all duration-300 hover:scale-106 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] border-2 border-transparent hover:border-amber-500 relative shrink-0"
                         title="Click để phóng to mã QR"
@@ -841,32 +841,32 @@ export default function AppDownloadLanding({ settings = {} }: AppDownloadLanding
       {zoomQr && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity duration-300">
           <div className="relative bg-gradient-to-br from-white/[0.02] to-white/[0.005] backdrop-blur-[30px] border border-white/[0.08] p-6 md:p-10 rounded-[32px] shadow-[0_25px_80px_rgba(0,0,0,0.8)] outline-none flex flex-col items-center gap-6 max-w-sm w-full">
-            <button 
+            <button
               onClick={() => setZoomQr(null)}
               className="absolute top-4 right-4 text-white/40 bg-white/[0.02] border border-white/[0.05] hover:text-white hover:bg-white/[0.08] hover:border-white/15 p-2 rounded-full transition-all cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
-            
+
             <h3 className="text-sm font-black text-white uppercase tracking-wider">
               QUÉT MÃ QR ĐỂ CÀI ĐẶT
             </h3>
 
             <div className="bg-white p-4 rounded-[24px] shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex items-center justify-center border-2 border-[#a78bfa]/30">
-              <img 
+              <img
                 src={zoomQr === 'windows'
                   ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(windowsUrl)}`
-                  : zoomQr === 'android' 
-                  ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(androidUrl)}` 
-                  : zoomQr === 'smart_tv'
-                  ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(smartTvUrl)}`
-                  : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(iosQrUrl)}`
-                } 
-                alt="Zoomed QR" 
-                className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px]" 
+                  : zoomQr === 'android'
+                    ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(androidUrl)}`
+                    : zoomQr === 'smart_tv'
+                      ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(smartTvUrl)}`
+                      : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(iosQrUrl)}`
+                }
+                alt="Zoomed QR"
+                className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px]"
               />
             </div>
-            
+
             <p className="text-[11px] text-zinc-500 font-semibold text-center leading-relaxed">
               Dùng ứng dụng Quét mã hoặc Máy ảnh trên thiết bị {zoomQr === 'windows' ? 'Windows Desktop' : zoomQr === 'android' ? 'Android' : zoomQr === 'smart_tv' ? 'Smart TV' : 'iOS'} để nhận dạng link.
             </p>

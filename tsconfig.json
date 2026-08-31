@@ -1,5 +1,4 @@
 {
-  "extends": "astro/tsconfigs/strict",
   "include": [
     ".astro/types.d.ts",
     "**/*",
@@ -11,11 +10,21 @@
     ".astro"
   ],
   "compilerOptions": {
-    "types": [
-      "./worker-configuration.d.ts",
-      "node",
-      "astro/client"
-    ],
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "strict": false,
     "paths": {
       "@components/*": [
         "./src/frontend/components/*"

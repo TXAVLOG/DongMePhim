@@ -13,7 +13,9 @@ export default defineConfig({
     enabled: false
   },
   output: "server",
-  adapter: cloudflare(),
+  adapter: cloudflare({
+
+  }),
   integrations: [react()],
   prefetch: {
     prefetchAll: true,
@@ -27,7 +29,7 @@ export default defineConfig({
         'react-dom': path.resolve('./node_modules/react-dom')
       }
     },
-    build: {
+    build: { minify: false, 
       target: 'esnext',
       cssMinify: 'esbuild',
     },

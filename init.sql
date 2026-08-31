@@ -1488,3 +1488,29 @@ CREATE POLICY "update_device_logs"
 -- Chỉ admin mới được đọc danh sách
 CREATE POLICY "select_device_logs_admin"
   ON public.txa_device_logs FOR SELECT TO public USING (is_admin());
+
+-- =================================================================================
+-- Table: public.txa_search_history
+-- Lưu lịch sử từ khóa tìm kiếm người dùng / thiết bị
+-- =================================================================================
+
+CREATE TABLE IF NOT EXISTS public.txa_search_history (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES public.users(id) ON DELETE CASCADE,
+  device_fingerprint text,
+  keyword character varying(255) NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_search_history_user ON public.txa_search_history(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_search_history_device ON public.txa_search_history(device_fingerprint, updated_at DESC);
+
+ALTER TABLE public.txa_search_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public select on search history" ON public.txa_search_history FOR SELECT USING (true);
+CREATE POLICY "Allow public insert on search history" ON public.txa_search_history FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update on search history" ON public.txa_search_history FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete on search history" ON public.txa_search_history FOR DELETE USING (true);
+

@@ -17,7 +17,7 @@
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.9",
-		"@astrojs/cloudflare": "^13.1.1",
+		"@astrojs/cloudflare": "^14.2.5",
 		"@astrojs/react": "^5.0.7",
 		"@block65/webcrypto-web-push": "^1.0.2",
 		"@supabase/supabase-js": "^2.108.2",
@@ -26,7 +26,7 @@
 		"@types/react": "^19.2.17",
 		"@types/react-dom": "^19.2.3",
 		"artplayer": "^5.4.0",
-		"astro": "^6.4.8",
+		"astro": "^7.2.9",
 		"clsx": "^2.1.1",
 		"edge-tts-universal": "^1.4.0",
 		"hls.js": "^1.7.1",
@@ -39,9 +39,6 @@
 	},
 	"devDependencies": {
 		"@types/node": "^26.0.0",
-		"wrangler": "^4.101.0"
-	},
-	"overrides": {
-		"vite": "^7"
+		"wrangler": "^4.127.1"
 	}
 }

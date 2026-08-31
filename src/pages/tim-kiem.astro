@@ -50,6 +50,20 @@ const fallbackMovies = query ? await MovieService.searchMovies(query) : await Mo
           </form>
         </div>
 
+        <!-- Search History Section -->
+        <div id="search-history-container" class="hidden flex flex-col gap-2.5 max-w-xl">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-xs text-zinc-400 font-bold">
+              <span class="material-symbols-outlined text-sm text-primary">history</span>
+              <span>Lịch sử tìm kiếm</span>
+            </div>
+            <button id="clear-search-history-btn" class="text-[11px] text-zinc-500 hover:text-rose-400 transition-colors font-medium cursor-pointer">
+              Xóa tất cả
+            </button>
+          </div>
+          <div id="search-history-chips" class="flex flex-wrap gap-2"></div>
+        </div>
+
         <!-- Browse & Filter Row matching Image 2 -->
         <div class="flex justify-between items-center border-b border-glass-stroke pb-4 pt-2">
           <div class="flex flex-col gap-1">
@@ -432,6 +446,137 @@ const fallbackMovies = query ? await MovieService.searchMovies(query) : await Mo
         }
 
         renderMovies(filtered);
+      }
+
+      // Search History Management
+      const historyContainer = document.getElementById('search-history-container');
+      const historyChips = document.getElementById('search-history-chips');
+      const clearHistoryBtn = document.getElementById('clear-search-history-btn');
+
+      async function getDeviceFingerprint() {
+        let fp = localStorage.getItem('txa_device_fingerprint');
+        if (!fp) {
+          fp = 'web_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+          localStorage.setItem('txa_device_fingerprint', fp);
+        }
+        return fp;
+      }
+
+      async function loadSearchHistory() {
+        try {
+          const fp = await getDeviceFingerprint();
+          const res = await fetch(`/api/app/search-history?device_fingerprint=${encodeURIComponent(fp)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+              renderSearchHistory(data.data);
+              return;
+            }
+          }
+        } catch (e) {}
+
+        // Fallback to localStorage
+        try {
+          const local = JSON.parse(localStorage.getItem('txa_search_history') || '[]');
+          if (Array.isArray(local) && local.length > 0) {
+            renderSearchHistory(local);
+          }
+        } catch (e) {}
+      }
+
+      function renderSearchHistory(keywords) {
+        if (!historyContainer || !historyChips) return;
+        if (!keywords || keywords.length === 0) {
+          historyContainer.classList.add('hidden');
+          return;
+        }
+
+        historyContainer.classList.remove('hidden');
+        historyChips.innerHTML = keywords.map(kw => `
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-zinc-300 transition-all cursor-pointer group">
+            <span class="history-keyword-text" data-kw="${kw.replace(/"/g, '&quot;')}">${kw}</span>
+            <button type="button" class="delete-history-item-btn text-zinc-500 hover:text-rose-400 text-xs ml-0.5" data-kw="${kw.replace(/"/g, '&quot;')}">
+              <span class="material-symbols-outlined text-[14px]">close</span>
+            </button>
+          </div>
+        `).join('');
+
+        // Bind clicks
+        historyChips.querySelectorAll('.history-keyword-text').forEach(el => {
+          el.addEventListener('click', () => {
+            const kw = el.getAttribute('data-kw');
+            if (kw) window.location.href = `/tim-kiem?q=${encodeURIComponent(kw)}`;
+          });
+        });
+
+        historyChips.querySelectorAll('.delete-history-item-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const kw = btn.getAttribute('data-kw');
+            if (kw) await removeSearchKeyword(kw);
+          });
+        });
+      }
+
+      async function saveSearchKeyword(keyword) {
+        if (!keyword || !keyword.trim()) return;
+        const kw = keyword.trim();
+        const fp = await getDeviceFingerprint();
+
+        // Local storage update
+        try {
+          let list = JSON.parse(localStorage.getItem('txa_search_history') || '[]');
+          list = [kw, ...list.filter(x => x.toLowerCase() !== kw.toLowerCase())].slice(0, 15);
+          localStorage.setItem('txa_search_history', JSON.stringify(list));
+        } catch(e) {}
+
+        // Backend Supabase sync
+        try {
+          fetch('/api/app/search-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword: kw, device_fingerprint: fp })
+          }).catch(() => {});
+        } catch(e) {}
+      }
+
+      async function removeSearchKeyword(keyword) {
+        const fp = await getDeviceFingerprint();
+        try {
+          let list = JSON.parse(localStorage.getItem('txa_search_history') || '[]');
+          list = list.filter(x => x.toLowerCase() !== keyword.toLowerCase());
+          localStorage.setItem('txa_search_history', JSON.stringify(list));
+          renderSearchHistory(list);
+        } catch(e) {}
+
+        try {
+          fetch('/api/app/search-history', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword, device_fingerprint: fp })
+          }).catch(() => {});
+        } catch(e) {}
+      }
+
+      clearHistoryBtn?.addEventListener('click', async () => {
+        const fp = await getDeviceFingerprint();
+        localStorage.removeItem('txa_search_history');
+        if (historyContainer) historyContainer.classList.add('hidden');
+
+        try {
+          fetch('/api/app/search-history', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clear_all: true, device_fingerprint: fp })
+          }).catch(() => {});
+        } catch(e) {}
+      });
+
+      // Save search keyword if query is present
+      if (searchQuery && searchQuery.trim()) {
+        saveSearchKeyword(searchQuery.trim());
+      } else {
+        loadSearchHistory();
       }
 
       // Initial Render

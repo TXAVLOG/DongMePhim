@@ -46,7 +46,7 @@ function cleanupExpiredCache(cache: any) {
         }
       });
     });
-  }).catch(() => {});
+  }).catch(() => { });
 }
 
 function normalizeUrl(urlStr: string): string {
@@ -118,7 +118,7 @@ function getCustomFragmentLoader(HlsClass: any) {
                 headers.append('Content-Type', 'video/MP2T');
                 headers.append('X-Cache-Time', Date.now().toString());
                 const cachedRes = new Response(response.data, { headers });
-                cache.put(cacheKey, cachedRes).catch(() => {});
+                cache.put(cacheKey, cachedRes).catch(() => { });
               } catch (e) {
                 console.warn('[Cache-Save] failed:', e);
               }
@@ -155,13 +155,13 @@ export function parseSubtitles(text: string): SubtitleCue[] {
         cues.push(currentCue as SubtitleCue);
       }
 
-      const startSec = 
+      const startSec =
         parseInt(match[1]) * 3600 +
         parseInt(match[2]) * 60 +
         parseInt(match[3]) +
         parseInt(match[4]) / 1000;
 
-      const endSec = 
+      const endSec =
         parseInt(match[5]) * 3600 +
         parseInt(match[6]) * 60 +
         parseInt(match[7]) +
@@ -614,7 +614,7 @@ const CustomSubtitleSystem: React.FC<{
 
     const voices = synth.getVoices();
     const bestVoice = voices.find(v => v.lang.includes('vi') && (v.name.includes('HoaiMy') || v.name.includes('NamMinh'))) ||
-                      voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
+      voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
     if (bestVoice) {
       utter.voice = bestVoice;
     }
@@ -645,7 +645,7 @@ const CustomSubtitleSystem: React.FC<{
     const size = isPrimary ? primarySize : secondarySize;
     const opacityVal = isPrimary ? primaryOpacity : secondaryOpacity;
     const font = isPrimary ? primaryFont : secondaryFont;
-    
+
     let adaptedSize = size;
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       if (size.endsWith('pt')) {
@@ -975,8 +975,8 @@ const CustomSubtitleSystem: React.FC<{
 
   return (
     <>
-      <div 
-        className="txa-subtitles-container" 
+      <div
+        className="txa-subtitles-container"
         style={{
           position: 'absolute',
           bottom: `${bottomOffset}px`,
@@ -994,13 +994,13 @@ const CustomSubtitleSystem: React.FC<{
         }}
       >
         {mode === 'bilingual' && activeSecondaryCue && (
-          <div 
+          <div
             style={getSubStyle(false)}
             dangerouslySetInnerHTML={formatCueText(activeSecondaryCue.text)}
           />
         )}
         {mode !== 'off' && activePrimaryCue && (
-          <div 
+          <div
             style={getSubStyle(true)}
             dangerouslySetInnerHTML={formatCueText(activePrimaryCue.text)}
           />
@@ -1008,7 +1008,7 @@ const CustomSubtitleSystem: React.FC<{
       </div>
 
       {showPanel && (
-        <div 
+        <div
           className="txa-sub-control-panel-wrapper"
           style={{
             position: 'absolute',
@@ -1067,7 +1067,7 @@ const CustomSubtitleSystem: React.FC<{
                     })}
                   </div>
 
-                  <button 
+                  <button
                     onClick={handleUploadClick}
                     style={{
                       border: 'none',
@@ -1086,15 +1086,15 @@ const CustomSubtitleSystem: React.FC<{
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>upload</span>
                   </button>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    style={{ display: 'none' }} 
-                    accept=".srt,.vtt" 
-                    onChange={handleFileUpload} 
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    accept=".srt,.vtt"
+                    onChange={handleFileUpload}
                   />
 
-                  <button 
+                  <button
                     onClick={() => setPanelView('custom')}
                     style={{
                       border: 'none',
@@ -1131,7 +1131,7 @@ const CustomSubtitleSystem: React.FC<{
                     utter.rate = 1.1;
                     const voices = window.speechSynthesis.getVoices();
                     const best = voices.find(v => v.lang.includes('vi') && (v.name.includes('HoaiMy') || v.name.includes('NamMinh'))) ||
-                                 voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
+                      voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
                     if (best) utter.voice = best;
                     window.speechSynthesis.speak(utter);
                   }
@@ -1170,8 +1170,8 @@ const CustomSubtitleSystem: React.FC<{
                       {tracks.map((t, idx) => {
                         const isSelected = primaryIdx === idx;
                         return (
-                          <div 
-                            key={t.file} 
+                          <div
+                            key={t.file}
                             onClick={() => {
                               setPrimaryIdx(idx);
                               localStorage.setItem('txa_sub_primary_idx', String(idx));
@@ -1196,12 +1196,12 @@ const CustomSubtitleSystem: React.FC<{
                     </div>
                   </div>
 
-                  <div 
-                    style={{ 
-                      flex: 1, 
-                      backgroundColor: 'rgba(0, 0, 0, 0.25)', 
-                      borderRadius: '10px', 
-                      padding: '8px', 
+                  <div
+                    style={{
+                      flex: 1,
+                      backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                      borderRadius: '10px',
+                      padding: '8px',
                       border: '1px solid rgba(255, 255, 255, 0.05)',
                       opacity: mode === 'bilingual' ? 1 : 0.35,
                       pointerEvents: mode === 'bilingual' ? 'auto' : 'none',
@@ -1214,8 +1214,8 @@ const CustomSubtitleSystem: React.FC<{
                         if (idx === primaryIdx) return null;
                         const isSelected = secondaryIdx === idx;
                         return (
-                          <div 
-                            key={t.file} 
+                          <div
+                            key={t.file}
                             onClick={() => {
                               setSecondaryIdx(idx);
                               localStorage.setItem('txa_sub_secondary_idx', String(idx));
@@ -1250,15 +1250,15 @@ const CustomSubtitleSystem: React.FC<{
 
           {panelView === 'custom' && (
             <div>
-              <div 
+              <div
                 onClick={() => setPanelView('main')}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  fontSize: '14px', 
-                  fontWeight: 700, 
-                  cursor: 'pointer', 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
                   marginBottom: '14px',
                   color: '#ffffff'
                 }}
@@ -1272,7 +1272,7 @@ const CustomSubtitleSystem: React.FC<{
                   <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 700, paddingBottom: '6px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '6px' }}>Phụ đề chính</div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {settingsConfig.filter(s => s.section === 'Phụ đề chính').map(item => (
-                      <div 
+                      <div
                         key={item.key}
                         onClick={() => {
                           setSelectedSetting(item.key);
@@ -1301,7 +1301,7 @@ const CustomSubtitleSystem: React.FC<{
                   <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 700, paddingBottom: '6px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '6px' }}>Song ngữ</div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {settingsConfig.filter(s => s.section === 'Song ngữ').map(item => (
-                      <div 
+                      <div
                         key={item.key}
                         onClick={() => {
                           setSelectedSetting(item.key);
@@ -1331,15 +1331,15 @@ const CustomSubtitleSystem: React.FC<{
 
           {panelView === 'select-option' && currentActiveSettingObj && (
             <div>
-              <div 
+              <div
                 onClick={() => setPanelView('custom')}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  fontSize: '14px', 
-                  fontWeight: 700, 
-                  cursor: 'pointer', 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
                   marginBottom: '14px',
                   color: '#ffffff'
                 }}
@@ -1352,7 +1352,7 @@ const CustomSubtitleSystem: React.FC<{
                 {currentActiveSettingObj.options.map(opt => {
                   const isChecked = currentActiveSettingObj.value === opt.value;
                   return (
-                    <div 
+                    <div
                       key={opt.value}
                       onClick={() => {
                         currentActiveSettingObj.setter(opt.value);
@@ -1567,7 +1567,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
           if (playerInstanceRef.current.fullscreen) {
             playerInstanceRef.current.fullscreen = false;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     };
     const handleOnline = () => {
@@ -1655,12 +1655,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
           if (oldArt.video) {
             oldArt.video.pause();
             oldArt.video.removeAttribute('src');
-            try { oldArt.video.load(); } catch (e) {}
+            try { oldArt.video.load(); } catch (e) { }
           }
-        } catch (e) {}
+        } catch (e) { }
         try {
           playerInstanceRef.current.destroy(false);
-        } catch (e) {}
+        } catch (e) { }
       }
       artRef.current.innerHTML = '';
 
@@ -1669,7 +1669,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
         isAutoSkipEnabled = e.detail;
       };
       window.addEventListener('txa-autoskip-changed', handleAutoSkipEvent);
-      
+
       const isM3u8 = realUrl.includes('.m3u8') || realUrl.includes('stream');
       const defaultSub = subtitles?.find(s => s.default) || subtitles?.[0];
 
@@ -1850,7 +1850,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
                     audioBufferErrorCount++;
                     if (audioBufferErrorCount <= 2) {
                       console.warn(`HLS audio buffer error #${audioBufferErrorCount}, attempting recovery...`);
-                      try { hls.recoverMediaError(); } catch(e) {}
+                      try { hls.recoverMediaError(); } catch (e) { }
                       return;
                     }
                     if (!hasReloadedWithoutAudio) {
@@ -1873,7 +1873,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
                         hlsRetry.loadSource(url);
                         hlsRetry.attachMedia(video);
                         hlsRetry.on(HlsClass.Events.MANIFEST_PARSED, () => {
-                          video.play().catch(() => {});
+                          video.play().catch(() => { });
                         });
                         // Suppress further audio errors on retry instance
                         hlsRetry.on(HlsClass.Events.ERROR, (_evt: any, retryData: any) => {
@@ -1888,7 +1888,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
                             }
                           }
                         });
-                        art.on('destroy', () => { try { hlsRetry.destroy(); } catch(e) {} });
+                        art.on('destroy', () => { try { hlsRetry.destroy(); } catch (e) { } });
                         art.notice.show = 'Đang tải lại video...';
                       } catch (e) {
                         console.error('Failed to reload HLS:', e);
@@ -1923,7 +1923,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
                           });
                           newHls.loadSource(url);
                           newHls.attachMedia(video);
-                          art.on('destroy', () => { try { newHls.destroy(); } catch(e) {} });
+                          art.on('destroy', () => { try { newHls.destroy(); } catch (e) { } });
                         } catch (e) {
                           console.error('Failed to recreate HLS:', e);
                         }
@@ -1933,7 +1933,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
                       console.error('Fatal HLS error, destroying player instance:', data);
                       try {
                         art.destroy();
-                      } catch (e) {}
+                      } catch (e) { }
                       break;
                   }
                 } else if (data.details === 'internalException') {
@@ -1945,13 +1945,13 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
               });
 
               // Removed video.src override since blob URLs are safe and overriding .src breaks hls.js internals
-              
+
               hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
                 let maxAllowedHeight = 99999;
                 if (maxResolution === 'SD') maxAllowedHeight = 480;
                 else if (maxResolution === 'HD') maxAllowedHeight = 720;
                 else if (maxResolution === 'FHD') maxAllowedHeight = 1080;
-                
+
                 const allowedLevels: number[] = [];
                 hls.levels.forEach((level: any, index: number) => {
                   if (level.height <= maxAllowedHeight) {
@@ -1973,7 +1973,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
                 if (levels && levels.length > 0) {
                   try {
                     art.setting.remove('quality');
-                  } catch (e) {}
+                  } catch (e) { }
 
                   const qualitySelector = [
                     {
@@ -2207,7 +2207,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
       };
 
       const art = new Artplayer(artOptions);
-      
+
       // ... (code omitted for brevity but preserved by tool)
       // (Lines between 1892 and 2390 are preserved)
 
@@ -2277,7 +2277,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
             utter.rate = 1.1;
             const voices = window.speechSynthesis.getVoices();
             const best = voices.find(v => v.lang.includes('vi') && (v.name.includes('HoaiMy') || v.name.includes('NamMinh'))) ||
-                         voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
+              voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
             if (best) utter.voice = best;
             window.speechSynthesis.speak(utter);
           }
@@ -2323,11 +2323,11 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
         if (now - lastTapTime < DOUBLE_TAP_DELAY && Math.abs(touch.clientX - lastTapX) < 80) {
           const container = art.template.$container;
           if (!container) return;
-          
+
           const rect = container.getBoundingClientRect();
           const touchX = touch.clientX - rect.left;
           const width = rect.width;
-          
+
           if (touchX < width * 0.4) {
             // Seek back 10s
             art.currentTime = Math.max(0, art.currentTime - 10);
@@ -2491,7 +2491,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
           // 6. Wrap navigator.mediaDevices to prevent screen capture
           if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
             const origGetDisplay = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
-            navigator.mediaDevices.getDisplayMedia = function() {
+            navigator.mediaDevices.getDisplayMedia = function () {
               return Promise.reject(new DOMException('Screen capture is disabled.', 'NotAllowedError'));
             };
           }
@@ -2566,11 +2566,11 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
             popupShownRef.current = true;
             setShowNextEpisodePopup(true);
             setCountdown(5);
-            
+
             if (countdownRef.current) {
               clearInterval(countdownRef.current);
             }
-            
+
             countdownRef.current = setInterval(() => {
               setCountdown((prev) => {
                 if (prev <= 1) {
@@ -2658,14 +2658,14 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
       };
 
       const intervalId = setInterval(checkWatermarkIntegrity, 3000);
-      
+
       const observer = new MutationObserver((mutations) => {
         if (hideWatermark) return;
         for (const mutation of mutations) {
           if (mutation.removedNodes.length > 0) {
             const hasWatermarkRemoved = Array.from(mutation.removedNodes).some(node => {
-              return (node as HTMLElement).classList?.contains('art-layer-txa-watermark-fixed') || 
-                     (node as HTMLElement).querySelector?.('.txa-watermark-wrapper');
+              return (node as HTMLElement).classList?.contains('art-layer-txa-watermark-fixed') ||
+                (node as HTMLElement).querySelector?.('.txa-watermark-wrapper');
             });
             if (hasWatermarkRemoved) {
               triggerViolation('Thiếu bản quyền! Vui lòng không can thiệp mã nguồn.');
@@ -2719,7 +2719,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
             script.async = true;
             document.head.appendChild(script);
           }
-          
+
           const onLoad = () => {
             if ((window as any).Hls) {
               initPlayer((window as any).Hls);
@@ -2752,12 +2752,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
           if (oldArt.video) {
             oldArt.video.pause();
             oldArt.video.removeAttribute('src');
-            try { oldArt.video.load(); } catch (e) {}
+            try { oldArt.video.load(); } catch (e) { }
           }
-        } catch (e) {}
+        } catch (e) { }
         try {
           playerInstanceRef.current.destroy(false);
-        } catch (e) {}
+        } catch (e) { }
       }
       if (artRef.current) {
         artRef.current.innerHTML = '';
@@ -2871,7 +2871,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
         }
       `}</style>
       {isOffline && (
-        <div 
+        <div
           className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-red-500/30 bg-[#0B0A0C]/95 flex flex-col items-center justify-center text-center p-6 artplayer-container-responsive"
         >
           <span className="material-symbols-outlined text-red-500 text-5xl mb-4 animate-pulse">wifi_off</span>
@@ -2882,7 +2882,7 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
         </div>
       )}
       {connectionRestored && (
-        <div 
+        <div
           className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-emerald-500/30 bg-[#0B0A0C]/95 flex flex-col items-center justify-center text-center p-6 artplayer-container-responsive"
         >
           <span className="material-symbols-outlined text-emerald-400 text-5xl mb-4 animate-bounce">wifi</span>
@@ -2890,8 +2890,8 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
           <p className="text-zinc-400 text-xs max-w-sm leading-relaxed mb-6 font-sans">
             Kết nối internet đã được khôi phục. Vui lòng tải lại trình phát để tiếp tục xem phim.
           </p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-[10px] font-black uppercase tracking-widest text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 border-none cursor-pointer"
           >
             Tải lại trình phát
@@ -2899,12 +2899,12 @@ export const ArtPlayer: React.FC<ArtPlayerProps> = (props) => {
         </div>
       )}
       {!isOffline && !connectionRestored && (
-        <div 
-          ref={artRef} 
-          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke artplayer-container-responsive" 
+        <div
+          ref={artRef}
+          className="w-full h-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-glass-stroke artplayer-container-responsive"
         />
       )}
-      
+
       {showNextEpisodePopup && nextEpisode && (
         <div className="absolute z-50 pointer-events-none" style={{ inset: 0 }}>
           {typeof window !== 'undefined' && window.innerWidth < 768 ? (
