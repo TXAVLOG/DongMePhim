@@ -66,9 +66,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const newTime = parseFloat(current_time) || 0;
     const timeWatched = newTime - oldTime;
 
+    let watchTimeAdded = 0;
     if (timeWatched > 0 && timeWatched <= 300) {
       const { TxaActivityCalculator } = await import('@services/TxaActivityCalculator');
-      await TxaActivityCalculator.incrementWatchTime(user.id, Math.round(timeWatched));
+      watchTimeAdded = Math.round(timeWatched);
+      await TxaActivityCalculator.incrementWatchTime(user.id, watchTimeAdded);
     }
 
     const nowStr = new Date().toISOString();
@@ -105,7 +107,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       if (insertError) throw insertError;
     }
 
-    return apiResponse({ success: true }, 'success', 'Cập nhật lịch sử xem thành công', 200, request, true);
+    return apiResponse({
+      success: true,
+      watch_time_added: watchTimeAdded,
+      current_time: newTime,
+      duration: parseFloat(duration) || 0,
+      movie_title: movie.title,
+      episode_name: episodeName
+    }, 'success', `Đã lưu tiến độ xem (Cộng dồn +${watchTimeAdded}s vào CSDL)`, 200, request, true);
   } catch (err: any) {
     return apiResponse(null, 'error', err.message || 'Lỗi hệ thống', 500, request);
   }
