@@ -20,17 +20,17 @@ const {
 
 <a 
   href={slug.startsWith('/') ? slug : `/c/${slug}`} 
-  class={`relative flex flex-col justify-between p-4 sm:p-5 md:p-6 rounded-2xl overflow-hidden group border border-white/10 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-white/25 active:scale-98 cursor-pointer h-28 sm:h-32 md:h-36`}
+  class={`relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden group border border-white/10 shadow-xl transition-all duration-300 active:scale-98 cursor-pointer h-32 md:h-36`}
 >
   <!-- Background Gradient & Overlay -->
   <div class={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-90 group-hover:scale-105 transition-transform duration-500`}></div>
   <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-  <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+  <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
 
   <!-- Content Top: Icon & Description -->
   <div class="relative z-10 flex justify-between items-start">
-    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:rotate-6 group-hover:scale-105 transition-transform duration-300 shrink-0">
-      <span class="material-symbols-outlined text-lg sm:text-xl" style="font-variation-settings: 'FILL' 1;">{icon}</span>
+    <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:rotate-12 transition-transform duration-300">
+      <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">{icon}</span>
     </div>
     {description && (
       <p class="text-white/80 text-[10px] leading-snug max-w-[65%] line-clamp-2 text-right hidden sm:block font-medium">
@@ -40,17 +40,18 @@ const {
   </div>
 
   <!-- Content Bottom: Name & Action link -->
-  <div class="relative z-10 flex justify-between items-end gap-2">
-    <div class="min-w-0">
-      <h3 class="font-title-md text-sm sm:text-base md:text-lg font-extrabold text-white leading-tight tracking-tight drop-shadow-md truncate">
+  <div class="relative z-10 flex justify-between items-end">
+    <div>
+      <h3 class="font-title-md text-base md:text-lg font-extrabold text-white leading-tight tracking-tight drop-shadow-md">
         {name}
       </h3>
-      <span class="text-[9px] sm:text-[10px] font-label-caps text-white/80 group-hover:text-white transition-colors mt-0.5 inline-flex items-center gap-0.5">
+      <span class="text-[9px] font-label-caps text-white/80 group-hover:text-white group-hover:underline transition-all mt-1 inline-block">
         {labelText}
       </span>
     </div>
-    <span class="material-symbols-outlined text-white/85 group-hover:translate-x-1 transition-transform text-base sm:text-lg shrink-0">
+    <span class="material-symbols-outlined text-white/85 group-hover:translate-x-1 transition-transform text-lg">
       chevron_right
-    </span>
-  </div>
-</a>
+    </span>?
+  </div>?
+  </a>
+

@@ -282,20 +282,20 @@ const getMovieProgressBadgesSSR = (movie: any) => {
             {firstHero?.description || 'Trải nghiệm điện ảnh đỉnh cao tại DongMePhim.'}
         </p>
         <div class="flex items-center gap-4 pt-4">
-          <!-- Play Button (Circle, vibrant amber/gold with silky glow) -->
-          <a id="hero-play-link" href={firstHero ? `/xem/${firstHero.slug}` : "#"} class="w-14 h-14 rounded-full btn-gold-glow flex items-center justify-center cursor-pointer shrink-0 transition-all duration-300" style={firstHero ? "" : "display: none;"} data-txatooltip="Xem Phim">
-            <span class="material-symbols-outlined text-3xl ml-0.5 font-bold" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+          <!-- Play Button (Circle) -->
+          <a id="hero-play-link" href={firstHero ? `/xem/${firstHero.slug}` : "#"} class="w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-slate-950 flex items-center justify-center shadow-[0_0_30px_rgba(124,58,237,0.5)] hover:shadow-[0_0_40px_rgba(124,58,237,0.8)] transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer shrink-0" style={firstHero ? "" : "display: none;"} data-txatooltip="Xem Phim">
+            <span class="material-symbols-outlined text-3xl ml-0.5" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
           </a>
 
           <!-- Capsule container for Playlist and Info buttons -->
-          <div class="flex items-center rounded-full bg-[#141416]/80 border border-white/15 backdrop-blur-xl overflow-hidden h-12 shadow-2xl transition-all" style={firstHero ? "" : "display: none;"}>
+          <div class="flex items-center rounded-full bg-[#141416]/75 border border-white/15 backdrop-blur-xl overflow-hidden h-12 shadow-2xl" style={firstHero ? "" : "display: none;"}>
             <!-- Playlist Button -->
             <button id="hero-playlist-btn" class="relative w-12 h-full flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer border-r border-white/10" data-txatooltip="Thêm vào DS phát">
               <span id="hero-playlist-icon-add" class="flex items-center justify-center">
                 <Txaicon name="playlist-add" class="w-5 h-5" />
               </span>
               <span id="hero-playlist-icon-added" class="flex items-center justify-center hidden">
-                <Txaicon name="playlist-added" class="w-5 h-5 text-amber-400" />
+                <Txaicon name="playlist-added" class="w-5 h-5 text-primary" />
               </span>
             </button>
             
@@ -313,9 +313,9 @@ const getMovieProgressBadgesSSR = (movie: any) => {
   </section>
 
   <!-- Content Categories -> Topics Grid -->
-  <section class="px-gutter -mt-10 sm:-mt-14 md:-mt-16 relative z-10 max-w-container-max mx-auto space-y-4">
-    <h3 class="font-headline-lg text-lg text-white font-bold tracking-tight px-1 drop-shadow-md font-outfit">Bạn đang quan tâm gì?</h3>
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+  <section class="px-gutter -mt-16 relative z-10 max-w-container-max mx-auto space-y-4">
+    <h3 class="font-headline-lg text-lg text-white font-bold tracking-tight px-1 drop-shadow-md">Bạn đang quan tâm gì?</h3>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {topics.slice(0, 5).map((topic) => (
         <TopicCard
           name={topic.name}
@@ -334,54 +334,6 @@ const getMovieProgressBadgesSSR = (movie: any) => {
         labelText="Xem tất cả"
         description="Khám phá tất cả danh mục phim thú vị khác."
       />
-    </div>
-  </section>
-
-  <!-- Member Callout Banner: "Đăng nhập để lưu phim xem tiếp" (Như Ảnh 2) -->
-  <section class="auth-guest px-gutter max-w-container-max mx-auto mt-6 mb-2">
-    <div class="glass-card-premium rounded-2xl sm:rounded-3xl border border-amber-500/25 p-5 sm:p-6 md:p-8 relative overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
-      <!-- Ambient Glow Elements -->
-      <div class="absolute -right-16 -top-16 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -left-16 -bottom-16 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
-      
-      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <!-- Left: Text & Action Button -->
-        <div class="space-y-3 max-w-xl">
-          <div class="space-y-1">
-            <h4 class="font-title-md text-base sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2 font-outfit">
-              <span class="material-symbols-outlined text-amber-400 text-2xl">account_circle</span>
-              Đăng nhập để lưu phim xem tiếp
-            </h4>
-            <p class="text-xs sm:text-sm text-zinc-300/90 font-sans leading-relaxed">
-              Lưu phim đang xem, đồng bộ trên nhiều thiết bị, tạo danh sách riêng — hoàn toàn miễn phí.
-            </p>
-          </div>
-          <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class="btn-gold-glow px-5 py-2.5 rounded-xl font-bold text-xs inline-flex items-center gap-2 cursor-pointer uppercase tracking-wider font-outfit">
-            <span class="material-symbols-outlined text-base">login</span>
-            <span>Đăng nhập ngay</span>
-          </button>
-        </div>
-
-        <!-- Right: 4 Features in 2x2 Grid -->
-        <div class="grid grid-cols-2 gap-2.5 sm:gap-3.5 shrink-0 lg:max-w-md w-full lg:w-auto">
-          <div class="flex items-center gap-2.5 p-3 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm">
-            <span class="material-symbols-outlined text-amber-400 text-lg sm:text-xl shrink-0">history</span>
-            <span class="text-xs font-semibold text-zinc-200">Lưu tiến trình xem</span>
-          </div>
-          <div class="flex items-center gap-2.5 p-3 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm">
-            <span class="material-symbols-outlined text-rose-400 text-lg sm:text-xl shrink-0">favorite</span>
-            <span class="text-xs font-semibold text-zinc-200">Thêm phim yêu thích</span>
-          </div>
-          <div class="flex items-center gap-2.5 p-3 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm">
-            <span class="material-symbols-outlined text-sky-400 text-lg sm:text-xl shrink-0">devices</span>
-            <span class="text-xs font-semibold text-zinc-200">Đồng bộ đa thiết bị</span>
-          </div>
-          <div class="flex items-center gap-2.5 p-3 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm">
-            <span class="material-symbols-outlined text-emerald-400 text-lg sm:text-xl shrink-0">playlist_add_check</span>
-            <span class="text-xs font-semibold text-zinc-200">Tạo danh sách riêng</span>
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -827,12 +779,12 @@ const getMovieProgressBadgesSSR = (movie: any) => {
 
       <!-- TOP BÌNH LUẬN Swiper Carousel -->
       <div class="top-discuss-wrapper relative z-10 group/nav">
-        <!-- Navigation Buttons (Touch-friendly & sleek glass) -->
-        <div class="absolute top-1/2 -translate-y-1/2 left-[-12px] sm:left-[-16px] right-[-12px] sm:right-[-16px] flex justify-between pointer-events-none z-30 opacity-90 sm:opacity-0 sm:group-hover/nav:opacity-100 transition-opacity duration-300">
-          <button id="top-discuss-prev" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/15 bg-black/75 backdrop-blur-md flex items-center justify-center text-zinc-300 hover:text-white hover:border-amber-400/60 hover:bg-black/90 transition-all pointer-events-auto cursor-pointer shadow-xl active:scale-95" data-txatooltip="Slide Trái">
+        <!-- Navigation Buttons -->
+        <div class="absolute top-1/2 -translate-y-1/2 left-[-16px] right-[-16px] flex justify-between pointer-events-none z-30 opacity-0 group-hover/nav:opacity-100 transition-opacity duration-300">
+          <button id="top-discuss-prev" class="w-9 h-9 rounded-full border border-glass-stroke bg-black/60 backdrop-blur-md flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 hover:bg-black/80 transition-all pointer-events-auto cursor-pointer shadow-lg" data-txatooltip="Slide Trái">
             <span class="material-symbols-outlined text-base font-bold">chevron_left</span>
           </button>
-          <button id="top-discuss-next" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/15 bg-black/75 backdrop-blur-md flex items-center justify-center text-zinc-300 hover:text-white hover:border-amber-400/60 hover:bg-black/90 transition-all pointer-events-auto cursor-pointer shadow-xl active:scale-95" data-txatooltip="Slide Phải">
+          <button id="top-discuss-next" class="w-9 h-9 rounded-full border border-glass-stroke bg-black/60 backdrop-blur-md flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 hover:bg-black/80 transition-all pointer-events-auto cursor-pointer shadow-lg" data-txatooltip="Slide Phải">
             <span class="material-symbols-outlined text-base font-bold">chevron_right</span>
           </button>
         </div>
@@ -845,7 +797,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
       </div>
 
       <!-- Bottom Grid: SÔI NỔI NHẤT, YÊU THÍCH NHẤT, THỂ LOẠI HOT, BÌNH LUẬN MỚI -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8 pt-6 border-t border-white/10 relative z-10">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pt-6 border-t border-glass-stroke relative z-10">
         <!-- SÔI NỔI NHẤT -->
         <div class="space-y-4">
           <h4 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 border-b border-glass-stroke/40 pb-2 font-outfit">
@@ -1245,36 +1197,6 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           ))}
         </div>
       </section>
-
-      <!-- Cinema SEO & Brand Introduction Showcase (Như Ảnh 3) -->
-      <section class="glass-card-premium rounded-3xl p-8 sm:p-12 md:p-16 border border-white/10 shadow-2xl relative overflow-hidden text-center space-y-6 my-10 sm:my-14">
-        <!-- Glow accents -->
-        <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/15 rounded-full blur-[140px] pointer-events-none"></div>
-        <div class="absolute -bottom-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[140px] pointer-events-none"></div>
-
-        <div class="relative z-10 max-w-3xl mx-auto space-y-6">
-          <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-inner">
-            <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-6 w-auto dyn-logo-img" />
-            <span class="text-xs font-bold text-white uppercase tracking-wider font-outfit">{settings.general.site_name}</span>
-          </div>
-
-          <h2 class="font-display-hero text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight leading-snug drop-shadow-lg font-outfit">
-            Xem Phim Miễn Phí Cực Nhanh, Chất Lượng Cao Và Cập Nhật Liên Tục
-          </h2>
-
-          <div class="pt-2">
-            <a href="/moi-cap-nhat" class="btn-gold-glow inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full font-bold text-xs sm:text-sm text-slate-950 uppercase tracking-wider font-outfit shadow-xl cursor-pointer transition-all active:scale-95">
-              <span>Xem Ngay</span>
-              <span class="material-symbols-outlined text-base font-bold">arrow_forward</span>
-            </a>
-          </div>
-
-          <p class="text-xs sm:text-sm text-zinc-300/80 font-sans leading-relaxed max-w-2xl mx-auto pt-4 border-t border-white/10">
-            Trong kỷ nguyên số ngày nay, việc xem phim miễn phí trực tuyến đã trở thành nhu cầu giải trí không thể thiếu. Với sự bùng nổ của các nền tảng phát trực tuyến, <strong>{settings.general.site_name}</strong> tự hào mang đến cho bạn trải nghiệm điện ảnh chuẩn rạp với hàng ngàn tựa phim bom tấn đỉnh cao, tốc độ phát siêu mượt mà và hoàn toàn miễn phí.
-          </p>
-        </div>
-      </section>
-
       <!-- Shared Global Hover Popover Portal -->
       <div id="shared-hover-card" class="pointer-events-none absolute z-[9999] w-[300px] rounded-2xl border border-glass-stroke bg-[#141416]/95 backdrop-blur-md opacity-0 scale-75 shadow-[0_0_40px_rgba(109,40,217,0.3),_0_20px_50px_rgba(0,0,0,0.85)] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hidden lg:block overflow-hidden font-outfit" style="display: none; transform: translate(-50%, -50%);"></div>
   </main>
@@ -1385,36 +1307,35 @@ const getMovieProgressBadgesSSR = (movie: any) => {
 
     return `
       <div class="swiper-slide w-[320px] shrink-0">
-        <div class="bg-[#181820]/75 backdrop-blur-xl border border-white/10 rounded-2xl relative overflow-hidden p-4 flex gap-3.5 h-[180px] hover:border-amber-400/40 hover:bg-[#1c1c26]/90 transition-all duration-300 group shadow-xl">
-          <div class="absolute inset-0 opacity-10 pointer-events-none z-0">
-            <img src="${comment.moviePoster || '/favicon.png'}" class="w-full h-full object-cover blur-[12px] scale-110" onerror="this.src='/favicon.png'" />
-            <div class="absolute inset-0 bg-gradient-to-b from-black/70 to-black/30"></div>
+        <div class="bg-[#141416]/50 border border-glass-stroke/60 rounded-2xl relative overflow-hidden p-4 flex gap-4 h-[180px] hover:border-primary/30 transition-all duration-300 group">
+          <div class="absolute inset-0 opacity-15 pointer-events-none z-0">
+            <img src="${comment.moviePoster || '/favicon.png'}" class="w-full h-full object-cover blur-[10px] scale-110" onerror="this.src='/favicon.png'" />
+            <div class="absolute inset-0 bg-gradient-to-b from-black/60 to-black/20"></div>
           </div>
           
-          <div class="flex gap-3 relative z-10 w-full min-w-0 pr-12">
-            <div class="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold text-white select-none ring-1.5 ring-white/20 overflow-hidden shadow-md" style="background: ${color}">${comment.avatar ? `<img src="${comment.avatar}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:11px;font-weight:700;\'>${initials}</span>';" />` : initials}</div>
+          <div class="flex gap-3 relative z-10 w-full min-w-0">
+            <div class="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold text-white select-none ring-2 ring-white/10 overflow-hidden" style="background: ${color}">${comment.avatar ? `<img src="${comment.avatar}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:11px;font-weight:700;\'>${initials}</span>';" />` : initials}</div>
             
             <div class="flex flex-col justify-between flex-1 min-w-0">
               <div>
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="truncate max-w-[110px] text-white text-xs font-bold font-outfit">${comment.author}</span>
-                  ${isMod ? '<span class="text-[8px] bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded px-1.5 py-0.2 font-extrabold uppercase tracking-wide font-outfit">Admin</span>' : '<span class="text-[8px] bg-white/10 border border-white/10 text-zinc-300 rounded px-1.5 py-0.2 font-bold font-outfit">∞</span>'}
+                  <span class="truncate max-w-[120px] text-white text-xs font-bold">${comment.author}</span>
+                  ${isMod ? '<span class="text-[8px] bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded px-1 py-0.2 font-bold">Admin</span>' : '<span class="text-[7px] bg-white/5 border border-white/10 text-zinc-400 rounded px-1 py-0.2 font-bold">TV</span>'}
                 </div>
               </div>
               
-              <div class="text-zinc-200 text-xs italic line-clamp-3 my-1.5 break-words whitespace-normal select-text leading-relaxed font-sans opacity-95">
+              <div class="text-zinc-300 text-xs italic line-clamp-2 my-2 break-words whitespace-normal select-text leading-relaxed font-outfit">
                 "${comment.content}"
               </div>
               
-              <div class="flex items-center gap-3 text-[11px] text-zinc-400 mt-auto font-outfit">
-                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-zinc-500">visibility</span> 1</span>
-                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-zinc-500">thumb_up</span> ${likes}</span>
-                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-zinc-500">chat_bubble</span> ${repliesCount}</span>
+              <div class="flex items-center gap-3 text-[10px] text-zinc-500 mt-auto">
+                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">thumb_up</span> ${likes}</span>
+                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">chat_bubble</span> ${repliesCount}</span>
               </div>
             </div>
           </div>
           
-          <a class="absolute top-4 right-4 z-20 shrink-0 block w-11 h-16 rounded-xl overflow-hidden border border-white/15 hover:scale-105 transition-transform bg-zinc-900 shadow-xl" title="${comment.movieTitle}" href="/phim/${comment.movieSlug}">
+          <a class="absolute top-4 right-4 z-20 shrink-0 block w-10 h-14 rounded-lg overflow-hidden border border-glass-stroke hover:scale-105 transition-transform bg-zinc-900 shadow-md" title="${comment.movieTitle}" href="/phim/${comment.movieSlug}">
             <img src="${comment.moviePoster || '/favicon.png'}" class="w-full h-full object-cover" onerror="this.src='/favicon.png'" />
           </a>
         </div>

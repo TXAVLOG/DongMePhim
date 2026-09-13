@@ -139,68 +139,39 @@
   }
 
   .glass-card {
-    background: rgba(18, 18, 22, 0.72);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 10px 32px 0 rgba(0, 0, 0, 0.45);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
 
   .glass-card-premium {
-    background: linear-gradient(135deg, rgba(28, 28, 36, 0.85) 0%, rgba(16, 16, 22, 0.9) 100%);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.55);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
     position: relative;
   }
 
-  .glass-pill {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .glass-pill:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.22);
-  }
-
   .movie-card-hover {
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.3s ease;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.35s ease, box-shadow 0.35s ease;
     will-change: transform;
     transform: translateZ(0);
   }
 
   .movie-card-hover:hover {
-    transform: translateY(-5px) scale(1.02);
+    transform: translateY(-6px) scale(1.025);
     border-color: rgba(124, 58, 237, 0.6) !important;
-    box-shadow: 0 16px 36px -8px rgba(124, 58, 237, 0.35), 0 0 20px 0 rgba(124, 58, 237, 0.15);
-  }
-
-  /* Golden/Amber Accent Button Glow */
-  .btn-gold-glow {
-    background: linear-gradient(135deg, #fecf59 0%, #f59e0b 100%);
-    color: #0b0c10;
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.35), 0 4px 14px rgba(0, 0, 0, 0.4);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .btn-gold-glow:hover {
-    transform: translateY(-1px) scale(1.03);
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.55), 0 6px 18px rgba(0, 0, 0, 0.5);
-    filter: brightness(1.08);
-  }
-  .btn-gold-glow:active {
-    transform: translateY(0) scale(0.97);
+    box-shadow: 0 16px 36px -10px rgba(124, 58, 237, 0.4), 0 0 24px 0 rgba(124, 58, 237, 0.2);
   }
 
   /* Keyframe Animations */
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(16px);
+      transform: translateY(20px);
     }
     to {
       opacity: 1;
@@ -211,7 +182,7 @@
   @keyframes scaleIn {
     from {
       opacity: 0;
-      transform: scale(0.96);
+      transform: scale(0.95);
     }
     to {
       opacity: 1;
@@ -221,40 +192,23 @@
 
   @keyframes pulseGlow {
     0%, 100% {
-      box-shadow: 0 0 15px rgba(124, 58, 237, 0.25);
+      box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
     }
     50% {
-      box-shadow: 0 0 30px rgba(124, 58, 237, 0.5);
+      box-shadow: 0 0 30px rgba(124, 58, 237, 0.6);
     }
   }
 
   .animate-fade-in-up {
-    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .animate-scale-in {
-    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .animate-pulse-glow {
     animation: pulseGlow 3s ease-in-out infinite;
-  }
-
-  /* Smooth Touch Carousels & Snap Scroll */
-  .smooth-scroll-x {
-    display: flex;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .smooth-scroll-x::-webkit-scrollbar {
-    display: none;
-  }
-  .smooth-scroll-x > * {
-    scroll-snap-align: start;
   }
 
   /* Performance utilities */
@@ -265,28 +219,26 @@
 
   /* Ultra-thin premium scrollbar */
   .premium-scrollbar::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
   }
   .premium-scrollbar::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 99px;
+    background: transparent;
   }
   .premium-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 99px;
-    transition: background 0.2s ease;
   }
   .premium-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.25);
   }
   .premium-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
   }
 }
 
-/* Mobile App & Responsive Optimization */
+/* Mobile App Optimization */
 body.mobile-app-active {
   -webkit-tap-highlight-color: transparent;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -294,16 +246,28 @@ body.mobile-app-active {
   --mobile-cta-text: var(--color-on-primary, #191b24);
 }
 
-@media screen and (max-width: 640px) {
+@media screen and (max-width: 540px) {
   body {
     font-size: 14px;
     width: 100%;
     overflow-x: hidden;
   }
+}
 
-  /* Ensure touch targets have comfortable spacing */
-  button, a {
-    touch-action: manipulation;
+
+/* Mobile App Optimization */
+body.mobile-app-active {
+  -webkit-tap-highlight-color: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mobile-cta: var(--color-primary, #ffd875);
+  --mobile-cta-text: var(--color-on-primary, #191b24);
+}
+
+@media screen and (max-width: 540px) {
+  body {
+    font-size: 14px;
+    width: 100%;
+    overflow-x: hidden;
   }
 }
 

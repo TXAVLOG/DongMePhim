@@ -1392,12 +1392,7 @@ const isImpersonating = userObj && !!userObj.adminId;
             <a class="flex items-center gap-2" href="/tphim">
                 <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-8 w-auto dyn-logo-img" />
             </a>
-            <div class="flex items-center gap-2">
-                <!-- Search Button for Mobile -->
-                <a href="/tim-kiem" class="p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-300 hover:text-white flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all w-9 h-9 cursor-pointer" title="Tìm kiếm">
-                    <span class="material-symbols-outlined text-[18px]">search</span>
-                </a>
-
+            <div class="flex items-center gap-2.5">
                 <div class="relative">
                     <button id="mobile-download-btn" class="p-2 rounded-xl bg-white/5 border border-white/10 text-amber-400 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all w-9 h-9 cursor-pointer border-none bg-transparent" title="Tải ứng dụng" onclick="toggleMobileDownloadMenu(event)">
                         <span class="material-symbols-outlined text-[18px]">devices</span>
@@ -1434,9 +1429,9 @@ const isImpersonating = userObj && !!userObj.adminId;
                 </a>
 
                 <!-- Search Input positioned right next to Logo -->
-                <div class="relative hidden md:block w-64 xl:w-72 shrink-0 group/search" id="search-container">
-                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within/search:text-amber-400 z-10 text-[18px] transition-colors pointer-events-none">search</span>
-                    <input id="nav-search-input" class="bg-white/5 border border-white/10 hover:border-white/20 rounded-full py-2 pl-9 pr-4 w-full focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400/60 focus:bg-white/10 transition-all outline-none text-xs text-white placeholder:text-zinc-500 font-sans" placeholder="Tìm kiếm phim, diễn viên..." type="text" autocomplete="off">
+                <div class="relative hidden md:block w-64 xl:w-72 shrink-0" id="search-container">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant z-10 text-[18px] transition-colors group-focus-within:text-primary">search</span>
+                    <input id="nav-search-input" class="bg-white/5 border border-white/10 rounded-full py-1.5 pl-9 pr-4 w-full focus:ring-2 focus:ring-primary/40 focus:border-primary/60 focus:bg-white/10 transition-all outline-none text-xs text-on-surface placeholder:text-zinc-500" placeholder="Tìm phim, diễn viên..." type="text" autocomplete="off">
                     
                     <!-- Real-time Search Popup -->
                     <div id="search-popup" class="absolute top-full left-0 mt-3 w-96 bg-[#0f111a]/98 border border-white/10 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.8)] p-4 opacity-0 invisible scale-95 origin-top-left transition-all duration-300 backdrop-blur-2xl z-50 flex flex-col gap-3">
@@ -1452,48 +1447,48 @@ const isImpersonating = userObj && !!userObj.adminId;
 
                 <!-- Navigation menu next to Search -->
                 <div class="hidden lg:flex gap-5 items-center ml-2">
-                    <a class={`font-label-caps text-[11px] font-bold tracking-wider relative py-1 transition-colors ${isActive('/tphim') ? 'text-amber-400 after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-amber-400 after:shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'text-zinc-400 hover:text-white'}`} href="/tphim">Trang Chủ</a>
-                    <a class={`font-label-caps text-[11px] font-bold tracking-wider relative py-1 transition-colors ${isActive('/phim-bo') ? 'text-amber-400 after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-amber-400 after:shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'text-zinc-400 hover:text-white'}`} href="/phim-bo">Phim Bộ</a>
-                    <a class={`font-label-caps text-[11px] font-bold tracking-wider relative py-1 transition-colors ${isActive('/phim-le') ? 'text-amber-400 after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-amber-400 after:shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'text-zinc-400 hover:text-white'}`} href="/phim-le">Phim Lẻ</a>
+                    <a class={`font-label-caps text-[11px] font-bold tracking-wider relative py-1 transition-colors ${isActive('/tphim') ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-primary after:shadow-[0_0_8px_rgba(124,58,237,0.8)]' : 'text-on-surface-variant hover:text-white'}`} href="/tphim">Trang Chủ</a>
+                    <a class={`font-label-caps text-[11px] font-bold tracking-wider relative py-1 transition-colors ${isActive('/phim-bo') ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-primary after:shadow-[0_0_8px_rgba(124,58,237,0.8)]' : 'text-on-surface-variant hover:text-white'}`} href="/phim-bo">Phim Bộ</a>
+                    <a class={`font-label-caps text-[11px] font-bold tracking-wider relative py-1 transition-colors ${isActive('/phim-le') ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-primary after:shadow-[0_0_8px_rgba(124,58,237,0.8)]' : 'text-on-surface-variant hover:text-white'}`} href="/phim-le">Phim Lẻ</a>
                     
                     <!-- Thể loại Dropdown -->
                     <div class="relative group">
-                        <a href="/the-loai" class="font-label-caps text-[11px] font-bold tracking-wider text-zinc-400 hover:text-white transition-colors flex items-center gap-0.5 cursor-pointer py-1">
+                        <a href="/the-loai" class="font-label-caps text-[11px] font-bold tracking-wider text-on-surface-variant hover:text-white transition-colors flex items-center gap-0.5 cursor-pointer py-1">
                             Thể Loại <span class="material-symbols-outlined text-[14px] group-hover:rotate-180 transition-transform duration-300">keyboard_arrow_down</span>
                         </a>
                         <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-zinc-950/98 border border-white/10 rounded-2xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 grid grid-cols-3 gap-2 backdrop-blur-2xl z-50">
                             {uniqueGenres.map((genre: string) => (
-                                <a href={`/the-loai/${slugify(genre)}`} class="px-3 py-2 text-xs font-semibold rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">{genre}</a>
+                                <a href={`/the-loai/${slugify(genre)}`} class="px-3 py-2 text-xs font-semibold rounded-xl text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">{genre}</a>
                             ))}
                         </div>
                     </div>
 
                     <!-- Quốc gia Dropdown -->
                     <div class="relative group">
-                        <a href="/quoc-gia" class="font-label-caps text-[11px] font-bold tracking-wider text-zinc-400 hover:text-white transition-colors flex items-center gap-0.5 cursor-pointer py-1">
+                        <a href="/quoc-gia" class="font-label-caps text-[11px] font-bold tracking-wider text-on-surface-variant hover:text-white transition-colors flex items-center gap-0.5 cursor-pointer py-1">
                             Quốc Gia <span class="material-symbols-outlined text-[14px] group-hover:rotate-180 transition-transform duration-300">keyboard_arrow_down</span>
                         </a>
                         <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-zinc-950/98 border border-white/10 rounded-2xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 grid grid-cols-2 gap-2 backdrop-blur-2xl z-50">
                             {uniqueCountries.map((country: string) => (
-                                <a href={`/quoc-gia/${slugify(country)}`} class="px-3 py-2 text-xs font-semibold rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">{country}</a>
+                                <a href={`/quoc-gia/${slugify(country)}`} class="px-3 py-2 text-xs font-semibold rounded-xl text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors">{country}</a>
                             ))}
                         </div>
                     </div>
 
-                    <a class={`font-label-caps text-[11px] font-bold tracking-wider relative py-1 transition-colors ${isActive('/moi-cap-nhat') ? 'text-amber-400 after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-amber-400 after:shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'text-zinc-400 hover:text-white'}`} href="/moi-cap-nhat">Mới Cập Nhật</a>
-                    <a class={`font-label-caps text-[11px] font-bold tracking-wider nav-watch-together hidden relative py-1 transition-colors ${isActive('/xem-chung') ? 'text-amber-400 after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-amber-400 after:shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'text-zinc-400 hover:text-white'}`} href="/xem-chung">Xem Chung</a>
+                    <a class={`font-label-caps text-[11px] font-bold tracking-wider relative py-1 transition-colors ${isActive('/moi-cap-nhat') ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-primary after:shadow-[0_0_8px_rgba(124,58,237,0.8)]' : 'text-on-surface-variant hover:text-white'}`} href="/moi-cap-nhat">Mới Cập Nhật</a>
+                    <a class={`font-label-caps text-[11px] font-bold tracking-wider nav-watch-together hidden relative py-1 transition-colors ${isActive('/xem-chung') ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-primary after:shadow-[0_0_8px_rgba(124,58,237,0.8)]' : 'text-on-surface-variant hover:text-white'}`} href="/xem-chung">Xem Chung</a>
 
                     <!-- Thêm Dropdown -->
                     <div class="relative group">
-                        <button class="font-label-caps text-[11px] font-bold tracking-wider text-zinc-400 hover:text-white transition-colors flex items-center gap-0.5 cursor-pointer py-1">
+                        <button class="font-label-caps text-[11px] font-bold tracking-wider text-on-surface-variant hover:text-white transition-colors flex items-center gap-0.5 cursor-pointer py-1">
                             Thêm <span class="material-symbols-outlined text-[14px] group-hover:rotate-180 transition-transform duration-300">keyboard_arrow_down</span>
                         </button>
                         <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-48 bg-zinc-950/98 border border-white/10 rounded-2xl shadow-2xl p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col gap-1 backdrop-blur-2xl z-50">
-                            <a href="/lich-chieu" class="px-4 py-2.5 text-xs font-bold text-zinc-300 hover:text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">calendar_month</span> Lịch chiếu</a>
+                            <a href="/lich-chieu" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">calendar_month</span> Lịch chiếu</a>
                             {isAdmin && (
-                              <a href="/admin/dien-vien" class="px-4 py-2.5 text-xs font-bold text-zinc-300 hover:text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">group</span> Diễn viên</a>
+                              <a href="/admin/dien-vien" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">group</span> Diễn viên</a>
                             )}
-                            <a href="/chu-de" class="px-4 py-2.5 text-xs font-bold text-zinc-300 hover:text-amber-400 hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">grid_view</span> Chủ đề</a>
+                            <a href="/chu-de" class="px-4 py-2.5 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors flex items-center gap-2 rounded-xl"><span class="material-symbols-outlined text-[16px]">grid_view</span> Chủ đề</a>
                         </div>
                     </div>
                 </div>
@@ -1538,10 +1533,10 @@ const isImpersonating = userObj && !!userObj.adminId;
                 
                 <!-- Guest View / Logged In View -->
                 <div class="flex gap-2 items-center">
-                    <!-- Guest View: Clean, high-contrast Thành viên pill button matching Screenshot 1 & 2 -->
+                    <!-- Guest View -->
                     <div class="auth-guest flex gap-2 items-center" id="desktop-guest-nav">
-                        <button id="desktop-login-btn" onclick="window.dispatchEvent(new Event('open-login-modal'))" class="font-outfit text-xs font-bold px-4 py-2 bg-white/95 hover:bg-white text-zinc-950 rounded-full transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-[0_4px_14px_rgba(255,255,255,0.2)] hover:shadow-[0_6px_20px_rgba(255,255,255,0.35)] border-none">
-                            <span class="material-symbols-outlined text-[18px] font-bold">person</span>
+                        <button id="desktop-login-btn" onclick="window.dispatchEvent(new Event('open-login-modal'))" class="font-label-caps text-label-caps px-4 py-2 bg-gradient-to-r from-violet-600/30 to-purple-600/30 border border-violet-500/30 hover:border-violet-500/60 text-white rounded-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-md hover:shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+                            <span class="material-symbols-outlined text-[18px]">person</span>
                             <span>Thành viên</span>
                         </button>
                     </div>
@@ -1603,27 +1598,27 @@ const isImpersonating = userObj && !!userObj.adminId;
     <!-- BottomNavBar (Mobile Pill) -->
     <nav class="fixed left-1/2 -translate-x-1/2 z-50 md:hidden w-[92%] max-w-md rounded-full backdrop-blur-[28px] bg-[#0A0A0B]/85 border border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-300" style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px));">
       <div class="flex justify-between items-center px-4 py-2.5">
-        <a href="/tphim" class={`flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/tphim') ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-white'}`}>
+        <a href="/tphim" class={`flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/tphim') ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'}`}>
           <span class="material-symbols-outlined text-xl">home</span>
           <span class="text-[9px]">Trang chủ</span>
-          {isActive('/tphim') && <span class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></span>}
+          {isActive('/tphim') && <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_rgba(124,58,237,1)]"></span>}
         </a>
-        <a href="/tim-kiem" class={`flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/tim-kiem') ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-white'}`}>
+        <a href="/tim-kiem" class={`flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/tim-kiem') ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'}`}>
           <span class="material-symbols-outlined text-xl">search</span>
           <span class="text-[9px]">Tìm kiếm</span>
-          {isActive('/tim-kiem') && <span class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></span>}
+          {isActive('/tim-kiem') && <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_rgba(124,58,237,1)]"></span>}
         </a>
-        <a href="/lich-chieu" class={`flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/lich-chieu') ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-white'}`}>
+        <a href="/lich-chieu" class={`flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/lich-chieu') ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'}`}>
           <span class="material-symbols-outlined text-xl">calendar_month</span>
           <span class="text-[9px]">Lịch chiếu</span>
-          {isActive('/lich-chieu') && <span class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></span>}
+          {isActive('/lich-chieu') && <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_rgba(124,58,237,1)]"></span>}
         </a>
 
         <!-- Guest View Links -->
-        <a href="/danh-sach-cua-toi" class={`auth-guest flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/danh-sach-cua-toi') ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-white'}`}>
+        <a href="/danh-sach-cua-toi" class={`auth-guest flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/danh-sach-cua-toi') ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'}`}>
           <span class="material-symbols-outlined text-xl">bookmark</span>
           <span class="text-[9px]">Lưu</span>
-          {isActive('/danh-sach-cua-toi') && <span class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></span>}
+          {isActive('/danh-sach-cua-toi') && <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_rgba(124,58,237,1)]"></span>}
         </a>
         <button onclick="window.dispatchEvent(new Event('open-login-modal'))" class={`auth-guest flex flex-col items-center gap-0.5 py-1 px-2 text-zinc-400 hover:text-white transition-all active:scale-95 border-none bg-transparent cursor-pointer`}>
           <span class="material-symbols-outlined text-xl">person</span>
@@ -1631,16 +1626,16 @@ const isImpersonating = userObj && !!userObj.adminId;
         </button>
 
         <!-- User View Links -->
-        <a href="/lich-su-xem" class={`auth-user hidden flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/lich-su-xem') ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-white'}`}>
+        <a href="/lich-su-xem" class={`auth-user hidden flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/lich-su-xem') ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'}`}>
           <span class="material-symbols-outlined text-xl">history</span>
           <span class="text-[9px]">Lịch sử</span>
-          {isActive('/lich-su-xem') && <span class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></span>}
+          {isActive('/lich-su-xem') && <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_rgba(124,58,237,1)]"></span>}
         </a>
         {isAdmin && (
-          <a href="/admin" class={`auth-user hidden flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/admin') ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-white'}`}>
+          <a href="/admin" class={`auth-user hidden flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/admin') ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'}`}>
             <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
             <span class="text-[9px]">Quản trị</span>
-            {isActive('/admin') && <span class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></span>}
+            {isActive('/admin') && <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_rgba(124,58,237,1)]"></span>}
           </a>
         )}
         <a href="/xem-chung" class={`auth-user nav-watch-together hidden flex flex-col items-center gap-0.5 relative py-1 px-2 transition-all active:scale-95 ${isActive('/xem-chung') ? 'text-primary font-bold' : 'text-zinc-400 hover:text-white'}`}>
