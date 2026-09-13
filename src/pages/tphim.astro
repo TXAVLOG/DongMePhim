@@ -10,6 +10,10 @@ import { getHomepageCategories } from '@data/categories';
 import { TxaMovieRanker } from '../backend/utils/txaMovieRanker';
 import { TxaTrendingService } from '../backend/services/txaTrendingService';
 import { supabase } from '@lib/supabase';
+import { SettingService } from '@services/SettingService';
+
+const settings = await SettingService.getSettings();
+const siteName = settings?.general?.site_name || 'Động Mê Phim';
 
 const homepageMappings = await getHomepageCategories();
 
@@ -1254,8 +1258,8 @@ const getMovieProgressBadgesSSR = (movie: any) => {
 
         <div class="relative z-10 max-w-3xl mx-auto space-y-6">
           <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-inner">
-            <img src="/logo-icon.gif" alt={`${settings.general.site_name} Logo`} class="h-6 w-auto dyn-logo-img" />
-            <span class="text-xs font-bold text-white uppercase tracking-wider font-outfit">{settings.general.site_name}</span>
+            <img src="/logo-icon.gif" alt={`${siteName} Logo`} class="h-6 w-auto dyn-logo-img" />
+            <span class="text-xs font-bold text-white uppercase tracking-wider font-outfit">{siteName}</span>
           </div>
 
           <h2 class="font-display-hero text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight leading-snug drop-shadow-lg font-outfit">
@@ -1270,7 +1274,7 @@ const getMovieProgressBadgesSSR = (movie: any) => {
           </div>
 
           <p class="text-xs sm:text-sm text-zinc-300/80 font-sans leading-relaxed max-w-2xl mx-auto pt-4 border-t border-white/10">
-            Trong kỷ nguyên số ngày nay, việc xem phim miễn phí trực tuyến đã trở thành nhu cầu giải trí không thể thiếu. Với sự bùng nổ của các nền tảng phát trực tuyến, <strong>{settings.general.site_name}</strong> tự hào mang đến cho bạn trải nghiệm điện ảnh chuẩn rạp với hàng ngàn tựa phim bom tấn đỉnh cao, tốc độ phát siêu mượt mà và hoàn toàn miễn phí.
+            Trong kỷ nguyên số ngày nay, việc xem phim miễn phí trực tuyến đã trở thành nhu cầu giải trí không thể thiếu. Với sự bùng nổ của các nền tảng phát trực tuyến, <strong>{siteName}</strong> tự hào mang đến cho bạn trải nghiệm điện ảnh chuẩn rạp với hàng ngàn tựa phim bom tấn đỉnh cao, tốc độ phát siêu mượt mà và hoàn toàn miễn phí.
           </p>
         </div>
       </section>
